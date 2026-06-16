@@ -1,0 +1,61 @@
+[project]
+name = "swe-bench-m-delta-testing"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "Daniel Di Giovanni", email = "dannyjdigio@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+
+[dependency-groups]
+dev = [
+    "pre-commit",
+    "pyright>=1.1.410",
+    "ruff",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pyright]
+pythonVersion = "3.13"
+venvPath = "."
+venv = ".venv"
+include = ["src"]
+exclude = [
+    "**/.*",
+    "**/node_modules",
+    "**/__pycache__",
+    ".venv",
+    "venv",
+]
+typeCheckingMode = "strict"
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportUnknownMemberType = "none"
+useLibraryCodeForTypes = true
+reportConstantRedefinition = false
+ignore = [
+]
+
+[tool.ruff]
+line-length = 79
+extend-exclude = [
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "single"
