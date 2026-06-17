@@ -1,0 +1,4412 @@
+[
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Affix render should render",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Affix render shoud render with affixTop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Affix render shoud render with affixBottom",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Affix render should render with specified target",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Affix render should receive offset change",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Animate should play appear animation",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Animate should not play appear animation if set animationAppear to false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Animate should play enter animation",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Animate should play leave animation",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Animate should support passing object to animation property",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Animate should play expand animation",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Badge should have next-badge-not-a-wrapper class if don't pass children",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Badge should receive className prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Badge should receive style prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Badge should render by dot and align",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Badge should receive content prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Badge should render by count part one",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Badge should render by count part two",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Badge should render by overflowCount",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon closable closable: true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon closable closable: false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon safeNode safeNode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon type type: normal",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon type type: primary",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon trigger ,triggerType should has the trigger element",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon trigger ,triggerType triggerType can set click",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon trigger ,triggerType triggerType can set hover",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon trigger ,triggerType trigger is disabled button, hover enter and leave, popup should resolve",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon trigger ,triggerType trigger can be string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon trigger ,triggerType trigger default is span",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon onPosition should update on position updated",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon align balloon align",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Balloon onClose ComponentWillReceiveProps closeIcon onClose ComponentWillReceiveProps closeIcon",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Tooltip balloon",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Tooltip tooltip",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Tooltip trigger default is span",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Tooltip tooltip should have the trigger element",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Tooltip text not string should throw an error",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Tooltip trigger is disabled button, hover enter and leave, popup should resolve",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Tooltip trigger can be string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Item should has item class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Item should has an a tag if you pass the link property",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Item should has an span tag if you do not pass the link property",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Item should has an activated class if you pass it",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Breadcrumb should throw error if you don't pass Item as children",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Breadcrumb should render ellipsis if maxNode is less than Items count",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Breadcrumb should not render the separator of the last item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Breadcrumb should be set component to change element tag",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Breadcrumb should support RTL",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Button render should render button by type",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Button render should render button with deprecated shape",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Button render should render warning/text button",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Button render should render ghost button",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Button render should render button with icon",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Button render should render button by diffrent htmlType",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Button render should render disabled <a>",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Button render should click single button",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Button render should mouseUp with handler",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ButtonGroup render should render button by type",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ButtonGroup render should render button by group size",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ButtonGroup render should render button group with invalid child",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ButtonGroup render should click button in group",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar render should render calendar",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar render should render with defaultVisibleMonth",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar render should render with default value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar render should render calendar panel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar render should render calendar card",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar render should render controlled calendar",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar render should render controlled calendar with mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar render should render with disabled dates",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar render should render custom content",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar action should change mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar action should change panel mode to month",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar action should change panel mode to year",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar action should change visible month",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar action should change visible month by year",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar action should change decade",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar action should select date",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangeCalendar render should render RangeCalendar",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangeCalendar render should render with defaultStartValue & defaultEndValue",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangeCalendar render should render with controlled value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangeCalendar action should change to month mode in panel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangeCalendar action should change to year mode in panel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangeCalendar action should change visible month",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangeCalendar action should change visible month by year",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangeCalendar action should change decade",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Card render should render card",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Card render should render without title bullet",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Card render should render without head underline",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Card render should render without head",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Card action should expand card",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should show dropdown when set defaultVisible to true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should show dropdown when click select box",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should render single cascader",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should render single cascader under control",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should not trigger onChange when click the selected item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader could only select leaf item when set canOnlySelectLeaf to true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader could only check checkbox of leaf item when set canOnlyCheckLeaf to true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should expand menu by hover when set expandTriggerType to hover",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should render multiple cascader",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should render multiple cascader when set checkStrictly to true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should compute expanded value auto if set value but not set expanded value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should load data asynchronously when set loadData",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should support listClassName and listStyle",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should support keyboard",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should set the style of the cascader inner node",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cascader should support rtl",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group [render] control should contain `pear`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group [render] control should have three children with mock data",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group [render] control should support null child",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group [render] uncontrol should have three children with mock data",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group [render] nest should contain `pear` and `watermelon`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group [render] nest should have two children with nest <Checkbox />",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group [events] simulate change should call `onChange`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group [behavior] controlled should support controlled `value`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group [behavior] controlled should support controlled `disabled`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group value === undefined should support value === undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group value === 0 should support value === 0",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox.Group should respect children's indeternimate state should support value === 0",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [render] normal should get a normal checkbox",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [render] checked should get a checked checkbox",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [render] indeterminate should get a indeterminate checkbox",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [render] disabled should get a disabled checkbox",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [render] label should get a checkbox with label",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [attribute] set custom `className` should has className `cumstom-name`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [events] simulate click should checked after click",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [events] simulate click should call `onChange`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [events] simulate click should call `onMouseEnter`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [events] simulate click should call `onMouseLeave`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Checkbox [behavior] controlled should support controlled `checked` and `indeterminate`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse render [normal] Should render from children",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse render Should render from dataSource",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse event Should expanded by click",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse event Should expanded by space key",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse event should support accordion",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse event disabled",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse event [onExpand] Call when the trigger",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse event under Control",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse react api calls componentWillReceiveProps",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse panel id should be auto add",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Collapse panel all id should be auto add",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should use default prop by default",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should use context prop if wrapped by ConfigProvider",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should use passed prop if pass custom prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should expose getInstance method",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should not pure render by default",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should pure render if set pure to true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should change context of component which is off the component tree",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should change moment locale",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should support alias displayName",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should support setLanguage",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider should support setLocale",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.Consumer can be to read the context state of provider",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should catch errors with componentDidCatch",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should catch errors with componentDidCatch as to basic component",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should on: errorBoundary should work",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should on: errorBoundary={{}} should work",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should off: errorBoundary={false} should work",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should on: errorBoundary={{open: true}} should work",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should off: errorBoundary={{open: false}} should work",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should off: config on component iteself >  on ConfigProvider 1",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should on: config on component iteself >  on ConfigProvider 2",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should on: config on component iteself >  on ConfigProvider 3",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should off: config on component iteself >  on ConfigProvider 4",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ConfigProvider.ErrorBoundary should on: config on component iteself >  on ConfigProvider 5",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker render with props should render",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker render with props should render with defaultValue",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker render with props should set hasClear to false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker render with props should render controlled value of DatePicker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker render with props should render controlled visible of DatePicker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker render with props should hide seconds",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker render with props should render dateInputAriaLabel & timeInputAriaLabel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should select",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should clear value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should input value in picker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should input null value in picker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should input disabled date in picker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should focus input to change panel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should select time panel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should select time panel by time-btn",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should click onOk",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should set defaultValue for TimePicker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should keyboard date input",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker action should keyboard date time input",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker with date string should defaultValue as string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker with date string should value as string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DatePicker with date string should set defaultValue as string for TimePicker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker render with props should render with defaultValue",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker render with props should set hasClear to false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker render with props should render controlled value of YearPicker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker render with props should render controlled visible of YearPicker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker render with props should render dateInputAriaLabel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker action should select",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker action should clear value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker action should input value in picker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker action should input null value in picker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker action should input disabled date in picker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker action should keyboard input",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker value as string should defaultValue as string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "YearPicker value as string should value as string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker render with props should render with defaultValue",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker render with props should set hasClear to false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker render with props should render controlled value of MonthPicker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker render with props should render controlled visible of MonthPicker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker render with props should render dateInputAriaLabel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker action should select",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker action should clear value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker action should input value in picker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker action should input null value in picker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker action should input disabled date in picker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker action should keyboard input",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker value as string should defaultValue as string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MonthPicker value as string should value as string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker render with props should render",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker render with props should render with defaultValue",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker render with props should render set hasClear to false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker render with props should render controlled value of RangePicker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker render with props should render controlled visible of RangePicker",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker render with props should hide seconds",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker render with props should render dateInputAriaLabel & timeInputAriaLabel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should foucs the input of start date",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should foucs the input of end date",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should focus the input to change panel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should select range",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should slect range with same day",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should clear range",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should input range value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should input range value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should show and hide",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should show and hide",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should select time panel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should select time panel",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should support footerActions",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should support custom footer",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should support custom footer",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should resetTime",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should resetTime",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should use css to position dialog if set isFullScreen to true and align to 'cc cc'",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should adjust position and size if not use css to position",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should adjust position and size if not use css to position",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should select a endDay less than the previous startDay",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should select a endDay less than the previous startDay",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should support show",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should support alert",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should support alert",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should select endDate firstly",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should select endDate firstly",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should support height",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should close dialog if click the ok button",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should close dialog if click the ok button",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should click onOk",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should click onOk",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should not close dialog immediately if onOk return promise and resolve true",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should not close dialog if onOk return promise and resolve false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker action should keyboard date time input",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker with date string should defaultValue as string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "RangePicker with date string should value as string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Quick should support alert message",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Quick should support confirm message",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Quick should support message title",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Quick should support default prefix",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Quick should support messageProps",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Quick should support custom prefix",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Quick should pass content as child",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Dropdown should render by defaultVisible",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Dropdown should render by visible",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Dropdown should trigger custom menu click event",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Dropdown should only focus when triggered by keyboard",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should not close dialog if onOk return promise and reject",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Dropdown autoFocus=false should not have any activeElement",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Dropdown autoFocus=true should have any activeElement when triggered by keyboard",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field render should support Form",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field render should support PureComponent",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field render should support origin input/checkbox/radio",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field init init(input)",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field init initValue",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field init valueName",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field init props",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field init custom Event: onChange",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field init getValueFromEvent",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field init rules",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field behaviour getValue & getValues & setValue & setValues",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field behaviour setError & setErrors & getError & getErrors",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field behaviour getState",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field behaviour validate",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field behaviour reset",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field behaviour remove",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "field behaviour spliceArray",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options should support autoUnmount",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options should support autoUnmount with same name",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options should support autoUnmount=false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options scrollToFirstError",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options values should set default field input values when given `values` in constructor",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options values should set default field input values when given `values` and `parseName` = true in constructor",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options values should allow access to field values before init when given `values` in constructor",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options values should reset `input` to undefined when given `values` in constructor and call `reset`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options values should reset `input` to constructor `values` after calling `resetToDefault`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options values should reset `input` to undefined when given `values` and `parseName` = true in constructor and call `reset`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options values should reset `input` to undefined when given `values` and `parseName` = true in constructor and call `resetToDefault`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options should support parseName getValues",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options should support parseName setValues",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options should support autoValidate=false options.autoValidate=true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options should support autoValidate=false options.autoValidate=false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "options should support autoValidate=false props.autoValidate=false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "rules required",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "rules triger",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "rules validator",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Field Utils getErrorStrs should return `undefined` when given no errors",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Field Utils getErrorStrs should return array of strings when given error objects",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Field Utils getErrorStrs should return array of strings when given string errors",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Field Utils getErrorStrs should return array of React elements with `error` key when no key set",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Field Utils getErrorStrs should accept React Elements in `message` key",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Field Utils getErrorStrs should accept React Elements",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form render Form ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form render FormItem",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form render should supoort Field",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form Form should supoort labelAlign",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form Form should supoort onSubmit",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form Form should deprecated direction",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form FormItem should supoort props",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form FormItem should supoort component",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form FormItem should supoort wrapperCol & labelCol",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form FormItem should supoort help",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form FormItem should supoort format",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form FormItem should supoort validateState",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form FormItem should supoort required",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "form FormItem should supoort function children",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Submit should support defaultValue & defaultChecked",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Submit Submit",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Submit Submit && validate",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Submit Submit && validate: minmaxMessage",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Submit Submit && validate: minmaxLengthMessage",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Submit Submit && validate (array)",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Submit autoValidate=false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Reset Reset",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Reset should supoort Reset toDefault",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Reset should support custom filed",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Reset should warn & callback if field not exist",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Row should have class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Row should apply gutter",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Row should receive className prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Row should receive style prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Row should have hidden class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Row should rendered as custom element type",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Row should rendered as custom element type(function)",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Col should have class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Col should have break point class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Col should have hidden class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Col should receive className prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Col should receive style prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Col should rendered as custom element type",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Col should rendered as custom element type(function)",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icon should have type class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icon should have size class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icon should receive className prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icon should receive style prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input-group render should accept addonBefore",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input-group render should accept addonAfter",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input render should accept defaultValue & value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input render should accept addonBefore & addonAfter",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior simulates onChange/onFocus/onBlur/onPressEnter events",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support onChange",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support trim",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support placeholder",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support dsiabled",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support maxLength & hasLimitHint",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support state",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support onPressEnter & onFocus & onBlur",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support hasClear",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support getValueLength",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support getInputNode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support htmlType=number",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input behavior should support htmlType=number value=\"\" ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "input react api calls componentWillReceiveProps",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TextArea behavior should support onChange/onFocus/onBlur events",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TextArea behavior should support defaultValue and can be changed",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TextArea behavior should support value and can not be changed",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TextArea behavior should work with value and onChange under control",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TextArea behavior should work with value and onChange under control",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should obey: self.locale > nearest ConfigProvider.locale > further ConfigProvider.locale",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should obey: self.locale > nearest ConfigProvider.locale > further ConfigProvider.locale",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner quick-calling should use root context's state if its exists",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner quick-calling should use root context's state if its exists",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should throw error (async)",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should throw error (async)",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should throw error",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "inner should throw error",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Test render should render default",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Test render should render medium size",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Test render should show fullscreen",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Test behavior should support tip",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Test behavior should support indicator",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Test behavior should support visible",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Test behavior should support inline",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Locale should be the same keys",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MenuButton render should render",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MenuButton render should controlled selectedKeys",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MenuButton render should controlled popup visible",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MenuButton action should click trigger to open the popup",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MenuButton action should select in uncontrolled mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MenuButton action should select in controlled mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "MenuButton action should mulitple select can`t close",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should render menu",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support isSelectIconRight",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should render menu item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should filter duplicate keys",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should pass className",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support onItemClick",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should render disabled menu item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should render menu divider",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should render menu group",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should render inline sub menu",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support triggerType under inline mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support openKeys and onOpen under inline mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support setting openMode to single under inline mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should render popup sub menu",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support triggerType under popup mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support popupAutoWidth and popupAlign",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu can not select item if not set selectMode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support single select",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support multiple select",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support selectedKeys and onSelect under inline mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should select sub menu label if set selectable of SubMenu to true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu can not select sub menu item if set shallowSelect to true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support pressing space to select item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should calling onSelect if you pass it to the item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should render checkbox menu item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support pressing space to check item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should render radio menu item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support keyboard",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu should support keyboard if direction is hoz",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Menu.create should create context menu",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Message should receive className prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Message should receive style prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Message should have type class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Message should have shape class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Message should have size class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Message should show title if you pass it",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Message should show content if you pass it",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Message should custom icon type",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Message should show close link if set closeable to true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Message should show or hide under control",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast should render message when only pass content string",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast should render message when only pass content react element",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast should render message when pass config object",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast should close message after duration and call afterClose method",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast should show message all the time when set duration to 0",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast should hide message when call hide method",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast should hide message when click this close link",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "should support configProvider normal should obey: self.locale > nearest ConfigProvider.locale > further ConfigProvider.locale",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast quick-calling render success",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should render single cascader select",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should render single cascader under control",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should change select box display when expand item if set changeOnSelect to true",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should render multiple cascader",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should render multiple cascader when set checkStrictly to true",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should support searching when it is a single cascader select",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should support searching when it is a multiple cascader select",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should support keyborad",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast quick-calling render warning",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast quick-calling render error",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast quick-calling render notice",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast quick-calling render help",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should support signle value not in dataSource",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CascaderSelect should support multiple value not in dataSource",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "mixin-ui-state Focus element should has focused class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "mixin-ui-state Blur element should not has focused class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "mixin-ui-state resetUIState should not has focused class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Nav should support type",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Nav should support direction",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Nav should support activeDirection",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Nav should render item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Nav should render sub nav",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Nav should render popup item",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Nav should render group",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Nav should support iconOnly",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "toast quick-calling render loading",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker render should accept defaultValue & value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker render should accept type ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior simulates onChange/onClick/onFocus/onDisabled events",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support defaultValue and can be changed",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support value and can not be changed",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should work with value and onChange under control",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support input with -/-0/-0./0./0.0 ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should accept disabled ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support click add && reduce",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support editable",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support max & min",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should be equal min while next value < min by click +",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should be equal max while next value > max by click -",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support precision",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should consider [\u3002] as [.]",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support onCorrect",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support onKeyDown & onFocus & onBlur",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support Integer & Float ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior should support e.triggerType ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker behavior will render value in custom if `format` is settled",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker react api calls componentWillReceiveProps",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker chrome bug hack 0.28 + 0.01 should be 0.29 not 0.29000000000000004",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "number-picker chrome bug hack 0.29 - 0.01 should be 0.28 not 0.27999999999999997",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Overlay should support rendering overlay and mask",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Overlay should support setting animation to false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Overlay should support canCloseByEsc",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Overlay should support canCloseByOutSideClick",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Overlay should support canCloseByMask",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Overlay should support safeNode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Popup should support rendering trigger and overlay",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Overlay should support disableScroll",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Overlay should support autoFocus",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Popup should support triggerType",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Popup should support triggerType",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Popup should support setting triggerType to click",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Overlay should support getContent",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should receive className prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should receive style prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render by type",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render by shape",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render by size",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render by current",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render by defaultCurrent",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should not trigger onChange callback when click current page button",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should not trigger onChange callback when input some text that can not conver to positive integer or current page",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should disable the previous button when current is the first page ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should disable the next button when current is the last page",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render by total, pageSize, showCount and hideOnlyOnePage",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should next- jump and display parts if the type is normal when set showJump to false ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render page size selector when set pageSizeSelector to filter",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render page size selector when set pageSizeSelector to filter with object",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render page size selector when set pageSizeSelector to dropdown",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render a tag with the specified href when set link",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render page total number",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Pagination should render page numder by cust render fuction, by pageNumberRender",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Paragraph render default class check",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Paragraph render props `type` & `size` must work",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Paragraph render props `rtl` should be ok",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Line render should render a line progress",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Line render should render a line progress without text",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Line render should render a line progress use custom text",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Line render should render a line progress with border",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Line action should change percent",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Line action should change style in progressive mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Circle render should render a circle progress",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Circle render should render a circle progress without text",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Circle render should render a circle progress use custom text",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Circle action should change percent",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Circle action should change style in progressive mode",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] control should contain `apple`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] control should have three children with mock data",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] uncontrol should have three children with mock data",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] nest should contain `pear` and `watermelon`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] nest should have two children with nest <Radio />",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] button shape small button should be 20px height",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] button shape medium button should be 28px height",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] button shape large button should be 40px height",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] button shape default tagName should be div",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] button shape customer tagName(String) should be footer",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [render] button shape customer tagName(Func) should be special-name",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [events] simulate change should call `onChange`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group disabled && value === undefined should support disabled",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group disabled && value === undefined should support value === undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [behavior] controlled should support controlled `value`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [behavior] controlled should support controlled `disabled`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group [behavior] controlled change 3 times for react@15.6.1",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group value === 0 should support value === 0",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group string array  should support string array",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group Radio shape shape = button",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group Children over datasource should render children over datasource",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio.Group Children over datasource should support null children",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio [render] normal should get a normal radio",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio [render] normal with checked && defaultChecked",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio [render] normal disabled",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio [render] normal should support className",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio [render] normal should support name",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio behavior simulate click",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Radio behavior should support controlled `checked`",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  defaultValue",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  min max",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  disabled",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  step",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  hasTip === true and tipRender",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  hasTip === false",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  marks",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  dragging onChange onProcess",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  exchange upper and lower",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  value bigger max",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  set value === undefined for reset ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  reverse  ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  fixedWidth ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  fixedWidth no tip",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  fixedWidth dragging should have active class",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range   fixedWidth tooltip enter+down+leave+up",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range   fixedWidth tooltipVisible === true, always has tooltip",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  keymove right",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  keymove left",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  keymove right at rightmost",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  rtl",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Range  rtl & reverse",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Rating render should render correct when value < min value",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Rating render should render correct rating",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Rating render should render correct when value > count",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Rating render should render with different types",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Rating action should be controlled ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Rating action should trigger click event",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Rating action should trigger click event correct",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Rating action should trigger mouse event",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Rating action should trigger mouse event when allow half",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search render should accept type ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search render should accept value ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search render should accept value=undefind ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search render should accept simple icon ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search render should accept no-icon",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search render should accept search text",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search render should set default aria-label to locale.buttonText",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search render should set aria-label to locale.buttonText",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search render should override aria-label with prop",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search behavior simulates onChange/onSearch/onBlur events",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search behavior should support defaultValue ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search behavior should support onSearch ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search behavior should support filter ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search behavior should support filterValue",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search behavior act in controlled way",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search behavior should support disabled",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search behavior should support enter key",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search behavior should support disable enter key",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search CombobBox should support DataSource ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search CombobBox should support dataSource filter ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search CombobBox should support dataSource value click ",
+        "passed": true
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search CombobBox should support dataSource value click ",
+        "passed": false
+    },
+    {
+        "instance_id": "alibaba-fusion__next-717",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Search CombobBox \"after each\" hook for \"should support dataSource value click \"",
+        "passed": false
+    }
+]

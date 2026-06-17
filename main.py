@@ -97,7 +97,7 @@ def main() -> None:
     results = evaluate(args.instance_id, args.patch_type, args.pred)
 
     with open(results_dir / filename, 'w') as f:
-        json.dump([asdict(r) for r in results], f)
+        json.dump([asdict(r) for r in results], f, indent=4)
 
 
 if __name__ == '__main__':
