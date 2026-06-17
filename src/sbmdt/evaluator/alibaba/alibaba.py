@@ -9,17 +9,12 @@ the results.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Final, override
 
-import docker
-
-from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.evaluator.alibaba.karma_junit_parser import (
     results_xml_to_test_results,
 )
-from sbmdt.evaluator.base import Evaluator, PatchType, TestResult
-from sbmdt.pred import Pred
+from sbmdt.evaluator.base import Evaluator, TestResult
 from sbmdt.utils import apply_change, read_from_container, write_to_container
 
 __all__ = [
@@ -40,59 +35,22 @@ class AlibabaEvaluator(Evaluator):
     and reads the resulting XML from the container.
     """
 
-    instance_id: str
-    dockerfile_path: Path
-    patch_type: PatchType
-    agent_name: str
-    pred: Pred | None
-
-    def __init__(
-        self,
-        instance_id: str,
-        patch_type: PatchType,
-        agent_name: str,
-        pred: Pred | None,
-    ):
-        """Initialize the evaluator for the given instance.
-
-        Args:
-            instance_id: Identifier for the benchmark instance. Used to
-                locate the Dockerfile under ``DOCKERFILES_BASE`` and to
-                name the resulting image and container.
-        """
-        self.instance_id = instance_id
-        self.dockerfile_path = DOCKERFILES_BASE / instance_id / 'Dockerfile'
-        self.patch_type = patch_type
-        self.agent_name = agent_name
-        self.pred = pred
-        self.image = None
-        self.container = None
-
     @override
     def setup(self) -> None:
-        """Build the Docker image, start the container, and patch Karma.
+        """Install the JUnit reporter and patch Karma's config.
 
         Steps performed:
-        1. Build the image from the instance's Dockerfile.
-        2. Start the container in detached mode with a TTY.
-        3. Install ``karma-junit-reporter`` in the container.
-        4. Patch ``karma.js`` to add the JUnit reporter, its config block,
+        1. Install ``karma-junit-reporter`` in the container.
+        2. Patch ``karma.js`` to add the JUnit reporter, its config block,
            and the plugin entry.
+
+        Raises:
+            Exception: If the container has not been started (i.e.,
+                :meth:`Evaluator.provision` was not called first).
         """
 
-        client = docker.from_env()
-        self.image, _ = client.images.build(
-            path=str(self.dockerfile_path.parent.resolve()),
-            tag=f'sbmdt-{self.instance_id}:latest',
-        )
-        self.container = client.containers.run(
-            self.image,
-            command='/bin/bash',
-            name=f'sbmdt-{self.instance_id}',
-            stdin_open=True,
-            tty=True,
-            detach=True,
-        )
+        if self.container is None:
+            raise Exception('no container')
 
         # 1. Install package
         exit_code, output = self.container.exec_run(

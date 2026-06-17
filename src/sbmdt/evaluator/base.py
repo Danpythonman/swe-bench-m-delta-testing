@@ -12,11 +12,14 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 from typing import final
 
+import docker
 from docker.models.containers import Container
 from docker.models.images import Image
 
+from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.pred import Pred
 
 __all__ = [
@@ -63,12 +66,18 @@ class TestResult:
 class Evaluator(ABC):
     """Abstract base for Docker-based benchmark evaluators.
 
-    Subclasses must implement :meth:`setup`, :meth:`evaluate`,
+    The constructor and :meth:`provision` (image build + container start)
+    are shared by every subclass since this happens identically for all
+    of them. Subclasses must implement :meth:`setup`, :meth:`evaluate`,
     :meth:`pre_cleanup`, and :meth:`post_cleanup`. The :meth:`cleanup`
     and :meth:`run` methods are final and handle container/image teardown
     and overall orchestration respectively.
 
     Attributes:
+        instance_id: Identifier of the benchmark instance being evaluated.
+        dockerfile_path: Path to the instance's Dockerfile, used by
+            :meth:`provision` to build :attr:`image`.
+        agent_name: Name of the agent that produced :attr:`pred`.
         image: The Docker image built or used by this evaluator.
         container: The running Docker container managed by this evaluator.
         patch_type: The patch state this evaluator is running under.
@@ -77,16 +86,70 @@ class Evaluator(ABC):
             ``patch_type`` is :attr:`PatchType.BEFORE_PATCH`.
     """
 
+    instance_id: str
+    dockerfile_path: Path
+    patch_type: PatchType
+    agent_name: str
+    pred: Pred | None
     image: Image | None
     container: Container | None
-    patch_type: PatchType
-    pred: Pred | None
+
+    def __init__(
+        self,
+        instance_id: str,
+        patch_type: PatchType,
+        agent_name: str,
+        pred: Pred | None,
+    ):
+        """Initialize the evaluator for the given instance.
+
+        Args:
+            instance_id: Identifier for the benchmark instance. Used to
+                locate the Dockerfile under ``DOCKERFILES_BASE`` and to
+                name the resulting image and container.
+            patch_type: The patch state this evaluator is running under.
+            agent_name: Name of the agent that produced ``pred``.
+            pred: The model-generated patch to apply, or ``None`` when
+                ``patch_type`` is :attr:`PatchType.BEFORE_PATCH`.
+        """
+        self.instance_id = instance_id
+        self.dockerfile_path = DOCKERFILES_BASE / instance_id / 'Dockerfile'
+        self.patch_type = patch_type
+        self.agent_name = agent_name
+        self.pred = pred
+        self.image = None
+        self.container = None
+
+    @final
+    def provision(self) -> None:
+        """Build the Docker image and start the container.
+
+        Builds the image from ``self.dockerfile_path`` and starts a
+        detached container from it, assigning ``self.image`` and
+        ``self.container``. Called by :meth:`run` before :meth:`setup`.
+        """
+
+        client = docker.from_env()
+        self.image, _ = client.images.build(
+            path=str(self.dockerfile_path.parent.resolve()),
+            tag=f'sbmdt-{self.instance_id}:latest',
+        )
+        self.container = client.containers.run(
+            self.image,
+            command='/bin/bash',
+            name=f'sbmdt-{self.instance_id}',
+            stdin_open=True,
+            tty=True,
+            detach=True,
+        )
 
     @abstractmethod
     def setup(self) -> None:
-        """Build the image and start the container.
+        """Perform evaluator-specific setup after the container is running.
 
-        Implementations should assign ``self.image`` and ``self.container``.
+        Called by :meth:`run` after the image has been built and the
+        container started by :meth:`provision`. ``self.image`` and
+        ``self.container`` are guaranteed to be set when this is called.
         """
         ...
 
@@ -186,10 +249,12 @@ class Evaluator(ABC):
     def run(self) -> list[TestResult]:
         """Run the full evaluation lifecycle.
 
-        Stages: :meth:`setup`, then :meth:`apply_patch` (only when
+        Stages: :meth:`provision` (build image, start container), then
+        :meth:`setup`, then :meth:`apply_patch` (only when
         ``self.patch_type`` is not :attr:`PatchType.BEFORE_PATCH`), then
         :meth:`evaluate`, then :meth:`cleanup`.
         """
+        self.provision()
         self.setup()
         if self.patch_type != PatchType.BEFORE_PATCH:
             self.apply_patch()
