@@ -73,6 +73,12 @@ uv run pyright            # type check (strict mode)
 uv run pre-commit install # set up git hooks
 ```
 
+Don't forget to make a branch before coding:
+
+```
+git checkout -b <name>
+```
+
 ## Running Containers
 
 First, go to the directory of the container:
@@ -108,7 +114,7 @@ Then code the pipeline for the repo by:
 1. Make a folder `/src/sbmdt/evaluator/<repo>/<repo>.py`.
 2. Make sure you make `/src/sbmdt/evaluator/<repo>/__init__.py`.
 3. Make a subclass of `Evaluator` class called `<repo>Evaluator`.
-4. Code!
+4. Code! ;)
 
 Once you code the pipeline for the repo:
 
