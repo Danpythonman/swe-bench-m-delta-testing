@@ -15,7 +15,11 @@ from sbmdt.evaluator.alibaba.karma_junit_parser import (
     results_xml_to_test_results,
 )
 from sbmdt.evaluator.base import Evaluator, TestResult
-from sbmdt.utils import apply_change, read_from_container, write_to_container
+from sbmdt.utils import (
+    apply_change_literal,
+    apply_change_regex,
+    read_from_container,
+)
 
 __all__ = [
     'AlibabaEvaluator',
@@ -64,7 +68,7 @@ class AlibabaEvaluator(Evaluator):
         log.info(output.decode())
 
         # 2. Add junit to reporters
-        apply_change(
+        apply_change_literal(
             container=self.container,
             file=KARMA_FILE,
             find="reporters: ['spec', 'coverage']",
@@ -73,7 +77,7 @@ class AlibabaEvaluator(Evaluator):
         )
 
         # 3. Add junitReporter config
-        apply_change(
+        apply_change_literal(
             container=self.container,
             file=KARMA_FILE,
             find="hostname: 'localhost'",
@@ -87,49 +91,17 @@ class AlibabaEvaluator(Evaluator):
         )
 
         # 4. Add plugin
-        apply_change(
+        apply_change_regex(
             container=self.container,
             file=KARMA_FILE,
-            find="'karma-coverage',",
-            replace="'karma-coverage',\n            'karma-junit-reporter',",
+            find=r"'karma-coverage',?",
+            replace=lambda m: (
+                "'karma-coverage',\n            'karma-junit-reporter',"
+            ),
             assertion="'karma-junit-reporter',",
         )
 
         log.info('All changes applied successfully.')
-
-    @override
-    def apply_patch(self) -> None:
-        """Apply ``self.pred.model_patch`` to ``/testbed`` via ``git apply``.
-
-        Writes the patch to a temporary file inside the container and
-        runs ``git apply`` against it from ``/testbed``.
-
-        Raises:
-            Exception: If the container has not been started, or if
-                ``git apply`` exits non-zero.
-        """
-
-        if self.container is None:
-            raise Exception('no container')
-        assert self.pred is not None
-
-        write_to_container(self.container, PATCH_FILE, self.pred.model_patch)
-
-        exit_code, output = self.container.exec_run(
-            f'git apply {PATCH_FILE}',
-            workdir='/testbed',
-            stream=False,
-        )
-        assert isinstance(output, bytes)
-
-        log.info(exit_code)
-        log.info(output.decode())
-
-        if exit_code != 0:
-            raise Exception(
-                f'Failed to apply patch for {self.instance_id}: '
-                f'{output.decode()}'
-            )
 
     @override
     def evaluate(self) -> list[TestResult]:

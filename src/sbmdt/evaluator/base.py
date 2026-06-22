@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import final
+from typing import Final, final
 
 import docker
 from docker.models.containers import Container
@@ -21,6 +21,7 @@ from docker.models.images import Image
 
 from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.pred import Pred
+from sbmdt.utils import write_to_container
 
 __all__ = [
     'Evaluator',
@@ -29,6 +30,8 @@ __all__ = [
 ]
 
 log = logging.getLogger(__name__)
+
+PATCH_FILE: Final[str] = '/tmp/model.patch'
 
 
 class PatchType(StrEnum):
@@ -43,6 +46,7 @@ class PatchType(StrEnum):
     BEFORE_PATCH = 'before_patch'
     WITH_IMAGE = 'with_image'
     WITHOUT_IMAGE = 'without_image'
+    GOLD = 'gold'
 
 
 @dataclass(kw_only=True)
@@ -153,25 +157,38 @@ class Evaluator(ABC):
         """
         ...
 
-    @abstractmethod
     def apply_patch(self) -> None:
-        """Apply ``self.pred``'s patch to the evaluation environment.
+        """Apply ``self.pred.model_patch`` to ``/testbed`` via ``git apply``.
 
-        Called by :meth:`run` after :meth:`setup` and before
-        :meth:`evaluate`, but only when ``self.patch_type`` is not
-        :attr:`PatchType.BEFORE_PATCH`; when there is no patch to apply,
-        :meth:`run` skips calling this method entirely. ``self.pred`` is
-        therefore guaranteed to be set whenever this is called.
-
-        ``PatchType.WITH_IMAGE`` and ``PatchType.WITHOUT_IMAGE`` only
-        describe how the resulting :class:`TestResult` should be
-        interpreted during analysis; they do not change how the patch
-        itself is applied here.
+        Writes the patch to a temporary file inside the container and
+        runs ``git apply`` against it from ``/testbed``.
 
         Raises:
-            Exception: If the patch fails to apply cleanly.
+            Exception: If the container has not been started, or if
+                ``git apply`` exits non-zero.
         """
-        ...
+
+        if self.container is None:
+            raise Exception('no container')
+        assert self.pred is not None
+
+        write_to_container(self.container, PATCH_FILE, self.pred.model_patch)
+
+        exit_code, output = self.container.exec_run(
+            f'git apply {PATCH_FILE}',
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+
+        log.info(exit_code)
+        log.info(output.decode())
+
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to apply patch for {self.instance_id}: '
+                f'{output.decode()}'
+            )
 
     @abstractmethod
     def evaluate(self) -> list[TestResult]:
