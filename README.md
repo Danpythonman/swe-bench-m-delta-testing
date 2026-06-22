@@ -72,3 +72,54 @@ uv run ruff format .      # format
 uv run pyright            # type check (strict mode)
 uv run pre-commit install # set up git hooks
 ```
+
+## Running Containers
+
+First, go to the directory of the container:
+
+```
+cd dockerfiles/alibaba-fusion__next-94
+```
+
+Then build the image (you give it the name):
+
+```
+docker build -t <image-name> .
+```
+
+Then run the container (you name the container as well):
+
+```
+docker run -it --name <container-name> <image-name> /bin/bash
+```
+
+At this point you will be in a Bash shell inside the container. Here you need to figure out how to run the tests and collect results.
+
+If you get errors that container already exists, or if the cleanup code doesn't fully clean up:
+
+```
+docker image ls                  # See what images you have
+docker image rm <image-name>     # Remove an image
+docker container ls -a           # See what containers you have (-a is for stopped containers)
+docker container rm <image-name> # Remove a container
+```
+
+Then code the pipeline for the repo by:
+1. Make a folder `/src/sbmdt/evaluator/<repo>/<repo>.py`.
+2. Make sure you make `/src/sbmdt/evaluator/<repo>/__init__.py`.
+3. Make a subclass of `Evaluator` class called `<repo>Evaluator`.
+4. Code!
+
+Once you code the pipeline for the repo:
+
+```
+uv run main.py <instance-id> <patch_type> [--pred-file]
+```
+
+Examples:
+
+```
+uv run main.py alibaba-fusion__next-717 before_patch
+
+uv run main.py alibaba-fusion__next-717 without_image --pred-file ../Project/image-necessity-paper-analysis/preds/without-images/alibaba-fusion__next-717.pred
+```
