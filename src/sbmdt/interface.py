@@ -48,6 +48,14 @@ def evaluate(
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
         )
+    elif instance_id.startswith('prettier'):
+        from sbmdt.evaluator.prettier import PrettierEvaluator
+        evaluator = PrettierEvaluator(
+            instance_id=instance_id,
+            patch_type=patch_type,
+            agent_name=Pred.get_agent_name(pred),
+            pred=pred,
+        )
     else:
         raise Exception(f'unknown instance ID {instance_id}')
 
