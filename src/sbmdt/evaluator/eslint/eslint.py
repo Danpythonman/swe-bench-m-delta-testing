@@ -1,19 +1,3 @@
-"""
-Evaluator implementation for ESLint repository instances.
-
-Installs ``mocha-junit-reporter`` in the container, runs the ESLint Mocha
-test suite directly (bypassing ``Makefile.js`` to avoid the Karma/PhantomJS
-browser runner), and parses the resulting JUnit XML.
-
-Why bypass ``Makefile.js``?
----------------------------
-``node Makefile.js test`` runs two distinct phases: a Mocha server-side
-phase (``tests/lib``, ``tests/bin``, ``tests/tools``) and a Karma/PhantomJS
-browser phase.  The browser phase is irrelevant for delta-testing and would
-require PhantomJS to be present and functional.  Running Mocha directly
-gives us clean, structured JUnit XML without browser dependencies.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -21,7 +5,9 @@ import xml.etree.ElementTree as ET
 from typing import Final, override
 
 from sbmdt.evaluator.base import Evaluator, TestResult
-from sbmdt.evaluator.eslint.mocha_junit_parser import results_xml_to_test_results
+from sbmdt.evaluator.eslint.mocha_junit_parser import (
+    results_xml_to_test_results,
+)
 from sbmdt.utils import read_from_container
 
 __all__ = [
@@ -32,12 +18,14 @@ log = logging.getLogger(__name__)
 
 RESULTS_FILE: Final[str] = '/testbed/test-results.xml'
 
-# Ordered list of (directory-to-check, mocha-glob) pairs.
-# Only globs whose directory exists in the container are passed to Mocha.
-_TEST_GLOBS: Final[tuple[tuple[str, str], ...]] = (
-    ('tests/lib',   'tests/lib/**/*.js'),
-    ('tests/bin',   'tests/bin/**/*.js'),
-    ('tests/tools', 'tests/tools/**/*.js'),
+# Ordered list of test directories to pass to Mocha with --recursive.
+# Mocha (2.x/3.x as used by older ESLint) expects directory paths when
+# --recursive is set, not ** glob patterns.  Directories are checked for
+# existence before being included.
+_TEST_DIRS: Final[tuple[str, ...]] = (
+    'tests/lib',
+    'tests/bin',
+    'tests/tools',
 )
 
 
@@ -53,11 +41,10 @@ class ESLintEvaluator(Evaluator):
     def _exec(self, cmd: str) -> tuple[int, str]:
         """Run ``cmd`` via ``/bin/bash -c`` in ``/testbed``.
 
-        Wrapping in a shell is required because several commands use shell
-        features: glob patterns for ``ls``, ``||`` for fallbacks, and
-        ``**`` glob expansion that Mocha expects the shell to leave alone
-        (Mocha's own glob library handles ``**``, but the argument must
-        arrive without surrounding quote characters).
+        Wrapping in a shell is necessary because ``exec_run`` does not
+        invoke a shell on its own — it passes the command directly to the
+        kernel, so operators like ``||`` and redirects like ``2>/dev/null``
+        would be treated as literal arguments.
 
         Args:
             cmd: Shell command to execute inside the container.
@@ -107,8 +94,8 @@ class ESLintEvaluator(Evaluator):
         Steps:
         1. Detect which of ``tests/lib``, ``tests/bin``, ``tests/tools``
            exist in the container.
-        2. Run ``npx mocha`` with ``mocha-junit-reporter`` writing to
-           ``RESULTS_FILE``.
+        2. Run ``npx mocha --recursive`` against those directories, with
+           ``mocha-junit-reporter`` writing JUnit XML to ``RESULTS_FILE``.
         3. Read and parse the JUnit XML via
            :func:`~sbmdt.evaluator.eslint.mocha_junit_parser.results_xml_to_test_results`.
 
@@ -126,40 +113,39 @@ class ESLintEvaluator(Evaluator):
 
         # ------------------------------------------------------------------
         # Step 1: discover which test directories exist in this ESLint version.
-        # Uses 'ls tests/' (no glob) so the shell is not required for this
-        # specific check, but _exec still wraps in bash for consistency.
+        # 'ls tests/' gives bare names (lib, bin, tools, ...) without shell
+        # globbing so it works even if the tests/ directory is empty.
         # ------------------------------------------------------------------
         _, ls_output = self._exec('ls tests/ 2>/dev/null || true')
         existing_entries = set(ls_output.split())
 
-        test_globs: list[str] = []
-        for dir_name, glob in _TEST_GLOBS:
-            # ls output gives bare names like 'lib', 'bin', 'tools'
-            # dir_name is 'tests/lib' etc., so check the basename portion
-            bare = dir_name.split('/')[-1]
+        test_dirs: list[str] = []
+        for dir_path in _TEST_DIRS:
+            bare = dir_path.split('/')[-1]  # 'tests/lib' -> 'lib'
             if bare in existing_entries:
-                test_globs.append(glob)
+                test_dirs.append(dir_path)
 
-        if not test_globs:
+        if not test_dirs:
             log.error('No test directories found under /testbed/tests/')
             return []
 
-        log.info('Test globs: %s', test_globs)
+        log.info('Test directories: %s', test_dirs)
 
         # ------------------------------------------------------------------
         # Step 2: run Mocha with JUnit XML output.
         #
-        # Flags:
-        #   --recursive  – descend into subdirectories (not all mocha versions
-        #                  support ** globs without this)
-        #   -t 10000     – 10 s per-test timeout (rule tests can be slow)
-        #   --exit       – force-exit after suite finishes; some ESLint tests
-        #                  leave async handles open
+        # We pass directories + --recursive rather than ** glob patterns.
+        # Older Mocha versions (2.x/3.x, used by ESLint 3–6) handle
+        # --recursive correctly when given directory paths but may not
+        # expand ** globs reliably.
         #
-        # The globs are shell-quoted so the shell passes them verbatim to
-        # Mocha's own glob resolver (which handles ** internally).
+        # Flags:
+        #   --recursive  – find all .js files inside each directory
+        #   -t 10000     – 10 s per-test timeout (rule tests can be slow)
+        #   --exit       – force-exit after suite finishes; some ESLint
+        #                  tests leave async handles open
         # ------------------------------------------------------------------
-        globs_str = ' '.join(f"'{g}'" for g in test_globs)
+        dirs_str = ' '.join(test_dirs)
         cmd = (
             f'npx mocha'
             f' --reporter mocha-junit-reporter'
@@ -167,7 +153,7 @@ class ESLintEvaluator(Evaluator):
             f' --recursive'
             f' -t 10000'
             f' --exit'
-            f' {globs_str}'
+            f' {dirs_str}'
         )
 
         log.info('Running: %s', cmd)
@@ -175,8 +161,8 @@ class ESLintEvaluator(Evaluator):
         log.info('Mocha exit code: %d', exit_code)
         log.info(output)
 
-        # A non-zero exit is expected when tests fail — we still collect the
-        # XML output rather than aborting here.
+        # A non-zero exit is expected when tests fail — we still collect
+        # the XML rather than aborting here.
 
         # ------------------------------------------------------------------
         # Step 3: read XML from container

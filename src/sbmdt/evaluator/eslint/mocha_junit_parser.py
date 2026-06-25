@@ -91,8 +91,7 @@ def results_xml_to_test_results(
 
         # A testcase is failed when it carries a <failure> or <error> child.
         passed = (
-            testcase.find('failure') is None
-            and testcase.find('error') is None
+            testcase.find('failure') is None and testcase.find('error') is None
         )
 
         results.append(

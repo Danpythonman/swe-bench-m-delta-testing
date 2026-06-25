@@ -1,0 +1,156 @@
+[
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "has exit code 0 if no linting errors are reported bin/eslint.js reading from stdin has exit code 0 if no linting errors are reported",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "has exit code 1 if a syntax error is thrown bin/eslint.js reading from stdin has exit code 1 if a syntax error is thrown",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "has exit code 1 if a linting error occurs bin/eslint.js reading from stdin has exit code 1 if a linting error occurs",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "gives a detailed error message if no config file is found bin/eslint.js reading from stdin gives a detailed error message if no config file is found",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "has exit code 0 if no linting errors occur bin/eslint.js running on files has exit code 0 if no linting errors occur",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "has exit code 0 if a linting warning is reported bin/eslint.js running on files has exit code 0 if a linting warning is reported",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "has exit code 1 if a linting error is reported bin/eslint.js running on files has exit code 1 if a linting error is reported",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "has exit code 1 if a syntax error is thrown bin/eslint.js running on files has exit code 1 if a syntax error is thrown",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "has exit code 0 and fixes a file if all rules can be fixed bin/eslint.js automatically fixing files has exit code 0 and fixes a file if all rules can be fixed",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "has exit code 0, fixes errors in a file, and does not report or fix warnings if --quiet and --fix are used bin/eslint.js automatically fixing files has exit code 0, fixes errors in a file, and does not report or fix warnings if --quiet and --fix are used",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "has exit code 1 and fixes a file if not all rules can be fixed bin/eslint.js automatically fixing files has exit code 1 and fixes a file if not all rules can be fixed",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "creates a cache file when the --cache flag is used bin/eslint.js cache files when no cache file exists creates a cache file when the --cache flag is used",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "can lint with an existing cache file and the --cache flag bin/eslint.js cache files when a valid cache file already exists can lint with an existing cache file and the --cache flag",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "updates the cache file when the source file is modified bin/eslint.js cache files when a valid cache file already exists updates the cache file when the source file is modified",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "deletes the cache file when run without the --cache argument bin/eslint.js cache files when a valid cache file already exists deletes the cache file when run without the --cache argument",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "overwrites the invalid cache file with a valid one when the --cache argument is used bin/eslint.js cache files when an invalid cache file already exists overwrites the invalid cache file with a valid one when the --cache argument is used",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "deletes the invalid cache file when the --cache argument is not used bin/eslint.js cache files when an invalid cache file already exists deletes the invalid cache file when the --cache argument is not used",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "prints the error message to stderr in the event of a crash bin/eslint.js handling crashes prints the error message to stderr in the event of a crash",
+        "passed": false
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "prints the error message pointing to line of code bin/eslint.js handling crashes prints the error message pointing to line of code",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "does not emit a warning when it does not find an ecmaFeatures option bin/eslint.js emitting a warning for ecmaFeatures does not emit a warning when it does not find an ecmaFeatures option",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "emits a warning when it finds an ecmaFeatures option bin/eslint.js emitting a warning for ecmaFeatures emits a warning when it finds an ecmaFeatures option",
+        "passed": true
+    },
+    {
+        "instance_id": "eslint__eslint-9348",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "\"before all\" hook eslint-fuzzer \"before all\" hook",
+        "passed": false
+    }
+]
