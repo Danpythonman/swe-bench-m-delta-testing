@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from sbmdt.evaluator.alibaba import AlibabaEvaluator
 from sbmdt.evaluator.base import PatchType, TestResult
+from sbmdt.evaluator.grommet import GrommetEvaluator
 from sbmdt.pred import Pred
 
 __all__ = ['evaluate']
@@ -43,6 +44,13 @@ def evaluate(
     """
     if instance_id.startswith('alibaba'):
         evaluator = AlibabaEvaluator(
+            instance_id=instance_id,
+            patch_type=patch_type,
+            agent_name=Pred.get_agent_name(pred),
+            pred=pred,
+        )
+    elif instance_id.startswith('grommet'):
+        evaluator = GrommetEvaluator(
             instance_id=instance_id,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
