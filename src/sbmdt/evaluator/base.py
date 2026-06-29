@@ -282,12 +282,16 @@ class Evaluator(ABC):
         Stages: :meth:`provision` (build image, start container), then
         :meth:`setup`, then :meth:`apply_patch` (only when
         ``self.patch_type`` is not :attr:`PatchType.BEFORE_PATCH`), then
-        :meth:`evaluate`, then :meth:`cleanup`.
+        :meth:`evaluate`, then :meth:`cleanup`. :meth:`cleanup` runs even
+        if an earlier stage raises, so a failed run never leaves behind a
+        container/image that has to be removed manually before retrying.
         """
-        self.provision()
-        self.setup()
-        if self.patch_type != PatchType.BEFORE_PATCH:
-            self.apply_patch()
-        results = self.evaluate()
-        self.cleanup()
+        try:
+            self.provision()
+            self.setup()
+            if self.patch_type != PatchType.BEFORE_PATCH:
+                self.apply_patch()
+            results = self.evaluate()
+        finally:
+            self.cleanup()
         return results
