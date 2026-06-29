@@ -136,18 +136,24 @@ class Evaluator(ABC):
         Builds the image from ``self.dockerfile_path`` and starts a
         detached container from it, assigning ``self.image`` and
         ``self.container``. Called by :meth:`run` before :meth:`setup`.
+
+        Docker image tags and container names must be lowercase, so
+        ``self.instance_id`` is lowercased when building these resource
+        names; ``self.instance_id`` itself is left untouched since it must
+        still match the on-disk Dockerfile directory name exactly.
         """
 
         client = docker.from_env()
+        resource_name = f'sbmdt-{self.instance_id}'.lower()
         self.image, _ = client.images.build(
             path=str(self.dockerfile_path.parent.resolve()),
-            tag=f'sbmdt-{self.instance_id}:latest',
+            tag=f'{resource_name}:latest',
             labels={LABEL_KEY: LABEL_VALUE},
         )
         self.container = client.containers.run(
             self.image,
             command='/bin/bash',
-            name=f'sbmdt-{self.instance_id}',
+            name=resource_name,
             stdin_open=True,
             tty=True,
             detach=True,
