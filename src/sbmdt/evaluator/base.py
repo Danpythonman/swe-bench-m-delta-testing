@@ -8,12 +8,13 @@ and ``run`` orchestration methods.
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Final, final
+from typing import Any, Final, final
 
 import docker
 from docker.models.containers import Container
@@ -54,6 +55,27 @@ class PatchType(StrEnum):
     GOLD = 'gold'
 
 
+def factory(items: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Build a JSON-safe dict from dataclass fields.
+
+    Intended for use as the ``dict_factory`` argument to
+    :func:`dataclasses.asdict`. Converts any :class:`datetime.datetime`
+    values to ISO 8601 strings; all other values are passed through
+    unchanged.
+
+    Args:
+        items: A list of (field_name, value) tuples, as produced by
+            ``dataclasses.asdict``.
+
+    Returns:
+        A dict mapping field names to JSON-serializable values.
+    """
+    return {
+        k: (v.isoformat() if isinstance(v, dt.datetime) else v)
+        for k, v in items
+    }
+
+
 @dataclass(kw_only=True)
 class TestResult:
     """Result of a single test case from a benchmark evaluation.
@@ -61,6 +83,7 @@ class TestResult:
     Attributes:
         instance_id: Identifier of the benchmark instance that was evaluated.
         patch_type: The patch state under which the test was run.
+        agent_name: The agent that produced that patch.
         test_name: Name of the individual test case.
         passed: Whether the test case passed.
     """
@@ -68,8 +91,84 @@ class TestResult:
     instance_id: str
     patch_type: PatchType
     agent_name: str
+    timestamp: dt.datetime
     test_name: str
     passed: bool
+
+    @staticmethod
+    def from_dict(obj: dict[str, Any]) -> TestResult:
+        """Construct a :class:`TestResult` from a plain dict.
+
+        Args:
+            obj: Mapping containing ``instance_id``, ``patch_type``,
+                ``agent_name``, ``test_name``, and ``passed`` keys.
+
+        Returns:
+            The constructed :class:`TestResult`.
+
+        Raises:
+            Exception: If a required key is missing, empty, or has the
+                wrong type.
+        """
+        instance_id = obj.get('instance_id', None)
+        if not instance_id:
+            raise Exception('instance_id not in dict')
+        if not isinstance(instance_id, str):
+            raise Exception('instance_id not str')
+
+        patch_type = obj.get('patch_type', None)
+        if not patch_type:
+            raise Exception('patch_type not in dict')
+        if not isinstance(patch_type, str):
+            raise Exception('patch_type not str')
+
+        agent_name = obj.get('agent_name', None)
+        if not agent_name:
+            raise Exception('agent_name not in dict')
+        if not isinstance(agent_name, str):
+            raise Exception('agent_name not str')
+
+        timestamp = obj.get('timestamp', None)
+        if not timestamp:
+            raise Exception('timestamp not in dict')
+        if not isinstance(timestamp, str):
+            raise Exception('timestamp not str')
+
+        test_name = obj.get('test_name', None)
+        if not test_name:
+            raise Exception('test_name not in dict')
+        if not isinstance(test_name, str):
+            raise Exception('test_name not str')
+
+        passed = obj.get('passed', None)
+        if passed is None:
+            raise Exception('passed not in dict')
+        if not isinstance(passed, bool):
+            raise Exception('passed not bool')
+
+        return TestResult(
+            instance_id=instance_id,
+            patch_type=PatchType(patch_type),
+            agent_name=agent_name,
+            timestamp=dt.datetime.fromisoformat(timestamp),
+            test_name=test_name,
+            passed=passed,
+        )
+
+    def to_dict(self, json_safe: bool = False) -> dict[str, Any]:
+        """Convert this :class:`TestResult` to a plain dict.
+
+        Args:
+            json_safe: If True, convert datetime fields to ISO 8601
+                strings so the result is JSON-serializable.
+
+        Returns:
+            A dict with the same fields as this :class:`TestResult`.
+        """
+        if json_safe:
+            return asdict(self, dict_factory=factory)
+        else:
+            return asdict(self)
 
 
 class Evaluator(ABC):
@@ -96,6 +195,7 @@ class Evaluator(ABC):
     """
 
     instance_id: str
+    timestamp: dt.datetime
     dockerfile_path: Path
     patch_type: PatchType
     agent_name: str
@@ -122,6 +222,7 @@ class Evaluator(ABC):
                 ``patch_type`` is :attr:`PatchType.BEFORE_PATCH`.
         """
         self.instance_id = instance_id
+        self.timestamp = dt.datetime.now(dt.UTC)
         self.dockerfile_path = DOCKERFILES_BASE / instance_id / 'Dockerfile'
         self.patch_type = patch_type
         self.agent_name = agent_name
