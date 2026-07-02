@@ -52,6 +52,7 @@ def cleanup() -> None:
 
     log.info('Cleanup complete')
 
+
 def main():
     cleanup()
 
