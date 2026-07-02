@@ -13,10 +13,10 @@ from sbmdt.evaluator.alibaba import AlibabaEvaluator
 from sbmdt.evaluator.base import PatchType, TestResult
 from sbmdt.evaluator.grommet import GrommetEvaluator
 from sbmdt.evaluator.lighthouse import LighthouseEvaluator
+from sbmdt.evaluator.prettier import PrettierEvaluator
 from sbmdt.pred import Pred
 
 __all__ = ['evaluate']
-
 
 def evaluate(
     instance_id: str, patch_type: PatchType, pred: Pred | None
@@ -59,6 +59,13 @@ def evaluate(
         )
     elif instance_id.startswith('GoogleChrome'):
         evaluator = LighthouseEvaluator(
+            instance_id=instance_id,
+            patch_type=patch_type,
+            agent_name=Pred.get_agent_name(pred),
+            pred=pred,
+        )
+    elif instance_id.startswith('prettier'):
+        evaluator = PrettierEvaluator(
             instance_id=instance_id,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
