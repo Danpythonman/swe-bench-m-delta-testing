@@ -1,0 +1,3943 @@
+[
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ChromeLauncher doesn't fail when killed twice",
+        "passed": false
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ChromeLauncher doesn't launch multiple chrome processes",
+        "passed": false
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CLI Tests fails if a url is not provided",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CLI Tests should list all audits without a url and exit immediately after",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CLI Tests accepts just the list-trace-categories flag and exit immediately after",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Printer accepts valid output paths",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Printer rejects invalid output paths",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Printer creates JSON for results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Printer creates Pretty Printed results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Printer creates HTML for results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Printer writes file for results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Printer throws for invalid paths",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Printer writes extended info",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Random port generation generates a valid random port number",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CLI bin all options should have descriptions",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config returns new object",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config doesn't change directly injected plugins",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config uses the default config when no config is provided",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config warns when a passName is used twice",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config warns when traced twice with no passNames specified",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config throws for unknown gatherers",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config doesn't mutate old gatherers when filtering passes",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config contains new copies of auditResults and aggregations",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config expands audits",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config throws when an audit is not found",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config throws on a non-absolute config path",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config loads an audit relative to a config path",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config loads an audit from node_modules/",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config loads an audit relative to the working directory",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config throws but not for missing audit when audit has a dependency error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config throws when it finds invalid audits",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config expands artifacts",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config expands artifacts with multiple named passes",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Config handles traces with no TracingStartedInPage events",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner loads a page",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner creates flags if needed",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner sets up the driver to begin emulation when all emulation flags are undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner stops device emulation when disableDeviceEmulation flag is true",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner stops network throttling when disableNetworkThrottling flag is true",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner stops cpu throttling when disableCpuThrottling flag is true",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner tells the driver to block given URL patterns when blockedUrlPatterns is given",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner does not throw when blockedUrlPatterns is not given",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner tells the driver to begin tracing",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner tells the driver to end tracing",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner tells the driver to begin network collection",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner tells the driver to end network collection",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner rejects when not given a URL",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner rejects when given a URL of zero length",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner rejects when not given a config",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner does as many passes as are required",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner respects trace names",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner loads gatherers from custom paths",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner returns gatherer when gatherer class, not package-name string, is provided",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner throws when a gatherer is not found",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner loads a gatherer relative to a config path",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner loads a gatherer from node_modules/",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner loads a gatherer relative to the working directory",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner throws but not for missing gatherer when it has a dependency error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner throws for invalid gatherers",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner can create computed artifacts",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner will instantiate computed artifacts during a run",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner artifact collection supports sync and async return of artifacts from gatherers",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner artifact collection uses the last not-undefined phase result as artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner artifact collection supports sync and async throwing of non-fatal errors from gatherers",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner artifact collection rejects if a gatherer returns a fatal error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner artifact collection rejects if a gatherer does not provide an artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner artifact collection rejects when domain name can't be resolved",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "GatherRunner artifact collection resolves when domain name can't be resolved but is offline",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "NetworkThroughput should compute correctly for a basic waterfall",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "NetworkThroughput should compute correctly for concurrent requests",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "NetworkThroughput should compute correctly for gaps",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "NetworkThroughput should compute correctly for partially overlapping requests",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "NetworkThroughput should exclude failed records",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "NetworkThroughput should exclude cached records",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "NetworkThroughput should exclude unfinished records",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "NetworkThroughput should exclude data URIs",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function returns correct data for chain of four critical requests",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function returns correct data for chain interleaved with non-critical requests",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function returns correct data for two parallel chains",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function returns correct data for fork at root",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function returns correct data for fork at non root",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function returns empty chain list when no critical request",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function returns empty chain list when no request whatsoever",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function returns two single node chains for two independent requests",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function returns correct data on a random big graph",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function handles redirects",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function discards favicons as non-critical",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CriticalRequestChain gatherer: getCriticalChain function handles non-existent nodes when building the tree",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Screenshot gatherer returns an artifact for a real trace",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "PushedRequests computed artifact filters networkRecords down to the pushed ones",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Trace of Tab computed artifact: gathers the events from the tab's process",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Trace of Tab computed artifact: finds correct FMP if there was a tracingStartedInPage after the frame's navStart",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Trace of Tab computed artifact: finds correct FMP if there was a tracingStartedInPage after the frame's navStart #2",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Trace of Tab computed artifact: finds correct FMP if it appears slightly before the fCP",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Speedline gatherer returns an error debugString on faulty trace data",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Speedline gatherer measures the pwa.rocks example with speed index of 577",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Speedline gatherer measures SI of 3 frame trace (blank @1s, content @2s, more content @3s)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Speedline gatherer uses a cache",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ComputedArtifact base class caches computed artifacts",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML without JavaScript gatherer updates the options",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML without JavaScript gatherer resets the options",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML without JavaScript gatherer returns an artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML without JavaScript gatherer handles driver returning non-string",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML without JavaScript gatherer handles driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cache Contents gatherer fails gracefully",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cache Contents gatherer handles driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cache Contents gatherer propagates error retrieving the results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cache Contents gatherer creates an object for valid results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Offline gatherer returns an artifact set to -1 when offline loading fails",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Offline gatherer returns an artifact set to 200 when offline loading succeeds",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Gatherer returns its name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "First paint blocking tags return filtered and indexed requests",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "First paint blocking tags returns an artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "First paint blocking tags handles driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Optimized images returns only sameorigin and data URI images",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Optimized images computes sizes",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Optimized images handles partial driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Optimized images handles total driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Theme Color gatherer returns the correct URL from options",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTTP Redirect gatherer sets the URL to HTTP",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTTP Redirect gatherer resets the URL",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTTP Redirect gatherer returns an artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTTP Redirect gatherer handles driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTTP Redirect gatherer handles driver timeout",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility gatherer fails gracefully",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility gatherer handles driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility gatherer propagates error retrieving the results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility gatherer creates an object for valid results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTTPS gatherer returns an artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTTPS gatherer handles driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTTPS gatherer handles driver timeout",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML gatherer returns an artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML gatherer handles driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Service Worker gatherer obtains the active service worker registration",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Service Worker gatherer handles driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Viewport gatherer returns an artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL gatherer returns the correct URL from options",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Content Width gatherer returns an artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Content Width gatherer handles driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest gatherer returns an artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest gatherer propagates error from driver failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest gatherer emits an error when unable to retrieve the manifest",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest gatherer creates a manifest object for valid manifest content",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Browser Driver returns null when DOM.querySelector finds no node",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Browser Driver returns element when DOM.querySelector finds node",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Browser Driver returns [] when DOM.querySelectorAll finds no node",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Browser Driver returns element when DOM.querySelectorAll finds node",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Browser Driver returns value when getObjectProperty finds property name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Browser Driver returns null when getObjectProperty finds no property name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Browser Driver will update the options.url through redirects",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Multiple tab check will pass if there are no current service workers",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Multiple tab check will pass if there is an active service worker for a different origin",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Multiple tab check will fail if a service worker with a matching origin has a controlled client",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Multiple tab check will succeed if a service worker with a matching origin has no controlled clients",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: critical-request-chains audit calculates the correct chain result for failing example",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: critical-request-chains audit calculates the correct chain result for failing example (no 2.)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: critical-request-chains audit calculates the correct chain result for passing example",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: short_name_length audit fails when an empty manifest is present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: short_name_length audit fails when a manifest contains no short_name and too long name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: short_name_length audit fails when a manifest contains a too long short_name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: short_name_length audit succeeds when a manifest contains a short_name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: start_url audit fails when no manifest artifact present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: start_url audit fails when an empty manifest is present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: start_url audit fails when a manifest contains no start_url",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: start_url audit succeeds when a minimal manifest contains a start_url",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: start_url audit succeeds when a complete manifest contains a start_url",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: estimated-input-latency audit scores a -1 with invalid trace data",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: estimated-input-latency audit evaluates valid input correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: exists audit fails when no manifest artifact present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: exists audit succeeds with a valid minimal manifest",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: exists audit succeeds with a valid minimal manifest",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: exists audit correctly passes through debug strings",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: exists audit correctly passes through a JSON parsing failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: exists audit succeeds with a complete manifest",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Offline: works-offline audit correctly audits a 200 code",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Offline: works-offline audit correctly audits a non-200 code",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: background color audit fails when no manifest artifact present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: background color audit fails when an empty manifest is present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: background color audit fails when a minimal manifest contains no background_color",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: background color audit fails when a minimal manifest contains an invalid background_color",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: background color audit succeeds when a minimal manifest contains a valid background_color",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: background color audit succeeds when a complete manifest contains a background_color",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: short_name audit fails when no manifest artfifact present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: short_name audit fails when an empty manifest is present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: short_name audit fails when a manifest contains no short_name and no name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: short_name audit succeeds when a manifest contains no short_name but a name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: short_name audit succeeds when a manifest contains a short_name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: icons audits icons exist check fails when a manifest contains no icons array",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: icons audits icons exist check fails when a manifest contains no icons",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: icons audits icons at least X size check fails when a manifest contains an icon with no size",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: icons audits icons at least X size check succeeds when a manifest contains icons that are large enough",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: icons audits icons at least X size check succeeds when there's one icon with multiple sizes, and one is valid",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: icons audits icons at least X size check succeeds when there's two icons, one without sizes; the other with a valid size",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: icons audits icons at least X size check fails when an icon has a valid size, though it's non-square.",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: first-meaningful-paint audit measures the pwa.rocks example correctly processes a valid trace file",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: first-meaningful-paint audit measures the pwa.rocks example correctly finds the expected fMP",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: first-meaningful-paint audit measures the pwa.rocks example correctly finds the correct fMP timings",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: first-meaningful-paint audit measures the pwa.rocks example correctly exposes the FCP timing",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: first-meaningful-paint audit measures the pwa.rocks example correctly exposes the navStart timestamp",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: first-meaningful-paint audit measures the pwa.rocks example correctly scores the fMP correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: first-meaningful-paint audit finds correct FMP in various traces finds the fMP if there was a tracingStartedInPage after the frame's navStart",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: first-meaningful-paint audit finds correct FMP in various traces finds the fMP if there was a tracingStartedInPage after the frame's navStart #2",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: first-meaningful-paint audit finds correct FMP in various traces finds the fMP if it appears slightly before the fCP",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use document.write() fails when gatherer returns error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use document.write() passes when document.write() is not used",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use document.write() fails when document.write() is used",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use console.time() fails when gatherer returns error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use console.time() passes when console.time() is not used",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use console.time() passes when console.time() is used on a different origin",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use console.time() fails when console.time() is used on the origin",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use console.time() fails when console.time() is used in eval()",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use console.time() includes results when there is no .url",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use old CSS flexbox passes when no stylesheets were collected on the page",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use old CSS flexbox fails when display: box is used",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use old CSS flexbox passes when display: box is not used",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Link Block First Paint audit fails when error input present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Link Block First Paint audit fails when there are links found which block first paint",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Link Block First Paint audit passes when there are no links found which block first paint",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Script Block First Paint audit fails when error input present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Script Block First Paint audit fails when there are scripts found which block first paint",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Script Block First Paint audit passes when there are no scripts found which block first paint",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Appcache manifest audit fails when gatherer failed",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Appcache manifest audit fails when <html> contains a manifest attribute",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Appcache manifest audit passes when <html> does not contain a manifest attribute",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "No websql audit fails when gatherer returns error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "No websql audit passes when no database is created",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "No websql audit fails when database is created",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "External anchors use rel=\"noopener\" fails when gatherer failed",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "External anchors use rel=\"noopener\" passes when links are from same hosts as the page host",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "External anchors use rel=\"noopener\" fails when links are from different hosts than the page host",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "External anchors use rel=\"noopener\" handles links with no href attribute",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses responsive images fails when an image is much larger than displayed size",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses responsive images fails when an image is much larger than DPR displayed size",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses responsive images handles images without network record",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses responsive images passes when all images are not wasteful",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use Date.now() fails when gatherer returns error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use Date.now() passes when Date.now() is not used",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use Date.now() passes when Date.now() is used on a different origin",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use Date.now() fails when Date.now() is used on the origin",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use Date.now() only passes when has url property",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use Date.now() fails when console.time() is used in eval()",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use Date.now() includes results when there is no .url",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "UX: geolocation audit fails when gatherer returns error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "UX: geolocation audit fails when geolocation has been automatically requested",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "UX: geolocation audit passes when geolocation has not been automatically requested",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Resources are fetched over http/2 fails when some resources were requested via http/1.x",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Resources are fetched over http/2 displayValue is correct when only one resource fails",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Resources are fetched over http/2 passes when all resources were requested via http/2",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses passive events listeners where applicable fails when gatherer returns error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses passive events listeners where applicable fails when scroll blocking listeners should be passive",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses passive events listeners where applicable passes scroll blocking listeners should be passive",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses passive events listeners where applicable fails when listener is missing a url property",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses passive events listeners where applicable fails when listener has a bad url property",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "UX: notification audit fails when gatherer returns error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "UX: notification audit fails when notification has been automatically requested",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "UX: notification audit passes when notification has not been automatically requested",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use mutation events fails when gatherer returns error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use mutation events passes when mutation events are not used",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use mutation events fails when mutation events are used on the origin",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use mutation events fails when listener is missing a url property",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page does not use mutation events fails when listener has a bad url property",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses optimized images fails when gatherer returns error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses optimized images fails when one jpeg image is unoptimized",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses optimized images fails when one png image is highly unoptimized",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses optimized images fails when images are collectively unoptimized",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses optimized images passes when all images are sufficiently optimized",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses optimized images limits output of data URIs",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Page uses optimized images warns when images have failed",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Security: HTTPS audit fails when not on HTTPS",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Security: HTTPS audit passes when on HTTPS",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: theme_color audit fails when no manifest artifact present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: theme_color audit fails when an empty manifest is present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: theme_color audit fails when a minimal manifest contains no theme_color",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: theme_color audit succeeds when a minimal manifest contains a theme_color",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: theme_color audit succeeds when a complete manifest contains a theme_color",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: speed-index-metric audit gives error string if no frames",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: speed-index-metric audit gives error string if speed index of 0",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: speed-index-metric audit scores speed index of 831 as 100",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Audit throws if an audit does not override the meta",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Audit does not throw if an audit overrides the meta",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Audit throws if an audit does not override audit()",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Audit does not throw if an audit overrides audit()",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Audit throws if an audit does generate a result with a value",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: label audit generates an audit output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: label audit generates an audit output (single node)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: label audit doesn't throw an error when violations is undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-required-attr audit generates an audit output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-required-attr audit generates an audit output (single node)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-required-attr audit doesn't throw an error when violations is undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: axe-audit audit() generates audit output using subclass meta",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: axe-audit createDebugString() handles empty rules",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: axe-audit createDebugString() creates debug strings",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: axe-audit createDebugString() refers to a single element if one failure",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: axe-audit createDebugString() refers to multiple elements if multiple failures",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-valid-attr audit generates an audit output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-valid-attr audit generates an audit output (single node)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-valid-attr audit doesn't throw an error when violations is undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: image-alt audit generates an audit output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: image-alt audit generates an audit output (single node)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: image-alt audit doesn't throw an error when violations is undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-allowed-attr audit generates an audit output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-allowed-attr audit generates an audit output (single node)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-allowed-attr audit doesn't throw an error when violations is undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-valid-attr-value audit generates an audit output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-valid-attr-value audit generates an audit output (single node)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: aria-valid-attr-value audit doesn't throw an error when violations is undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: tabindex audit generates an audit output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: tabindex audit generates an audit output (single node)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: tabindex audit doesn't throw an error when violations is undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: color-contrast audit generates an audit output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: color-contrast audit generates an audit output (single node)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Accessibility: color-contrast audit doesn't throw an error when violations is undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: name audit fails when no manifest artifact present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: name audit fails when an empty manifest is present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: name audit fails when a manifest contains no name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: name audit succeeds when a minimal manifest contains a name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest: name audit succeeds when a complete manifest contains a name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Offline: Service Worker audit reports driver error when given no Service Worker versions",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Offline: Service Worker audit passes when given a matching Service Worker version",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Offline: Service Worker audit discards service worker registrations for other origins",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML: theme-color audit fails and warns when no theme-color meta tag found",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML: theme-color audit fails and warns when theme-color has an invalid CSS color",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML: theme-color audit succeeds when theme-color present in the html",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "HTML: theme-color audit succeeds when theme-color has a CSS nickname content value",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: viewport audit fails when HTML does not contain a viewport meta tag",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: viewport audit fails when HTML contains a non-mobile friendly viewport meta tag",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: viewport audit fails when HTML contains an invalid viewport meta tag key",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: viewport audit fails when HTML contains an invalid viewport meta tag value",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: viewport audit fails when HTML contains an invalid viewport meta tag key and value",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: viewport audit passes when a valid viewport is provided",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: content-width audit fails when scroll width differs from viewport width",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: content-width audit fails when gatherer failed",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: content-width audit passes when widths match",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Progressive Enhancement: without javascript audit passes on the error when there was a driver error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Progressive Enhancement: without javascript audit does not error on non-string input",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Progressive Enhancement: without javascript audit fails when the js-less body is empty",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Progressive Enhancement: without javascript audit fails when the js-less body is whitespace",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Progressive Enhancement: without javascript audit succeeds when the js-less body contains some content",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: user-timings audit evaluates valid input correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Console deprecations audit fails when gather fails",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Console deprecations audit passes when no console messages were found",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Console deprecations audit handles deprecations that do not have url or line numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Console deprecations audit fails when deprecation messages are found",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cache: start_url audit fails when no cache contents given",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cache: start_url audit succeeds when given a manifest with a start_url, cache contents, and a URL",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Cache: start_url audit handles URLs with utm params",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #determineContentPreview correctly computes short content preview",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #determineContentPreview correctly computes long content preview",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #determineContentPreview correctly computes long rule content preview",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #determineContentPreview correctly computes long comment content preview",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #mapSheetToResult correctly computes potentialSavings",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #mapSheetToResult correctly computes url",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #mapSheetToResult does not give content preview when url is present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #audit ignores missing stylesheets",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #audit passes when rules are used",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #audit fails when rules are unused",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #audit does not include duplicate sheets",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Best Practices: unused css rules audit #audit does not include empty sheets",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: time-to-interactive audit scores a -1 with invalid trace data",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Performance: time-to-interactive audit evaluates valid input correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Security: HTTP->HTTPS audit fails when no redirect detected",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Security: HTTP->HTTPS audit passes when redirect detected",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: display audit only accepts when a value is set for the display prop",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: display audit fails when no manifest artifact present",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: display audit falls back to the successful default when there is no manifest display property",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: display audit succeeds when a manifest has a display property",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Mobile-friendly: display audit succeeds when a complete manifest contains a display property",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CRC Formatter copes with invalid input",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CRC Formatter generates valid pretty output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "CRC Formatter generates valid HTML output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatter returns supported formats",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatter returns supported formats when called by name",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatter throws when invalid format is provided",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatter throws when getFormatter is called directly",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TableFormatter handles invalid input",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TableFormatter createTable() produces formatted rows/cols",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TableFormatter generates valid pretty output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TableFormatter generates valid html output",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TableFormatter handles missing values",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TableFormatter handles non-string values",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatter handles invalid input",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatter handles valid input",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatter handles valid input",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatter handles invalid input",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatters has no formatters failing when getFormatter(\"html\") is called",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatters has formatters that return valid HTML",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatters has no formatters failing when getFormatter(\"pretty\") is called",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatters has formatters that return a function for pretty printing",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatters has formatters that cope with empty or invalid input",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Formatters has no formatters succeeding when getFormatter(\"invalid-formatter\") is called",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner expands gatherers",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner rejects when given neither passes nor artifacts",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner accepts existing artifacts",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner accepts trace artifacts as paths and outputs appropriate data",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner rejects when given an invalid trace artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner accepts performance logs as an artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner rejects when given neither audits nor auditResults",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner accepts existing auditResults",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner returns an aggregation",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner rejects when not given a URL",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner rejects when given a URL of zero length",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner rejects when given a URL without protocol",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner rejects when given a URL without hostname",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner only supports core audits with names matching their filename",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner results include artifacts when given artifacts and audits",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner results include artifacts when given passes and audits",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner results include artifacts when given auditResults",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner Bad required artifact handling outputs an error audit result when trace required but not provided",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner Bad required artifact handling outputs an error audit result when missing a required artifact",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Runner Bad required artifact handling outputs an error audit result when required artifact was a non-fatal Error",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should have a main attribute defined in the package.json",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should be able to require in the package.json's main file",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should require lighthouse as a function",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should throw an error when the first parameter is not defined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should throw an error when the first parameter is an empty string",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should throw an error when the first parameter is not a string",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should throw an error when the second parameter is not an object",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should throw an error when the config is invalid",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should throw an error when the config contains incorrect audits",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should return formatted audit results when given no aggregations",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should return a list of audits",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Module Tests should return a list of trace categories required by the driver",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim handles URLs beginning with multiple digits",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim safely identifies valid URLs",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim safely identifies invalid URLs",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim safely identifies same hosts",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim safely identifies different hosts",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim safely identifies invalid hosts",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim getDisplayName Elides hashes",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim getDisplayName Elides hashes in the middle",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim getDisplayName Elides long names",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim getDisplayName Elides long names with hash",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim getDisplayName Doesn't elide short names",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim equalWithExcludedFragments correctly checks equality of URLs regardless of fragment",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "URL Shim equalWithExcludedFragments correctly checks inequality of URLs regardless of fragment",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Element throws when no driver or element is passed",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Element throws when no driver is passed",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Element throws when no element is passed",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Element returns null from getAttribute when no attribute found",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Element returns attribute value from getAttribute",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Element returns property value from getProperty",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser should not parse empty string input",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser accepts empty dictionary",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser icon parsing gives an empty array and an error for erroneous icons entry",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser icon parsing gives an empty array and no error for missing icons entry",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser icon parsing parses basic string",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser icon parsing finds three icons in the stub manifest",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser icon parsing parses icons with extra whitespace",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser icon parsing parses icons and discards any with invalid src values",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser icon parsing parses icons and discards any with undefined or empty string src values",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser icon parsing constructs icon URLs relative to manifest URL ",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser name parsing parses basic string",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser name parsing trims whitespaces",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser name parsing doesn't parse non-string",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser short_name parsing parses basic string",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser short_name parsing trims whitespaces",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser short_name parsing doesn't parse non-string",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser start_url parsing falls back to document URL and issues a warning for an invalid value",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser start_url parsing falls back to document URL and issues a warning for an invalid value",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser start_url parsing falls back to document URL and issues a warning for an empty string",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser start_url parsing falls back to document URL and issues no warning when undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser start_url parsing falls back to document URL with warning when on different domain from document URL",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser start_url parsing falls back to document URL with warning when on different port from document URL",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser start_url parsing falls back to document URL with warning when on different scheme from document URL",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser start_url parsing correctly parses a start_url of \"/\" relative to the manifest's url",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser start_url parsing correctly parses a start_url relative to the manifest's url",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser display parsing falls back to 'browser' and issues a warning for an invalid value",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser display parsing falls back to 'browser' and issues a warning for an invalid value",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser display parsing falls back to 'browser' and issues no warning when undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser display parsing trims whitespace",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser display parsing converts to lowercase",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser display parsing falls back to 'browser' and issues a warning when a non-existent mode",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser display parsing correctly parses `fullscreen` display mode",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser display parsing correctly parses `standalone` display mode",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser display parsing correctly parses `minimal-ui` display mode",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser display parsing correctly parses `browser` display mode",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser related_applications parsing correctly parses the urls from an example manifest",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Manifest Parser related_applications parsing handles applications with invalid urls",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons exist check copes when no manifest is provided",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons exist check fails when a manifest contains no icons array",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons exist check fails when a manifest contains no icons",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons exist check succeed when a manifest contains icons",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons at least X size check succeeds when a manifest icon that equals the requirements",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons at least X size check fails when a manifest contains an icon with no size",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons at least X size check succeeds when a manifest icon exceeds the requirements",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons at least X size check fails when a manifest icon doesn't meet the requirements",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons at least X size check succeeds when there's one icon with multiple sizes, and one is valid",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons at least X size check succeeds when there's two icons, one without sizes; the other with a valid size",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons at least X size check fails when an icon has a valid size, though it's non-square.",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Icons helper icons at least X size check fails when an icon uses an invalid string for its size",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Web Inspector lib WebInspector exported is the real one",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "event helpers addFormattedCodeSnippet() adds label and code snippet and returns new object",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "event helpers addFormattedCodeSnippet() normalizes document and window objects",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "event helpers groupCodeSnippetsByLocation() has no duplicate line/col violations",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "style helpers filterStylesheetsByUsage() can take optional arguments",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "style helpers filterStylesheetsByUsage() returns no results when not found",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "style helpers getFormattedStyleRule() formats output correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "style helpers getFormattedStyleRule() formats output correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "style helpers addWebPrefixes() correctly adds prefixes to array of propsNames",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "style helpers addWebPrefixes() correctly adds prefixes to a string propName",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib doesn't throw when module is loaded",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation correctly calculates percentiles of no tasks",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation correctly calculates percentiles of a single task with idle time",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation correctly calculates percentiles of a single task with no idle time",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation correctly calculates percentiles of several equal-length tasks",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation correctly calculates percentiles of tasks including zero-length durations",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation correctly calculates percentiles of three one-second tasks in a five-second window",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation correctly calculates percentiles of tasks with a clipped task",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation correctly calculates percentiles of single task over multiple windows",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation correctly calculates with a task shorter than the clipped length of another",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation correctly calculates with a task clipped completely",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib riskPercentiles calculation does not divide by zero when duration sum is less than whole",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib log normal distribution creates a log normal distribution",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "TracingProcessor lib risk to responsiveness gets durations of top-level tasks",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DevTools Timeline Model doesn't throw an exception",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DevTools Timeline Model metrics returned are expected",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DevTools Timeline Model top-down profile",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DevTools Timeline Model bottom-up profile",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DevTools Timeline Model bottom-up profile - group by eventname",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "asset-saver helper generates filename prefixes",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "asset-saver helper generates HTML",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "asset-saver helper saves files trace file saved to disk with data",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "asset-saver helper saves files screenshots file saved to disk with data",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate filters empty results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate filters results against an empty set",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate filters results against an expected set",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate returns a weight for an empty set",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate generates the correct total weight",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate remaps results to an object",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate throws if key already exists during remapping",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate throws for undefined inputs",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate throws for undefined results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate returns a weight of zero for undefined expectations",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate returns the correct weight for a boolean result",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate returns the correct weight for a numeric result",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate throws if weight is missing from the expected",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate returns a weight of zero for other inputs",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate throws if types do not match",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate scores a set correctly (contributesToScore: true)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate scores a set correctly (contributesToScore: false)",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate throws when given a result containing no score property",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate throws when given an audit containing no expectedValue property",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate throws when attempting to aggregate an audit name not in audit results",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate filters out non-aggregated audit results correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate outputs a score",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate outputs subitems",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate aggregates",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Aggregate counts a total",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Report generates CLI HTML",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Report should format generated Time",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Report should escape closing </script> tags",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Report `nameToLink` works properly",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Report sets report context in HTML",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Report adds export button for viewer context",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Report generates HTML",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Report does not include script for devtools",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Report sanitizes JSON input",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Viewer initializes properties and the DOM",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Viewer hidden file input responds to change events",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Viewer document responds to drag and drop events",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Viewer _resetDraggingUI()",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Viewer removeDropzonePlaceholder()",
+        "passed": true
+    },
+    {
+        "instance_id": "GoogleChrome__lighthouse-1446",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Viewer readFile()",
+        "passed": true
+    }
+]
