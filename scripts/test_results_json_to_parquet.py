@@ -16,6 +16,7 @@ from sbmdt.parquet import (
     parquet_table_to_s3,
     test_results_to_parquet_table,
 )
+from sbmdt.s3 import TEST_RESULTS_S3_BUCKET_NAME
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--bucket',
         type=str,
-        default='sbmdt-test-results',
+        default=TEST_RESULTS_S3_BUCKET_NAME,
         help='S3 bucket name. Required when --s3 is set.',
     )
     parser.add_argument(

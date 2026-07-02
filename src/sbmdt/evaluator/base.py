@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import re
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from enum import StrEnum
@@ -28,6 +29,7 @@ __all__ = [
     'Evaluator',
     'PatchType',
     'TestResult',
+    'TestResultsFilename',
     'LABEL_KEY',
     'LABEL_VALUE',
 ]
@@ -38,6 +40,13 @@ PATCH_FILE: Final[str] = '/tmp/model.patch'
 
 LABEL_KEY = 'ca.maleknazn.sbmdt.managed'
 LABEL_VALUE = 'true'
+
+_TIMESTAMP_FMT: Final[str] = '%Y-%m-%d_%H-%M-%SZ'
+_TIMESTAMP_RE: Final[str] = r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}Z'
+_FILENAME_RE: Final[re.Pattern[str]] = re.compile(
+    rf'^(?P<instance_id>.+)-(?P<patch_type>.+)-(?P<agent_name>.+)-'
+    rf'(?P<timestamp>{_TIMESTAMP_RE})$'
+)
 
 
 class PatchType(StrEnum):
@@ -171,6 +180,96 @@ class TestResult:
             return asdict(self)
 
 
+@dataclass(kw_only=True)
+class TestResultsFilename:
+    """A parsed/structured representation of a prediction filename.
+
+    Prediction files use filenames of the form
+    ``{instance_id}-{patch_type}-{agent_name}-{timestamp}``, where each
+    field is escaped to keep the ``-`` field separator unambiguous.
+
+    Attributes:
+        instance_id: The SWE-bench instance ID the prediction is for.
+        patch_type: The type of patch the prediction represents.
+        agent_name: The name of the agent that produced the prediction.
+        timestamp: The UTC timestamp of when the prediction was created.
+    """
+
+    instance_id: str
+    patch_type: PatchType
+    agent_name: str
+    timestamp: dt.datetime
+
+    @staticmethod
+    def _escape(s: str) -> str:
+        """Escape a field value so it can be safely embedded in a filename.
+
+        Args:
+            s: The raw field value to escape.
+
+        Returns:
+            The escaped value, with '%' and '-' replaced with sequences that
+            cannot collide with the '-' field separator.
+        """
+        return s.replace('%', '%25').replace('-', '%2D')
+
+    @staticmethod
+    def _unescape(s: str) -> str:
+        """Reverse the escaping applied by ``_escape``.
+
+        Args:
+            s: The escaped field value, as extracted from a filename.
+
+        Returns:
+            The original, unescaped field value.
+        """
+        return s.replace('%2D', '-').replace('%25', '%')
+
+    def encode(self) -> str:
+        """Encode this instance as a prediction filename.
+
+        Returns:
+            The filename in the form
+            ``{instance_id}-{patch_type}-{agent_name}-{timestamp}``, with
+            each field escaped and the timestamp converted to UTC.
+        """
+        ts = self.timestamp.astimezone(dt.UTC).strftime(_TIMESTAMP_FMT)
+        return (
+            f'{TestResultsFilename._escape(self.instance_id)}-'
+            f'{TestResultsFilename._escape(self.patch_type)}-'
+            f'{TestResultsFilename._escape(self.agent_name)}-'
+            f'{ts}'
+        )
+
+    @staticmethod
+    def decode(filename: str) -> TestResultsFilename:
+        """Parse a prediction filename into a ``PredFilename`` instance.
+
+        Args:
+            filename: The filename to parse, as produced by ``encode``.
+
+        Returns:
+            The decoded ``PredFilename``, with the timestamp set to UTC.
+
+        Raises:
+            ValueError: If ``filename`` does not match the expected format.
+        """
+        m = _FILENAME_RE.match(filename)
+        if not m:
+            raise ValueError(f'Cannot parse filename: {filename!r}')
+        ts = dt.datetime.strptime(m['timestamp'], _TIMESTAMP_FMT).replace(
+            tzinfo=dt.UTC
+        )
+        return TestResultsFilename(
+            instance_id=TestResultsFilename._unescape(m['instance_id']),
+            patch_type=PatchType(
+                TestResultsFilename._unescape(m['patch_type'])
+            ),
+            agent_name=TestResultsFilename._unescape(m['agent_name']),
+            timestamp=ts,
+        )
+
+
 class Evaluator(ABC):
     """Abstract base for Docker-based benchmark evaluators.
 
@@ -206,6 +305,7 @@ class Evaluator(ABC):
     def __init__(
         self,
         instance_id: str,
+        timestamp: dt.datetime,
         patch_type: PatchType,
         agent_name: str,
         pred: Pred | None,
@@ -216,13 +316,14 @@ class Evaluator(ABC):
             instance_id: Identifier for the benchmark instance. Used to
                 locate the Dockerfile under ``DOCKERFILES_BASE`` and to
                 name the resulting image and container.
+            timestamp: Timestamp of the start of the run.
             patch_type: The patch state this evaluator is running under.
             agent_name: Name of the agent that produced ``pred``.
             pred: The model-generated patch to apply, or ``None`` when
                 ``patch_type`` is :attr:`PatchType.BEFORE_PATCH`.
         """
         self.instance_id = instance_id
-        self.timestamp = dt.datetime.now(dt.UTC)
+        self.timestamp = timestamp
         self.dockerfile_path = DOCKERFILES_BASE / instance_id / 'Dockerfile'
         self.patch_type = patch_type
         self.agent_name = agent_name

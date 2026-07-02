@@ -1,4 +1,5 @@
 import argparse
+import datetime as dt
 import json
 import logging
 from dataclasses import dataclass
@@ -7,15 +8,19 @@ from typing import Literal
 
 from sbmdt import evaluate
 from sbmdt.env import PROJECT_BASE
-from sbmdt.evaluator.base import PatchType
+from sbmdt.evaluator.base import PatchType, TestResultsFilename
 from sbmdt.log import setup_logging
 from sbmdt.parquet import (
     parquet_table_to_file,
     parquet_table_to_s3,
-    s3_object_exists,
     test_results_to_parquet_table,
 )
 from sbmdt.pred import Pred
+from sbmdt.s3 import (
+    TEST_RESULTS_S3_BUCKET_NAME,
+    load_pred_from_s3,
+    s3_object_exists,
+)
 
 log = logging.getLogger(__name__)
 
@@ -52,10 +57,11 @@ def parse_args() -> Args:
     )
     parser.add_argument(
         '--pred-file',
-        type=Path,
+        type=str,
         default=None,
         help=(
-            'Path to .pred file (required unless patch_type is before_patch).'
+            'Path to .pred file, or an s3:// URL '
+            '(required unless patch_type is before_patch).'
         ),
     )
     parser.add_argument(
@@ -100,7 +106,7 @@ def parse_args() -> Args:
     parser.add_argument(
         '--bucket',
         type=str,
-        default='sbmdt-test-results',
+        default=TEST_RESULTS_S3_BUCKET_NAME,
         help='S3 bucket name. Required when --s3 is set.',
     )
     parser.add_argument(
@@ -127,9 +133,13 @@ def parse_args() -> Args:
 
     pred: Pred | None = None
     if ns.pred_file is not None:
-        if not ns.pred_file.exists():
-            parser.error(f'--pred-file does not exist: {ns.pred_file}')
-        pred = Pred.from_file(ns.pred_file)
+        if str(ns.pred_file).startswith('s3://'):
+            pred = Pred.from_file_contents(load_pred_from_s3(ns.pred_file))
+        else:
+            pred_path = Path(ns.pred_file)
+            if not pred_path.exists():
+                parser.error(f'--pred-file does not exist: {pred_path}')
+            pred = Pred.from_file(pred_path)
 
     return Args(
         instance_id=ns.instance_id,
@@ -147,11 +157,14 @@ def run_instance(args: Args):
     results_dir = PROJECT_BASE / 'results'
     results_dir.mkdir(exist_ok=True)
 
-    filename = (
-        f'{args.instance_id}-{args.patch_type}-'
-        f'{Pred.get_agent_name(args.pred)}'
+    timestamp = dt.datetime.now(dt.UTC)
+    test_result_filename = TestResultsFilename(
+        instance_id=args.instance_id,
+        patch_type=args.patch_type,
+        agent_name=Pred.get_agent_name(args.pred),
+        timestamp=timestamp,
     )
-    results_path = results_dir / filename
+    results_path = results_dir / test_result_filename.encode()
 
     if args.output_format == 'json':
         results_path = results_path.with_suffix('.json')
@@ -167,7 +180,7 @@ def run_instance(args: Args):
             return
     else:
         if (
-            s3_object_exists(args.bucket, results_path.name)
+            s3_object_exists(args.bucket, test_result_filename.encode())
             and not args.overwrite
         ):
             log.warning(
@@ -177,7 +190,12 @@ def run_instance(args: Args):
             )
             return
 
-    results = evaluate(args.instance_id, args.patch_type, args.pred)
+    results = evaluate(
+        instance_id=args.instance_id,
+        timestamp=timestamp,
+        patch_type=args.patch_type,
+        pred=args.pred,
+    )
 
     if args.output_format == 'json':
         with open(results_path, 'w') as f:
@@ -194,7 +212,10 @@ def run_instance(args: Args):
             )
         else:
             parquet_table_to_s3(
-                parquet_table, args.bucket, results_path.name, args.overwrite
+                parquet_table,
+                args.bucket,
+                test_result_filename.encode(),
+                args.overwrite,
             )
 
 
@@ -203,7 +224,7 @@ def main() -> None:
 
     log_path = Path(args.log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    setup_logging(log_file=log_path)
+    setup_logging(log_file=log_path, level=logging.INFO)
 
     run_instance(args)
 

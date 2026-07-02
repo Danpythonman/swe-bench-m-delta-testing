@@ -5,16 +5,15 @@ from __future__ import annotations
 import io
 from pathlib import Path
 
-import boto3
 import pyarrow as pa
 import pyarrow.parquet as pq
 
 from sbmdt.evaluator.base import TestResult
+from sbmdt.s3 import buffer_to_s3
 
 __all__ = [
     'test_results_to_parquet_table',
     'parquet_table_to_file',
-    's3_object_exists',
     'parquet_table_to_s3',
 ]
 
@@ -64,26 +63,6 @@ def parquet_table_to_file(
     pq.write_table(table, filepath)
 
 
-def s3_object_exists(bucket: str, key: str) -> bool:
-    """Check whether an object exists in S3.
-
-    Args:
-        bucket: S3 bucket name.
-        key: Object key within ``bucket``.
-
-    Returns:
-        True if the object exists, False otherwise.
-    """
-    client = boto3.client('s3')
-    try:
-        client.head_object(Bucket=bucket, Key=key)
-        return True
-    except client.exceptions.ClientError as e:
-        if e.response.get('Error', {}).get('Code') != '404':
-            raise
-        return False
-
-
 def parquet_table_to_s3(
     table: pa.Table, bucket: str, key: str, overwrite: bool = False
 ) -> None:
@@ -99,11 +78,7 @@ def parquet_table_to_s3(
         overwrite: If False (default), raises FileExistsError if the object
                    already exists.
     """
-    if not overwrite and s3_object_exists(bucket, key):
-        raise FileExistsError(f'S3 object already exists: s3://{bucket}/{key}')
-
-    client = boto3.client('s3')
     buffer = io.BytesIO()
     pq.write_table(table, buffer)
     buffer.seek(0)
-    client.put_object(Body=buffer, Bucket=bucket, Key=key)
+    buffer_to_s3(buffer, bucket, key, overwrite)
