@@ -33,6 +33,13 @@ IMPORT_MAP: Final[str] = '/testbed/src/import_map.json'
 DENO_TEST_FLAGS: Final[str] = (
     '--unstable --allow-read --allow-write --allow-run --allow-env --allow-net'
 )
+# deno test runs files sequentially by default, so a single hung render (a
+# LaTeX/xelatex compile that never returns has been observed in practice)
+# would otherwise block the rest of the suite indefinitely. --kill-after
+# escalates to SIGKILL if the process tree ignores the initial SIGTERM,
+# which xelatex has been observed to do.
+TEST_TIMEOUT_SECONDS: Final[int] = 1800
+TIMEOUT_CMD: Final[str] = f'timeout --kill-after=30 {TEST_TIMEOUT_SECONDS}'
 
 
 class QuartoEvaluator(Evaluator):
@@ -149,7 +156,10 @@ class QuartoEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
-        command = f'{DENO_BIN} test {DENO_TEST_FLAGS} --importmap={IMPORT_MAP}'
+        command = (
+            f'{TIMEOUT_CMD} {DENO_BIN} test {DENO_TEST_FLAGS}'
+            f' --importmap={IMPORT_MAP}'
+        )
         exit_code, output = self.container.exec_run(
             command,
             workdir=TESTS_DIR,
