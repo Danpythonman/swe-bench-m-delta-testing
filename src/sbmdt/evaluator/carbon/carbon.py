@@ -2,8 +2,8 @@
 Evaluator implementation for Carbon Design System repository instances.
 
 Builds a Docker image from the instance's Dockerfile, runs the Jest test
-suite (which already has ``jest-junit`` configured as a reporter), and
-retrieves the results.
+suite (which already has ``jest-junit`` configured as a reporter in
+``jest.config.js``), and retrieves the results.
 """
 
 from __future__ import annotations
@@ -23,17 +23,18 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
-RESULTS_FILE: Final[str] = '/testbed/test-results/results.xml'
+RESULTS_DIR: Final[str] = 'test-results'
+RESULTS_FILE: Final[str] = 'results.xml'
 
 
 class CarbonEvaluator(Evaluator):
     """Evaluator for Carbon Design System benchmark instances.
 
-    Carbon's ``package.json`` already declares ``jest-junit`` as a dev
-    dependency and lists it in Jest's ``reporters`` array, so no patching
-    is needed. This evaluator only ensures the output directory exists,
-    then runs ``npm test`` with the ``JEST_JUNIT_OUTPUT`` environment
-    variable pointing to the desired results file.
+    Carbon's ``jest.config.js`` already declares ``jest-junit`` in Jest's
+    ``reporters`` array, so no patching is needed. This evaluator only
+    ensures the output directory exists, then runs ``npm test`` with the
+    ``JEST_JUNIT_OUTPUT_DIR``/``JEST_JUNIT_OUTPUT_NAME`` environment
+    variables pointing to the desired results file.
     """
 
     @override
@@ -49,7 +50,7 @@ class CarbonEvaluator(Evaluator):
             raise Exception('no container')
 
         exit_code, output = self.container.exec_run(
-            'mkdir -p /testbed/test-results',
+            f'mkdir -p /testbed/{RESULTS_DIR}',
             workdir='/testbed',
             stream=False,
         )
@@ -68,8 +69,10 @@ class CarbonEvaluator(Evaluator):
     def evaluate(self) -> list[TestResult]:
         """Run ``npm test`` and retrieve the JUnit XML results.
 
-        Uses the ``JEST_JUNIT_OUTPUT`` environment variable (the single-path
-        API used by jest-junit v6) to direct output to a known location.
+        Uses the ``JEST_JUNIT_OUTPUT_DIR``/``JEST_JUNIT_OUTPUT_NAME``
+        environment variables to direct output to a known location.
+        jest-junit v10 (the version installed here) does not support the
+        older single-path ``JEST_JUNIT_OUTPUT`` variable.
 
         Returns:
             A list of :class:`TestResult` parsed from the JUnit XML output.
@@ -84,7 +87,8 @@ class CarbonEvaluator(Evaluator):
         exit_code, output = self.container.exec_run(
             'npm test',
             environment={
-                'JEST_JUNIT_OUTPUT': RESULTS_FILE,
+                'JEST_JUNIT_OUTPUT_DIR': RESULTS_DIR,
+                'JEST_JUNIT_OUTPUT_NAME': RESULTS_FILE,
             },
             workdir='/testbed',
             stream=False,
@@ -95,7 +99,9 @@ class CarbonEvaluator(Evaluator):
         log.info(exit_code)
         log.info(output.decode())
 
-        results = read_from_container(self.container, RESULTS_FILE)
+        results = read_from_container(
+            self.container, f'/testbed/{RESULTS_DIR}/{RESULTS_FILE}'
+        )
 
         return results_xml_to_test_results(
             self.instance_id,
