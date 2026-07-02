@@ -16,7 +16,6 @@ from sbmdt.pred import Pred
 
 __all__ = ['evaluate']
 
-
 def evaluate(
     instance_id: str, patch_type: PatchType, pred: Pred | None
 ) -> list[TestResult]:
@@ -51,6 +50,14 @@ def evaluate(
         )
     elif instance_id.startswith('grommet'):
         evaluator = GrommetEvaluator(
+            instance_id=instance_id,
+            patch_type=patch_type,
+            agent_name=Pred.get_agent_name(pred),
+            pred=pred,
+        )
+    elif instance_id.startswith('prettier'):
+        from sbmdt.evaluator.prettier import PrettierEvaluator
+        evaluator = PrettierEvaluator(
             instance_id=instance_id,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
