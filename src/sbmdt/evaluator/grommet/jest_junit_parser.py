@@ -1,5 +1,6 @@
 """
-Utilities for parsing JUnit XML test results into :class:`TestResult` objects.
+Utilities for parsing jest-junit XML test results into :class:`TestResult`
+objects.
 """
 
 from __future__ import annotations
@@ -24,17 +25,18 @@ def results_xml_to_test_results(
     xml_string: str,
     timestamp: dt.datetime,
 ) -> list[TestResult]:
-    """Parse a JUnit XML string into a list of :class:`TestResult` objects.
+    """Parse a jest-junit XML string into a list of :class:`TestResult`.
 
-    Iterates over all ``<testcase>`` elements in the XML. A test is
+    jest-junit nests ``<testcase>`` elements inside one or more
+    ``<testsuite>`` elements under the root ``<testsuites>`` element, so
+    this searches recursively rather than only at the top level. A test is
     considered passed if it has no ``<failure>`` child element.
-    Test cases with no ``name`` attribute are skipped with a warning.
 
     Args:
         instance_id: Identifier of the benchmark instance that produced the
                      results.
         patch_type: The patch state under which the tests were run.
-        xml_string: JUnit-format XML string to parse.
+        xml_string: jest-junit-format XML string to parse.
 
     Returns:
         A list of :class:`TestResult`, one per parseable ``<testcase>``
@@ -44,7 +46,7 @@ def results_xml_to_test_results(
     root = ET.fromstring(xml_string)
 
     results: list[TestResult] = []
-    for tc in root.findall('testcase'):
+    for tc in root.findall('.//testcase'):
         test_name = tc.get('name')
         if test_name is None:
             log.warning('no test name')

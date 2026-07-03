@@ -1,0 +1,3 @@
+Seq	Host	Starttime	JobRuntime	Send	Receive	Exitval	Signal	Command
+2	:	1782941708.970	     0.570	0	135	1	0	uv run /home/daniel/York/Masters/EECS6444/swe-bench-m-delta-testing/scripts/run_instance.py PrismJS__prism-2861 gold --pred-file s3://sbmdt-preds/PrismJS%5F%5Fprism-2861_gold_GOLD_2026-06-23_21-40-48Z.pred --parquet --s3 --bucket sbmdt-test-results
+1	:	1782941708.968	    54.956	0	114690	0	0	uv run /home/daniel/York/Masters/EECS6444/swe-bench-m-delta-testing/scripts/run_instance.py alibaba-fusion__next-1063 gold --pred-file s3://sbmdt-preds/alibaba-fusion%5F%5Fnext-1063_gold_GOLD_2026-06-23_21-40-48Z.pred --parquet --s3 --bucket sbmdt-test-results
