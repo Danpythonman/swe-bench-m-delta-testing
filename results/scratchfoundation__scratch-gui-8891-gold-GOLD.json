@@ -1,0 +1,2025 @@
+[
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "initialState",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "doneCreatingProject for new project with projectId type string shows project with that id",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "doneCreatingProject for new project with projectId type number shows project with id of type number",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "doneCreatingProject for remix shows project with that id",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "doneCreatingProject for save as copy shows project with that id",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onFetchedProjectData with id loads project data into vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onFetchedProjectData new loads project data into vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_WITH_ID, true, true) results in state SHOWING_WITH_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_WITH_ID, false, true) results in state SHOWING_WITH_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_WITH_ID, false, false), with project id, results in state SHOWING_WITH_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_WITH_ID, false, false), with no project id, results in state SHOWING_WITHOUT_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_FILE_UPLOAD, true, true) prepares to save",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_FILE_UPLOAD, false, true) results in state SHOWING_WITHOUT_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_FILE_UPLOAD, false, false), when we know project id, results in state SHOWING_WITH_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_FILE_UPLOAD, false, false), when we don't know project id, results in state SHOWING_WITHOUT_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_NEW_DEFAULT, true, true) results in state SHOWING_WITHOUT_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_NEW_DEFAULT, false, true) results in state SHOWING_WITHOUT_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "onLoadedProject(LOADING_VM_NEW_DEFAULT, false, false) results in ERROR state",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "doneUpdatingProject with id results in state SHOWING_WITH_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "doneUpdatingProject with id, before copy occurs, results in state CREATING_COPY",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "doneUpdatingProject with id, before new, results in state FETCHING_NEW_DEFAULT",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "calling setProjectId, using with same id as already showing, results in state SHOWING_WITH_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "calling setProjectId, using different id from project already showing, results in state FETCHING_WITH_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "setProjectId, with same id as before, but not same type, results in FETCHING_WITH_ID because the two projectIds are not strictly equal",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "requestNewProject, when can't create/save, results in FETCHING_NEW_DEFAULT",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "requestNewProject, when can create/save, results in UPDATING_BEFORE_NEW (in order to save before fetching default project)",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "requestProjectUpload when project not loaded results in state LOADING_VM_FILE_UPLOAD",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "requestProjectUpload when showing project with id results in state LOADING_VM_FILE_UPLOAD",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "requestProjectUpload when showing project without id results in state LOADING_VM_FILE_UPLOAD",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "manualUpdateProject should prepare to update",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "autoUpdateProject should prepare to update",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "saveProjectAsCopy should save, before preparing to save as a copy",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "remixProject should prepare to remix",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectError from various states should show error",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "fatal projectError should show error state",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "non-fatal projectError should show normal state",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectError when creating new while viewing project with id should go back to state SHOWING_WITH_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectError when creating new while logged out, looking at default project should go back to state SHOWING_WITHOUT_ID",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectError encountered while in state FETCHING_WITH_ID results in ERROR state",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if canSave becomes true when showing a project with an id, project will be saved",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if canSave is already true and we show a project with an id, project will NOT be saved",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if canSave is false when showing a project without an id, project will NOT be created",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if canCreateNew becomes true when showing a project without an id, project will be created",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if canCreateNew is true and we transition to showing new project, project will be created",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if we enter creating new state, vm project should be requested",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if we enter remixing state, vm project should be requested, and alert should show",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if we enter creating copy state, vm project should be requested, and alert should show",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if we enter updating/saving state, vm project should be requested",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if we are already in updating/saving state, vm project should NOT requested, alert should NOT show",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if user saves, inline saving alert should show",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if project is changed, it should autosave after interval",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if project is changed several times in a row, it should only autosave once",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC if project is not changed, it should not autosave after interval",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC when starting to remix, onRemixing should be called with param true",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC when starting to remix, onRemixing should be called with param false",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC uses onSetProjectThumbnailer on mount/unmount",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "projectSaverHOC uses onSetProjectSaver on mount/unmount",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC when it mounts, the cloud provider is set on the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC when cloudHost is missing, the cloud provider is not set on the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC when projectID is missing, the cloud provider is not set on the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC when project is not showingWithId, the cloud provider is not set on the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC when hasCloudPermission is false, the cloud provider is not set on the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC when videoSensing extension is active, the cloud provider is not set on the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC if the isShowingWithId prop becomes true, it sets the cloud provider on the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC projectId change should not trigger cloudProvider connection unless isShowingWithId becomes true",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC when it unmounts, the cloud provider is reset to null on the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC projectId changing should trigger cloudProvider disconnection",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC username changing should trigger cloudProvider disconnection",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC project without cloud data should not trigger cloud connection",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC projectHasCloudData becoming true should trigger a cloud connection",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC projectHasCloudDataUpdate becoming false should trigger cloudProvider disconnection",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudManagerHOC Entering editor mode and can't save project should disconnect cloud provider",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "initialState",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "addMonitorRect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "addMonitorRectWithSavedPosition",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "invalidRect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "invalidAddMonitorRect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "moveMonitorRect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "invalidMoveMonitorRect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "resizeMonitorRect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "invalidResizeMonitorRect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "removeMonitorRect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "invalidRemoveMonitorRect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "getInitialPosition_lineUpTopLeft",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "getInitialPosition_savedPosition",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "getInitialPosition_lineUpLeft",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "getInitialPosition_lineUpTop",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "getInitialPosition_noRoom",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container should pass the correct data to the component from the store",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container it plays when clicked and stops when clicked again",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container it submits name changes to the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container it handles an effect by submitting the result and playing",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container it handles reverse effect correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container it handles louder effect correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container it handles softer effect correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container it handles faster effect correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container it handles slower effect correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container it handles echo effect correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container it handles robot effect correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container undo/redo stack state",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Container undo and redo submit new samples and play the sound",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "defineDynamicBlock is a function",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "defineDynamicBlock can define a command block with an icon",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "defineDynamicBlock can define a command block without an icon",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "defineDynamicBlock can define a terminal command",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "defineDynamicBlock can define a reporter",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "defineDynamicBlock can define a Boolean",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "defineDynamicBlock can define a hat",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider createVariable",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider updateVariable",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider updateVariable with falsey value",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider renameVariable",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider deleteVariable",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider onMessage set",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider onMessage with newline at the end",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider onMessage with multiple commands",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider connnection attempts set back to 1 when socket is opened",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider disconnect waits for a period equal to 2^k-1 before trying again",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider close after connection is opened waits 1s before reconnecting",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider exponentialTimeout caps connection attempt number",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "CloudProvider requestCloseConnection does not try to reconnect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMManagerHOC when it mounts in player mode, the vm is initialized but not started",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMManagerHOC when it mounts in editor mode, the vm is initialized and started",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMManagerHOC if it mounts with an initialized vm, it does not reinitialize the vm but will start it",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMManagerHOC if it mounts without starting the VM, it can be started by switching to editor mode",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMManagerHOC if it mounts with an initialized and started VM, it does not start again",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMManagerHOC if the isLoadingWithId prop becomes true, it loads project data into the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMManagerHOC if the fontsLoaded prop becomes true, it loads project data into the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMManagerHOC if the fontsLoaded prop is false, project data is never loaded",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "initialState",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "create one standard alert",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "add several standard alerts",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "create one inline alert message",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "can close alerts by index",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "can close a single alert by id",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "related alerts can clear each other",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "several related alerts can be cleared at once",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "filterInlineAlerts only returns inline type alerts",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "filterPopupAlerts returns standard and extension type alerts",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Menu Bar HOC Logged in user who IS owner and HAS changed project will NOT be prompted to save",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Menu Bar HOC Logged in user who IS owner and has NOT changed project will NOT be prompted to save",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Menu Bar HOC Logged in user who is NOT owner and HAS changed project will NOT be prompted to save",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Menu Bar HOC Logged OUT user who HAS changed project WILL be prompted to save",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Menu Bar HOC Logged OUT user who has NOT changed project WILL NOT be prompted to save",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Menu Bar HOC Logged in user who IS owner and HAS changed project SHOULD save before transition to project page",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Menu Bar HOC Logged in user who IS owner and has NOT changed project should NOT save before transition",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Menu Bar HOC Logged in user who is NOT owner and HAS changed project should NOT save before transition",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Menu Bar HOC Logged in user who is NOT owner and has NOT changed project should NOT save before transition",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC vm green flag event is bound to the passed in prop callback",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC onGreenFlag is not passed to the children",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC targetsUpdate event from vm triggers targets update action",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC targetsUpdate does not dispatch if the sound recorder is visible",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC PROJECT_CHANGED does dispatch if the sound recorder is visible",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC PROJECT_CHANGED does not dispatch if in fullscreen mode",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC keypresses go to the vm",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes core functionality provides the default theme colors",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes core functionality returns the dark mode",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes core functionality uses default theme colors when not specified",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes block helpers updates extension block colors based on theme",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes block helpers updates extension block icon based on theme",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes block helpers bypasses updates if using the default theme",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes block helpers updates extension category based on theme",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes theme persistance returns the theme stored in a cookie",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes theme persistance returns the system theme when no cookie",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes theme persistance persists theme to cookie",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "themes theme persistance clears theme when matching system preferences",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer start -> small drag",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer start -> large vertical touch move -> scroll, not drag",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer start -> large vertical mouse move -> mouse moves always drag)",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer start -> large horizontal touch move -> drag",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer after starting a scroll, it cannot become a drag",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer start -> end unbinds",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer start -> end calls dragEnd callback after resetting internal state",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer start -> reset unbinds",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer scrolls do not call prevent default",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer confirmed drags have preventDefault called on them",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "DragRecognizer multiple horizontal drag angles",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Component matches snapshot",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Component delete button appears when selection is not null",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Component play button appears when playhead is null",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Component stop button appears when playhead is not null",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Component submitting name calls the callback",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Component effect buttons call the correct callbacks",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Component undo and redo buttons can be disabled by canUndo/canRedo",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Sound Editor Component undo/redo buttons call the correct callback",
+        "passed": false
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Audio Effects manager changes buffer length and playback rate for faster effect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Audio Effects manager changes buffer length  and playback rate for slower effect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Audio Effects manager changes buffer length for echo effect",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Audio Effects manager updates the trim positions after an effect has changed the length of selection",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Audio Effects manager process starts the offline rendering context and returns a promise",
+        "passed": false
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Audio Effects manager reverse effect strictly reverses the samples",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Effects all effects provide an input and output that are connected",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "computeRMS returns 0 when given no samples",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "computeRMS returns the RMS scaled by the given unity value and square rooted",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "computeRMS uses a default unity value of 0.55",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "computeChunkedRMS computes the rms for each chunk based on chunk size",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "computeChunkedRMS chunk size larger than sample size creates single chunk",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "computeChunkedRMS chunk size as multiple is handled correctly",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "downsampleIfNeeded returns given data when no downsampling needed",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "downsampleIfNeeded downsamples to 22050 if that puts it under the limit",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "downsampleIfNeeded fails if resampling would not put it under the limit",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "dropEveryOtherSample result is half the length",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "dropEveryOtherSample result contains only even-index items",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "dropEveryOtherSample result sampleRate is given sampleRate / 2",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SBFileUploaderHOC correctly sets title with .sb3 filename",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SBFileUploaderHOC correctly sets title with .sb2 filename",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SBFileUploaderHOC correctly sets title with .sb filename",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SBFileUploaderHOC sets blank title with filename with no extension",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SBFileUploaderHOC if isLoadingUpload becomes true, without fileToUpload set, will call cancelFileUpload",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Slider Prompt Container Min/max are shown with decimal when isDiscrete is false",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Slider Prompt Container Min/max are NOT shown with decimal when isDiscrete is true",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Slider Prompt Container Entering a number with a decimal submits with isDiscrete=false",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Slider Prompt Container Entering integers submits with isDiscrete=true",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Slider Prompt Container Enter button submits the form",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Slider Prompt Container Validates number-ness before submitting",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "indexForPositionOnList returns null when not given any boxes",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "indexForPositionOnList wrapped list with incomplete last row LTR",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "indexForPositionOnList wrapped list with incomplete last row RTL",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SpriteSelectorItemComponent matches snapshot when selected",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SpriteSelectorItemComponent matches snapshot when given a number and details to show",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SpriteSelectorItemComponent does not have a close box when not selected",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SpriteSelectorItemComponent triggers callback when Box component is clicked",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SpriteSelectorItemComponent triggers callback when CloseButton component is clicked",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SpriteSelectorItemComponent it has a context menu with delete menu item and callback",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SaveStatus container if there are inline messages, they are shown instead of save now",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SaveStatus container save now is shown if there are project changes and no inline messages",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SaveStatus container neither is shown if there are no project changes or inline messages",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "HashParserHOC when there is a hash, it passes the hash as projectId",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "HashParserHOC when there is no hash, it passes 0 as the projectId",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "HashParserHOC when the hash is not a number, it passes 0 as projectId",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "HashParserHOC when hash change happens, the projectId state is changed",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "detectLocale uses locale from the URL when present",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "detectLocale is case insensitive",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "detectLocale also accepts lang from the URL when present",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "detectLocale ignores unsupported locales",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "detectLocale ignores other parameters",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "detectLocale uses navigator language property for default if supported",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "detectLocale ignores navigator language property if unsupported",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "detectLocale works with an empty locale",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "detectLocale if multiple, uses the first locale",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "ProjectFetcherHOC when there is an id, it tries to update the store with that id",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "ProjectFetcherHOC when there is a reduxProjectId and isFetchingWithProjectId is true, it loads the project",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "MonitorListComponent it renders the correct step size for discrete sliders",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "MonitorListComponent it renders the correct step size for non-discrete sliders",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Monitor Component it selects the correct colors based on default theme",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Monitor Component it selects the correct colors based on dark mode theme",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SpriteSelectorItem Container should delete the sprite",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Cards component showVideos=true shows the video step",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Cards component showVideos=false shows the title image/name instead of video step",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "MenuBar Component menu bar with no About handler has no About button",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "MenuBar Component menu bar with an About handler has an About button",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "MenuBar Component clicking on About button calls the handler",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC it passes the props on initial render ",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC it does not rerender if throttled prop is updated too soon",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC it does rerender if throttled prop is updated after throttle timeout",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "VMListenerHOC it does rerender if a non-throttled prop is changed",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "ToggleButtons renders multiple buttons",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "ToggleButtons calls correct click handler",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "ErrorBoundary ErrorBoundary shows children before error and CrashMessageComponent after",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "returns the tutorial ID if the urlId matches",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "returns null if no matching urlId",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "returns null if empty template",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "returns null if no query param",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "returns null if unrecognized template",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "takes the first of multiple",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "returns all for the tutorial library shortcut",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "initialState",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "set full screen mode",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "set player mode",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Controls component shows turbo mode when in turbo mode",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Controls component triggers the right callbacks when clicked",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "IconButtonComponent matches snapshot",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "IconButtonComponent triggers callback when clicked",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "defaultProject assets referenced by the project are included",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "initialState",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "updateMetrics action creator",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Shared Audio Context returns empty object without user gesture",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Shared Audio Context returns AudioContext when mousedown is triggered",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Shared Audio Context returns AudioContext when touchstart is triggered",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "ButtonComponent matches snapshot",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "ButtonComponent triggers callback when clicked",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "translateVideo returns the id if it is not found",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "translateVideo returns the expected id for Japanese",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "translateVideo returns the expected id for English",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "translateVideo returns the English id for non-existent locales",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "codePayload base64 encodes the blocks as json",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Opcode Labels day of week label",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "Opcode Labels unspecified opcodes default to extension category and opcode as label",
+        "passed": true
+    },
+    {
+        "instance_id": "scratchfoundation__scratch-gui-8891",
+        "patch_type": "gold",
+        "agent_name": "GOLD",
+        "test_name": "SVG Font Parsing Has font regexp works",
+        "passed": true
+    }
+]
