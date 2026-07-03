@@ -13,6 +13,7 @@ import datetime as dt
 import logging
 
 from sbmdt.evaluator.alibaba import AlibabaEvaluator
+from sbmdt.evaluator.eslint import ESLintEvaluator
 from sbmdt.evaluator.base import PatchType, TestResult
 from sbmdt.evaluator.bpmn import BpmnEvaluator
 from sbmdt.evaluator.grommet import GrommetEvaluator
@@ -104,7 +105,13 @@ def evaluate(
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
         )
-    
+    elif instance_id.startswith('eslint'):
+        evaluator = ESLintEvaluator(
+            instance_id=instance_id,
+            patch_type=patch_type,
+            agent_name=Pred.get_agent_name(pred),
+            pred=pred,
+        )
     else:
         raise Exception(f'unknown instance ID {instance_id}')
 
