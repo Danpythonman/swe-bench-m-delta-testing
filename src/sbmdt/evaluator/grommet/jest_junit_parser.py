@@ -5,6 +5,7 @@ objects.
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import xml.etree.ElementTree as ET
 
@@ -18,7 +19,11 @@ log = logging.getLogger(__name__)
 
 
 def results_xml_to_test_results(
-    instance_id: str, patch_type: PatchType, agent_name: str, xml_string: str
+    instance_id: str,
+    patch_type: PatchType,
+    agent_name: str,
+    xml_string: str,
+    timestamp: dt.datetime,
 ) -> list[TestResult]:
     """Parse a jest-junit XML string into a list of :class:`TestResult`.
 
@@ -51,6 +56,7 @@ def results_xml_to_test_results(
                 instance_id=instance_id,
                 patch_type=patch_type,
                 agent_name=agent_name,
+                timestamp=timestamp,
                 test_name=test_name,
                 passed=(tc.find('failure') is None),
             )
