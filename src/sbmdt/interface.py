@@ -21,6 +21,7 @@ from sbmdt.evaluator.grommet import GrommetEvaluator
 from sbmdt.evaluator.lighthouse import LighthouseEvaluator
 from sbmdt.evaluator.openlayers import OpenlayersEvaluator
 from sbmdt.evaluator.prettier import PrettierEvaluator
+from sbmdt.evaluator.prismjs import PrismjsEvaluator
 from sbmdt.evaluator.quarto import QuartoEvaluator
 from sbmdt.evaluator.scratchgui import ScratchGuiEvaluator
 from sbmdt.pred import Pred
@@ -88,6 +89,13 @@ def evaluate(
         )
     elif instance_id.startswith('prettier'):
         evaluator = PrettierEvaluator(
+            instance_id=instance_id,
+            patch_type=patch_type,
+            agent_name=Pred.get_agent_name(pred),
+            pred=pred,
+        )
+    elif instance_id.startswith('PrismJS'):
+        evaluator = PrismjsEvaluator(
             instance_id=instance_id,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
