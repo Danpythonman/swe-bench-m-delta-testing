@@ -190,6 +190,8 @@ def run_instance(args: Args):
             )
             return
 
+    log.info('Starting evaluation')
+
     results = evaluate(
         instance_id=args.instance_id,
         timestamp=timestamp,
@@ -197,7 +199,10 @@ def run_instance(args: Args):
         pred=args.pred,
     )
 
+    log.info('Evaluation complete, saving results')
+
     if args.output_format == 'json':
+        log.info('Dumping results as local JSON file')
         with open(results_path, 'w') as f:
             json.dump(
                 [r.to_dict(json_safe=True) for r in results], f, indent=4
@@ -205,18 +210,22 @@ def run_instance(args: Args):
     else:
         parquet_table = test_results_to_parquet_table(results)
         if args.destination == 'file':
+            log.info('Dumping results as local parquet file')
             parquet_table_to_file(
                 parquet_table,
                 results_path,
                 args.overwrite,
             )
         else:
+            log.info('Dumping results as S3 parquet file')
             parquet_table_to_s3(
                 parquet_table,
                 args.bucket,
                 test_result_filename.encode(),
                 args.overwrite,
             )
+
+    log.info('Saving results complete')
 
 
 def main() -> None:
