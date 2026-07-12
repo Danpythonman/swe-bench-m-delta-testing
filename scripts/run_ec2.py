@@ -79,6 +79,9 @@ REGION = 'us-east-1'
 BLOCK_DEVICE_NAME = '/dev/xvda'
 BLOCK_VOLUME_SIZE_GB = 8
 
+AUTO_SHUTDOWN_SCRIPT = """#!/bin/bash
+shutdown -h +30
+"""
 
 _cleanup_state: list[tuple[EC2Client, str]] = []
 """(ec2 client, instance_id) pairs for instances that have been created.
@@ -114,9 +117,12 @@ def create_instance(ec2: EC2Client, instance_name: str) -> str:
         SubnetId=SUBNET_ID,
         SecurityGroupIds=[SECURITY_GROUP_ID],
         IamInstanceProfile={'Arn': INSTANCE_PROFILE_ARN},
-        # TODO: DELETE - only needed for SSH access while debugging; remove
-        # once instance access is fully handled through SSM.
-        KeyName='sbmdt-debug',
+        # Terminate on shutdown
+        InstanceInitiatedShutdownBehavior='terminate',
+        # Shutdown after 30 minutes automatically as a protection measure in
+        # case the terminate script fails to terminate the instance
+        UserData=AUTO_SHUTDOWN_SCRIPT,
+        # Make a custom hard drive size
         BlockDeviceMappings=[
             {
                 'DeviceName': BLOCK_DEVICE_NAME,
@@ -172,7 +178,6 @@ def terminate_instance(
         # Terminate request was accepted; waiter failing doesn't mean the
         # instance is still running. Log and don't mask it as total failure.
         log.error(f'Waiter for termination failed, verify manually: {e}')
-        raise
 
 
 def wait_for_ssm(
@@ -227,6 +232,7 @@ def send_ssm_command(
         Exception: If the response does not contain a command ID.
         WaiterError: If the command does not complete successfully.
     """
+    log.info(f'Running commands {" ; ".join(commands)}')
     send = ssm.send_command(
         InstanceIds=[instance_id],
         DocumentName='AWS-RunShellScript',
@@ -251,7 +257,6 @@ def send_ssm_command(
             f'StatusDetails: {result.get("StatusDetails")}, '
             f'Stderr: {result.get("StandardErrorContent")}'
         )
-        raise
 
     log.info(f'Getting command invocation for command ID {command_id}')
     result = ssm.get_command_invocation(
@@ -382,6 +387,9 @@ async def run_instance_async(
     loop.
     """
     async with sem:
+        log.info(
+            f'Running {sbmdt_instance_id} {patch_type} with pred {pred_s3_key}'
+        )
         return await asyncio.to_thread(
             run_instance, sbmdt_instance_id, patch_type, pred_s3_key
         )
