@@ -64,6 +64,7 @@ class ESLintEvaluator(Evaluator):
             stream=False,
         )
         assert isinstance(output, bytes)
+        assert exit_code is not None
         return exit_code, output.decode('utf-8', errors='replace')
 
     @override
@@ -184,6 +185,7 @@ class ESLintEvaluator(Evaluator):
                 self.patch_type,
                 self.agent_name,
                 xml_content,
+                self.timestamp,
             )
         except ET.ParseError as exc:
             log.error('JUnit XML parse error: %s', exc)

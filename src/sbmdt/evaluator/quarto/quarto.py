@@ -179,7 +179,11 @@ class QuartoEvaluator(Evaluator):
         log.info(decoded)
 
         return results_text_to_test_results(
-            self.instance_id, self.patch_type, self.agent_name, decoded
+            self.instance_id,
+            self.patch_type,
+            self.agent_name,
+            decoded,
+            self.timestamp,
         )
 
     @override

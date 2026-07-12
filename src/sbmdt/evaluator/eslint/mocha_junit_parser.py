@@ -21,6 +21,7 @@ Example output shape::
 
 from __future__ import annotations
 
+import datetime as dt
 import xml.etree.ElementTree as ET
 
 from sbmdt.evaluator.base import PatchType, TestResult
@@ -35,6 +36,7 @@ def results_xml_to_test_results(
     patch_type: PatchType,
     agent_name: str,
     xml_content: str,
+    timestamp: dt.datetime,
 ) -> list[TestResult]:
     """Parse a JUnit XML string into a list of :class:`TestResult` objects.
 
@@ -99,6 +101,7 @@ def results_xml_to_test_results(
                 instance_id=instance_id,
                 patch_type=patch_type,
                 agent_name=agent_name,
+                timestamp=timestamp,
                 test_name=test_name,
                 passed=passed,
             )

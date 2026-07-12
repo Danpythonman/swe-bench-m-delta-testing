@@ -10,6 +10,7 @@ machine-readable format.
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import re
 
@@ -33,7 +34,11 @@ TEST_LINE: re.Pattern[str] = re.compile(
 
 
 def results_text_to_test_results(
-    instance_id: str, patch_type: PatchType, agent_name: str, output: str
+    instance_id: str,
+    patch_type: PatchType,
+    agent_name: str,
+    output: str,
+    timestamp: dt.datetime,
 ) -> list[TestResult]:
     """Parse ``deno test``'s plain-text output into a list of
     :class:`TestResult`.
@@ -61,6 +66,7 @@ def results_text_to_test_results(
                 instance_id=instance_id,
                 patch_type=patch_type,
                 agent_name=agent_name,
+                timestamp=timestamp,
                 test_name=match.group('name'),
                 passed=(status == 'ok'),
             )

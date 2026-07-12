@@ -117,7 +117,7 @@ class BpmnEvaluator(Evaluator):
         apply_change_regex(
             container=self.container,
             file=KARMA_CONFIG_FILE,
-            find=r"(reporters:\s*.+?)(\s*,\s*\n)",
+            find=r'(reporters:\s*.+?)(\s*,\s*\n)',
             replace=lambda m: f"{m.group(1)}.concat('junit'){m.group(2)}",
             assertion="concat('junit')",
         )
@@ -133,14 +133,14 @@ class BpmnEvaluator(Evaluator):
         apply_change_regex(
             container=self.container,
             file=KARMA_CONFIG_FILE,
-            find=r"(singleRun:\s*true,?)",
+            find=r'(singleRun:\s*true,?)',
             replace=(
-                r"\1"
-                "\n\n    junitReporter: {"
+                r'\1'
+                '\n\n    junitReporter: {'
                 "\n      outputDir: 'test-results',"
                 "\n      outputFile: 'results.xml',"
-                "\n      useBrowserName: false,"
-                "\n    },"
+                '\n      useBrowserName: false,'
+                '\n    },'
             ),
             assertion='junitReporter:',
         )
@@ -151,11 +151,12 @@ class BpmnEvaluator(Evaluator):
     def evaluate(self) -> list[TestResult]:
         """Run ``npm test`` and retrieve the JUnit XML results.
 
-        Runs the Karma test suite with ``NODE_OPTIONS=--openssl-legacy-provider``
-        to suppress the OpenSSL incompatibility between Node ≥ 17 and the
-        webpack version pinned by bpmn-js.  Reads the XML written to
-        ``/testbed/test-results/results.xml`` by ``karma-junit-reporter``
-        and parses it into :class:`TestResult` objects.
+        Runs the Karma test suite with
+        ``NODE_OPTIONS=--openssl-legacy-provider`` to suppress the OpenSSL
+        incompatibility between Node ≥ 17 and the webpack version pinned by
+        bpmn-js. Reads the XML written to ``/testbed/test-results/results.xml``
+        by ``karma-junit-reporter`` and parses it into :class:`TestResult`
+        objects.
 
         Returns:
             A list of :class:`TestResult` parsed from the JUnit XML output.
@@ -178,7 +179,11 @@ class BpmnEvaluator(Evaluator):
             workdir='/testbed',
             stream=False,
         )
-        log.info('npm test finished for %s, exit_code=%s', self.instance_id, exit_code)
+        log.info(
+            'npm test finished for %s, exit_code=%s',
+            self.instance_id,
+            exit_code,
+        )
         assert isinstance(output, bytes)
 
         log.info(output.decode())
@@ -193,6 +198,7 @@ class BpmnEvaluator(Evaluator):
             self.patch_type,
             self.agent_name,
             results_xml,
+            self.timestamp,
         )
 
     @override

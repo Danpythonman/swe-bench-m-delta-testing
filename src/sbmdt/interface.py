@@ -13,10 +13,10 @@ import datetime as dt
 import logging
 
 from sbmdt.evaluator.alibaba import AlibabaEvaluator
-from sbmdt.evaluator.eslint import ESLintEvaluator
 from sbmdt.evaluator.base import PatchType, TestResult
 from sbmdt.evaluator.bpmn import BpmnEvaluator
 from sbmdt.evaluator.carbon import CarbonEvaluator
+from sbmdt.evaluator.eslint import ESLintEvaluator
 from sbmdt.evaluator.grommet import GrommetEvaluator
 from sbmdt.evaluator.lighthouse import LighthouseEvaluator
 from sbmdt.evaluator.openlayers import OpenlayersEvaluator
@@ -83,6 +83,7 @@ def evaluate(
     elif instance_id.startswith('GoogleChrome'):
         evaluator = LighthouseEvaluator(
             instance_id=instance_id,
+            timestamp=timestamp,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
@@ -90,6 +91,7 @@ def evaluate(
     elif instance_id.startswith('prettier'):
         evaluator = PrettierEvaluator(
             instance_id=instance_id,
+            timestamp=timestamp,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
@@ -97,6 +99,7 @@ def evaluate(
     elif instance_id.startswith('PrismJS'):
         evaluator = PrismjsEvaluator(
             instance_id=instance_id,
+            timestamp=timestamp,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
@@ -104,6 +107,7 @@ def evaluate(
     elif instance_id.startswith('carbon'):
         evaluator = CarbonEvaluator(
             instance_id=instance_id,
+            timestamp=timestamp,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
@@ -111,6 +115,7 @@ def evaluate(
     elif instance_id.startswith('quarto-dev'):
         evaluator = QuartoEvaluator(
             instance_id=instance_id,
+            timestamp=timestamp,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
@@ -118,6 +123,7 @@ def evaluate(
     elif instance_id.startswith('openlayers'):
         evaluator = OpenlayersEvaluator(
             instance_id=instance_id,
+            timestamp=timestamp,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
@@ -125,6 +131,7 @@ def evaluate(
     elif instance_id.startswith('scratchfoundation'):
         evaluator = ScratchGuiEvaluator(
             instance_id=instance_id,
+            timestamp=timestamp,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
@@ -133,6 +140,7 @@ def evaluate(
     elif instance_id.startswith('bpmn-io'):
         evaluator = BpmnEvaluator(
             instance_id=instance_id,
+            timestamp=timestamp,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
@@ -140,6 +148,7 @@ def evaluate(
     elif instance_id.startswith('eslint'):
         evaluator = ESLintEvaluator(
             instance_id=instance_id,
+            timestamp=timestamp,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
