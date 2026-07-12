@@ -347,10 +347,13 @@ class Evaluator(ABC):
 
         client = docker.from_env()
         resource_name = f'sbmdt-{self.instance_id}'.lower()
+        # Note that rm=True remove intermediate containers after build
         self.image, _ = client.images.build(
             path=str(self.dockerfile_path.parent.resolve()),
             tag=f'{resource_name}:latest',
             labels={LABEL_KEY: LABEL_VALUE},
+            rm=True,
+            forcerm=True,
         )
         self.container = client.containers.run(
             self.image,
@@ -400,6 +403,7 @@ class Evaluator(ABC):
         log.info(output.decode())
 
         if exit_code != 0:
+            log.error('Failed to apply patch')
             raise Exception(
                 f'Failed to apply patch for {self.instance_id}: '
                 f'{output.decode()}'
