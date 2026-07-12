@@ -10,18 +10,33 @@ from __future__ import annotations
 import asyncio
 import datetime as dt
 import logging
+import random
+import shlex
 import signal
 import sys
 import time
+from collections.abc import Coroutine
 from types import FrameType
-from typing import TypedDict
+from typing import Any, Final
 
 import boto3
 from botocore.exceptions import ClientError, WaiterError
 from mypy_boto3_ec2 import EC2Client
 from mypy_boto3_ssm import SSMClient
 
+from sbmdt.evaluator.base import PatchType
 from sbmdt.log import setup_logging
+from sbmdt.s3 import (
+    PREDS_S3_BUCKET_NAME,
+    STDOUT_S3_BUCKET_NAME,
+    TEST_RESULTS_S3_BUCKET_NAME,
+    S3PredFilename,
+    get_all_keys_in_s3_bucket,
+)
+
+# Maximum number of EC2 instances allowed to be running (i.e. mid-evaluation)
+# at the same time; enforced via the semaphore in `main()`.
+N_CONCURRENT: Final[int] = 5
 
 
 class TaskContextFilter(logging.Filter):
@@ -36,7 +51,8 @@ class TaskContextFilter(logging.Filter):
 
 log = logging.getLogger(__name__)
 
-def setup_logging_for_asyncio():
+
+def setup_logging_for_asyncio() -> None:
     log.addFilter(TaskContextFilter())
     for handler in log.handlers:
         formatter = handler.formatter
@@ -46,7 +62,8 @@ def setup_logging_for_asyncio():
         if fmt is None:
             continue
         new_format = fmt.replace(
-            '%(message)s', '[%(threadName)s:%(thread)d:%(taskName)s] %(message)s'
+            '%(message)s',
+            '[%(threadName)s:%(thread)d:%(taskName)s] %(message)s',
         )
         formatter._fmt = new_format
 
@@ -63,14 +80,17 @@ BLOCK_DEVICE_NAME = '/dev/xvda'
 BLOCK_VOLUME_SIZE_GB = 8
 
 
-class CleanupState(TypedDict):
-    ec2: EC2Client | None
-    instance_id: str | None
+_cleanup_state: list[tuple[EC2Client, str]] = []
+"""(ec2 client, instance_id) pairs for instances that have been created.
 
-
-_cleanup_state: CleanupState = {'ec2': None, 'instance_id': None}
-"""Cleanup state for the signal handler to use when terminating an instance
-after a signal is given."""
+Each concurrently running ``run_instance`` call appends its own entry once
+its instance exists, so ``_handle_signal`` can drain this list and
+terminate every outstanding instance on SIGINT/SIGTERM, not just the most
+recently created one. Entries are not removed when an instance terminates
+normally, so this grows for the lifetime of the process; terminating an
+already-terminated instance again from a stale entry is expected to be a
+harmless no-op.
+"""
 
 
 def create_instance(ec2: EC2Client, instance_name: str) -> str:
@@ -131,7 +151,7 @@ def wait_for_instance(ec2: EC2Client, instance_id: str) -> None:
 
 def terminate_instance(
     ec2: EC2Client, instance_id: str, max_attempts: int = 5
-):
+) -> None:
     """Terminate the given instance and block until it is fully terminated.
     Retries the terminate call itself on transient AWS errors.
     """
@@ -240,9 +260,70 @@ def send_ssm_command(
     return result['StandardOutputContent']
 
 
-def run_instance():
-    """Create an EC2 instance, run a smoke-test command on it via SSM, then
-    tear it down.
+def make_command(
+    sbmdt_instance_id: str, patch_type: PatchType, pred_s3_key: str
+) -> str:
+    """Build the shell command to run on the EC2 instance via SSM.
+
+    Wraps ``aws/run_ec2.sh`` (invoked from ``/opt/sbmdt``, which is expected
+    to exist on the AMI referenced by ``IMAGE_ID``) with flags:
+
+        --instance-id     ``sbmdt_instance_id`` -- benchmark instance ID to
+            evaluate.
+        --patch-type      ``patch_type`` -- patch state to evaluate under.
+        --pred-bucket     ``PREDS_S3_BUCKET_NAME`` -- bucket containing the
+            input prediction file.
+        --pred-key        ``pred_s3_key`` -- key of the input prediction
+            file within that bucket.
+        --results-bucket  ``TEST_RESULTS_S3_BUCKET_NAME`` -- bucket the
+            evaluation results should be uploaded to.
+        --stdout-bucket   ``STDOUT_S3_BUCKET_NAME`` -- bucket the command's
+            stdout/log should be uploaded to.
+        --stdout-key      ``stdout_s3_key`` -- key the command's
+            stdout/log should be uploaded to within that bucket (derived
+            from ``pred_s3_key`` by swapping the ``.pred`` extension for
+            ``.log``).
+
+    Args:
+        sbmdt_instance_id: Benchmark instance ID to evaluate.
+        patch_type: Patch state to evaluate under.
+        pred_s3_key: S3 key of the prediction file to evaluate, within
+            ``PREDS_S3_BUCKET_NAME``.
+
+    Returns:
+        The full shell command string to execute on the instance.
+    """
+    stdout_s3_key = S3PredFilename.decode(pred_s3_key).encode(extension='.log')
+    args = [
+        'bash',
+        'aws/run_ec2.sh',
+        '--instance-id',
+        sbmdt_instance_id,
+        '--patch-type',
+        str(patch_type),
+        '--pred-bucket',
+        PREDS_S3_BUCKET_NAME,
+        '--pred-key',
+        pred_s3_key,
+        '--results-bucket',
+        TEST_RESULTS_S3_BUCKET_NAME,
+        '--stdout-bucket',
+        STDOUT_S3_BUCKET_NAME,
+        '--stdout-key',
+        stdout_s3_key,
+    ]
+    command = 'cd /opt/sbmdt && ' + shlex.join(args)
+    return command
+
+
+def run_instance(
+    sbmdt_instance_id: str, patch_type: PatchType, pred_s3_key: str
+) -> None:
+    """Create an EC2 instance, run a single evaluation command on it via
+    SSM, then tear it down.
+
+    Blocking; intended to be run off the event loop via
+    ``run_instance_async``.
     """
 
     now = dt.datetime.now(tz=dt.UTC)
@@ -262,8 +343,7 @@ def run_instance():
         log.info('Creating instance')
         instance_id = create_instance(ec2, instance_name)
         log.info(f'Created instance: {instance_id}')
-        _cleanup_state['ec2'] = ec2
-        _cleanup_state['instance_id'] = instance_id
+        _cleanup_state.append((ec2, instance_id))
 
         log.info('Waiting for instance to become ready')
         wait_for_instance(ec2, instance_id)
@@ -277,7 +357,7 @@ def run_instance():
         output = send_ssm_command(
             ssm,
             instance_id,
-            ['cd /opt/sbmdt && bash aws/run_ec2.sh'],
+            [make_command(sbmdt_instance_id, patch_type, pred_s3_key)],
         )
         log.info(f'Received output: {output}')
     finally:
@@ -288,26 +368,63 @@ def run_instance():
     log.info('Done')
 
 
-def _handle_signal(signum: int, frame: FrameType | None):
+async def run_instance_async(
+    sbmdt_instance_id: str,
+    patch_type: PatchType,
+    pred_s3_key: str,
+    sem: asyncio.Semaphore,
+) -> None:
+    """Run ``run_instance`` in a worker thread, bounded by ``sem``.
+
+    ``run_instance`` is synchronous (it blocks on boto3 waiters), so it is
+    offloaded to a thread via ``asyncio.to_thread`` to let up to
+    ``N_CONCURRENT`` instances run concurrently without blocking the event
+    loop.
+    """
+    async with sem:
+        return await asyncio.to_thread(
+            run_instance, sbmdt_instance_id, patch_type, pred_s3_key
+        )
+
+
+def _handle_signal(signum: int, frame: FrameType | None) -> None:
     """Attempts to terminate an instance, if it exists, when a signal is
     given.
     """
     del frame
     log.warning(f'Received signal {signum}, terminating instance before exit')
-    if _cleanup_state['ec2'] and _cleanup_state['instance_id']:
-        terminate_instance(
-            _cleanup_state['ec2'], _cleanup_state['instance_id']
-        )
-        _cleanup_state['ec2'] = None
-        _cleanup_state['instance_id'] = None
+    while len(_cleanup_state) > 0:
+        ec2, instance_id = _cleanup_state.pop()
+        try:
+            terminate_instance(ec2, instance_id)
+        except Exception as e:
+            log.error(
+                f'Error terminating instance {instance_id} in signal handler: '
+                f'{e}'
+            )
     sys.exit(1)
 
 
-async def main():
-    await asyncio.gather(
-        asyncio.to_thread(run_instance),
-        asyncio.to_thread(run_instance),
-    )
+async def main() -> None:
+    """Evaluate every prediction currently in ``PREDS_S3_BUCKET_NAME``.
+
+    Launches one EC2 instance per prediction file found in the bucket (up
+    to ``N_CONCURRENT`` at a time), shuffled so that a single unlucky batch
+    of slow/large instances isn't processed all at once.
+    """
+    pred_s3_keys = get_all_keys_in_s3_bucket(PREDS_S3_BUCKET_NAME)
+    tasks: list[Coroutine[Any, Any, None]] = []
+    sem = asyncio.Semaphore(N_CONCURRENT)
+    for key in pred_s3_keys:
+        pred_filename = S3PredFilename.decode(key)
+        sbmdt_instance_id = pred_filename.instance_id
+        patch_type = pred_filename.patch_type
+        tasks.append(
+            run_instance_async(sbmdt_instance_id, patch_type, key, sem)
+        )
+
+    random.shuffle(tasks)
+    await asyncio.gather(*tasks)
 
 
 if __name__ == '__main__':
