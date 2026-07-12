@@ -1,0 +1,318 @@
+"""Launch a short-lived EC2 instance, run a command on it via SSM, then
+terminate it.
+
+Used to run the pipeline on distributed cloud computing instances built from
+``IMAGE_ID``.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import datetime as dt
+import logging
+import signal
+import sys
+import time
+from types import FrameType
+from typing import TypedDict
+
+import boto3
+from botocore.exceptions import ClientError, WaiterError
+from mypy_boto3_ec2 import EC2Client
+from mypy_boto3_ssm import SSMClient
+
+from sbmdt.log import setup_logging
+
+
+class TaskContextFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            task = asyncio.current_task()
+            record.taskName = task.get_name() if task else 'main'
+        except RuntimeError:
+            record.taskName = 'main'
+        return True
+
+
+log = logging.getLogger(__name__)
+
+def setup_logging_for_asyncio():
+    log.addFilter(TaskContextFilter())
+    for handler in log.handlers:
+        formatter = handler.formatter
+        if formatter is None:
+            continue
+        fmt = formatter._fmt
+        if fmt is None:
+            continue
+        new_format = fmt.replace(
+            '%(message)s', '[%(threadName)s:%(thread)d:%(taskName)s] %(message)s'
+        )
+        formatter._fmt = new_format
+
+
+IMAGE_ID = 'ami-0412980e86e47df68'
+INSTANCE_TYPE = 't2.medium'
+SUBNET_ID = 'subnet-047914ca11e3cc7b5'
+SECURITY_GROUP_ID = 'sg-0efcda98c4f731b8b'
+INSTANCE_PROFILE_ARN = (
+    'arn:aws:iam::607869540801:instance-profile/sbmdt-instance-profile'
+)
+REGION = 'us-east-1'
+BLOCK_DEVICE_NAME = '/dev/xvda'
+BLOCK_VOLUME_SIZE_GB = 8
+
+
+class CleanupState(TypedDict):
+    ec2: EC2Client | None
+    instance_id: str | None
+
+
+_cleanup_state: CleanupState = {'ec2': None, 'instance_id': None}
+"""Cleanup state for the signal handler to use when terminating an instance
+after a signal is given."""
+
+
+def create_instance(ec2: EC2Client, instance_name: str) -> str:
+    """Launch a single EC2 instance and return its instance ID.
+
+    Args:
+        ec2: EC2 client used to issue the ``run_instances`` request.
+        instance_name: Value to set as the instance's ``Name`` tag.
+
+    Returns:
+        The ID of the newly created instance.
+
+    Raises:
+        Exception: If the response does not contain an instance ID.
+    """
+    response = ec2.run_instances(
+        ImageId=IMAGE_ID,
+        InstanceType=INSTANCE_TYPE,
+        MinCount=1,
+        MaxCount=1,
+        SubnetId=SUBNET_ID,
+        SecurityGroupIds=[SECURITY_GROUP_ID],
+        IamInstanceProfile={'Arn': INSTANCE_PROFILE_ARN},
+        # TODO: DELETE - only needed for SSH access while debugging; remove
+        # once instance access is fully handled through SSM.
+        KeyName='sbmdt-debug',
+        BlockDeviceMappings=[
+            {
+                'DeviceName': BLOCK_DEVICE_NAME,
+                'Ebs': {
+                    'VolumeSize': BLOCK_VOLUME_SIZE_GB,
+                    'VolumeType': 'gp3',
+                    'DeleteOnTermination': True,
+                },
+            }
+        ],
+        TagSpecifications=[
+            {
+                'ResourceType': 'instance',
+                'Tags': [{'Key': 'Name', 'Value': instance_name}],
+            }
+        ],
+    )
+
+    # MinCount/MaxCount above are both 1, so exactly one instance is
+    # expected in the response.
+    instance_id = response.get('Instances', [{}])[0].get('InstanceId', None)
+    if instance_id is None:
+        raise Exception('no instance id')
+
+    return instance_id
+
+
+def wait_for_instance(ec2: EC2Client, instance_id: str) -> None:
+    """Block until the given instance reaches the "running" state."""
+    ec2.get_waiter('instance_running').wait(InstanceIds=[instance_id])
+
+
+def terminate_instance(
+    ec2: EC2Client, instance_id: str, max_attempts: int = 5
+):
+    """Terminate the given instance and block until it is fully terminated.
+    Retries the terminate call itself on transient AWS errors.
+    """
+    for attempt in range(1, max_attempts + 1):
+        try:
+            ec2.terminate_instances(InstanceIds=[instance_id])
+            break
+        except ClientError as e:
+            log.error(f'Terminate attempt {attempt} failed: {e}')
+            if attempt == max_attempts:
+                raise
+            time.sleep(2**attempt)
+
+    try:
+        ec2.get_waiter('instance_terminated').wait(InstanceIds=[instance_id])
+        log.info(f'{instance_id} terminated')
+    except WaiterError as e:
+        # Terminate request was accepted; waiter failing doesn't mean the
+        # instance is still running. Log and don't mask it as total failure.
+        log.error(f'Waiter for termination failed, verify manually: {e}')
+        raise
+
+
+def wait_for_ssm(
+    ssm: SSMClient, instance_id: str, timeout_s: int = 300
+) -> None:
+    """Poll SSM until the instance registers as managed, or time out.
+
+    A running EC2 instance is not immediately controllable via SSM: the
+    SSM agent needs time to start and check in. This polls
+    ``describe_instance_information`` every 5 seconds until the instance
+    shows up.
+
+    Args:
+        ssm: SSM client used to check instance registration.
+        instance_id: ID of the instance to wait for.
+        timeout_s: Maximum number of seconds to wait before giving up.
+
+    Raises:
+        TimeoutError: If the instance has not registered within
+            ``timeout_s`` seconds.
+    """
+    start = time.monotonic()
+    while time.monotonic() - start < timeout_s:
+        resp = ssm.describe_instance_information(
+            Filters=[{'Key': 'InstanceIds', 'Values': [instance_id]}]
+        )
+        if resp['InstanceInformationList']:
+            return
+        time.sleep(5)
+    raise TimeoutError(f'{instance_id} did not register with SSM in time')
+
+
+def send_ssm_command(
+    ssm: SSMClient, instance_id: str, commands: list[str]
+) -> str:
+    """Run shell commands on an instance via SSM and return the stdout.
+
+    Sends the commands as an ``AWS-RunShellScript`` document, blocks until
+    the command finishes, and logs the failure details (status and
+    stderr) before re-raising if the command does not complete
+    successfully.
+
+    Args:
+        ssm: SSM client used to send and track the command.
+        instance_id: ID of the instance to run the commands on.
+        commands: Shell commands to execute on the instance.
+
+    Returns:
+        The captured standard output of the command.
+
+    Raises:
+        Exception: If the response does not contain a command ID.
+        WaiterError: If the command does not complete successfully.
+    """
+    send = ssm.send_command(
+        InstanceIds=[instance_id],
+        DocumentName='AWS-RunShellScript',
+        Parameters={'commands': commands},
+    )
+
+    command_id = send.get('Command', {}).get('CommandId', None)
+    if command_id is None:
+        raise Exception('no command id')
+
+    log.info(f'Waiting for command ID {command_id}')
+    waiter = ssm.get_waiter('command_executed')
+
+    try:
+        waiter.wait(CommandId=command_id, InstanceId=instance_id)
+    except WaiterError:
+        result = ssm.get_command_invocation(
+            CommandId=command_id, InstanceId=instance_id
+        )
+        log.error(
+            f'Command failed. Status: {result.get("Status")}, '
+            f'StatusDetails: {result.get("StatusDetails")}, '
+            f'Stderr: {result.get("StandardErrorContent")}'
+        )
+        raise
+
+    log.info(f'Getting command invocation for command ID {command_id}')
+    result = ssm.get_command_invocation(
+        CommandId=command_id, InstanceId=instance_id
+    )
+    return result['StandardOutputContent']
+
+
+def run_instance():
+    """Create an EC2 instance, run a smoke-test command on it via SSM, then
+    tear it down.
+    """
+
+    now = dt.datetime.now(tz=dt.UTC)
+    # Timestamp suffix keeps instance names unique across runs.
+    instance_name = f'sbmdt-ec2-{now.timestamp()}'
+
+    log.info('Starting session')
+    # Uses the local AWS CLI profile named "admin-user" rather than the
+    # default credential chain.
+    session = boto3.Session(profile_name='admin-user')
+    ec2 = session.client('ec2', region_name=REGION)
+
+    # Once the instance exists, always terminate it on the way out, even if
+    # waiting for SSM, sending the command, or anything else below raises.
+    instance_id = None
+    try:
+        log.info('Creating instance')
+        instance_id = create_instance(ec2, instance_name)
+        log.info(f'Created instance: {instance_id}')
+        _cleanup_state['ec2'] = ec2
+        _cleanup_state['instance_id'] = instance_id
+
+        log.info('Waiting for instance to become ready')
+        wait_for_instance(ec2, instance_id)
+
+        ssm = session.client('ssm', region_name=REGION)
+
+        log.info('Waiting for SSM')
+        wait_for_ssm(ssm, instance_id)
+
+        log.info('Sending command')
+        output = send_ssm_command(
+            ssm,
+            instance_id,
+            ['cd /opt/sbmdt && bash aws/run_ec2.sh'],
+        )
+        log.info(f'Received output: {output}')
+    finally:
+        if instance_id is not None:
+            log.info('Terminating instance')
+            terminate_instance(ec2, instance_id)
+
+    log.info('Done')
+
+
+def _handle_signal(signum: int, frame: FrameType | None):
+    """Attempts to terminate an instance, if it exists, when a signal is
+    given.
+    """
+    del frame
+    log.warning(f'Received signal {signum}, terminating instance before exit')
+    if _cleanup_state['ec2'] and _cleanup_state['instance_id']:
+        terminate_instance(
+            _cleanup_state['ec2'], _cleanup_state['instance_id']
+        )
+        _cleanup_state['ec2'] = None
+        _cleanup_state['instance_id'] = None
+    sys.exit(1)
+
+
+async def main():
+    await asyncio.gather(
+        asyncio.to_thread(run_instance),
+        asyncio.to_thread(run_instance),
+    )
+
+
+if __name__ == '__main__':
+    setup_logging(level=logging.INFO)
+    setup_logging_for_asyncio()
+    signal.signal(signal.SIGTERM, _handle_signal)
+    signal.signal(signal.SIGINT, _handle_signal)
+    asyncio.run(main())
