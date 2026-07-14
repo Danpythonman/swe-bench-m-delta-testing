@@ -1,3 +1,7 @@
+"""CLI entrypoint for running delta testing evaluation on a single benchmark
+instance and writing the results to a local file or S3.
+"""
+
 import argparse
 import datetime as dt
 import json
@@ -39,6 +43,9 @@ class Args:
 
 
 def parse_args() -> Args:
+    """Parse and validate CLI arguments, loading the referenced pred file
+    (if any) into an `Args` instance.
+    """
     parser = argparse.ArgumentParser(
         description='Run delta testing evaluation for a benchmark instance.'
     )
@@ -156,6 +163,10 @@ def parse_args() -> Args:
 
 @log_duration(logger=log)
 def run_instance(args: Args):
+    """Run the evaluation described by `args` and write the results to the
+    configured destination, skipping if results already exist and
+    `overwrite` is not set.
+    """
     results_dir = PROJECT_BASE / 'results'
     results_dir.mkdir(exist_ok=True)
 
@@ -229,7 +240,9 @@ def run_instance(args: Args):
 
     log.info('Saving results complete')
 
+
 def main() -> None:
+    """Parse arguments, set up logging, and run the instance evaluation."""
     args = parse_args()
 
     log_path = Path(args.log_file)
