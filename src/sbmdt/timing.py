@@ -3,8 +3,7 @@
 import functools
 import logging
 import time
-from typing import Callable
-
+from collections.abc import Callable
 
 __all__ = ['log_duration']
 
@@ -22,6 +21,7 @@ def log_duration[**P, R](
         duration (in seconds, to two decimal places) after it returns or
         raises.
     """
+
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -31,5 +31,7 @@ def log_duration[**P, R](
             finally:
                 elapsed = time.perf_counter() - start
                 logger.info(f'{func.__name__} finished in {elapsed:.2f}s')
+
         return wrapper
+
     return decorator
