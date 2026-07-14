@@ -7,6 +7,7 @@ Used to run the pipeline on distributed cloud computing instances built from
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import datetime as dt
 import logging
@@ -15,7 +16,7 @@ import shlex
 import signal
 import time
 from collections.abc import Coroutine
-from typing import Any, Final
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError, WaiterError
@@ -23,7 +24,7 @@ from mypy_boto3_ec2 import EC2Client
 from mypy_boto3_ssm import SSMClient
 
 from sbmdt.evaluator.base import PatchType
-from sbmdt.log import setup_logging
+from sbmdt.log import setup_logging, setup_logging_for_asyncio
 from sbmdt.s3 import (
     PREDS_S3_BUCKET_NAME,
     STDOUT_S3_BUCKET_NAME,
@@ -32,9 +33,11 @@ from sbmdt.s3 import (
     get_all_keys_in_s3_bucket,
 )
 
-N_CONCURRENT: Final[int] = 5
+N_CONCURRENT = 5
 """Maximum number of EC2 instances allowed to be running (i.e. mid-evaluation)
 at the same time; enforced via the semaphore in `main()`.
+
+Overridden by ``--n-concurrent`` when run as a script.
 """
 
 _shutdown = asyncio.Event()
@@ -47,36 +50,10 @@ set.
 """
 
 
-class TaskContextFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        try:
-            task = asyncio.current_task()
-            record.taskName = task.get_name() if task else 'main'
-        except RuntimeError:
-            record.taskName = 'main'
-        return True
-
-
 log = logging.getLogger(__name__)
 
 
-def setup_logging_for_asyncio() -> None:
-    log.addFilter(TaskContextFilter())
-    for handler in log.handlers:
-        formatter = handler.formatter
-        if formatter is None:
-            continue
-        fmt = formatter._fmt
-        if fmt is None:
-            continue
-        new_format = fmt.replace(
-            '%(message)s',
-            '[%(threadName)s:%(thread)d:%(taskName)s] %(message)s',
-        )
-        formatter._fmt = new_format
-
-
-IMAGE_ID = 'ami-0412980e86e47df68'
+IMAGE_ID = 'ami-02d59616d6accef67'
 INSTANCE_TYPE = 't2.medium'
 SUBNET_ID = 'subnet-047914ca11e3cc7b5'
 SECURITY_GROUP_ID = 'sg-0efcda98c4f731b8b'
@@ -86,6 +63,13 @@ INSTANCE_PROFILE_ARN = (
 REGION = 'us-east-1'
 BLOCK_DEVICE_NAME = '/dev/xvda'
 BLOCK_VOLUME_SIZE_GB = 8
+AWS_PROFILE = 'admin-user'
+"""Local AWS CLI profile used to create the boto3 session in
+``run_instance``, rather than the default credential chain.
+"""
+# The values above are all overridable via CLI flags -- see `parse_args()`
+# -- and are read as module globals by the functions below, so
+# `if __name__ == '__main__'` rebinds these names directly after parsing.
 
 AUTO_SHUTDOWN_SCRIPT = """#!/bin/bash
 shutdown -h +30
@@ -346,9 +330,7 @@ def run_instance(
     instance_name = f'sbmdt-ec2-{now.timestamp()}'
 
     log.info('Starting session')
-    # Uses the local AWS CLI profile named "admin-user" rather than the
-    # default credential chain.
-    session = boto3.Session(profile_name='admin-user')
+    session = boto3.Session(profile_name=AWS_PROFILE)
     ec2 = session.client('ec2', region_name=REGION)
 
     # Once the instance exists, always terminate it on the way out, even if
@@ -497,7 +479,89 @@ async def main() -> None:
     log.info('Done!')
 
 
+def parse_args() -> argparse.Namespace:
+    """Parse CLI overrides for the AWS resource settings and other globals
+    used throughout this module.
+
+    Defaults are the module-level constants defined above.
+    """
+    parser = argparse.ArgumentParser(
+        description=(
+            'Evaluate every prediction in PREDS_S3_BUCKET_NAME on a batch '
+            'of short-lived EC2 instances.'
+        )
+    )
+    parser.add_argument(
+        '--n-concurrent',
+        type=int,
+        default=N_CONCURRENT,
+        help='Maximum number of EC2 instances running at the same time.',
+    )
+    parser.add_argument(
+        '--image-id',
+        default=IMAGE_ID,
+        help='AMI ID to launch instances from.',
+    )
+    parser.add_argument(
+        '--instance-type',
+        default=INSTANCE_TYPE,
+        help='EC2 instance type to launch.',
+    )
+    parser.add_argument(
+        '--subnet-id',
+        default=SUBNET_ID,
+        help='Subnet ID to launch instances into.',
+    )
+    parser.add_argument(
+        '--security-group-id',
+        default=SECURITY_GROUP_ID,
+        help='Security group ID to attach to instances.',
+    )
+    parser.add_argument(
+        '--instance-profile-arn',
+        default=INSTANCE_PROFILE_ARN,
+        help='IAM instance profile ARN to attach to instances.',
+    )
+    parser.add_argument(
+        '--region',
+        default=REGION,
+        help='AWS region to launch instances in.',
+    )
+    parser.add_argument(
+        '--block-device-name',
+        default=BLOCK_DEVICE_NAME,
+        help='Root block device name for the instance volume.',
+    )
+    parser.add_argument(
+        '--block-volume-size-gb',
+        type=int,
+        default=BLOCK_VOLUME_SIZE_GB,
+        help='Root block device volume size, in GB.',
+    )
+    parser.add_argument(
+        '--aws-profile',
+        default=AWS_PROFILE,
+        help=(
+            'Local AWS CLI profile used to create the boto3 session '
+            '(rather than the default credential chain).'
+        ),
+    )
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
+    args = parse_args()
+    N_CONCURRENT = args.n_concurrent
+    IMAGE_ID = args.image_id
+    INSTANCE_TYPE = args.instance_type
+    SUBNET_ID = args.subnet_id
+    SECURITY_GROUP_ID = args.security_group_id
+    INSTANCE_PROFILE_ARN = args.instance_profile_arn
+    REGION = args.region
+    BLOCK_DEVICE_NAME = args.block_device_name
+    BLOCK_VOLUME_SIZE_GB = args.block_volume_size_gb
+    AWS_PROFILE = args.aws_profile
+
     setup_logging(level=logging.INFO)
-    setup_logging_for_asyncio()
+    setup_logging_for_asyncio(log)
     asyncio.run(main())
