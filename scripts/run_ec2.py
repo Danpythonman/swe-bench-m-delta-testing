@@ -13,10 +13,8 @@ import logging
 import random
 import shlex
 import signal
-import sys
 import time
 from collections.abc import Coroutine
-from types import FrameType
 from typing import Any, Final
 
 import boto3
@@ -34,9 +32,19 @@ from sbmdt.s3 import (
     get_all_keys_in_s3_bucket,
 )
 
-# Maximum number of EC2 instances allowed to be running (i.e. mid-evaluation)
-# at the same time; enforced via the semaphore in `main()`.
 N_CONCURRENT: Final[int] = 5
+"""Maximum number of EC2 instances allowed to be running (i.e. mid-evaluation)
+at the same time; enforced via the semaphore in `main()`.
+"""
+
+_shutdown = asyncio.Event()
+"""Set by the SIGINT/SIGTERM handler.
+
+``main()`` watches for it to stop waiting on the rest of the batch and start
+terminating in-flight instances; ``run_instance_async`` checks it too, so
+tasks still waiting on the semaphore skip creating a new instance once it's
+set.
+"""
 
 
 class TaskContextFilter(logging.Filter):
@@ -87,9 +95,9 @@ _cleanup_state: list[tuple[EC2Client, str]] = []
 """(ec2 client, instance_id) pairs for instances that have been created.
 
 Each concurrently running ``run_instance`` call appends its own entry once
-its instance exists, so ``_handle_signal`` can drain this list and
-terminate every outstanding instance on SIGINT/SIGTERM, not just the most
-recently created one. Entries are not removed when an instance terminates
+its instance exists, so ``_terminate_known_instances`` can drain this list
+and terminate every outstanding instance on SIGINT/SIGTERM, not just the
+most recently created one. Entries are not removed when an instance terminates
 normally, so this grows for the lifetime of the process; terminating an
 already-terminated instance again from a stale entry is expected to be a
 harmless no-op.
@@ -163,6 +171,7 @@ def terminate_instance(
     """
     for attempt in range(1, max_attempts + 1):
         try:
+            log.info(f'Attempting to terminate EC2 instance {instance_id}')
             ec2.terminate_instances(InstanceIds=[instance_id])
             break
         except ClientError as e:
@@ -172,6 +181,7 @@ def terminate_instance(
             time.sleep(2**attempt)
 
     try:
+        log.info(f'Waiting for EC2 instance {instance_id} to terminate')
         ec2.get_waiter('instance_terminated').wait(InstanceIds=[instance_id])
         log.info(f'{instance_id} terminated')
     except WaiterError as e:
@@ -385,8 +395,19 @@ async def run_instance_async(
     offloaded to a thread via ``asyncio.to_thread`` to let up to
     ``N_CONCURRENT`` instances run concurrently without blocking the event
     loop.
+
+    If ``_shutdown`` is already set by the time this task acquires ``sem``,
+    it returns without creating an instance -- there's no way to interrupt
+    ``run_instance`` once it's running in its thread, so this only prevents
+    starting *new* work after a shutdown was requested.
     """
     async with sem:
+        if _shutdown.is_set():
+            log.warning(
+                f'Coroutine for {sbmdt_instance_id} {patch_type} with pred '
+                f'{pred_s3_key} received shutdown signal, aborting'
+            )
+            return
         log.info(
             f'Running {sbmdt_instance_id} {patch_type} with pred {pred_s3_key}'
         )
@@ -395,22 +416,26 @@ async def run_instance_async(
         )
 
 
-def _handle_signal(signum: int, frame: FrameType | None) -> None:
-    """Attempts to terminate an instance, if it exists, when a signal is
-    given.
+def _request_shutdown(signum: int) -> None:
+    """Sets the shutdown signal."""
+    log.warning(f'Received signal {signum}, shutting down gracefully')
+    _shutdown.set()
+    log.warning('Shutdown signal has been set')
+
+
+async def _terminate_known_instances() -> None:
+    """Terminates every instance currently tracked in ``_cleanup_state``.
+
+    A single drain pass: instances created after this call starts (e.g. a
+    task still waiting on the semaphore when shutdown was requested) aren't
+    covered by it.
     """
-    del frame
-    log.warning(f'Received signal {signum}, terminating instance before exit')
-    while len(_cleanup_state) > 0:
+    coros: list[Coroutine[Any, Any, None]] = []
+    while _cleanup_state:
         ec2, instance_id = _cleanup_state.pop()
-        try:
-            terminate_instance(ec2, instance_id)
-        except Exception as e:
-            log.error(
-                f'Error terminating instance {instance_id} in signal handler: '
-                f'{e}'
-            )
-    sys.exit(1)
+        log.warning(f'Adding EC2 instance {instance_id} to terminate queue')
+        coros.append(asyncio.to_thread(terminate_instance, ec2, instance_id))
+    await asyncio.gather(*coros, return_exceptions=True)
 
 
 async def main() -> None:
@@ -419,7 +444,17 @@ async def main() -> None:
     Launches one EC2 instance per prediction file found in the bucket (up
     to ``N_CONCURRENT`` at a time), shuffled so that a single unlucky batch
     of slow/large instances isn't processed all at once.
+
+    Registers the SIGINT/SIGTERM handler on this coroutine's running loop
+    (``asyncio.run`` creates a fresh loop per call, so this can't be done
+    beforehand). If a shutdown is requested before all instances finish,
+    terminates every currently-tracked instance and waits for the
+    already-running work to unwind before returning.
     """
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, _request_shutdown, sig)
+
     pred_s3_keys = get_all_keys_in_s3_bucket(PREDS_S3_BUCKET_NAME)
     tasks: list[Coroutine[Any, Any, None]] = []
     sem = asyncio.Semaphore(N_CONCURRENT)
@@ -432,12 +467,37 @@ async def main() -> None:
         )
 
     random.shuffle(tasks)
-    await asyncio.gather(*tasks)
+
+    work_tasks = asyncio.gather(*tasks, return_exceptions=True)
+    shutdown_wait = asyncio.create_task(_shutdown.wait())
+
+    # Race work against the shutdown signal so we react as soon as either
+    # finishes, rather than always waiting for the full batch.
+    await asyncio.wait(
+        (work_tasks, shutdown_wait), return_when=asyncio.FIRST_COMPLETED
+    )
+
+    # If shutdown was requested before all work finished, terminate every
+    # currently-tracked instance so in-flight run_instance calls fail fast
+    # instead of running their full multi-minute lifecycle. Those failures
+    # are captured (not raised) by work_tasks's return_exceptions=True.
+    if shutdown_wait.done():
+        if work_tasks.done():
+            log.warning('Shutdown requested, but work had already finished')
+        else:
+            log.warning(
+                'Shutdown requested with work still pending, terminating '
+                'known instances now'
+            )
+            await _terminate_known_instances()
+            await work_tasks
+    else:
+        log.info('Work finished without a shutdown request')
+
+    log.info('Done!')
 
 
 if __name__ == '__main__':
     setup_logging(level=logging.INFO)
     setup_logging_for_asyncio()
-    signal.signal(signal.SIGTERM, _handle_signal)
-    signal.signal(signal.SIGINT, _handle_signal)
     asyncio.run(main())
