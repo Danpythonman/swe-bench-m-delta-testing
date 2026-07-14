@@ -73,8 +73,7 @@ done
 # Fail loudly if the caller forgot a required flag, rather than silently
 # proceeding with an empty value (e.g. an empty --pred-bucket would turn
 # into `s3:///<key>`).
-for name in INSTANCE_ID PATCH_TYPE PRED_BUCKET PRED_KEY RESULTS_BUCKET \
-    STDOUT_BUCKET STDOUT_KEY; do
+for name in INSTANCE_ID PATCH_TYPE PRED_BUCKET PRED_KEY RESULTS_BUCKET STDOUT_BUCKET STDOUT_KEY; do
     if [[ -z "${!name}" ]]; then
         echo "run_ec2.sh: missing required argument for ${name}" >&2
         exit 1
@@ -84,15 +83,30 @@ done
 # Local path that run_instance.py writes its own log output to.
 LOG_FILENAME='run.log'
 
+PRED_URI="s3://${PRED_BUCKET}/${PRED_KEY}"
+STDOUT_URI="s3://${STDOUT_BUCKET}/${STDOUT_KEY}"
+
+# Copy the log file to S3 when this script exits.
+upload_log() {
+    local exit_code=$?
+    echo "Uploading log to ${STDOUT_URI}"
+    if aws s3 cp "${LOG_FILENAME}" "${STDOUT_URI}"; then
+        echo "Uploaded log to ${STDOUT_URI}"
+    else
+        echo "run_ec2.sh: failed to upload log to ${STDOUT_URI}" >&2
+    fi
+    exit "${exit_code}"
+}
+trap upload_log EXIT
+
+echo "Running instance ${INSTANCE_ID} ${PATCH_TYPE}, pred from ${PRED_URI} into results bucket ${RESULTS_BUCKET}, log into ${STDOUT_URI}"
+
 uv run \
     ./scripts/run_instance.py \
     "${INSTANCE_ID}" \
     "${PATCH_TYPE}" \
-    --pred-file "s3://${PRED_BUCKET}/${PRED_KEY}" \
+    --pred-file "${PRED_URI}" \
     --parquet \
     --s3 \
     --bucket "${RESULTS_BUCKET}" \
     --log-file "${LOG_FILENAME}"
-
-# Copy the log file to S3.
-aws s3 cp "${LOG_FILENAME}" "s3://${STDOUT_BUCKET}/${STDOUT_KEY}"
