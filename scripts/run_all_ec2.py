@@ -53,7 +53,7 @@ set.
 log = logging.getLogger(__name__)
 
 
-IMAGE_ID = 'ami-02d59616d6accef67'
+IMAGE_ID = 'ami-0314fc0c725224099'
 INSTANCE_TYPE = 't2.medium'
 SUBNET_ID = 'subnet-047914ca11e3cc7b5'
 SECURITY_GROUP_ID = 'sg-0efcda98c4f731b8b'
