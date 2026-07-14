@@ -21,6 +21,7 @@ from sbmdt.s3 import (
     load_pred_from_s3,
     s3_object_exists,
 )
+from sbmdt.timing import log_duration
 
 log = logging.getLogger(__name__)
 
@@ -153,6 +154,7 @@ def parse_args() -> Args:
     )
 
 
+@log_duration(logger=log)
 def run_instance(args: Args):
     results_dir = PROJECT_BASE / 'results'
     results_dir.mkdir(exist_ok=True)
@@ -226,7 +228,6 @@ def run_instance(args: Args):
             )
 
     log.info('Saving results complete')
-
 
 def main() -> None:
     args = parse_args()
