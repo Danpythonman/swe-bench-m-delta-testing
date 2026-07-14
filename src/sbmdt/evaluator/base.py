@@ -348,6 +348,7 @@ class Evaluator(ABC):
         client = docker.from_env()
         resource_name = f'sbmdt-{self.instance_id}'.lower()
         # Note that rm=True remove intermediate containers after build
+        log.info('Building image...')
         self.image, _ = client.images.build(
             path=str(self.dockerfile_path.parent.resolve()),
             tag=f'{resource_name}:latest',
@@ -355,6 +356,7 @@ class Evaluator(ABC):
             rm=True,
             forcerm=True,
         )
+        log.info('Running container...')
         self.container = client.containers.run(
             self.image,
             command='/bin/bash',
@@ -493,11 +495,19 @@ class Evaluator(ABC):
         container/image that has to be removed manually before retrying.
         """
         try:
+            log.info('Provisioning...')
             self.provision()
+            log.info('Setting up...')
             self.setup()
             if self.patch_type != PatchType.BEFORE_PATCH:
+                log.info('Applying patch...')
                 self.apply_patch()
+            else:
+                log.info('No patch to apply')
+            log.info('Evaluating...')
             results = self.evaluate()
         finally:
+            log.info('Cleaning up...')
             self.cleanup()
+        log.info('Returning results...')
         return results
