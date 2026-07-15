@@ -22,6 +22,10 @@ import boto3
 from botocore.exceptions import ClientError, WaiterError
 from mypy_boto3_ec2 import EC2Client
 from mypy_boto3_ssm import SSMClient
+from mypy_boto3_ssm.type_defs import (
+    GetCommandInvocationResultTypeDef,
+    SendCommandResultTypeDef,
+)
 
 from sbmdt.evaluator.base import PatchType
 from sbmdt.log import setup_logging, setup_logging_for_asyncio
@@ -53,16 +57,16 @@ set.
 log = logging.getLogger(__name__)
 
 
-IMAGE_ID = 'ami-0314fc0c725224099'
-INSTANCE_TYPE = 't2.medium'
-SUBNET_ID = 'subnet-047914ca11e3cc7b5'
-SECURITY_GROUP_ID = 'sg-0efcda98c4f731b8b'
+IMAGE_ID = 'ami-067086def119f0525'
+INSTANCE_TYPE = 't3a.large'
+SUBNET_ID = 'subnet-0d1aeaaad9a22c741'
+SECURITY_GROUP_ID = 'sg-09f9a76d742f8549d'
 INSTANCE_PROFILE_ARN = (
     'arn:aws:iam::607869540801:instance-profile/sbmdt-instance-profile'
 )
 REGION = 'us-east-1'
 BLOCK_DEVICE_NAME = '/dev/xvda'
-BLOCK_VOLUME_SIZE_GB = 8
+BLOCK_VOLUME_SIZE_GB = 16
 AWS_PROFILE = 'admin-user'
 """Local AWS CLI profile used to create the boto3 session in
 ``run_instance``, rather than the default credential chain.
@@ -88,7 +92,7 @@ harmless no-op.
 """
 
 
-def create_instance(ec2: EC2Client, instance_name: str) -> str:
+async def create_instance(ec2: EC2Client, instance_name: str) -> str:
     """Launch a single EC2 instance and return its instance ID.
 
     Args:
@@ -101,36 +105,40 @@ def create_instance(ec2: EC2Client, instance_name: str) -> str:
     Raises:
         Exception: If the response does not contain an instance ID.
     """
-    response = ec2.run_instances(
-        ImageId=IMAGE_ID,
-        InstanceType=INSTANCE_TYPE,
-        MinCount=1,
-        MaxCount=1,
-        SubnetId=SUBNET_ID,
-        SecurityGroupIds=[SECURITY_GROUP_ID],
-        IamInstanceProfile={'Arn': INSTANCE_PROFILE_ARN},
-        # Terminate on shutdown
-        InstanceInitiatedShutdownBehavior='terminate',
-        # Shutdown after 30 minutes automatically as a protection measure in
-        # case the terminate script fails to terminate the instance
-        UserData=AUTO_SHUTDOWN_SCRIPT,
-        # Make a custom hard drive size
-        BlockDeviceMappings=[
-            {
-                'DeviceName': BLOCK_DEVICE_NAME,
-                'Ebs': {
-                    'VolumeSize': BLOCK_VOLUME_SIZE_GB,
-                    'VolumeType': 'gp3',
-                    'DeleteOnTermination': True,
-                },
-            }
-        ],
-        TagSpecifications=[
-            {
-                'ResourceType': 'instance',
-                'Tags': [{'Key': 'Name', 'Value': instance_name}],
-            }
-        ],
+    loop = asyncio.get_running_loop()
+    response = await loop.run_in_executor(
+        None,
+        lambda: ec2.run_instances(
+            ImageId=IMAGE_ID,
+            InstanceType=INSTANCE_TYPE,
+            MinCount=1,
+            MaxCount=1,
+            SubnetId=SUBNET_ID,
+            SecurityGroupIds=[SECURITY_GROUP_ID],
+            IamInstanceProfile={'Arn': INSTANCE_PROFILE_ARN},
+            # Terminate on shutdown
+            InstanceInitiatedShutdownBehavior='terminate',
+            # Shutdown after 30 minutes automatically as a protection measure in
+            # case the terminate script fails to terminate the instance
+            UserData=AUTO_SHUTDOWN_SCRIPT,
+            # Make a custom hard drive size
+            BlockDeviceMappings=[
+                {
+                    'DeviceName': BLOCK_DEVICE_NAME,
+                    'Ebs': {
+                        'VolumeSize': BLOCK_VOLUME_SIZE_GB,
+                        'VolumeType': 'gp3',
+                        'DeleteOnTermination': True,
+                    },
+                }
+            ],
+            TagSpecifications=[
+                {
+                    'ResourceType': 'instance',
+                    'Tags': [{'Key': 'Name', 'Value': instance_name}],
+                }
+            ],
+        )
     )
 
     # MinCount/MaxCount above are both 1, so exactly one instance is
@@ -142,31 +150,45 @@ def create_instance(ec2: EC2Client, instance_name: str) -> str:
     return instance_id
 
 
-def wait_for_instance(ec2: EC2Client, instance_id: str) -> None:
+async def wait_for_instance(ec2: EC2Client, instance_id: str) -> None:
     """Block until the given instance reaches the "running" state."""
-    ec2.get_waiter('instance_running').wait(InstanceIds=[instance_id])
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(
+        None,
+        lambda: ec2.get_waiter('instance_running').wait(
+            InstanceIds=[instance_id]
+        ),
+    )
 
 
-def terminate_instance(
+async def terminate_instance(
     ec2: EC2Client, instance_id: str, max_attempts: int = 5
 ) -> None:
     """Terminate the given instance and block until it is fully terminated.
     Retries the terminate call itself on transient AWS errors.
     """
+    loop = asyncio.get_running_loop()
     for attempt in range(1, max_attempts + 1):
         try:
             log.info(f'Attempting to terminate EC2 instance {instance_id}')
-            ec2.terminate_instances(InstanceIds=[instance_id])
+            await loop.run_in_executor(
+                None, lambda: ec2.terminate_instances(InstanceIds=[instance_id])
+            )
             break
         except ClientError as e:
             log.error(f'Terminate attempt {attempt} failed: {e}')
             if attempt == max_attempts:
                 raise
-            time.sleep(2**attempt)
+            await asyncio.sleep(2**attempt)
 
     try:
         log.info(f'Waiting for EC2 instance {instance_id} to terminate')
-        ec2.get_waiter('instance_terminated').wait(InstanceIds=[instance_id])
+        await loop.run_in_executor(
+            None,
+            lambda: ec2.get_waiter('instance_terminated').wait(
+                InstanceIds=[instance_id]
+            ),
+        )
         log.info(f'{instance_id} terminated')
     except WaiterError as e:
         # Terminate request was accepted; waiter failing doesn't mean the
@@ -174,7 +196,7 @@ def terminate_instance(
         log.error(f'Waiter for termination failed, verify manually: {e}')
 
 
-def wait_for_ssm(
+async def wait_for_ssm(
     ssm: SSMClient, instance_id: str, timeout_s: int = 300
 ) -> None:
     """Poll SSM until the instance registers as managed, or time out.
@@ -193,19 +215,69 @@ def wait_for_ssm(
         TimeoutError: If the instance has not registered within
             ``timeout_s`` seconds.
     """
+    loop = asyncio.get_running_loop()
     start = time.monotonic()
     while time.monotonic() - start < timeout_s:
-        resp = ssm.describe_instance_information(
-            Filters=[{'Key': 'InstanceIds', 'Values': [instance_id]}]
+        resp = await loop.run_in_executor(
+            None,
+            lambda: ssm.describe_instance_information(
+                Filters=[{'Key': 'InstanceIds', 'Values': [instance_id]}]
+            ),
         )
         if resp['InstanceInformationList']:
             return
-        time.sleep(5)
+        await asyncio.sleep(5)
     raise TimeoutError(f'{instance_id} did not register with SSM in time')
 
 
-def send_ssm_command(
-    ssm: SSMClient, instance_id: str, commands: list[str]
+async def start_running_ssm_command(
+    ssm: SSMClient, instance_id: str, command: str
+) -> SendCommandResultTypeDef:
+    loop = asyncio.get_running_loop()
+    send = await loop.run_in_executor(
+        None,
+        lambda: ssm.send_command(
+            InstanceIds=[instance_id],
+            DocumentName='AWS-RunShellScript',
+            Parameters={'commands': [command]},
+        ),
+    )
+    return send
+
+
+async def get_ssm_command_invocation(
+    ssm: SSMClient,
+    instance_id: str,
+    command_id: str,
+    max_retries: int = 5,
+    retry_delay_seconds: float = 2.0,
+) -> GetCommandInvocationResultTypeDef:
+    loop = asyncio.get_running_loop()
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            log.info(f'Getting command invocation {command_id}')
+            return await loop.run_in_executor(
+                None,
+                lambda: ssm.get_command_invocation(
+                    CommandId=command_id, InstanceId=instance_id
+                ),
+            )
+        except ClientError as e:
+            if e.response.get('Error', {}).get('Code') != 'InvocationDoesNotExist':
+                raise
+            if attempt == max_retries:
+                raise
+            log.info(
+                f'Invocation for command {command_id} not yet available '
+                f'(attempt {attempt}/{max_retries}), retrying...'
+            )
+            await asyncio.sleep(retry_delay_seconds)
+    raise Exception(f'command retries exceeded')
+
+
+async def send_ssm_command(
+    ssm: SSMClient, instance_id: str, command: str
 ) -> str:
     """Run shell commands on an instance via SSM and return the stdout.
 
@@ -226,36 +298,52 @@ def send_ssm_command(
         Exception: If the response does not contain a command ID.
         WaiterError: If the command does not complete successfully.
     """
-    log.info(f'Running commands {" ; ".join(commands)}')
-    send = ssm.send_command(
-        InstanceIds=[instance_id],
-        DocumentName='AWS-RunShellScript',
-        Parameters={'commands': commands},
-    )
+    log.info(f'Running command {command}')
+    send = await start_running_ssm_command(ssm, instance_id, command)
 
     command_id = send.get('Command', {}).get('CommandId', None)
     if command_id is None:
         raise Exception('no command id')
 
     log.info(f'Waiting for command ID {command_id}')
-    waiter = ssm.get_waiter('command_executed')
 
-    try:
-        waiter.wait(CommandId=command_id, InstanceId=instance_id)
-    except WaiterError:
-        result = ssm.get_command_invocation(
-            CommandId=command_id, InstanceId=instance_id
-        )
+    timeout_minutes = 30
+    timeout_seconds = timeout_minutes * 60
+    poll_interval_seconds = 10
+    terminal_statuses = {'Success', 'Failed', 'Cancelled', 'TimedOut'}
+    deadline = time.monotonic() + timeout_seconds
+
+    result = None
+    while time.monotonic() < deadline:
+        result = await get_ssm_command_invocation(ssm, instance_id, command_id)
+        status = result.get('Status')
+        log.info(f'Got command invocation {command_id}, status: {status}')
+        if status in terminal_statuses:
+            break
+        await asyncio.sleep(poll_interval_seconds)
+    else:
         log.error(
-            f'Command failed. Status: {result.get("Status")}, '
-            f'StatusDetails: {result.get("StatusDetails")}, '
-            f'Stderr: {result.get("StandardErrorContent")}'
+            f'Command timed out after {timeout_seconds}s. Command: {command}'
+        )
+        raise Exception(
+            f'Command {command_id} timed out after {timeout_seconds}s'
         )
 
-    log.info(f'Getting command invocation for command ID {command_id}')
-    result = ssm.get_command_invocation(
-        CommandId=command_id, InstanceId=instance_id
-    )
+    if status != 'Success':
+        log.error(
+            f'Command failed.'
+            f'\n\tCommand: {command}'
+            f'\n\tStatus: {result.get("Status")}, '
+            f'\n\tStatusDetails: {result.get("StatusDetails")}, '
+            f'\n\tStdout: {result.get("StandardOutputContent")}, '
+            f'\n\tStderr: {result.get("StandardErrorContent")}'
+        )
+        raise Exception(
+            f'Command {command_id} failed with status {result.get("Status")}'
+        )
+    else:
+        log.info(f'Command success {command_id}')
+
     return result['StandardOutputContent']
 
 
@@ -315,7 +403,7 @@ def make_command(
     return command
 
 
-def run_instance(
+async def run_instance(
     sbmdt_instance_id: str, patch_type: PatchType, pred_s3_key: str
 ) -> None:
     """Create an EC2 instance, run a single evaluation command on it via
@@ -338,29 +426,31 @@ def run_instance(
     instance_id = None
     try:
         log.info('Creating instance')
-        instance_id = create_instance(ec2, instance_name)
+        instance_id = await create_instance(ec2, instance_name)
         log.info(f'Created instance: {instance_id}')
         _cleanup_state.append((ec2, instance_id))
 
         log.info('Waiting for instance to become ready')
-        wait_for_instance(ec2, instance_id)
+        await wait_for_instance(ec2, instance_id)
 
         ssm = session.client('ssm', region_name=REGION)
 
         log.info('Waiting for SSM')
-        wait_for_ssm(ssm, instance_id)
+        await wait_for_ssm(ssm, instance_id)
 
         log.info('Sending command')
-        output = send_ssm_command(
+        output = await send_ssm_command(
             ssm,
             instance_id,
-            [make_command(sbmdt_instance_id, patch_type, pred_s3_key)],
+            make_command(sbmdt_instance_id, patch_type, pred_s3_key),
         )
         log.info(f'Received output: {output}')
+    except Exception as e:
+        log.error(f'Error running instance {instance_id} {patch_type}: {e}')
     finally:
         if instance_id is not None:
             log.info('Terminating instance')
-            terminate_instance(ec2, instance_id)
+            await terminate_instance(ec2, instance_id)
 
     log.info('Done')
 
@@ -393,9 +483,7 @@ async def run_instance_async(
         log.info(
             f'Running {sbmdt_instance_id} {patch_type} with pred {pred_s3_key}'
         )
-        return await asyncio.to_thread(
-            run_instance, sbmdt_instance_id, patch_type, pred_s3_key
-        )
+        return await run_instance(sbmdt_instance_id, patch_type, pred_s3_key)
 
 
 def _request_shutdown(signum: int) -> None:
@@ -416,7 +504,7 @@ async def _terminate_known_instances() -> None:
     while _cleanup_state:
         ec2, instance_id = _cleanup_state.pop()
         log.warning(f'Adding EC2 instance {instance_id} to terminate queue')
-        coros.append(asyncio.to_thread(terminate_instance, ec2, instance_id))
+        coros.append(terminate_instance(ec2, instance_id))
     await asyncio.gather(*coros, return_exceptions=True)
 
 

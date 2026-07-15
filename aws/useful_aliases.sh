@@ -121,3 +121,7 @@ tail-logs() {
 whoami-aws() {
     aws sts get-caller-identity --profile "${1:-default}" --output table
 }
+
+get-sbmdt-stdout-object() {
+    aws s3 cp "s3://sbmdt-stdout/${1}" -
+}
