@@ -13,9 +13,12 @@
 #                                               under (PatchType value, e.g.
 #                                               "with_image").
 #   --pred-bucket      s3_pred_bucket_name   - S3 bucket containing the
-#                                               input .pred file.
+#                                               input .pred file. Ignored
+#                                               when patch_type is
+#                                               "before_patch".
 #   --pred-key         s3_pred_key           - S3 key of the input .pred
-#                                               file.
+#                                               file. Ignored when
+#                                               patch_type is "before_patch".
 #   --results-bucket   s3_test_results_bucket_name - S3 bucket to upload
 #                                               the test results to.
 #   --stdout-bucket    s3_stdout_bucket_name - S3 bucket to upload this
@@ -73,7 +76,11 @@ done
 # Fail loudly if the caller forgot a required flag, rather than silently
 # proceeding with an empty value (e.g. an empty --pred-bucket would turn
 # into `s3:///<key>`).
-for name in INSTANCE_ID PATCH_TYPE PRED_BUCKET PRED_KEY RESULTS_BUCKET STDOUT_BUCKET STDOUT_KEY; do
+required_args=(INSTANCE_ID PATCH_TYPE RESULTS_BUCKET STDOUT_BUCKET STDOUT_KEY)
+if [[ "${PATCH_TYPE}" != "before_patch" ]]; then
+    required_args+=(PRED_BUCKET PRED_KEY)
+fi
+for name in "${required_args[@]}"; do
     if [[ -z "${!name}" ]]; then
         echo "run_ec2.sh: missing required argument for ${name}" >&2
         exit 1
@@ -83,8 +90,13 @@ done
 # Local path that run_instance.py writes its own log output to.
 LOG_FILENAME='run.log'
 
-PRED_URI="s3://${PRED_BUCKET}/${PRED_KEY}"
 STDOUT_URI="s3://${STDOUT_BUCKET}/${STDOUT_KEY}"
+
+pred_file_args=()
+if [[ "${PATCH_TYPE}" != "before_patch" ]]; then
+    PRED_URI="s3://${PRED_BUCKET}/${PRED_KEY}"
+    pred_file_args=(--pred-file "${PRED_URI}")
+fi
 
 # Copy the log file to S3 when this script exits.
 upload_log() {
@@ -99,13 +111,17 @@ upload_log() {
 }
 trap upload_log EXIT
 
-echo "Running instance ${INSTANCE_ID} ${PATCH_TYPE}, pred from ${PRED_URI} into results bucket ${RESULTS_BUCKET}, log into ${STDOUT_URI}"
+if [[ "${PATCH_TYPE}" != "before_patch" ]]; then
+    echo "Running instance ${INSTANCE_ID} ${PATCH_TYPE}, pred from ${PRED_URI} into results bucket ${RESULTS_BUCKET}, log into ${STDOUT_URI}"
+else
+    echo "Running instance ${INSTANCE_ID} ${PATCH_TYPE} into results bucket ${RESULTS_BUCKET}, log into ${STDOUT_URI}"
+fi
 
 uv run \
     ./scripts/run_instance.py \
     "${INSTANCE_ID}" \
     "${PATCH_TYPE}" \
-    --pred-file "${PRED_URI}" \
+    "${pred_file_args[@]}" \
     --parquet \
     --s3 \
     --bucket "${RESULTS_BUCKET}" \
