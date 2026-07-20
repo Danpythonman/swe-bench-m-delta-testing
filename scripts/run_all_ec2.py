@@ -259,12 +259,18 @@ async def _terminate_known_instances() -> None:
     await asyncio.gather(*coros, return_exceptions=True)
 
 
-async def main() -> None:
-    """Evaluate every prediction currently in ``PREDS_S3_BUCKET_NAME``.
+async def main(pred_keys: list[str] | None = None) -> None:
+    """Evaluate predictions in ``PREDS_S3_BUCKET_NAME``.
 
-    Launches one EC2 instance per prediction file found in the bucket (up
-    to ``N_CONCURRENT`` at a time), shuffled so that a single unlucky batch
-    of slow/large instances isn't processed all at once.
+    Launches one EC2 instance per prediction file (up to ``N_CONCURRENT``
+    at a time), shuffled so that a single unlucky batch of slow/large
+    instances isn't processed all at once.
+
+    Args:
+        pred_keys: If given, only evaluate these S3 keys within
+            ``PREDS_S3_BUCKET_NAME`` instead of every key in the bucket.
+            Every key must exist in the bucket; if any don't, the run
+            aborts before launching any instances.
 
     Registers the SIGINT/SIGTERM handler on this coroutine's running loop
     (``asyncio.run`` creates a fresh loop per call, so this can't be done
@@ -276,7 +282,18 @@ async def main() -> None:
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, _request_shutdown, sig)
 
-    pred_s3_keys = get_all_keys_in_s3_bucket(PREDS_S3_BUCKET_NAME)
+    all_pred_s3_keys = get_all_keys_in_s3_bucket(PREDS_S3_BUCKET_NAME)
+    if pred_keys is None:
+        pred_s3_keys = all_pred_s3_keys
+    else:
+        missing_keys = sorted(set(pred_keys) - set(all_pred_s3_keys))
+        if missing_keys:
+            raise ValueError(
+                f'Requested pred key(s) not found in bucket '
+                f'{PREDS_S3_BUCKET_NAME!r}: {missing_keys}'
+            )
+        pred_s3_keys = pred_keys
+
     tasks: list[Coroutine[Any, Any, None]] = []
     sem = asyncio.Semaphore(N_CONCURRENT)
     for key in pred_s3_keys:
@@ -326,8 +343,10 @@ def parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         description=(
-            'Evaluate every prediction in PREDS_S3_BUCKET_NAME on a batch '
-            'of short-lived EC2 instances.'
+            'Evaluate predictions in PREDS_S3_BUCKET_NAME on a batch of '
+            'short-lived EC2 instances. By default, evaluates every '
+            'prediction in the bucket; use --pred-keys to evaluate a '
+            'specific subset instead.'
         )
     )
     parser.add_argument(
@@ -335,6 +354,18 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=N_CONCURRENT,
         help='Maximum number of EC2 instances running at the same time.',
+    )
+    parser.add_argument(
+        '--pred-keys',
+        nargs='+',
+        default=None,
+        metavar='KEY',
+        help=(
+            'Specific prediction file S3 key(s) to evaluate, instead of '
+            'every key in PREDS_S3_BUCKET_NAME. All requested keys must '
+            'already exist in the bucket, or the run aborts before '
+            'launching any instances.'
+        ),
     )
     parser.add_argument(
         '--image-id',
@@ -403,4 +434,4 @@ if __name__ == '__main__':
 
     setup_logging(level=logging.INFO)
     setup_logging_for_asyncio(log)
-    asyncio.run(main())
+    asyncio.run(main(pred_keys=args.pred_keys))
