@@ -21,6 +21,10 @@ dependencies = [
 [dependency-groups]
 dev = [
     "boto3-stubs[ec2,s3,ssm]>=1.43.36",
+    "ipykernel>=7.3.0",
+    "matplotlib>=3.11.0",
+    "nbstripout>=0.9.1",
+    "pandas>=3.0.3",
     "pre-commit",
     "pyarrow-stubs>=20.0.0.20260625",
     "pyright>=1.1.410",
