@@ -11,6 +11,11 @@ from pathlib import Path
 from typing import Literal
 
 from sbmdt import evaluate
+from sbmdt.aws.s3 import (
+    TEST_RESULTS_S3_BUCKET_NAME,
+    load_pred_from_s3,
+    s3_object_exists,
+)
 from sbmdt.env import PROJECT_BASE
 from sbmdt.evaluator.base import PatchType, TestResultsFilename
 from sbmdt.log import setup_logging
@@ -20,11 +25,6 @@ from sbmdt.parquet import (
     test_results_to_parquet_table,
 )
 from sbmdt.pred import Pred
-from sbmdt.s3 import (
-    TEST_RESULTS_S3_BUCKET_NAME,
-    load_pred_from_s3,
-    s3_object_exists,
-)
 from sbmdt.timing import log_duration
 
 log = logging.getLogger(__name__)

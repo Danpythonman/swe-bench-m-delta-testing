@@ -20,17 +20,21 @@ from typing import Any
 import boto3
 from mypy_boto3_ec2 import EC2Client
 
-from sbmdt.ec2 import create_instance, terminate_instance, wait_for_instance
-from sbmdt.evaluator.base import PatchType
-from sbmdt.log import setup_logging, setup_logging_for_asyncio
-from sbmdt.s3 import (
+from sbmdt.aws.ec2 import (
+    create_instance,
+    terminate_instance,
+    wait_for_instance,
+)
+from sbmdt.aws.s3 import (
     PREDS_S3_BUCKET_NAME,
     STDOUT_S3_BUCKET_NAME,
     TEST_RESULTS_S3_BUCKET_NAME,
     S3PredFilename,
     get_all_keys_in_s3_bucket,
 )
-from sbmdt.ssm import send_ssm_command, wait_for_ssm
+from sbmdt.aws.ssm import send_ssm_command, wait_for_ssm
+from sbmdt.evaluator.base import PatchType
+from sbmdt.log import setup_logging, setup_logging_for_asyncio
 
 N_CONCURRENT = 5
 """Maximum number of EC2 instances allowed to be running (i.e. mid-evaluation)

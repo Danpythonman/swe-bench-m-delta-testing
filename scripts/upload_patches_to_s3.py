@@ -6,11 +6,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from sbmdt.aws.s3 import PREDS_S3_BUCKET_NAME, S3PredFilename, file_to_s3
 from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.evaluator.base import PatchType
 from sbmdt.log import setup_logging
 from sbmdt.pred import Pred
-from sbmdt.s3 import PREDS_S3_BUCKET_NAME, S3PredFilename, file_to_s3
 
 log = logging.getLogger(__name__)
 

@@ -8,6 +8,7 @@ from typing import Any, cast
 
 from dotenv import load_dotenv
 
+from sbmdt.aws.s3 import TEST_RESULTS_S3_BUCKET_NAME
 from sbmdt.env import PROJECT_BASE
 from sbmdt.evaluator.base import TestResult
 from sbmdt.log import setup_logging
@@ -16,7 +17,6 @@ from sbmdt.parquet import (
     parquet_table_to_s3,
     test_results_to_parquet_table,
 )
-from sbmdt.s3 import TEST_RESULTS_S3_BUCKET_NAME
 
 log = logging.getLogger(__name__)
 
