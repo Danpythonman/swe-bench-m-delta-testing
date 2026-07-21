@@ -70,6 +70,10 @@ AWS_PROFILE = 'admin-user'
 """Local AWS CLI profile used to create the boto3 session in
 ``run_instance``, rather than the default credential chain.
 """
+GIT_BRANCH: str | None = None
+"""If set, checked out on the instance (via ``make_git_checkout_command``)
+before the evaluation command is run.
+"""
 # The values above are all overridable via CLI flags -- see `parse_args()`
 # -- and are read as module globals by the functions below, so
 # `if __name__ == '__main__'` rebinds these names directly after parsing.
@@ -144,6 +148,29 @@ def make_command(
     return command
 
 
+def make_git_checkout_command(branch: str) -> str:
+    """Build the shell command to fetch and check out ``branch`` in
+    ``/opt/sbmdt`` on the EC2 instance, ahead of running the evaluation
+    command built by ``make_command``.
+
+    Args:
+        branch: Name of the git branch to fetch and check out.
+
+    Returns:
+        The full shell command string to execute on the instance.
+    """
+    ref = f'refs/remotes/origin/{branch}'
+    fetch = ['git', 'fetch', '--depth', '1', 'origin', f'{branch}:{ref}']
+    checkout = ['git', 'checkout', '-b', branch, f'origin/{branch}']
+    command = (
+        'cd /opt/sbmdt && '
+        + shlex.join(fetch)
+        + ' && '
+        + shlex.join(checkout)
+    )
+    return command
+
+
 async def run_instance(
     sbmdt_instance_id: str, patch_type: PatchType, pred_s3_key: str
 ) -> None:
@@ -171,7 +198,7 @@ async def run_instance(
             ec2,
             instance_name,
             image_id=IMAGE_ID,
-            instance_type='t3a.large',
+            instance_type=INSTANCE_TYPE,
             subnet_id=SUBNET_ID,
             security_group_ids=[SECURITY_GROUP_ID],
             instance_profile_arn=INSTANCE_PROFILE_ARN,
@@ -188,6 +215,12 @@ async def run_instance(
 
         log.info('Waiting for SSM')
         await wait_for_ssm(ssm, instance_id)
+
+        if GIT_BRANCH is not None:
+            log.info(f'Checking out branch {GIT_BRANCH}')
+            await send_ssm_command(
+                ssm, instance_id, make_git_checkout_command(GIT_BRANCH)
+            )
 
         log.info('Sending command')
         output = await send_ssm_command(
@@ -416,6 +449,15 @@ def parse_args() -> argparse.Namespace:
             '(rather than the default credential chain).'
         ),
     )
+    parser.add_argument(
+        '--git-branch',
+        default=GIT_BRANCH,
+        help=(
+            'If given, fetch and check out this git branch in /opt/sbmdt '
+            'on each instance (via SSM) before running the evaluation '
+            'command.'
+        ),
+    )
     return parser.parse_args()
 
 
@@ -431,6 +473,7 @@ if __name__ == '__main__':
     BLOCK_DEVICE_NAME = args.block_device_name
     BLOCK_VOLUME_SIZE_GB = args.block_volume_size_gb
     AWS_PROFILE = args.aws_profile
+    GIT_BRANCH = args.git_branch
 
     setup_logging(level=logging.INFO)
     setup_logging_for_asyncio(log)
