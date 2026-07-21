@@ -18,5 +18,9 @@ logs/
 # Results (don't commit to Git; save to S3 or some other data store instead)
 results/
 
+# Synced local copies of S3 buckets
+s3-sync/
+
 # Secrets
 .env
+*.pem

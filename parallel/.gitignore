@@ -1,2 +1,3 @@
 # Output files containing stdout and stderr
 outdir/
+outdir-old/

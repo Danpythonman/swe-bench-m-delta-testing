@@ -19,11 +19,13 @@ Jest's ``--json`` flag produces output with this shape::
         ]
     }
 
-Note: individual test cases are under ``assertionResults``, not ``testResults``.
+Note: individual test cases are under ``assertionResults``, not
+``testResults``.
 """
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import logging
 from typing import Any
@@ -42,6 +44,7 @@ def results_json_to_test_results(
     patch_type: PatchType,
     agent_name: str,
     json_string: str,
+    timestamp: dt.datetime,
 ) -> list[TestResult]:
     data: Any = json.loads(json_string)
     suite_results: list[Any] = data.get('testResults', [])
@@ -60,6 +63,7 @@ def results_json_to_test_results(
                     instance_id=instance_id,
                     patch_type=patch_type,
                     agent_name=agent_name,
+                    timestamp=timestamp,
                     test_name=full_name,
                     passed=(status == 'passed'),
                 )

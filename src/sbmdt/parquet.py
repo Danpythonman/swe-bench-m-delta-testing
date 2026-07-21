@@ -8,8 +8,8 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from sbmdt.aws.s3 import buffer_to_s3
 from sbmdt.evaluator.base import TestResult
-from sbmdt.s3 import buffer_to_s3
 
 __all__ = [
     'test_results_to_parquet_table',

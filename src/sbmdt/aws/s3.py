@@ -24,12 +24,15 @@ __all__ = [
     'get_all_keys_in_s3_bucket',
     'S3PredFilename',
     'PREDS_S3_BUCKET_NAME',
+    'STDOUT_S3_BUCKET_NAME',
     'TEST_RESULTS_S3_BUCKET_NAME',
 ]
 
 PREDS_S3_BUCKET_NAME: Final[str] = 'sbmdt-preds'
 
 TEST_RESULTS_S3_BUCKET_NAME: Final[str] = 'sbmdt-test-results'
+
+STDOUT_S3_BUCKET_NAME: Final[str] = 'sbmdt-stdout'
 
 _TIMESTAMP_FMT: Final[str] = '%Y-%m-%d_%H-%M-%SZ'
 _TIMESTAMP_RE: Final[str] = r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}Z'
@@ -87,7 +90,7 @@ class S3PredFilename:
         """
         return s.replace('%5F', '_').replace('%25', '%')
 
-    def encode(self) -> str:
+    def encode(self, extension: str = '.pred') -> str:
         """Encode this instance as a prediction filename.
 
         Returns:
@@ -100,7 +103,7 @@ class S3PredFilename:
             f'{S3PredFilename._escape(self.instance_id)}_'
             f'{S3PredFilename._escape(self.patch_type)}_'
             f'{S3PredFilename._escape(self.agent_name)}_'
-            f'{ts}.pred'
+            f'{ts}{extension}'
         )
 
     @staticmethod

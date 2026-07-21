@@ -1,3 +1,7 @@
+"""CLI entrypoint for running delta testing evaluation on a single benchmark
+instance and writing the results to a local file or S3.
+"""
+
 import argparse
 import datetime as dt
 import json
@@ -7,6 +11,11 @@ from pathlib import Path
 from typing import Literal
 
 from sbmdt import evaluate
+from sbmdt.aws.s3 import (
+    TEST_RESULTS_S3_BUCKET_NAME,
+    load_pred_from_s3,
+    s3_object_exists,
+)
 from sbmdt.env import PROJECT_BASE
 from sbmdt.evaluator.base import PatchType, TestResultsFilename
 from sbmdt.log import setup_logging
@@ -16,11 +25,7 @@ from sbmdt.parquet import (
     test_results_to_parquet_table,
 )
 from sbmdt.pred import Pred
-from sbmdt.s3 import (
-    TEST_RESULTS_S3_BUCKET_NAME,
-    load_pred_from_s3,
-    s3_object_exists,
-)
+from sbmdt.timing import log_duration
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +43,9 @@ class Args:
 
 
 def parse_args() -> Args:
+    """Parse and validate CLI arguments, loading the referenced pred file
+    (if any) into an `Args` instance.
+    """
     parser = argparse.ArgumentParser(
         description='Run delta testing evaluation for a benchmark instance.'
     )
@@ -153,7 +161,12 @@ def parse_args() -> Args:
     )
 
 
+@log_duration(logger=log)
 def run_instance(args: Args):
+    """Run the evaluation described by `args` and write the results to the
+    configured destination, skipping if results already exist and
+    `overwrite` is not set.
+    """
     results_dir = PROJECT_BASE / 'results'
     results_dir.mkdir(exist_ok=True)
 
@@ -190,6 +203,8 @@ def run_instance(args: Args):
             )
             return
 
+    log.info('Starting evaluation')
+
     results = evaluate(
         instance_id=args.instance_id,
         timestamp=timestamp,
@@ -197,7 +212,10 @@ def run_instance(args: Args):
         pred=args.pred,
     )
 
+    log.info('Evaluation complete, saving results')
+
     if args.output_format == 'json':
+        log.info('Dumping results as local JSON file')
         with open(results_path, 'w') as f:
             json.dump(
                 [r.to_dict(json_safe=True) for r in results], f, indent=4
@@ -205,12 +223,14 @@ def run_instance(args: Args):
     else:
         parquet_table = test_results_to_parquet_table(results)
         if args.destination == 'file':
+            log.info('Dumping results as local parquet file')
             parquet_table_to_file(
                 parquet_table,
                 results_path,
                 args.overwrite,
             )
         else:
+            log.info('Dumping results as S3 parquet file')
             parquet_table_to_s3(
                 parquet_table,
                 args.bucket,
@@ -218,8 +238,11 @@ def run_instance(args: Args):
                 args.overwrite,
             )
 
+    log.info('Saving results complete')
+
 
 def main() -> None:
+    """Parse arguments, set up logging, and run the instance evaluation."""
     args = parse_args()
 
     log_path = Path(args.log_file)

@@ -27,9 +27,7 @@ __all__ = [
 log = logging.getLogger(__name__)
 
 PACKAGE_JSON_FILE: Final[str] = '/testbed/package.json'
-RUN_MOCHA_SCRIPT: Final[str] = (
-    '/testbed/lighthouse-core/scripts/run-mocha.sh'
-)
+RUN_MOCHA_SCRIPT: Final[str] = '/testbed/lighthouse-core/scripts/run-mocha.sh'
 RESULTS_DIR: Final[str] = '/testbed/test-results'
 # Each suite is run independently (rather than via run-mocha.sh's default
 # ``&&``-chained invocation) so that one suite's test failures don't prevent
@@ -90,8 +88,7 @@ class LighthouseEvaluator(Evaluator):
 
         # 1. Install package
         exit_code, output = self.container.exec_run(
-            'npm install mocha-junit-reporter@1 --save-dev'
-            ' --legacy-peer-deps',
+            'npm install mocha-junit-reporter@1 --save-dev --legacy-peer-deps',
             workdir='/testbed',
             stream=False,
         )
@@ -172,7 +169,7 @@ class LighthouseEvaluator(Evaluator):
         apply_change_literal(
             container=self.container,
             file=RUN_MOCHA_SCRIPT,
-            find="--timeout 60000;",
+            find='--timeout 60000;',
             replace=(
                 '--timeout 60000 --reporter mocha-junit-reporter'
                 f' --reporter-options mochaFile={RESULTS_DIR}/$1.xml;'
@@ -241,6 +238,7 @@ class LighthouseEvaluator(Evaluator):
                     self.patch_type,
                     self.agent_name,
                     xml,
+                    self.timestamp,
                 )
             )
 

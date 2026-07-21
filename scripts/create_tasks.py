@@ -4,14 +4,14 @@ import random
 from pathlib import Path
 from typing import Final
 
-from sbmdt.env import PROJECT_BASE
-from sbmdt.evaluator.base import PatchType
-from sbmdt.s3 import (
+from sbmdt.aws.s3 import (
     PREDS_S3_BUCKET_NAME,
     TEST_RESULTS_S3_BUCKET_NAME,
     S3PredFilename,
     get_all_keys_in_s3_bucket,
 )
+from sbmdt.env import PROJECT_BASE
+from sbmdt.evaluator.base import PatchType
 
 PYTHON_COMMAND: Final[str] = 'uv run'
 SCRIPT_PATH: Final[Path] = PROJECT_BASE / 'scripts' / 'run_instance.py'

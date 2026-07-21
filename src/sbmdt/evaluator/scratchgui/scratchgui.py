@@ -182,7 +182,7 @@ class ScratchGuiEvaluator(Evaluator):
             raise Exception(
                 f'{self.instance_id}: jest did not produce '
                 f'{JEST_OUTPUT_FILE} (exit code {exit_code}). This usually '
-                "means the jest command itself failed to run (rather than "
+                'means the jest command itself failed to run (rather than '
                 'running and reporting test failures). Captured output:\n'
                 f'{decoded_output}'
             )
@@ -194,6 +194,7 @@ class ScratchGuiEvaluator(Evaluator):
             self.patch_type,
             self.agent_name,
             results_json,
+            self.timestamp,
         )
 
     @override

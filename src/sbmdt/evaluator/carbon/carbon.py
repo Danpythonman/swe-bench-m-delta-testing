@@ -108,6 +108,7 @@ class CarbonEvaluator(Evaluator):
             self.patch_type,
             self.agent_name,
             results,
+            self.timestamp,
         )
 
     @override

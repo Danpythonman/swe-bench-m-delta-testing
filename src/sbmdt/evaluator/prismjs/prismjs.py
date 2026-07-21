@@ -60,8 +60,7 @@ class PrismjsEvaluator(Evaluator):
             raise Exception('no container')
 
         exit_code, output = self.container.exec_run(
-            'npm install mocha-junit-reporter@1 --save-dev'
-            ' --legacy-peer-deps',
+            'npm install mocha-junit-reporter@1 --save-dev --legacy-peer-deps',
             workdir='/testbed',
             stream=False,
         )
@@ -136,6 +135,7 @@ class PrismjsEvaluator(Evaluator):
                     self.patch_type,
                     self.agent_name,
                     xml,
+                    self.timestamp,
                 )
             )
 

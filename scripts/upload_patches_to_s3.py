@@ -6,16 +6,18 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from sbmdt.aws.s3 import PREDS_S3_BUCKET_NAME, S3PredFilename, file_to_s3
 from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.evaluator.base import PatchType
 from sbmdt.log import setup_logging
 from sbmdt.pred import Pred
-from sbmdt.s3 import PREDS_S3_BUCKET_NAME, S3PredFilename, file_to_s3
 
 log = logging.getLogger(__name__)
 
 
-def upload_single_pred_to_s3(pred_filepath: Path, patch_type: PatchType):
+def upload_single_pred_to_s3(
+    pred_filepath: Path, patch_type: PatchType, ignore_patch: bool = False
+):
     """Upload a single .pred file to S3 with a standardized filename.
 
     The new filename is built from the instance id (the source filename),
@@ -35,6 +37,10 @@ def upload_single_pred_to_s3(pred_filepath: Path, patch_type: PatchType):
 
     pred = Pred.from_file(pred_filepath)
     instance_id = pred.instance_id
+
+    if ignore_patch:
+        pred.model_name_or_path = 'NONE'
+        pred.model_patch = ''
 
     s3_pred_filename = S3PredFilename(
         instance_id=instance_id,
@@ -59,7 +65,10 @@ def upload_single_pred_to_s3(pred_filepath: Path, patch_type: PatchType):
 
 
 def upload_preds_to_s3(
-    preds_dir: Path, patch_type: PatchType, recursive: bool = True
+    preds_dir: Path,
+    patch_type: PatchType,
+    recursive: bool = True,
+    ignore_patch: bool = False,
 ):
     """Upload .pred files found under a directory to S3.
 
@@ -72,7 +81,9 @@ def upload_preds_to_s3(
     """
     glob_fn = preds_dir.rglob if recursive else preds_dir.glob
     for pred_filepath in glob_fn('*.pred'):
-        upload_single_pred_to_s3(pred_filepath, patch_type)
+        upload_single_pred_to_s3(
+            pred_filepath, patch_type, ignore_patch=ignore_patch
+        )
 
 
 def main():
@@ -94,6 +105,7 @@ def main():
 
     gold_patches_dir = DOCKERFILES_BASE
     upload_preds_to_s3(gold_patches_dir, PatchType.GOLD)
+    upload_preds_to_s3(gold_patches_dir, PatchType.BEFORE_PATCH)
 
 
 if __name__ == '__main__':
