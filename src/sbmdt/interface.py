@@ -3,23 +3,80 @@ from __future__ import annotations
 import datetime as dt
 import logging
 
-from sbmdt.evaluator.alibaba import AlibabaEvaluator
-from sbmdt.evaluator.base import PatchType, TestResult
-from sbmdt.evaluator.bpmn import BpmnEvaluator
-from sbmdt.evaluator.carbon import CarbonEvaluator
-from sbmdt.evaluator.eslint import ESLintEvaluator
-from sbmdt.evaluator.grommet import GrommetEvaluator
-from sbmdt.evaluator.lighthouse import LighthouseEvaluator
-from sbmdt.evaluator.openlayers import OpenlayersEvaluator
-from sbmdt.evaluator.prettier import PrettierEvaluator
-from sbmdt.evaluator.prismjs import PrismjsEvaluator
-from sbmdt.evaluator.quarto import QuartoEvaluator
-from sbmdt.evaluator.scratchgui import ScratchGuiEvaluator
+from sbmdt.evaluator.base import Evaluator, PatchType, TestResult
 from sbmdt.pred import Pred
 
 __all__ = ['evaluate']
 
 log = logging.getLogger(__name__)
+
+
+def _load_evaluator_cls(instance_id: str) -> type[Evaluator]:
+    """Return the evaluator class for ``instance_id`` via lazy import.
+
+    Each evaluator module is imported only when its prefix matches, so
+    unrelated evaluator modules are never loaded. No prefix here is
+    itself a prefix of another, so branch order does not affect which
+    evaluator is selected.
+
+    Args:
+        instance_id: Identifier whose prefix selects the evaluator.
+
+    Returns:
+        The evaluator class matching ``instance_id``'s prefix.
+
+    Raises:
+        Exception: If ``instance_id`` does not match any known evaluator.
+    """
+    if instance_id.startswith('alibaba'):
+        from sbmdt.evaluator.alibaba import AlibabaEvaluator
+
+        return AlibabaEvaluator
+    if instance_id.startswith('grommet'):
+        from sbmdt.evaluator.grommet import GrommetEvaluator
+
+        return GrommetEvaluator
+    if instance_id.startswith('GoogleChrome'):
+        from sbmdt.evaluator.lighthouse import LighthouseEvaluator
+
+        return LighthouseEvaluator
+    if instance_id.startswith('prettier'):
+        from sbmdt.evaluator.prettier import PrettierEvaluator
+
+        return PrettierEvaluator
+    if instance_id.startswith('PrismJS'):
+        from sbmdt.evaluator.prismjs import PrismjsEvaluator
+
+        return PrismjsEvaluator
+    if instance_id.startswith('carbon'):
+        from sbmdt.evaluator.carbon import CarbonEvaluator
+
+        return CarbonEvaluator
+    if instance_id.startswith('quarto-dev'):
+        from sbmdt.evaluator.quarto import QuartoEvaluator
+
+        return QuartoEvaluator
+    if instance_id.startswith('openlayers'):
+        from sbmdt.evaluator.openlayers import OpenlayersEvaluator
+
+        return OpenlayersEvaluator
+    if instance_id.startswith('scratchfoundation'):
+        from sbmdt.evaluator.scratchgui import ScratchGuiEvaluator
+
+        return ScratchGuiEvaluator
+    if instance_id.startswith('bpmn-io'):
+        from sbmdt.evaluator.bpmn import BpmnEvaluator
+
+        return BpmnEvaluator
+    if instance_id.startswith('eslint'):
+        from sbmdt.evaluator.eslint import ESLintEvaluator
+
+        return ESLintEvaluator
+    if instance_id.startswith('highlightjs'):
+        from sbmdt.evaluator.highlightjs import HighlightjsEvaluator
+
+        return HighlightjsEvaluator
+    raise Exception(f'unknown instance ID {instance_id}')
 
 
 def evaluate(
@@ -55,128 +112,18 @@ def evaluate(
         f'Evaluating instance {instance_id} {patch_type} from '
         f'{Pred.get_agent_name(pred)} at {timestamp.isoformat()}'
     )
-    if instance_id.startswith('alibaba'):
-        evaluator = AlibabaEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('grommet'):
-        evaluator = GrommetEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('GoogleChrome'):
-        evaluator = LighthouseEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('prettier'):
-        evaluator = PrettierEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('PrismJS'):
-        evaluator = PrismjsEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('carbon'):
-        evaluator = CarbonEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('quarto-dev'):
-        evaluator = QuartoEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('openlayers'):
-        evaluator = OpenlayersEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('scratchfoundation'):
-        evaluator = ScratchGuiEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
 
-    elif instance_id.startswith('bpmn-io'):
-        evaluator = BpmnEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('eslint'):
-        evaluator = ESLintEvaluator(
-            instance_id=instance_id,
-            timestamp=timestamp,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('grommet'):
-        from sbmdt.evaluator.grommet import GrommetEvaluator
-        evaluator = GrommetEvaluator(
-            instance_id=instance_id,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('GoogleChrome'):
-        from sbmdt.evaluator.lighthouse import LighthouseEvaluator
-        evaluator = LighthouseEvaluator(
-            instance_id=instance_id,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('prettier'):
-        from sbmdt.evaluator.prettier import PrettierEvaluator
-        evaluator = PrettierEvaluator(
-            instance_id=instance_id,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    elif instance_id.startswith('highlightjs'):
-        from sbmdt.evaluator.highlightjs import HighlightjsEvaluator
-        evaluator = HighlightjsEvaluator(
-            instance_id=instance_id,
-            patch_type=patch_type,
-            agent_name=Pred.get_agent_name(pred),
-            pred=pred,
-        )
-    else:
-        raise Exception(f'unknown instance ID {instance_id}')
+    log.info(f'Loading evaluator module for instance {instance_id}')
+    evaluator_cls = _load_evaluator_cls(instance_id)
+    log.info(f'Loaded evaluator {evaluator_cls.__name__}')
 
+    evaluator = evaluator_cls(
+        instance_id=instance_id,
+        timestamp=timestamp,
+        patch_type=patch_type,
+        agent_name=Pred.get_agent_name(pred),
+        pred=pred,
+    )
+
+    log.info(f'Running evaluation with {evaluator_cls.__name__}')
     return evaluator.run()
