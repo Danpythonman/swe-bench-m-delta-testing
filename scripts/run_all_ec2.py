@@ -163,10 +163,7 @@ def make_git_checkout_command(branch: str) -> str:
     fetch = ['git', 'fetch', '--depth', '1', 'origin', f'{branch}:{ref}']
     checkout = ['git', 'checkout', '-b', branch, f'origin/{branch}']
     command = (
-        'cd /opt/sbmdt && '
-        + shlex.join(fetch)
-        + ' && '
-        + shlex.join(checkout)
+        'cd /opt/sbmdt && ' + shlex.join(fetch) + ' && ' + shlex.join(checkout)
     )
     return command
 
