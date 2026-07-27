@@ -15,6 +15,9 @@ wheels/
 # Logs
 logs/
 
+# MacOS stuff
+.DS_Store
+
 # Results (don't commit to Git; save to S3 or some other data store instead)
 results/
 

@@ -1,0 +1,3670 @@
+[
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .IDENT_RE should match non-underscore starting words",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .IDENT_RE should not match underscore starting words",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .UNDERSCORE_IDENT_RE should match any word starting without numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .UNDERSCORE_IDENT_RE should not match any word starting with numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .NUMBER_RE should match regular numbers and decimals",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .NUMBER_RE should not match hex or binary numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .C_NUMBER_RE should match regular numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .C_NUMBER_RE should match decimals",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .C_NUMBER_RE should match hex numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .C_NUMBER_RE should not match hex numbers greater than \"f\"",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .C_NUMBER_RE should not match binary numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .BINARY_NUMBER_RE should match binary numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .BINARY_NUMBER_RE should not match binary numbers greater than 2",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .RE_STARTERS_RE should match boolean operators",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .RE_STARTERS_RE should match arithmetic operators",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .RE_STARTERS_RE should match binary operators",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .RE_STARTERS_RE should match miscellaneous operators",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .getLanguage() should get an existing language",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .getLanguage() should get an existing language by alias",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .getLanguage() should be case insensitive",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .getLanguage() should return undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .getLanguage() should not break on undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .getLanguage() should get the csharp language by c# alias",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .getLanguage() should not succeed for constructor",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .getLanguage() should not succeed for __proto__",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .autoDetection() should get an existing language",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .autoDetection() should get an existing language by alias",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .autoDetection() should be case insensitive",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .autoDetection() should return undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .autoDetection() should not break on undefined",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .highlight() should works without continuation",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .fixmarkup() should not strip HTML from beginning of strings",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .fixmarkup() should not add \"undefined\" to the beginning of the result (#1452)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs computing the relevance score of a language should ignore common keywords",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs computing the relevance score of a language should not ignore weighted common keywords",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs computing the relevance score of a language should not ignore weighted common keywords (if 1 is forced)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .registerAliases() should get an existing language by alias",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs .registerAliases() should get an existing language by aliases",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs parser specifics a grammar with look-ahead end matchers should match successfully",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs bugs resume scan when a match is ignored should continue to highlight later matches",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs bugs resume scan when a match is ignored BUT should not skip ahead too far",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs bugs modes containing 'endsWithParent' should be allowed to be reused",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs bugs a grammar with a mode that makes a 0 width match should instead count it as a 1 character match",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() adding dynamic tests...",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "highlight() markup adding dynamic tests...",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests explicit language class should highlight block with language in code tag",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests explicit language class should highlight block with language in pre tag",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests explicit language class should highlight using html 5 style (language-*)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests explicit language class should highlight with shortened prefix (lang-)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests explicit language class should highlight if classname contains uppercase symbols",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests custom markup should replace tabs",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests custom markup should keep custom markup",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests custom markup should keep custom markup and replace tabs",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests custom markup should keep the same amount of void elements (<br>, <hr>, ...)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests language alias should highlight as aliased language",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests no highlighting should keep block unchanged (nohighlight)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests no highlighting should keep block unchanged (no-highlight)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests no highlighting should skip pre tags without a child code tag",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests no highlighting should keep block unchanged (unsupported language)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests no highlighting should keep block unchanged (unsupported lang)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests no highlighting should keep block unchanged (unsupported prefixed language)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests sub-languages should highlight XML with PHP and JavaScript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests block class names should add language class name to block",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests block class names should not clutter block class (first)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests block class names should not clutter block class (last)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests block class names should not clutter block class (spaces around)",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests use br should respect <br> tags",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests use br should ignore literal new lines",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests use br should recognize xml-style <br/>",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "special cases tests ends with parent variants should end on all variants",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as 1c",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as abnf",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as accesslog",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as actionscript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as ada",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as angelscript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as apache",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as applescript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as arcade",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as cpp",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as arduino",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as armasm",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as xml",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as asciidoc",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as aspectj",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as autohotkey",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as autoit",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as avrasm",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as awk",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as axapta",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as bash",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as basic",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as bnf",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as brainfuck",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as cal",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as capnproto",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as ceylon",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as clean",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as clojure",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as clojure-repl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as cmake",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as coffeescript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as coq",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as cos",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as crmsh",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as crystal",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as csharp",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as csp",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as css",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as d",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as markdown",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as dart",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as delphi",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as diff",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as django",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as dns",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as dockerfile",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as dos",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as dsconfig",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as dts",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as dust",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as ebnf",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as elixir",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as elm",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as ruby",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as erb",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as erlang-repl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as erlang",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as excel",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as fix",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as flix",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as fortran",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as fsharp",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as gams",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as gauss",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as gcode",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as gherkin",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as glsl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as gml",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as go",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as golo",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as gradle",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as groovy",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as haml",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as handlebars",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as haskell",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as haxe",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as hsp",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as http",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as hy",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as inform7",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as ini",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as irpf90",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as isbl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as java",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as javascript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as jboss-cli",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as json",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as julia",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as julia-repl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as kotlin",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as lasso",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as latex",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as ldif",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as leaf",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as less",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as lisp",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as livecodeserver",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as livescript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as llvm",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as lsl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as lua",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as makefile",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as mathematica",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as matlab",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as maxima",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as mel",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as mercury",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as mipsasm",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as mizar",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as perl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as mojolicious",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as monkey",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as moonscript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as n1ql",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as nginx",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as nim",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as nix",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as nsis",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as objectivec",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as ocaml",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as openscad",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as oxygene",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as parser3",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as pf",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as pgsql",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as php",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as php-template",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as pony",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as powershell",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as processing",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as profile",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as prolog",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as properties",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as protobuf",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as puppet",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as purebasic",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as python",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as python-repl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as q",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as qml",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as r",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as reasonml",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as rib",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as roboconf",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as routeros",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as rsl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as ruleslanguage",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as rust",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as sas",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as scala",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as scheme",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as scilab",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as scss",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as shell",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as smali",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as smalltalk",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as sml",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as sqf",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as sql",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as stan",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as stata",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as step21",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as stylus",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as subunit",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as swift",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as taggerscript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as yaml",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as tap",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as tcl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as thrift",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as tp",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as twig",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as typescript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as vala",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as vbnet",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as vbscript",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as vbscript-html",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as verilog",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as vhdl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as vim",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as x86asm",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as xl",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as xquery",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "hljs.highlightAuto() should be detected as zephir",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "abnf should markup default",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "accesslog should markup default",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "actionscript should markup method-call",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "arcade should markup profile",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "arduino should markup default",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "armasm should markup default",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "aspectj should markup intertype-constructor",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "aspectj should markup intertype-method",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "bash should markup arithmetic",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "bash should markup escaped-quote",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "bash should markup no-numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "bash should markup strings",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "bash should markup token-containing-keyword",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "bash should markup variables",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ceylon should markup nested-comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "clojure should markup globals_definition",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "clojure should markup hint_col",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "clojure should markup symbols-numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "clojure-repl should markup prompt",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "coffeescript should markup division",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "coffeescript should markup freeze_bug",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "coffeescript should markup function",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "coffeescript should markup regex",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cos should markup basic",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cos should markup embedded",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup expression-keywords",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup function-declarations",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup function-params",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup function-title",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup number-literals",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup pointers-returns",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup preprocessor",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup primitive-types",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup string-literals",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup truncated-block-comment",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "cpp should markup truncated-raw-string",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "crystal should markup defs",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "crystal should markup literals",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "crystal should markup macro",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "crystal should markup operators",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "crystal should markup regexes",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "crystal should markup toplevel-keywords",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "csharp should markup dotted-namespace",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "csharp should markup floats",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "csharp should markup functions",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "csharp should markup generic_modifiers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "csharp should markup identifiers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "csharp should markup records",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "csharp should markup string-interpolation",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "csharp should markup titles",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "css should markup pseudo-selector",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "css should markup sample",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "css should markup url",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "dart should markup comment-markdown",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "dart should markup string-interpolation",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "delphi should markup compiler-directive",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "diff should markup comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "dockerfile should markup default",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "dos should markup comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "dsconfig should markup default",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ebnf should markup quote-symbols",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ebnf should markup terminators",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ebnf should markup underscore-production",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "elixir should markup function-not-regex",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "elixir should markup function-title",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "elixir should markup numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "elixir should markup sigils",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "elixir should markup strings",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "elixir should markup uppercase-string-sigil",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "erlang should markup numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "excel should markup comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "fortran should markup comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "fortran should markup numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "fsharp should markup bang-keywords",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "gauss should markup function_defs",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "gauss should markup function_refs",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "gauss should markup keywords",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "go should markup functions",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "go should markup numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "go should markup strings",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "golo should markup default",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "groovy should markup default",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "groovy should markup oneoffs",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup block-expression-variants-as-path-segment",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup block-expression-variants-in-helper-name",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup block-expression-variants-in-param",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup block-parameters-as",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup block-with-param",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup block",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup built-ins",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup combinations-with-text",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup else-variants",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup escaped-mustaches",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup expression-variants",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup hashes",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup literals-in-different-places",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup literals",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup partial-call",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup path-expressions",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup raw-block",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup simple-expression",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup sub-expressions",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "handlebars should markup triple-mustache",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "haskell should markup infix",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "haskell should markup nested-comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "http should markup default",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ini should markup array",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ini should markup comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ini should markup keys",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ini should markup tables",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ini should markup types",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ini should markup variable",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "java should markup annotations",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "java should markup gh1031",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "java should markup numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "java should markup titles",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup arrow-function",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup class",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup default-parameters",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup inline-languages",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup jsdoc",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup jsx-fragment",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup jsx",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup keyword_as_identifier",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup keyword-as-part-of-method-name",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup keywords",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup method-call",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup modules",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup object-attr",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup regex",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup shebang",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "javascript should markup template-strings",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "json should markup comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "kotlin should markup class",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "kotlin should markup function",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "kotlin should markup nested_comment",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "kotlin should markup string",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "lasso should markup delimiters",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ldif should markup ldapmodify",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ldif should markup schema",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "less should markup selectors",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "lisp should markup mec",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "markdown should markup bold_italics",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "markdown should markup code",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "markdown should markup list",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "markdown should markup sections",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "matlab should markup block_comment",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "matlab should markup transpose",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "maxima should markup example",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "maxima should markup numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "maxima should markup symbols",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "objectivec should markup preprocessor",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "objectivec should markup string-literals",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ocaml should markup literals",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ocaml should markup types",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pgsql should markup clauses",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pgsql should markup clauses2",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pgsql should markup constraints",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pgsql should markup dollar_strings",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pgsql should markup options",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pgsql should markup plpgsql",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pgsql should markup sql-commands",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pgsql should markup window-functions",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pgsql should markup xml",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "php should markup comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "php should markup strings",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pony should markup control-flow",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pony should markup creator",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pony should markup iterface-trait",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pony should markup lambda",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pony should markup match",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pony should markup method",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pony should markup number-literals",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pony should markup objects",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pony should markup prime",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "pony should markup triple-quote",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "powershell should markup apos-herestring",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "powershell should markup classes",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "powershell should markup misc",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "powershell should markup quote-herestring",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "properties should markup syntax",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "protobuf should markup message-message",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "protobuf should markup rpc",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "python should markup escaped-quotes",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "python should markup f-strings",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "python should markup function-header-comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "python should markup function-header",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "python should markup matrix-multiplication",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "python-repl should markup sample",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "r should markup names",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "r should markup numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "r should markup roxygen",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "r should markup strings",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "reasonml should markup functions",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "reasonml should markup literals",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "reasonml should markup modules",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "reasonml should markup pattern-matching",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ruby should markup gemfile",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ruby should markup heredoc",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ruby should markup prompt",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "ruby should markup regexes",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "rust should markup comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "rust should markup numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "rust should markup strings",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "rust should markup traits",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "rust should markup types",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "rust should markup variables",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "scala should markup case-classes",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "scheme should markup lambda",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "scheme should markup quoted",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "shell should markup plain-prompt",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "shell should markup prompt-with-slash",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "sql should markup interval",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "sql should markup join",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "sql should markup keywords",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "sql should markup lateral-view",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "sql should markup numeric-types",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "sql should markup set-operator",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "sql should markup string-types",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "sql should markup tablesample",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "sql should markup values-statement",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "sql should markup window-function",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "stata should markup built_ins",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "subunit should markup subunit-errorline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "subunit should markup subunit-failureline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "subunit should markup subunit-progressline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "subunit should markup subunit-skipline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "subunit should markup subunit-successline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "subunit should markup subunit-tagline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "subunit should markup subunit-testline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "subunit should markup subunit-timeline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "subunit should markup subunit-uxsuccessline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "subunit should markup subunit-xfailline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "swift should markup functions",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "swift should markup multiline-string",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "tap should markup basic",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "tap should markup without-numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "tap should markup yaml-block",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "twig should markup filter_with_underscore",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "twig should markup template_tags",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "typescript should markup class",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "typescript should markup declares",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "typescript should markup decorator-factories",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "typescript should markup functions",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "typescript should markup identifiers_that_include_keywords",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "typescript should markup inline-languages",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "typescript should markup jsx",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "typescript should markup module-id",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "typescript should markup nested-templates",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "verilog should markup misc",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "verilog should markup numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "vim should markup strings-comments",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "x86asm should markup labels-directives",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "xml should markup document-type-variations",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "xml should markup space-attributes",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "xml should markup sublanguage_no_relevancy",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "xml should markup unquoted-attributes",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "xquery should markup computed_inbuilt",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "xquery should markup direct_method",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "xquery should markup function_body",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "xquery should markup prolog_declarations",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "yaml should markup block",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "yaml should markup inline",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "yaml should markup keys",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "yaml should markup numbers",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "yaml should markup string",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "yaml should markup tag",
+        "passed": true
+    },
+    {
+        "instance_id": "highlightjs__highlight.js-2703",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "zephir should markup default",
+        "passed": true
+    }
+]

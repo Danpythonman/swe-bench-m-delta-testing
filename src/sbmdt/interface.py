@@ -1,12 +1,3 @@
-"""
-Public entrypoint for running a benchmark evaluation.
-
-Exposes a single ``evaluate`` function that picks the right concrete
-:class:`~sbmdt.evaluator.base.Evaluator` for a given instance ID and runs
-it. Callers (CLI scripts, notebooks, etc.) should go through this module
-rather than constructing evaluators directly.
-"""
-
 from __future__ import annotations
 
 import datetime as dt
@@ -149,6 +140,38 @@ def evaluate(
         evaluator = ESLintEvaluator(
             instance_id=instance_id,
             timestamp=timestamp,
+            patch_type=patch_type,
+            agent_name=Pred.get_agent_name(pred),
+            pred=pred,
+        )
+    elif instance_id.startswith('grommet'):
+        from sbmdt.evaluator.grommet import GrommetEvaluator
+        evaluator = GrommetEvaluator(
+            instance_id=instance_id,
+            patch_type=patch_type,
+            agent_name=Pred.get_agent_name(pred),
+            pred=pred,
+        )
+    elif instance_id.startswith('GoogleChrome'):
+        from sbmdt.evaluator.lighthouse import LighthouseEvaluator
+        evaluator = LighthouseEvaluator(
+            instance_id=instance_id,
+            patch_type=patch_type,
+            agent_name=Pred.get_agent_name(pred),
+            pred=pred,
+        )
+    elif instance_id.startswith('prettier'):
+        from sbmdt.evaluator.prettier import PrettierEvaluator
+        evaluator = PrettierEvaluator(
+            instance_id=instance_id,
+            patch_type=patch_type,
+            agent_name=Pred.get_agent_name(pred),
+            pred=pred,
+        )
+    elif instance_id.startswith('highlightjs'):
+        from sbmdt.evaluator.highlightjs import HighlightjsEvaluator
+        evaluator = HighlightjsEvaluator(
+            instance_id=instance_id,
             patch_type=patch_type,
             agent_name=Pred.get_agent_name(pred),
             pred=pred,
