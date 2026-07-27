@@ -54,9 +54,7 @@ __all__ = [
 log = logging.getLogger(__name__)
 
 MOCHA_OUTPUT_FILE: Final[str] = '/tmp/test-results.xml'
-TEST_CMD: Final[str] = (
-    'npm test -- --reporter mocha-junit-reporter'
-)
+TEST_CMD: Final[str] = 'npm test -- --reporter mocha-junit-reporter'
 
 
 class HighlightjsEvaluator(Evaluator):
@@ -121,15 +119,14 @@ class HighlightjsEvaluator(Evaluator):
         log.info(exit_code)
         log.info(output.decode())
 
-        results_xml = read_from_container(
-            self.container, MOCHA_OUTPUT_FILE
-        )
+        results_xml = read_from_container(self.container, MOCHA_OUTPUT_FILE)
 
         return results_xml_to_test_results(
             self.instance_id,
             self.patch_type,
             self.agent_name,
             results_xml,
+            self.timestamp,
         )
 
     @override

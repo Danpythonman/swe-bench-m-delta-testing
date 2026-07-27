@@ -23,6 +23,7 @@ A test is considered passed if it has neither a ``<failure>`` nor an
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import xml.etree.ElementTree as ET
 
@@ -40,6 +41,7 @@ def results_xml_to_test_results(
     patch_type: PatchType,
     agent_name: str,
     xml_string: str,
+    timestamp: dt.datetime,
 ) -> list[TestResult]:
     """Parse a Mocha JUnit XML string into :class:`TestResult` objects.
 
@@ -69,14 +71,13 @@ def results_xml_to_test_results(
         if test_name is None:
             log.warning('no test name')
             continue
-        passed = (
-            tc.find('failure') is None and tc.find('error') is None
-        )
+        passed = tc.find('failure') is None and tc.find('error') is None
         results.append(
             TestResult(
                 instance_id=instance_id,
                 patch_type=patch_type,
                 agent_name=agent_name,
+                timestamp=timestamp,
                 test_name=test_name,
                 passed=passed,
             )

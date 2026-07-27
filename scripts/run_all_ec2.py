@@ -56,7 +56,7 @@ set.
 log = logging.getLogger(__name__)
 
 
-IMAGE_ID = 'ami-01a65918ac2a00983'
+IMAGE_ID = 'ami-04934ddbd9e03f358'
 INSTANCE_TYPE = 't3a.large'
 SUBNET_ID = 'subnet-0d1aeaaad9a22c741'
 SECURITY_GROUP_ID = 'sg-09f9a76d742f8549d'
@@ -163,10 +163,7 @@ def make_git_checkout_command(branch: str) -> str:
     fetch = ['git', 'fetch', '--depth', '1', 'origin', f'{branch}:{ref}']
     checkout = ['git', 'checkout', '-b', branch, f'origin/{branch}']
     command = (
-        'cd /opt/sbmdt && '
-        + shlex.join(fetch)
-        + ' && '
-        + shlex.join(checkout)
+        'cd /opt/sbmdt && ' + shlex.join(fetch) + ' && ' + shlex.join(checkout)
     )
     return command
 
@@ -193,7 +190,14 @@ async def run_instance(
     # waiting for SSM, sending the command, or anything else below raises.
     instance_id = None
     try:
-        log.info('Creating instance')
+        log.info(
+            f'Creating instance with image_id={IMAGE_ID} '
+            f'instance_type={INSTANCE_TYPE} subnet_id={SUBNET_ID} '
+            f'security_group_id={SECURITY_GROUP_ID} '
+            f'instance_profile_arn={INSTANCE_PROFILE_ARN} '
+            f'block_device_name={BLOCK_DEVICE_NAME} '
+            f'block_volume_size_gb={BLOCK_VOLUME_SIZE_GB}'
+        )
         instance_id = await create_instance(
             ec2,
             instance_name,
