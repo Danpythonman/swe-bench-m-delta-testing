@@ -1,0 +1,117 @@
+diff --git a/packages/react/src/components/DataTable/TableToolbarSearch.js b/packages/react/src/components/DataTable/TableToolbarSearch.js
+index ba735e9f8baa..bf2c81b742ec 100644
+--- a/packages/react/src/components/DataTable/TableToolbarSearch.js
++++ b/packages/react/src/components/DataTable/TableToolbarSearch.js
+@@ -101,7 +101,6 @@ const TableToolbarSearch = ({
+   return (
+     <div
+       tabIndex={expandedState ? '-1' : tabIndex}
+-      role="search"
+       ref={searchRef}
+       onClick={event => onClick(event)}
+       onFocus={event => handleExpand(event, true)}
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
+index 5d65c824dfe5..8edca04c6577 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
+@@ -2245,7 +2245,6 @@ exports[`DataTable should render 1`] = `
+                   onBlur={[Function]}
+                   onClick={[Function]}
+                   onFocus={[Function]}
+-                  role="search"
+                   tabIndex="0"
+                 >
+                   <Search
+@@ -2261,7 +2260,9 @@ exports[`DataTable should render 1`] = `
+                     value=""
+                   >
+                     <div
++                      aria-labelledby="custom-id-search"
+                       className="bx--search bx--search--sm"
++                      role="search"
+                     >
+                       <ForwardRef(Search16)
+                         className="bx--search-magnifier"
+@@ -2298,6 +2299,7 @@ exports[`DataTable should render 1`] = `
+                       <label
+                         className="bx--label"
+                         htmlFor="custom-id"
++                        id="custom-id-search"
+                       >
+                         Filter table
+                       </label>
+@@ -3242,7 +3244,6 @@ exports[`DataTable sticky header should render 1`] = `
+                   onBlur={[Function]}
+                   onClick={[Function]}
+                   onFocus={[Function]}
+-                  role="search"
+                   tabIndex="0"
+                 >
+                   <Search
+@@ -3258,7 +3259,9 @@ exports[`DataTable sticky header should render 1`] = `
+                     value=""
+                   >
+                     <div
++                      aria-labelledby="custom-id-search"
+                       className="bx--search bx--search--sm"
++                      role="search"
+                     >
+                       <ForwardRef(Search16)
+                         className="bx--search-magnifier"
+@@ -3295,6 +3298,7 @@ exports[`DataTable sticky header should render 1`] = `
+                       <label
+                         className="bx--label"
+                         htmlFor="custom-id"
++                        id="custom-id-search"
+                       >
+                         Filter table
+                       </label>
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableToolbarSearch-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableToolbarSearch-test.js.snap
+index 2eccdb99d83f..cfb74f4268ff 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableToolbarSearch-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableToolbarSearch-test.js.snap
+@@ -14,7 +14,6 @@ exports[`DataTable.TableToolbarSearch should render 1`] = `
+     onBlur={[Function]}
+     onClick={[Function]}
+     onFocus={[Function]}
+-    role="search"
+     tabIndex="0"
+   >
+     <Search
+@@ -31,7 +30,9 @@ exports[`DataTable.TableToolbarSearch should render 1`] = `
+       value=""
+     >
+       <div
++        aria-labelledby="custom-id-search"
+         className="bx--search bx--search--sm custom-class"
++        role="search"
+       >
+         <ForwardRef(Search16)
+           className="bx--search-magnifier"
+@@ -68,6 +69,7 @@ exports[`DataTable.TableToolbarSearch should render 1`] = `
+         <label
+           className="bx--label"
+           htmlFor="custom-id"
++          id="custom-id-search"
+         >
+           Filter table
+         </label>
+diff --git a/packages/react/src/components/Search/Search.js b/packages/react/src/components/Search/Search.js
+index 4f08defba927..5fea9810920c 100644
+--- a/packages/react/src/components/Search/Search.js
++++ b/packages/react/src/components/Search/Search.js
+@@ -161,10 +161,12 @@ export default class Search extends Component {
+ 
+     const CloseIconX = size === 'xl' ? Close20 : Close16;
+ 
++    const searchId = `${id}-search`;
++
+     return (
+-      <div className={searchClasses}>
++      <div role="search" aria-labelledby={searchId} className={searchClasses}>
+         <Search16 className={`${prefix}--search-magnifier`} />
+-        <label htmlFor={id} className={`${prefix}--label`}>
++        <label id={searchId} htmlFor={id} className={`${prefix}--label`}>
+           {labelText}
+         </label>
+         <input

@@ -1,0 +1,99 @@
+diff --git a/news/changelog-1.3.md b/news/changelog-1.3.md
+index 1e518f11a05..8861496d69f 100644
+--- a/news/changelog-1.3.md
++++ b/news/changelog-1.3.md
+@@ -108,6 +108,7 @@
+ - the API for shortcode handlers in lua now accepts a fourth parameter `raw_args` which hold the unparsed arguments in a table ([#3833](https://github.com/quarto-dev/quarto-cli/issues/3833)).
+ - remove scaffolding div from conditional content in final output ([#3847](https://github.com/quarto-dev/quarto-cli/issues/3847)).
+ - ensure proof titles are appended to paragraph nodes ([#3772](https://github.com/quarto-dev/quarto-cli/issues/3772)).
++- Support parsing markdown in table captions in LaTeX and HTML tables ([#2573](https://github.com/quarto-dev/quarto-cli/issues/2573)).
+ 
+ ## Pandoc filter changes
+ 
+diff --git a/src/resources/filters/quarto-pre/table-captions.lua b/src/resources/filters/quarto-pre/table-captions.lua
+index 7ee3a3c112e..8251b27224d 100644
+--- a/src/resources/filters/quarto-pre/table-captions.lua
++++ b/src/resources/filters/quarto-pre/table-captions.lua
+@@ -167,7 +167,7 @@ function applyTableCaptions(el, tblCaptions, tblLabels)
+           -- apply table caption and label
+           local beginCaption, captionText, endCaption = raw.text:match(captionPattern)
+           if #tblCaptions[idx] > 0 then
+-            captionText = pandoc.utils.stringify(tblCaptions[idx])
++            captionText = stringEscape(tblCaptions[idx], "html")
+           end
+           if #tblLabels[idx] > 0 then
+             captionText = captionText .. " {#" .. tblLabels[idx] .. "}"
+@@ -182,7 +182,7 @@ function applyTableCaptions(el, tblCaptions, tblLabels)
+           end
+         elseif hasPagedHtmlTable(raw) then
+           if #tblCaptions[idx] > 0 then
+-            local captionText = pandoc.utils.stringify(tblCaptions[idx])
++            local captionText = stringEscape(tblCaptions[idx], "html")
+             if #tblLabels[idx] > 0 then
+               captionText = captionText .. " {#" .. tblLabels[idx] .. "}"
+             end
+@@ -210,10 +210,8 @@ function applyLatexTableCaption(latex, tblCaption, tblLabel, tablePattern)
+   -- apply table caption and label
+   local beginCaption, captionText, endCaption = latex:match(latexCaptionPattern)
+   if #tblCaption > 0 then
+-    captionText = pandoc.utils.stringify(tblCaption)
++    captionText = stringEscape(tblCaption, "latex")
+   end
+-  -- escape special characters for LaTeX
+-  captionText = stringEscape(captionText, "latex")
+   if #tblLabel > 0 then
+     captionText = captionText .. " {#" .. tblLabel .. "}"
+   end
+diff --git a/tests/docs/smoke-all/2023/01/16/md-captions.qmd b/tests/docs/smoke-all/2023/01/16/md-captions.qmd
+new file mode 100644
+index 00000000000..d170ddffad2
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/01/16/md-captions.qmd
+@@ -0,0 +1,46 @@
++---
++title: markdown in captions
++format:
++  html: default
++  latex: default
++_quarto:
++  tests: 
++    html:
++      ensureHtmlElements:
++        - ["#html caption sup", "#html caption em", "#paged div.table-caption sup", "#paged div.table-caption em", "#md caption sup"]
++    latex:
++      ensureFileRegexMatches:
++        - ["\\\\textsuperscript\\{superscript\\}", "\\\\emph\\{italics\\}"]
++execute: 
++  echo: false
++---
++
++# HTML table {#html}
++```{r}
++#| tbl-cap: Using ^superscript^ or _italics_ in table caption
++#| eval: !expr knitr::is_html_output()
++knitr::kable(head(cars), format = "html")
++```
++
++# Paged table {#paged}
++
++```{r}
++#| tbl-cap: Using ^superscript^ or _italics_ in table caption
++#| eval: !expr knitr::is_html_output()
++rmarkdown::paged_table(head(cars))
++```
++
++# Mardown Table {#md}
++
++```{r}
++#| tbl-cap: Using ^superscript^ in caption
++knitr::kable(head(cars))
++```
++
++# LaTeX table {#latex}
++
++```{r}
++#| tbl-cap: Using _italics_ in caption
++#| eval: !expr knitr::is_latex_output()
++knitr::kable(head(cars), format = "latex")
++```
+\ No newline at end of file

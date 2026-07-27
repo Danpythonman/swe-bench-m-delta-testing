@@ -1,0 +1,113 @@
+diff --git a/src/command/render/codetools.ts b/src/command/render/codetools.ts
+index 2413c6d8f7d..11c973a709b 100644
+--- a/src/command/render/codetools.ts
++++ b/src/command/render/codetools.ts
+@@ -315,8 +315,9 @@ function resolveCodeTools(format: Format, doc: Document): CodeTools {
+       : codeTools?.caption || kCodeCaption,
+   };
+ 
+-  // if we have request source, make sure we are able to keep source
+-  if (codeToolsResolved.source) {
++  // if we have request source without an external url,
++  // make sure we are able to keep source
++  if (codeToolsResolved.source === true) {
+     codeToolsResolved.source = !!format.render[kKeepSource];
+   }
+ 
+diff --git a/tests/docs/code-tools/code-tools-activated.qmd b/tests/docs/code-tools/code-tools-activated.qmd
+new file mode 100644
+index 00000000000..f5f72ae35e7
+--- /dev/null
++++ b/tests/docs/code-tools/code-tools-activated.qmd
+@@ -0,0 +1,10 @@
++---
++title: "with code tools"
++format: 
++  html:
++    code-tools: true
++---
++
++```{r}
++1 + 2
++```
+\ No newline at end of file
+diff --git a/tests/docs/code-tools/code-tools-external-source.qmd b/tests/docs/code-tools/code-tools-external-source.qmd
+new file mode 100644
+index 00000000000..933fdd040ca
+--- /dev/null
++++ b/tests/docs/code-tools/code-tools-external-source.qmd
+@@ -0,0 +1,11 @@
++---
++title: "with code tools"
++format: 
++  html:
++    code-tools: 
++      source: https://github.com/quarto-dev/quarto-web/blob/main/index.qmd
++---
++
++```{r}
++1 + 2
++```
+\ No newline at end of file
+diff --git a/tests/docs/code-tools/code-tools-toggle.qmd b/tests/docs/code-tools/code-tools-toggle.qmd
+new file mode 100644
+index 00000000000..a3815b80207
+--- /dev/null
++++ b/tests/docs/code-tools/code-tools-toggle.qmd
+@@ -0,0 +1,12 @@
++---
++title: "with code tools"
++format: 
++  html:
++    code-fold: true
++    code-tools:
++      toggle: true
++---
++
++```{r}
++1 + 2
++```
+\ No newline at end of file
+diff --git a/tests/smoke/render/render-code-tools.test.ts b/tests/smoke/render/render-code-tools.test.ts
+new file mode 100644
+index 00000000000..90ed54fddb3
+--- /dev/null
++++ b/tests/smoke/render/render-code-tools.test.ts
+@@ -0,0 +1,36 @@
++/*
++* render-r.test.ts
++*
++* Copyright (C) 2020 by RStudio, PBC
++*
++*/
++
++import { fileLoader } from "../../utils.ts";
++import { ensureHtmlElements } from "../../verify.ts";
++import { testRender } from "./render.ts";
++
++let doc = fileLoader("code-tools")(
++  "code-tools-activated.qmd",
++  "html",
++);
++testRender(doc.input, "html", false, [
++  ensureHtmlElements(doc.output.outputPath, [
++    "div.quarto-title-block button#quarto-code-tools-source",
++    "div#quarto-embedded-source-code-modal",
++  ]),
++]);
++
++doc = fileLoader("code-tools")("code-tools-toggle.qmd", "html");
++testRender(doc.input, "html", false, [
++  ensureHtmlElements(doc.output.outputPath, [
++    "div.quarto-title-block button#quarto-code-tools-menu",
++    "div.cell > details",
++  ]),
++]);
++
++doc = fileLoader("code-tools")("code-tools-external-source.qmd", "html");
++testRender(doc.input, "html", false, [
++  ensureHtmlElements(doc.output.outputPath, [
++    "div.quarto-title-block button#quarto-code-tools-source[data-quarto-source-url]",
++  ]),
++]);
+\ No newline at end of file

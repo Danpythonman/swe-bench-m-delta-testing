@@ -1,0 +1,179 @@
+diff --git a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+index 396eaf5a04a0..c65128e8c446 100644
+--- a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
++++ b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+@@ -1688,6 +1688,9 @@ Map {
+         "expandIconDescription": Object {
+           "type": "string",
+         },
++        "id": Object {
++          "type": "string",
++        },
+         "isExpanded": [Function],
+         "onExpand": Object {
+           "args": Array [
+@@ -1701,9 +1704,6 @@ Map {
+       },
+     },
+     "TableExpandRow": Object {
+-      "defaultProps": Object {
+-        "expandHeader": "expand",
+-      },
+       "propTypes": Object {
+         "ariaLabel": Object {
+           "isRequired": true,
+@@ -6960,6 +6960,9 @@ Map {
+       "expandIconDescription": Object {
+         "type": "string",
+       },
++      "id": Object {
++        "type": "string",
++      },
+       "isExpanded": [Function],
+       "onExpand": Object {
+         "args": Array [
+@@ -6973,9 +6976,6 @@ Map {
+     },
+   },
+   "TableExpandRow" => Object {
+-    "defaultProps": Object {
+-      "expandHeader": "expand",
+-    },
+     "propTypes": Object {
+       "ariaLabel": Object {
+         "isRequired": true,
+diff --git a/packages/react/src/components/DataTable/TableExpandHeader.js b/packages/react/src/components/DataTable/TableExpandHeader.js
+index 93d7f1eee286..fe65758fc693 100644
+--- a/packages/react/src/components/DataTable/TableExpandHeader.js
++++ b/packages/react/src/components/DataTable/TableExpandHeader.js
+@@ -18,6 +18,7 @@ const TableExpandHeader = ({
+   className: headerClassName,
+   enableExpando,
+   enableToggle,
++  id = 'expand',
+   isExpanded,
+   onExpand,
+   expandIconDescription,
+@@ -33,6 +34,7 @@ const TableExpandHeader = ({
+       scope="col"
+       className={className}
+       data-previous-value={previousValue}
++      id={id}
+       {...rest}>
+       {enableExpando || enableToggle ? (
+         <button
+@@ -84,6 +86,11 @@ TableExpandHeader.propTypes = {
+    */
+   expandIconDescription: PropTypes.string,
+ 
++  /**
++   * Supply an id to the th element.
++   */
++  id: PropTypes.string,
++
+   /**
+    * Specify whether this row is expanded or not. This helps coordinate data
+    * attributes so that `TableExpandRow` and `TableExpandedRow` work together
+diff --git a/packages/react/src/components/DataTable/TableExpandRow.js b/packages/react/src/components/DataTable/TableExpandRow.js
+index ffaafeff405e..abd6b0024fa4 100644
+--- a/packages/react/src/components/DataTable/TableExpandRow.js
++++ b/packages/react/src/components/DataTable/TableExpandRow.js
+@@ -20,7 +20,7 @@ const TableExpandRow = ({
+   onExpand,
+   expandIconDescription,
+   isSelected,
+-  expandHeader,
++  expandHeader = 'expand',
+   ...rest
+ }) => {
+   const prefix = usePrefix();
+@@ -92,8 +92,4 @@ TableExpandRow.propTypes = {
+   onExpand: PropTypes.func.isRequired,
+ };
+ 
+-TableExpandRow.defaultProps = {
+-  expandHeader: 'expand',
+-};
+-
+ export default TableExpandRow;
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandHeader-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandHeader-test.js.snap
+index 4e99cefb58ad..f1ed5d23a68b 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandHeader-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandHeader-test.js.snap
+@@ -25,6 +25,7 @@ exports[`DataTable.TableExpandHeader should render 1`] = `
+               >
+                 <th
+                   className="cds--table-expand custom-class"
++                  id="expand"
+                   scope="col"
+                 />
+               </TableExpandHeader>
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandRow-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandRow-test.js.snap
+index 06ced6f71274..cc24e49dc456 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandRow-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandRow-test.js.snap
+@@ -22,7 +22,6 @@ exports[`DataTable.TableExpandRow should render 1`] = `
+           <TableExpandRow
+             ariaLabel="Aria label"
+             className="custom-class"
+-            expandHeader="expand"
+             isExpanded={false}
+             onExpand={[MockFunction]}
+           >
+diff --git a/packages/react/src/components/DataTable/stories/expansion/DataTable-expansion.stories.js b/packages/react/src/components/DataTable/stories/expansion/DataTable-expansion.stories.js
+index 7c45aeec778e..ea7c03de9af1 100644
+--- a/packages/react/src/components/DataTable/stories/expansion/DataTable-expansion.stories.js
++++ b/packages/react/src/components/DataTable/stories/expansion/DataTable-expansion.stories.js
+@@ -62,7 +62,7 @@ export const Default = () => (
+         <Table {...getTableProps()}>
+           <TableHead>
+             <TableRow>
+-              <TableExpandHeader id="expand" />
++              <TableExpandHeader />
+               {headers.map((header, i) => (
+                 <TableHeader key={i} {...getHeaderProps({ header })}>
+                   {header.header}
+@@ -73,7 +73,7 @@ export const Default = () => (
+           <TableBody>
+             {rows.map((row) => (
+               <React.Fragment key={row.id}>
+-                <TableExpandRow expandHeader="expand" {...getRowProps({ row })}>
++                <TableExpandRow {...getRowProps({ row })}>
+                   {row.cells.map((cell) => (
+                     <TableCell key={cell.id}>{cell.value}</TableCell>
+                   ))}
+@@ -114,7 +114,6 @@ export const BatchExpansion = () => (
+           <TableHead>
+             <TableRow>
+               <TableExpandHeader
+-                id="expand"
+                 enableExpando={true}
+                 {...getExpandHeaderProps()}
+               />
+@@ -128,7 +127,7 @@ export const BatchExpansion = () => (
+           <TableBody>
+             {rows.map((row) => (
+               <React.Fragment key={row.id}>
+-                <TableExpandRow expandHeader="expand" {...getRowProps({ row })}>
++                <TableExpandRow {...getRowProps({ row })}>
+                   {row.cells.map((cell) => (
+                     <TableCell key={cell.id}>{cell.value}</TableCell>
+                   ))}
+@@ -278,7 +277,7 @@ export const Playground = (args) => (
+         <Table {...getTableProps()}>
+           <TableHead>
+             <TableRow>
+-              <TableExpandHeader id="expand" />
++              <TableExpandHeader />
+               {headers.map((header, i) => (
+                 <TableHeader key={i} {...getHeaderProps({ header })}>
+                   {header.header}
+@@ -289,7 +288,7 @@ export const Playground = (args) => (
+           <TableBody>
+             {rows.map((row) => (
+               <React.Fragment key={row.id}>
+-                <TableExpandRow expandHeader="expand" {...getRowProps({ row })}>
++                <TableExpandRow {...getRowProps({ row })}>
+                   {row.cells.map((cell) => (
+                     <TableCell key={cell.id}>{cell.value}</TableCell>
+                   ))}

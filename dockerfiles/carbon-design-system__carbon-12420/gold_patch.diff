@@ -1,0 +1,220 @@
+diff --git a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+index 036acc7a161c..876180ab74cc 100644
+--- a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
++++ b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+@@ -8325,6 +8325,9 @@ Map {
+       "placeholder": Object {
+         "type": "string",
+       },
++      "readOnly": Object {
++        "type": "bool",
++      },
+       "size": Object {
+         "args": Array [
+           Array [
+diff --git a/packages/react/src/components/TimePicker/TimePicker-test.js b/packages/react/src/components/TimePicker/TimePicker-test.js
+index 7aec125bb018..59ca5f2e899b 100644
+--- a/packages/react/src/components/TimePicker/TimePicker-test.js
++++ b/packages/react/src/components/TimePicker/TimePicker-test.js
+@@ -7,7 +7,8 @@
+ 
+ import React from 'react';
+ import { default as TimePicker } from './TimePicker';
+-
++import SelectItem from '../SelectItem';
++import TimePickerSelect from '../TimePickerSelect/next/TimePickerSelect.js';
+ import { render, screen, fireEvent } from '@testing-library/react';
+ import userEvent from '@testing-library/user-event';
+ 
+@@ -40,6 +41,51 @@ describe('TimePicker', () => {
+       expect(onClick).not.toHaveBeenCalled();
+     });
+ 
++    it('should behave readonly as expected', () => {
++      const onClick = jest.fn();
++      const onChange = jest.fn();
++
++      render(
++        <TimePicker
++          id="time-picker"
++          onClick={onClick}
++          onChange={onChange}
++          readOnly={true}>
++          <TimePickerSelect id="time-picker-select-1">
++            <SelectItem value="AM" text="AM" />
++            <SelectItem value="PM" text="PM" />
++          </TimePickerSelect>
++          <TimePickerSelect id="time-picker-select-2">
++            <SelectItem value="Time zone 1" text="Time zone 1" />
++            <SelectItem value="Time zone 2" text="Time zone 2" />
++          </TimePickerSelect>
++        </TimePicker>
++      );
++
++      const input = screen.getByRole('textbox');
++      userEvent.click(input);
++      expect(onClick).toHaveBeenCalled();
++      expect(input).toHaveAttribute('readonly');
++
++      userEvent.type(input, '01:50');
++      expect(onChange).not.toHaveBeenCalled();
++
++      screen.getByDisplayValue('AM');
++      screen.getByDisplayValue('Time zone 1');
++
++      //------------------------------------------------------------------------
++      // Testing library - userEvent.type() does not work on <select> elements
++      // and using selectOption causes the value to change.
++      // Ideally we'd use userEvent.type(theSelect, '{arrowdown}{enter}') to test the readOnly prop
++      // or have a way to click on a slotted option.
++      // https://github.com/testing-library/user-event/issues/786
++      //------------------------------------------------------------------------
++      // userEvent.selectOptions(theSelect, 'option-1'); // unfortunately this bypasses the readOnly prop
++
++      // Change events should *not* fire
++      // expect(screen.getByText('Option 1').selected).toBe(false);
++    });
++
+     it('should set placeholder as expected', () => {
+       render(<TimePicker id="time-picker" placeholder="🧸" />);
+       expect(screen.getByPlaceholderText('🧸')).toBeInTheDocument();
+diff --git a/packages/react/src/components/TimePicker/TimePicker.js b/packages/react/src/components/TimePicker/TimePicker.js
+index 9d71c96ce3cc..59dcfcbc8fb6 100644
+--- a/packages/react/src/components/TimePicker/TimePicker.js
++++ b/packages/react/src/components/TimePicker/TimePicker.js
+@@ -28,6 +28,7 @@ const TimePicker = React.forwardRef(function TimePicker(
+     onBlur = () => {},
+     pattern = '(1[012]|[1-9]):[0-5][0-9](\\s)?',
+     placeholder = 'hh:mm',
++    readOnly,
+     size = 'md',
+     type = 'text',
+     value,
+@@ -47,13 +48,15 @@ const TimePicker = React.forwardRef(function TimePicker(
+ 
+   function handleOnClick(evt) {
+     if (!disabled) {
+-      setValue(isValue);
++      if (!readOnly) {
++        setValue(isValue);
++      }
+       onClick(evt);
+     }
+   }
+ 
+   function handleOnChange(evt) {
+-    if (!disabled) {
++    if (!disabled && !readOnly) {
+       setValue(isValue);
+       onChange(evt);
+     }
+@@ -61,7 +64,9 @@ const TimePicker = React.forwardRef(function TimePicker(
+ 
+   function handleOnBlur(evt) {
+     if (!disabled) {
+-      setValue(isValue);
++      if (!readOnly) {
++        setValue(isValue);
++      }
+       onBlur(evt);
+     }
+   }
+@@ -79,6 +84,7 @@ const TimePicker = React.forwardRef(function TimePicker(
+     [`${prefix}--time-picker`]: true,
+     [`${prefix}--time-picker--light`]: light,
+     [`${prefix}--time-picker--invalid`]: invalid,
++    [`${prefix}--time-picker--readonly`]: readOnly,
+     [`${prefix}--time-picker--${size}`]: size,
+     [className]: className,
+   });
+@@ -98,6 +104,41 @@ const TimePicker = React.forwardRef(function TimePicker(
+     <div className={`${prefix}--form-requirement`}>{invalidText}</div>
+   ) : null;
+ 
++  function getInternalPickerSelects() {
++    const readOnlyEventHandlers = {
++      onMouseDown: (evt) => {
++        // NOTE: does not prevent click
++        if (readOnly) {
++          evt.preventDefault();
++          // focus on the element as per readonly input behavior
++          evt.target.focus();
++        }
++      },
++      onKeyDown: (evt) => {
++        const selectAccessKeys = ['ArrowDown', 'ArrowUp', ' '];
++        // This prevents the select from opening for the above keys
++        if (readOnly && selectAccessKeys.includes(evt.key)) {
++          evt.preventDefault();
++        }
++      },
++    };
++
++    const mappedChildren = React.Children.map(children, (pickerSelect) => {
++      return React.cloneElement(pickerSelect, {
++        ...pickerSelect.props,
++        disabled: disabled,
++        readOnly: readOnly,
++        ...readOnlyEventHandlers,
++      });
++    });
++
++    return mappedChildren;
++  }
++
++  const readOnlyProps = {
++    readOnly: readOnly,
++  };
++
+   return (
+     <div className={cx(`${prefix}--form-item`, className)}>
+       {label}
+@@ -118,9 +159,10 @@ const TimePicker = React.forwardRef(function TimePicker(
+             type={type}
+             value={value}
+             {...rest}
++            {...readOnlyProps}
+           />
+         </div>
+-        {children}
++        {getInternalPickerSelects()}
+       </div>
+       {error}
+     </div>
+@@ -210,6 +252,11 @@ TimePicker.propTypes = {
+    */
+   placeholder: PropTypes.string,
+ 
++  /**
++   * Specify whether the TimePicker should be read-only
++   */
++  readOnly: PropTypes.bool,
++
+   /**
+    * Specify the size of the Time Picker.
+    */
+diff --git a/packages/styles/scss/components/time-picker/_time-picker.scss b/packages/styles/scss/components/time-picker/_time-picker.scss
+index 7f57be067669..994f948eea07 100644
+--- a/packages/styles/scss/components/time-picker/_time-picker.scss
++++ b/packages/styles/scss/components/time-picker/_time-picker.scss
+@@ -88,4 +88,20 @@
+     height: rem(48px);
+     max-height: rem(48px);
+   }
++
++  // readonly
++  .#{$prefix}--time-picker--readonly .#{$prefix}--time-picker__input-field {
++    background-color: transparent;
++  }
++
++  .#{$prefix}--time-picker--readonly .#{$prefix}--select-input {
++    background-color: transparent;
++    cursor: default;
++  }
++
++  .#{$prefix}--time-picker--readonly
++    .#{$prefix}--select-input
++    + .#{$prefix}--select__arrow {
++    fill: $icon-disabled;
++  }
+ }

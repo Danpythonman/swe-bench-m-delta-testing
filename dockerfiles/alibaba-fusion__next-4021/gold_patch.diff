@@ -1,0 +1,127 @@
+diff --git a/src/number-picker/number-picker.jsx b/src/number-picker/number-picker.jsx
+index c33491fd48..04b930a09a 100644
+--- a/src/number-picker/number-picker.jsx
++++ b/src/number-picker/number-picker.jsx
+@@ -266,12 +266,7 @@ class NumberPicker extends React.Component {
+         const displayValue = `${this.state.displayValue}`;
+         // 展示值合法但超出边界时，额外在Blur时触发onChange
+         // 展示值非法时，回退前一个有效值
+-        if (
+-            editable === true &&
+-            !isNaN(displayValue) &&
+-            !this.shouldFireOnChange(displayValue) &&
+-            !this.withinMinMax(displayValue)
+-        ) {
++        if (editable === true && !isNaN(displayValue) && !this.withinMinMax(displayValue)) {
+             let valueCorrected = this.correctValue(displayValue);
+             valueCorrected = stringMode ? BigNumber(valueCorrected).toFixed(this.getPrecision()) : valueCorrected;
+             if (this.state.value !== valueCorrected) {
+@@ -293,6 +288,12 @@ class NumberPicker extends React.Component {
+         return true;
+     }
+ 
++    withinMin(value) {
++        const { min } = this.state;
++        if (isNaN(value) || this.isGreaterThan(min, value)) return false;
++        return true;
++    }
++
+     setDisplayValue({ displayValue, onlyDisplay = false }) {
+         this.setState({ displayValue, onlyDisplay });
+     }
+@@ -309,9 +310,13 @@ class NumberPicker extends React.Component {
+             : displayValue;
+     }
+ 
++    /**
++     * 输入时判断是否要触发onChange
++     * 正常触发: 合法数字 (eg: -0 -0. 0.1)；超出最大值
++     * 不触发: 1. 非数字（eg: - ）, 2. 小于最小值(输入需要过程由小变大)
++     */
+     shouldFireOnChange(value) {
+-        // 不触发onChange：a.非数字  b.超出边界的数字输入
+-        if (isNaN(value) || !this.withinMinMax(value)) {
++        if (isNaN(value) || !this.withinMin(value)) {
+             return false;
+         }
+         return true;
+@@ -320,12 +325,18 @@ class NumberPicker extends React.Component {
+     onChange(value, e) {
+         // ignore space & Compatible Chinese Input Method
+         value = value.replace('。', '.').trim();
++        // 过滤非数字
++        value = value.replace(/[^-.\d]/g, '');
++
+         let onlyDisplay = false;
+         if (this.props.editable === true && this.shouldFireOnChange(value)) {
+-            let valueCorrected = this.correctValue(value);
++            const valueCorrected = this.correctValue(value);
+             if (this.state.value !== valueCorrected) {
+                 this.setValue({ value: valueCorrected, e });
+             }
++            if (typeof this.props.max !== 'undefined' && this.isGreaterThan(value, this.state.max)) {
++                value = String(valueCorrected);
++            }
+         } else {
+             onlyDisplay = true;
+         }
+diff --git a/test/number-picker/index-spec.js b/test/number-picker/index-spec.js
+index 466f2f19c2..66bed04b35 100644
+--- a/test/number-picker/index-spec.js
++++ b/test/number-picker/index-spec.js
+@@ -127,7 +127,7 @@ describe('number-picker', () => {
+             wrapper
+                 .find('input')
+                 .simulate('change', { target: { value: `${Number.MAX_SAFE_INTEGER}a2333` } });
+-            assert(wrapper.find('input').prop('value') === `${Number.MAX_SAFE_INTEGER}a2333`);
++            assert(wrapper.find('input').prop('value') === `${Number.MAX_SAFE_INTEGER}2333`);
+             wrapper.find('input').simulate('blur');
+             assert(wrapper.find('input').prop('value') === `${Number.MAX_SAFE_INTEGER}2333`);
+             wrapper
+@@ -148,7 +148,7 @@ describe('number-picker', () => {
+             wrapper2
+                 .find('input')
+                 .simulate('change', { target: { value: `${Number.MAX_SAFE_INTEGER}a2333` } });
+-            assert(wrapper2.find('input').prop('value') === `${Number.MAX_SAFE_INTEGER}a2333`);
++            assert(wrapper2.find('input').prop('value') === `${Number.MAX_SAFE_INTEGER}2333`);
+             wrapper2.find('input').simulate('blur');
+             assert(wrapper2.find('input').prop('value') === `${Number.MAX_SAFE_INTEGER}2333`);
+             wrapper2
+@@ -322,6 +322,18 @@ describe('number-picker', () => {
+             done();
+         });
+ 
++        it('should only input -.1234567890', () => {
++            let wrapper = mount(
++                <NumberPicker />
++            );
++            wrapper.find('input').simulate('change', { target: { value: '-1.' } });
++            assert(wrapper.find('input').prop('value') === "-1.");
++            wrapper.find('input').simulate('change', { target: { value: '-1.a' } });
++            assert(wrapper.find('input').prop('value') === "-1.");
++            wrapper.find('input').simulate('change', { target: { value: '-1.13a2' } });
++            assert(wrapper.find('input').prop('value') === "-1.132");
++        });
++        
+         it('onChange value 1.9 -> 1. should input displayValue === 1. onchange value === 1', done => {
+             const onChange = (value) => {
+                 assert(value === 1)
+@@ -969,7 +981,17 @@ describe('number-picker', () => {
+                 .at(1)
+                 .simulate('click');
+         });
+-
++        
++        it('should not input number large then max', () => {
++            let wrapper = mount(
++                <NumberPicker max={10} />
++            );
++            wrapper.find('input').simulate('change', { target: { value: '100' } });
++            assert(wrapper.find('input').prop('value') === "10");
++            wrapper.find('input').simulate('change', { target: { value: '5' } });
++            assert(wrapper.find('input').prop('value') === "5");
++        });
++        
+         it('should support precision', done => {
+             const wrapper = mount(
+                 <NumberPicker defaultValue={0.121} step={0.01} precision={3} />

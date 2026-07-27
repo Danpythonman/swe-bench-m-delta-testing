@@ -1,0 +1,80 @@
+diff --git a/CHANGES.md b/CHANGES.md
+index c0d3c387d5..8053906b60 100644
+--- a/CHANGES.md
++++ b/CHANGES.md
+@@ -1,10 +1,11 @@
+-## Version 11.4.1
++## Version 11.5.0 (in progress)
+ 
+ Themes:
+ - Added `Tokyo-Night-dark` theme [Henri Vandersleyen][]
+ 
+ Grammars:
+ 
++- fix(markdown) Handle `***Hello world***` without breaking [Josh Goebel][]
+ - enh(php) add support for PHP Attributes [Wojciech Kania][]
+ - fix(java) prevent false positive variable init on `else` [Josh Goebel][]
+ - enh(php) named arguments [Wojciech Kania][]
+@@ -20,6 +21,8 @@ Grammars:
+ [henri Vandersleyen]: https://github.com/Vanderscycle
+ [Christina Hanson]: https://github.com/LyricLy
+ [Flakebi]: https://github.com/Flakebi
++[Josh Goebel]: https://github.com/joshgoebel
++
+ 
+ ## Version 11.4.0
+ 
+diff --git a/src/languages/markdown.js b/src/languages/markdown.js
+index ff73dd31ff..6db1118191 100644
+--- a/src/languages/markdown.js
++++ b/src/languages/markdown.js
+@@ -169,16 +169,23 @@ export default function(hljs) {
+       }
+     ]
+   };
+-  BOLD.contains.push(ITALIC);
+-  ITALIC.contains.push(BOLD);
++
++  // 3 level deep nesting is not allowed because it would create confusion
++  // in cases like `***testing***` because where we don't know if the last
++  // `***` is starting a new bold/italic or finishing the last one
++  const BOLD_WITHOUT_ITALIC = hljs.inherit(BOLD, { contains: [] });
++  const ITALIC_WITHOUT_BOLD = hljs.inherit(ITALIC, { contains: [] });
++  BOLD.contains.push(ITALIC_WITHOUT_BOLD);
++  ITALIC.contains.push(BOLD_WITHOUT_ITALIC);
+ 
+   let CONTAINABLE = [
+     INLINE_HTML,
+     LINK
+   ];
+ 
+-  BOLD.contains = BOLD.contains.concat(CONTAINABLE);
+-  ITALIC.contains = ITALIC.contains.concat(CONTAINABLE);
++  [ BOLD, ITALIC, BOLD_WITHOUT_ITALIC, ITALIC_WITHOUT_BOLD ].forEach(m => {
++    m.contains = m.contains.concat(CONTAINABLE);
++  });
+ 
+   CONTAINABLE = CONTAINABLE.concat(BOLD, ITALIC);
+ 
+diff --git a/test/markup/markdown/bold_italics.expect.txt b/test/markup/markdown/bold_italics.expect.txt
+index d9db053a7f..ddc8a59558 100644
+--- a/test/markup/markdown/bold_italics.expect.txt
++++ b/test/markup/markdown/bold_italics.expect.txt
+@@ -16,3 +16,6 @@
+ 
+ <span class="hljs-bullet">*</span> list with a <span class="hljs-emphasis">*italic item*</span>
+ <span class="hljs-bullet">*</span> list with a <span class="hljs-strong">**bold item**</span>
++
++<span class="hljs-strong">**<span class="hljs-emphasis">*This is bold and italic*</span>**</span>
++<span class="hljs-strong">__<span class="hljs-emphasis">_This is bold and italic_</span>__</span>
+diff --git a/test/markup/markdown/bold_italics.txt b/test/markup/markdown/bold_italics.txt
+index 2b72d45cdd..5f15ea0d7b 100644
+--- a/test/markup/markdown/bold_italics.txt
++++ b/test/markup/markdown/bold_italics.txt
+@@ -16,3 +16,6 @@ __Bold *then italic*__
+ 
+ * list with a *italic item*
+ * list with a **bold item**
++
++***This is bold and italic***
++___This is bold and italic___

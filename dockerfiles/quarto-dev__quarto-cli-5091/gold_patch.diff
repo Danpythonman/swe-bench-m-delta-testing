@@ -1,0 +1,38 @@
+diff --git a/src/resources/filters/quarto-post/pdf-images.lua b/src/resources/filters/quarto-post/pdf-images.lua
+index 724b3085afc..7d4f489c41c 100644
+--- a/src/resources/filters/quarto-post/pdf-images.lua
++++ b/src/resources/filters/quarto-post/pdf-images.lua
+@@ -109,8 +109,13 @@ function pdfImages()
+             else 
+               local relativePath = image.src:match('https?://[%w%.%:]+/(.+)')
+               if relativePath then
++                
+                 local imgMt, imgContents = pandoc.mediabag.fetch(image.src)
+-                local filename = windows_safe_filename(tex_safe_filename(pandoc.path.filename(relativePath)))
++                local decodedSrc = urldecode(image.src)
++                if decodedSrc == nil then
++                  decodedSrc = "unknown"
++                end
++                local filename = windows_safe_filename(tex_safe_filename(pandoc.path.filename(decodedSrc)))
+                 if imgMt ~= nil then
+                   local existingMt = pandoc.mediabag.lookup(filename)
+                   local counter = 1
+diff --git a/tests/docs/smoke-all/2023/04/04/5089.qmd b/tests/docs/smoke-all/2023/04/04/5089.qmd
+new file mode 100644
+index 00000000000..a2b96b7bbf4
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/04/04/5089.qmd
+@@ -0,0 +1,13 @@
++---
++title: Simple Document
++format: pdf
++---
++
++## Url with encoding
++
++![](https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F9b7345d9-5f62-46dc-8062-d704c2c014a5_289x174.jpeg)
++
++
++## Simple Url
++
++![](https://quarto.org/quarto.png)

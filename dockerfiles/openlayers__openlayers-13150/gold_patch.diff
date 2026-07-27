@@ -1,0 +1,105 @@
+diff --git a/src/ol/layer/Heatmap.js b/src/ol/layer/Heatmap.js
+index 2b41e56d374..5c9066a1eba 100644
+--- a/src/ol/layer/Heatmap.js
++++ b/src/ol/layer/Heatmap.js
+@@ -285,12 +285,13 @@ class Heatmap extends BaseVector {
+ 
+             uniform sampler2D u_image;
+             uniform sampler2D u_gradientTexture;
++            uniform float u_opacity;
+ 
+             varying vec2 v_texCoord;
+ 
+             void main() {
+               vec4 color = texture2D(u_image, v_texCoord);
+-              gl_FragColor.a = color.a;
++              gl_FragColor.a = color.a * u_opacity;
+               gl_FragColor.rgb = texture2D(u_gradientTexture, vec2(0.5, color.a)).rgb;
+               gl_FragColor.rgb *= gl_FragColor.a;
+             }`,
+@@ -298,6 +299,9 @@ class Heatmap extends BaseVector {
+             u_gradientTexture: function () {
+               return this.gradient_;
+             }.bind(this),
++            u_opacity: function () {
++              return this.getOpacity();
++            }.bind(this),
+           },
+         },
+       ],
+diff --git a/src/ol/renderer/webgl/PointsLayer.js b/src/ol/renderer/webgl/PointsLayer.js
+index a122651c5a4..d66b2b4601f 100644
+--- a/src/ol/renderer/webgl/PointsLayer.js
++++ b/src/ol/renderer/webgl/PointsLayer.js
+@@ -55,7 +55,7 @@ import {listen, unlistenByKey} from '../../events.js';
+  * @property {string} [hitVertexShader] Vertex shader source for hit detection rendering.
+  * @property {string} [hitFragmentShader] Fragment shader source for hit detection rendering.
+  * @property {Object<string,import("../../webgl/Helper").UniformValue>} [uniforms] Uniform definitions for the post process steps
+- * Please note that `u_texture` is reserved for the main texture slot.
++ * Please note that `u_texture` is reserved for the main texture slot and `u_opacity` is reserved for the layer opacity.
+  * @property {Array<import("./Layer").PostProcessesOptions>} [postProcesses] Post-processes definitions
+  */
+ 
+@@ -99,6 +99,7 @@ import {listen, unlistenByKey} from '../../events.js';
+  * the final color that will have to be output for hit detection to work.
+  *
+  * The following uniform is used for the main texture: `u_texture`.
++ * The following uniform is used for the layer opacity: `u_opacity`.
+  *
+  * Please note that the main shader output should have premultiplied alpha, otherwise visual anomalies may occur.
+  *
+diff --git a/test/rendering/cases/heatmap-layer-opacity/expected.png b/test/rendering/cases/heatmap-layer-opacity/expected.png
+new file mode 100644
+index 00000000000..d47bb7e7e14
+Binary files /dev/null and b/test/rendering/cases/heatmap-layer-opacity/expected.png differ
+diff --git a/test/rendering/cases/heatmap-layer-opacity/main.js b/test/rendering/cases/heatmap-layer-opacity/main.js
+new file mode 100644
+index 00000000000..9b8949ad803
+--- /dev/null
++++ b/test/rendering/cases/heatmap-layer-opacity/main.js
+@@ -0,0 +1,45 @@
++import KML from '../../../../src/ol/format/KML.js';
++import Map from '../../../../src/ol/Map.js';
++import TileLayer from '../../../../src/ol/layer/Tile.js';
++import VectorSource from '../../../../src/ol/source/Vector.js';
++import View from '../../../../src/ol/View.js';
++import XYZ from '../../../../src/ol/source/XYZ.js';
++import {Heatmap as HeatmapLayer} from '../../../../src/ol/layer.js';
++
++const vector = new HeatmapLayer({
++  source: new VectorSource({
++    url: '/data/2012_Earthquakes_Mag5.kml',
++    format: new KML({
++      extractStyles: false,
++    }),
++  }),
++  blur: 3,
++  radius: 3,
++  opacity: 0.5,
++});
++
++vector.getSource().on('addfeature', function (event) {
++  const name = event.feature.get('name');
++  const magnitude = parseFloat(name.substr(2));
++  event.feature.set('weight', magnitude - 5);
++});
++
++const raster = new TileLayer({
++  source: new XYZ({
++    url: '/data/tiles/satellite/{z}/{x}/{y}.jpg',
++    transition: 0,
++  }),
++});
++
++new Map({
++  layers: [raster, vector],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    zoom: 0,
++  }),
++});
++
++render({
++  message: 'Heatmap layer with opacity renders properly using webgl',
++});

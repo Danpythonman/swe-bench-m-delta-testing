@@ -1,0 +1,209 @@
+diff --git a/src/ol/render/canvas/ExecutorGroup.js b/src/ol/render/canvas/ExecutorGroup.js
+index 6ff3e3fb802..0ddc0746957 100644
+--- a/src/ol/render/canvas/ExecutorGroup.js
++++ b/src/ol/render/canvas/ExecutorGroup.js
+@@ -364,6 +364,7 @@ class ExecutorGroup {
+     zs.sort(ascending);
+ 
+     builderTypes = builderTypes ? builderTypes : ALL;
++    const maxBuilderTypes = ALL.length;
+     let i, ii, j, jj, replays, replay;
+     if (declutterTree) {
+       zs.reverse();
+@@ -403,11 +404,11 @@ class ExecutorGroup {
+           }
+           if (zIndexContext) {
+             zIndexContext.offset();
+-            const z = zs[i];
+-            if (!this.deferredZIndexContexts_[z]) {
+-              this.deferredZIndexContexts_[z] = [];
++            const index = zs[i] * maxBuilderTypes + j;
++            if (!this.deferredZIndexContexts_[index]) {
++              this.deferredZIndexContexts_[index] = [];
+             }
+-            this.deferredZIndexContexts_[z].push(zIndexContext);
++            this.deferredZIndexContexts_[index].push(zIndexContext);
+           }
+         }
+       }
+diff --git a/src/ol/renderer/canvas/VectorTileLayer.js b/src/ol/renderer/canvas/VectorTileLayer.js
+index 68be9e1863e..3ca7220d470 100644
+--- a/src/ol/renderer/canvas/VectorTileLayer.js
++++ b/src/ol/renderer/canvas/VectorTileLayer.js
+@@ -312,7 +312,7 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
+         source.getOverlaps(),
+         executorGroupInstructions,
+         layer.getRenderBuffer(),
+-        !!this.frameState?.declutter,
++        true,
+       );
+       tile.executorGroups[layerUid].push(renderingReplayGroup);
+     }
+@@ -726,10 +726,8 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
+       let clipContext = context;
+       let tileClipContext;
+       if (currentClip) {
+-        if (declutter) {
+-          tileClipContext = new ZIndexContext();
+-          clipContext = tileClipContext.getContext();
+-        }
++        tileClipContext = new ZIndexContext();
++        clipContext = tileClipContext.getContext();
+         for (let j = 0, jj = clips.length; j < jj; ++j) {
+           if (z !== currentZ && currentZ < clipZs[j]) {
+             const clip = clips[j];
+@@ -775,6 +773,7 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
+           rotation,
+           hifi,
+           replayTypes,
++          frameState.declutter === null ? undefined : frameState.declutter,
+         );
+       }
+       if (contextSaved) {
+@@ -788,6 +787,9 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
+     context.globalAlpha = alpha;
+     this.ready = ready;
+     this.tileClipContexts_ = tileClipContexts;
++    if (!frameState.declutter) {
++      this.renderDeferredInternal(frameState);
++    }
+ 
+     super.postRender(context, frameState);
+   }
+diff --git a/test/rendering/cases/layer-vectortile-overlap-declutter/expected.png b/test/rendering/cases/layer-vectortile-overlap-declutter/expected.png
+new file mode 100644
+index 00000000000..59114c7f874
+Binary files /dev/null and b/test/rendering/cases/layer-vectortile-overlap-declutter/expected.png differ
+diff --git a/test/rendering/cases/layer-vectortile-overlap-declutter/main.js b/test/rendering/cases/layer-vectortile-overlap-declutter/main.js
+new file mode 100644
+index 00000000000..b2923402ba5
+--- /dev/null
++++ b/test/rendering/cases/layer-vectortile-overlap-declutter/main.js
+@@ -0,0 +1,59 @@
++import Feature from '../../../../src/ol/Feature.js';
++import Map from '../../../../src/ol/Map.js';
++import VectorTileLayer from '../../../../src/ol/layer/VectorTile.js';
++import VectorTileSource from '../../../../src/ol/source/VectorTile.js';
++import View from '../../../../src/ol/View.js';
++import {Fill, Stroke, Style, Text} from '../../../../src/ol/style.js';
++import {fromExtent} from '../../../../src/ol/geom/Polygon.js';
++
++const vectorTileSource = new VectorTileSource({
++  tileSize: 64,
++  tileUrlFunction: (tileCoord) => tileCoord,
++  tileLoadFunction(tile, tileCoord) {
++    const polygon = new Feature({
++      geometry: fromExtent(
++        vectorTileSource.getTileGrid().getTileCoordExtent(tileCoord),
++      ),
++    });
++    tile.setFeatures([polygon]);
++  },
++});
++
++const vectorTileLayer = new VectorTileLayer({
++  declutter: true,
++  renderMode: 'vector',
++  source: vectorTileSource,
++  style: new Style({
++    text: new Text({
++      overflow: true,
++      font: '32px ubuntu',
++      offsetX: 10,
++      text: '-W',
++      fill: new Fill({
++        color: 'rgba(0, 0, 0, 1)',
++      }),
++      stroke: new Stroke({
++        width: 35,
++        color: 'red',
++      }),
++    }),
++    fill: new Fill({
++      color: 'rgba(0, 0, 255, 0.3)',
++    }),
++  }),
++});
++
++new Map({
++  target: 'map',
++  layers: [vectorTileLayer],
++  view: new View({
++    center: [0, 0],
++    zoom: 1,
++    multiWorld: true,
++  }),
++});
++
++render({
++  message: 'Text is rendered above polygons, even when from different tiles',
++  tolerance: 0.001,
++});
+diff --git a/test/rendering/cases/layer-vectortile-overlap-no-declutter/expected.png b/test/rendering/cases/layer-vectortile-overlap-no-declutter/expected.png
+new file mode 100644
+index 00000000000..8d724dce03e
+Binary files /dev/null and b/test/rendering/cases/layer-vectortile-overlap-no-declutter/expected.png differ
+diff --git a/test/rendering/cases/layer-vectortile-overlap-no-declutter/main.js b/test/rendering/cases/layer-vectortile-overlap-no-declutter/main.js
+new file mode 100644
+index 00000000000..19fd1768297
+--- /dev/null
++++ b/test/rendering/cases/layer-vectortile-overlap-no-declutter/main.js
+@@ -0,0 +1,58 @@
++import Feature from '../../../../src/ol/Feature.js';
++import Map from '../../../../src/ol/Map.js';
++import VectorTileLayer from '../../../../src/ol/layer/VectorTile.js';
++import VectorTileSource from '../../../../src/ol/source/VectorTile.js';
++import View from '../../../../src/ol/View.js';
++import {Fill, Stroke, Style, Text} from '../../../../src/ol/style.js';
++import {fromExtent} from '../../../../src/ol/geom/Polygon.js';
++
++const vectorTileSource = new VectorTileSource({
++  tileSize: 64,
++  tileUrlFunction: (tileCoord) => tileCoord,
++  tileLoadFunction(tile, tileCoord) {
++    const polygon = new Feature({
++      geometry: fromExtent(
++        vectorTileSource.getTileGrid().getTileCoordExtent(tileCoord),
++      ),
++    });
++    tile.setFeatures([polygon]);
++  },
++});
++
++const vectorTileLayer = new VectorTileLayer({
++  renderMode: 'vector',
++  source: vectorTileSource,
++  style: new Style({
++    text: new Text({
++      overflow: true,
++      font: '32px ubuntu',
++      offsetX: -10,
++      text: 'W-',
++      fill: new Fill({
++        color: 'rgba(0, 0, 0, 1)',
++      }),
++      stroke: new Stroke({
++        width: 35,
++        color: 'red',
++      }),
++    }),
++    fill: new Fill({
++      color: 'rgba(0, 0, 255, 0.3)',
++    }),
++  }),
++});
++
++new Map({
++  target: 'map',
++  layers: [vectorTileLayer],
++  view: new View({
++    center: [0, 0],
++    zoom: 1,
++    multiWorld: true,
++  }),
++});
++
++render({
++  message: 'Text is rendered above polygons, even when from different tiles',
++  tolerance: 0.001,
++});

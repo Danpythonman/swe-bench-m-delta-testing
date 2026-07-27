@@ -1,0 +1,42 @@
+diff --git a/src/resources/rmd/hooks.R b/src/resources/rmd/hooks.R
+index 2e9b9fcad05..5e83e01999d 100644
+--- a/src/resources/rmd/hooks.R
++++ b/src/resources/rmd/hooks.R
+@@ -915,9 +915,9 @@ figure_cap <- function(options) {
+   if (is.null(output_label) || is_figure_label(output_label)) {
+     fig.cap <- options[["fig.cap"]]
+     fig.subcap <- options[["fig.subcap"]]
+-    if (!is.null(fig.subcap))
++    if (length(fig.subcap) != 0)
+       fig.subcap
+-    else if (!is.null(fig.cap))
++    else if (length(fig.cap) != 0)
+       fig.cap
+     else
+       ""
+diff --git a/tests/docs/smoke-all/2023/08/30/6658.qmd b/tests/docs/smoke-all/2023/08/30/6658.qmd
+new file mode 100644
+index 00000000000..81139c91833
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/08/30/6658.qmd
+@@ -0,0 +1,19 @@
++---
++format: html
++_quarto:
++  tests:
++    html:
++      ensureHtmlElements:
++        - ["img"]
++        - ["figcaption"]
++---
++
++Having empty caption with knitr chunk can happen when defining caption from within the chunk. (when leveraging `eval.after`)
++
++See https://github.com/quarto-dev/quarto-cli/issues/6658
++
++```{r}
++#| fig-cap: !expr caption
++caption = character(0)
++knitr::include_graphics("https://quarto.org/quarto.png")
++```
+\ No newline at end of file

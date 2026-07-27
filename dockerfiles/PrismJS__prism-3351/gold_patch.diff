@@ -1,0 +1,665 @@
+diff --git a/components/prism-java.js b/components/prism-java.js
+index 49ff19dd51..9d10f2fe62 100644
+--- a/components/prism-java.js
++++ b/components/prism-java.js
+@@ -3,11 +3,11 @@
+ 	var keywords = /\b(?:abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|exports|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|module|native|new|non-sealed|null|open|opens|package|permits|private|protected|provides|public|record(?!\s*[(){}[\]<>=%~.:,;?+\-*/&|^])|requires|return|sealed|short|static|strictfp|super|switch|synchronized|this|throw|throws|to|transient|transitive|try|uses|var|void|volatile|while|with|yield)\b/;
+ 
+ 	// full package (optional) + parent classes (optional)
+-	var classNamePrefix = /(^|[^\w.])(?:[a-z]\w*\s*\.\s*)*(?:[A-Z]\w*\s*\.\s*)*/.source;
++	var classNamePrefix = /(?:[a-z]\w*\s*\.\s*)*(?:[A-Z]\w*\s*\.\s*)*/.source;
+ 
+ 	// based on the java naming conventions
+ 	var className = {
+-		pattern: RegExp(classNamePrefix + /[A-Z](?:[\d_A-Z]*[a-z]\w*)?\b/.source),
++		pattern: RegExp(/(^|[^\w.])/.source + classNamePrefix + /[A-Z](?:[\d_A-Z]*[a-z]\w*)?\b/.source),
+ 		lookbehind: true,
+ 		inside: {
+ 			'namespace': {
+@@ -29,9 +29,16 @@
+ 		'class-name': [
+ 			className,
+ 			{
+-				// variables and parameters
++				// variables, parameters, and constructor references
+ 				// this to support class names (or generic parameters) which do not contain a lower case letter (also works for methods)
+-				pattern: RegExp(classNamePrefix + /[A-Z]\w*(?=\s+\w+\s*[;,=()])/.source),
++				pattern: RegExp(/(^|[^\w.])/.source + classNamePrefix + /[A-Z]\w*(?=\s+\w+\s*[;,=()]|\s*(?:\[[\s,]*\]\s*)?::\s*new\b)/.source),
++				lookbehind: true,
++				inside: className.inside
++			},
++			{
++				// class names based on keyword
++				// this to support class names (or generic parameters) which do not contain a lower case letter (also works for methods)
++				pattern: RegExp(/(\b(?:class|enum|extends|implements|instanceof|interface|new|record|throws)\s+)/.source + classNamePrefix + /[A-Z]\w*\b/.source),
+ 				lookbehind: true,
+ 				inside: className.inside
+ 			}
+@@ -79,6 +86,30 @@
+ 				'operator': /[?&|]/
+ 			}
+ 		},
++		'import': [
++			{
++				pattern: RegExp(/(\bimport\s+)/.source + classNamePrefix + /(?:[A-Z]\w*|\*)(?=\s*;)/.source),
++				lookbehind: true,
++				inside: {
++					'namespace': className.inside.namespace,
++					'punctuation': /\./,
++					'operator': /\*/,
++					'class-name': /\w+/
++				}
++			},
++			{
++				pattern: RegExp(/(\bimport\s+static\s+)/.source + classNamePrefix + /(?:\w+|\*)(?=\s*;)/.source),
++				lookbehind: true,
++				alias: 'static',
++				inside: {
++					'namespace': className.inside.namespace,
++					'static': /\b\w+$/,
++					'punctuation': /\./,
++					'operator': /\*/,
++					'class-name': /\w+/
++				}
++			}
++		],
+ 		'namespace': {
+ 			pattern: RegExp(
+ 				/(\b(?:exports|import(?:\s+static)?|module|open|opens|package|provides|requires|to|transitive|uses|with)\s+)(?!<keyword>)[a-z]\w*(?:\.[a-z]\w*)*\.?/
+diff --git a/components/prism-java.min.js b/components/prism-java.min.js
+index 7f8f684c72..b2dc396627 100644
+--- a/components/prism-java.min.js
++++ b/components/prism-java.min.js
+@@ -1 +1 @@
+-!function(e){var t=/\b(?:abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|exports|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|module|native|new|non-sealed|null|open|opens|package|permits|private|protected|provides|public|record(?!\s*[(){}[\]<>=%~.:,;?+\-*/&|^])|requires|return|sealed|short|static|strictfp|super|switch|synchronized|this|throw|throws|to|transient|transitive|try|uses|var|void|volatile|while|with|yield)\b/,n="(^|[^\\w.])(?:[a-z]\\w*\\s*\\.\\s*)*(?:[A-Z]\\w*\\s*\\.\\s*)*",a={pattern:RegExp(n+"[A-Z](?:[\\d_A-Z]*[a-z]\\w*)?\\b"),lookbehind:!0,inside:{namespace:{pattern:/^[a-z]\w*(?:\s*\.\s*[a-z]\w*)*(?:\s*\.)?/,inside:{punctuation:/\./}},punctuation:/\./}};e.languages.java=e.languages.extend("clike",{string:{pattern:/(^|[^\\])"(?:\\.|[^"\\\r\n])*"/,lookbehind:!0,greedy:!0},"class-name":[a,{pattern:RegExp(n+"[A-Z]\\w*(?=\\s+\\w+\\s*[;,=()])"),lookbehind:!0,inside:a.inside}],keyword:t,function:[e.languages.clike.function,{pattern:/(::\s*)[a-z_]\w*/,lookbehind:!0}],number:/\b0b[01][01_]*L?\b|\b0x(?:\.[\da-f_p+-]+|[\da-f_]+(?:\.[\da-f_p+-]+)?)\b|(?:\b\d[\d_]*(?:\.[\d_]*)?|\B\.\d[\d_]*)(?:e[+-]?\d[\d_]*)?[dfl]?/i,operator:{pattern:/(^|[^.])(?:<<=?|>>>?=?|->|--|\+\+|&&|\|\||::|[?:~]|[-+*/%&|^!=<>]=?)/m,lookbehind:!0}}),e.languages.insertBefore("java","string",{"triple-quoted-string":{pattern:/"""[ \t]*[\r\n](?:(?:"|"")?(?:\\.|[^"\\]))*"""/,greedy:!0,alias:"string"},char:{pattern:/'(?:\\.|[^'\\\r\n]){1,6}'/,greedy:!0}}),e.languages.insertBefore("java","class-name",{annotation:{pattern:/(^|[^.])@\w+(?:\s*\.\s*\w+)*/,lookbehind:!0,alias:"punctuation"},generics:{pattern:/<(?:[\w\s,.?]|&(?!&)|<(?:[\w\s,.?]|&(?!&)|<(?:[\w\s,.?]|&(?!&)|<(?:[\w\s,.?]|&(?!&))*>)*>)*>)*>/,inside:{"class-name":a,keyword:t,punctuation:/[<>(),.:]/,operator:/[?&|]/}},namespace:{pattern:RegExp("(\\b(?:exports|import(?:\\s+static)?|module|open|opens|package|provides|requires|to|transitive|uses|with)\\s+)(?!<keyword>)[a-z]\\w*(?:\\.[a-z]\\w*)*\\.?".replace(/<keyword>/g,function(){return t.source})),lookbehind:!0,inside:{punctuation:/\./}}})}(Prism);
+\ No newline at end of file
++!function(e){var n=/\b(?:abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|exports|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|module|native|new|non-sealed|null|open|opens|package|permits|private|protected|provides|public|record(?!\s*[(){}[\]<>=%~.:,;?+\-*/&|^])|requires|return|sealed|short|static|strictfp|super|switch|synchronized|this|throw|throws|to|transient|transitive|try|uses|var|void|volatile|while|with|yield)\b/,t="(?:[a-z]\\w*\\s*\\.\\s*)*(?:[A-Z]\\w*\\s*\\.\\s*)*",s={pattern:RegExp("(^|[^\\w.])"+t+"[A-Z](?:[\\d_A-Z]*[a-z]\\w*)?\\b"),lookbehind:!0,inside:{namespace:{pattern:/^[a-z]\w*(?:\s*\.\s*[a-z]\w*)*(?:\s*\.)?/,inside:{punctuation:/\./}},punctuation:/\./}};e.languages.java=e.languages.extend("clike",{string:{pattern:/(^|[^\\])"(?:\\.|[^"\\\r\n])*"/,lookbehind:!0,greedy:!0},"class-name":[s,{pattern:RegExp("(^|[^\\w.])"+t+"[A-Z]\\w*(?=\\s+\\w+\\s*[;,=()]|\\s*(?:\\[[\\s,]*\\]\\s*)?::\\s*new\\b)"),lookbehind:!0,inside:s.inside},{pattern:RegExp("(\\b(?:class|enum|extends|implements|instanceof|interface|new|record|throws)\\s+)"+t+"[A-Z]\\w*\\b"),lookbehind:!0,inside:s.inside}],keyword:n,function:[e.languages.clike.function,{pattern:/(::\s*)[a-z_]\w*/,lookbehind:!0}],number:/\b0b[01][01_]*L?\b|\b0x(?:\.[\da-f_p+-]+|[\da-f_]+(?:\.[\da-f_p+-]+)?)\b|(?:\b\d[\d_]*(?:\.[\d_]*)?|\B\.\d[\d_]*)(?:e[+-]?\d[\d_]*)?[dfl]?/i,operator:{pattern:/(^|[^.])(?:<<=?|>>>?=?|->|--|\+\+|&&|\|\||::|[?:~]|[-+*/%&|^!=<>]=?)/m,lookbehind:!0}}),e.languages.insertBefore("java","string",{"triple-quoted-string":{pattern:/"""[ \t]*[\r\n](?:(?:"|"")?(?:\\.|[^"\\]))*"""/,greedy:!0,alias:"string"},char:{pattern:/'(?:\\.|[^'\\\r\n]){1,6}'/,greedy:!0}}),e.languages.insertBefore("java","class-name",{annotation:{pattern:/(^|[^.])@\w+(?:\s*\.\s*\w+)*/,lookbehind:!0,alias:"punctuation"},generics:{pattern:/<(?:[\w\s,.?]|&(?!&)|<(?:[\w\s,.?]|&(?!&)|<(?:[\w\s,.?]|&(?!&)|<(?:[\w\s,.?]|&(?!&))*>)*>)*>)*>/,inside:{"class-name":s,keyword:n,punctuation:/[<>(),.:]/,operator:/[?&|]/}},import:[{pattern:RegExp("(\\bimport\\s+)"+t+"(?:[A-Z]\\w*|\\*)(?=\\s*;)"),lookbehind:!0,inside:{namespace:s.inside.namespace,punctuation:/\./,operator:/\*/,"class-name":/\w+/}},{pattern:RegExp("(\\bimport\\s+static\\s+)"+t+"(?:\\w+|\\*)(?=\\s*;)"),lookbehind:!0,alias:"static",inside:{namespace:s.inside.namespace,static:/\b\w+$/,punctuation:/\./,operator:/\*/,"class-name":/\w+/}}],namespace:{pattern:RegExp("(\\b(?:exports|import(?:\\s+static)?|module|open|opens|package|provides|requires|to|transitive|uses|with)\\s+)(?!<keyword>)[a-z]\\w*(?:\\.[a-z]\\w*)*\\.?".replace(/<keyword>/g,function(){return n.source})),lookbehind:!0,inside:{punctuation:/\./}}})}(Prism);
+\ No newline at end of file
+diff --git a/tests/languages/java/class-name_feature.test b/tests/languages/java/class-name_feature.test
+index 71530bb5be..b9c3c1a675 100644
+--- a/tests/languages/java/class-name_feature.test
++++ b/tests/languages/java/class-name_feature.test
+@@ -1,122 +1,163 @@
+-class Foo extends foo.bar.Foo {
+-
+-	java.util.List<foo.bar.Foo.Bar> bar(foo.bar.Baz bat) throws java.lang.Exception {
+-		var foo = new java.lang.UnsupportedOperationException("Not implemented");
+-		Exception e = foo;
+-		throw e;
+-	}
+-
+-}
+-
+-ID id;
+-
+-String.valueOf(5);
+-
+-----------------------------------------------------
+-
+-[
+-	["keyword", "class"],
+-	["class-name", ["Foo"]],
+-	["keyword", "extends"],
+-	["class-name", [
+-		["namespace", [
+-			"foo",
+-			["punctuation", "."],
+-			"bar",
+-			["punctuation", "."]
+-		]],
+-		"Foo"
+-	]],
+-	["punctuation", "{"],
+-
+-	["class-name", [
+-		["namespace", [
+-			"java",
+-			["punctuation", "."],
+-			"util",
+-			["punctuation", "."]
+-		]],
+-		"List"
+-	]],
+-	["generics", [
+-		["punctuation", "<"],
+-		["class-name", [
+-			["namespace", [
+-				"foo",
+-				["punctuation", "."],
+-				"bar",
+-				["punctuation", "."]
+-			]],
+-			"Foo",
+-			["punctuation", "."],
+-			"Bar"
+-		]],
+-		["punctuation", ">"]
+-	]],
+-	["function", "bar"],
+-	["punctuation", "("],
+-	["class-name", [
+-		["namespace", [
+-			"foo",
+-			["punctuation", "."],
+-			"bar",
+-			["punctuation", "."]
+-		]],
+-		"Baz"
+-	]],
+-	" bat",
+-	["punctuation", ")"],
+-	["keyword", "throws"],
+-	["class-name", [
+-		["namespace", [
+-			"java",
+-			["punctuation", "."],
+-			"lang",
+-			["punctuation", "."]
+-		]],
+-		"Exception"
+-	]],
+-	["punctuation", "{"],
+-
+-	["keyword", "var"],
+-	" foo ",
+-	["operator", "="],
+-	["keyword", "new"],
+-	["class-name", [
+-		["namespace", [
+-			"java",
+-			["punctuation", "."],
+-			"lang",
+-			["punctuation", "."]
+-		]],
+-		"UnsupportedOperationException"
+-	]],
+-	["punctuation", "("],
+-	["string", "\"Not implemented\""],
+-	["punctuation", ")"],
+-	["punctuation", ";"],
+-
+-	["class-name", ["Exception"]],
+-	" e ",
+-	["operator", "="],
+-	" foo",
+-	["punctuation", ";"],
+-
+-	["keyword", "throw"],
+-	" e",
+-	["punctuation", ";"],
+-
+-	["punctuation", "}"],
+-
+-	["punctuation", "}"],
+-
+-	["class-name", ["ID"]], " id", ["punctuation", ";"],
+-
+-	["class-name", ["String"]],
+-	["punctuation", "."],
+-	["function", "valueOf"],
+-	["punctuation", "("],
+-	["number", "5"],
+-	["punctuation", ")"],
+-	["punctuation", ";"]
+-]
++class Foo extends foo.bar.Foo {
++
++	java.util.List<foo.bar.Foo.Bar> bar(foo.bar.Baz bat) throws java.lang.Exception {
++		var foo = new java.lang.UnsupportedOperationException("Not implemented");
++		Exception e = foo;
++		throw e;
++	}
++
++}
++
++import com.lib.ID;
++ID id = new ID();
++ID.Nested id;
++ID::new
++ID[]::new
++
++String.valueOf(5);
++
++----------------------------------------------------
++
++[
++	["keyword", "class"],
++	["class-name", ["Foo"]],
++	["keyword", "extends"],
++	["class-name", [
++		["namespace", [
++			"foo",
++			["punctuation", "."],
++			"bar",
++			["punctuation", "."]
++		]],
++		"Foo"
++	]],
++	["punctuation", "{"],
++
++	["class-name", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"util",
++			["punctuation", "."]
++		]],
++		"List"
++	]],
++	["generics", [
++		["punctuation", "<"],
++		["class-name", [
++			["namespace", [
++				"foo",
++				["punctuation", "."],
++				"bar",
++				["punctuation", "."]
++			]],
++			"Foo",
++			["punctuation", "."],
++			"Bar"
++		]],
++		["punctuation", ">"]
++	]],
++	["function", "bar"],
++	["punctuation", "("],
++	["class-name", [
++		["namespace", [
++			"foo",
++			["punctuation", "."],
++			"bar",
++			["punctuation", "."]
++		]],
++		"Baz"
++	]],
++	" bat",
++	["punctuation", ")"],
++	["keyword", "throws"],
++	["class-name", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"lang",
++			["punctuation", "."]
++		]],
++		"Exception"
++	]],
++	["punctuation", "{"],
++
++	["keyword", "var"],
++	" foo ",
++	["operator", "="],
++	["keyword", "new"],
++	["class-name", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"lang",
++			["punctuation", "."]
++		]],
++		"UnsupportedOperationException"
++	]],
++	["punctuation", "("],
++	["string", "\"Not implemented\""],
++	["punctuation", ")"],
++	["punctuation", ";"],
++
++	["class-name", ["Exception"]],
++	" e ",
++	["operator", "="],
++	" foo",
++	["punctuation", ";"],
++
++	["keyword", "throw"],
++	" e",
++	["punctuation", ";"],
++
++	["punctuation", "}"],
++
++	["punctuation", "}"],
++
++	["keyword", "import"],
++	["import", [
++		["namespace", [
++			"com",
++			["punctuation", "."],
++			"lib",
++			["punctuation", "."]
++		]],
++		["class-name", "ID"]
++	]],
++	["punctuation", ";"],
++
++	["class-name", ["ID"]],
++	" id ",
++	["operator", "="],
++	["keyword", "new"],
++	["class-name", ["ID"]],
++	["punctuation", "("],
++	["punctuation", ")"],
++	["punctuation", ";"],
++
++	["class-name", [
++		"ID",
++		["punctuation", "."],
++		"Nested"
++	]],
++	" id",
++	["punctuation", ";"],
++
++	["class-name", ["ID"]],
++	["operator", "::"],
++	["keyword", "new"],
++
++	["class-name", ["ID"]],
++	["punctuation", "["],
++	["punctuation", "]"],
++	["operator", "::"],
++	["keyword", "new"],
++
++	["class-name", ["String"]],
++	["punctuation", "."],
++	["function", "valueOf"],
++	["punctuation", "("],
++	["number", "5"],
++	["punctuation", ")"],
++	["punctuation", ";"]
++]
+diff --git a/tests/languages/java/issue3350.test b/tests/languages/java/issue3350.test
+new file mode 100644
+index 0000000000..1af8678e2a
+--- /dev/null
++++ b/tests/languages/java/issue3350.test
+@@ -0,0 +1,86 @@
++import java.nio.charset.StandardCharsets;
++import java.security.MessageDigest;
++import java.util.Arrays;
++import java.util.HashSet;
++import java.util.UUID;
++import java.util.regex.Pattern;
++
++----------------------------------------------------
++
++[
++	["keyword", "import"],
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"nio",
++			["punctuation", "."],
++			"charset",
++			["punctuation", "."]
++		]],
++		["class-name", "StandardCharsets"]
++	]],
++	["punctuation", ";"],
++
++	["keyword", "import"],
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"security",
++			["punctuation", "."]
++		]],
++		["class-name", "MessageDigest"]
++	]],
++	["punctuation", ";"],
++
++	["keyword", "import"],
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"util",
++			["punctuation", "."]
++		]],
++		["class-name", "Arrays"]
++	]],
++	["punctuation", ";"],
++
++	["keyword", "import"],
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"util",
++			["punctuation", "."]
++		]],
++		["class-name", "HashSet"]
++	]],
++	["punctuation", ";"],
++
++	["keyword", "import"],
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"util",
++			["punctuation", "."]
++		]],
++		["class-name", "UUID"]
++	]],
++	["punctuation", ";"],
++
++	["keyword", "import"],
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"util",
++			["punctuation", "."],
++			"regex",
++			["punctuation", "."]
++		]],
++		["class-name", "Pattern"]
++	]],
++	["punctuation", ";"]
++]
+diff --git a/tests/languages/java/package_feature.test b/tests/languages/java/package_feature.test
+index c88dca8da3..15dbdf5f73 100644
+--- a/tests/languages/java/package_feature.test
++++ b/tests/languages/java/package_feature.test
+@@ -2,10 +2,12 @@ package java;
+ package java.lang;
+ 
+ import foo.Bar;
++import foo.ID;
+ import java.lang.Math;
+ import java.lang.*;
+ 
+ import static foo.Bar.BAZ;
++import static foo.ID.DEFAULT;
+ import static java.lang.Math.PI;
+ import static java.lang.Math.sin;
+ import static java.lang.Math.*;
+@@ -14,10 +16,9 @@ import static java.lang.Math.*;
+ 
+ [
+ 	["keyword", "package"],
+-	["namespace", [
+-		"java"
+-	]],
++	["namespace", ["java"]],
+ 	["punctuation", ";"],
++
+ 	["keyword", "package"],
+ 	["namespace", [
+ 		"java",
+@@ -27,91 +28,121 @@ import static java.lang.Math.*;
+ 	["punctuation", ";"],
+ 
+ 	["keyword", "import"],
+-	["namespace", [
+-		"foo",
+-		["punctuation", "."]
++	["import", [
++		["namespace", [
++			"foo",
++			["punctuation", "."]
++		]],
++		["class-name", "Bar"]
+ 	]],
+-	["class-name", [
+-		"Bar"
++	["punctuation", ";"],
++
++	["keyword", "import"],
++	["import", [
++		["namespace", [
++			"foo",
++			["punctuation", "."]
++		]],
++		["class-name", "ID"]
+ 	]],
+ 	["punctuation", ";"],
++
+ 	["keyword", "import"],
+-	["namespace", [
+-		"java",
+-		["punctuation", "."],
+-		"lang",
+-		["punctuation", "."]
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"lang",
++			["punctuation", "."]
++		]],
++		["class-name", "Math"]
+ 	]],
+-	["class-name", [
+-		"Math"
++	["punctuation", ";"],
++
++	["keyword", "import"],
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"lang",
++			["punctuation", "."]
++		]],
++		["operator", "*"]
+ 	]],
+ 	["punctuation", ";"],
++
+ 	["keyword", "import"],
+-	["namespace", [
+-		"java",
++	["keyword", "static"],
++	["import", [
++		["namespace", [
++			"foo",
++			["punctuation", "."]
++		]],
++		["class-name", "Bar"],
+ 		["punctuation", "."],
+-		"lang",
+-		["punctuation", "."]
++		["static", "BAZ"]
+ 	]],
+-	["operator", "*"],
+ 	["punctuation", ";"],
+ 
+ 	["keyword", "import"],
+ 	["keyword", "static"],
+-	["namespace", [
+-		"foo",
+-		["punctuation", "."]
+-	]],
+-	["class-name", [
+-		"Bar"
++	["import", [
++		["namespace", [
++			"foo",
++			["punctuation", "."]
++		]],
++		["class-name", "ID"],
++		["punctuation", "."],
++		["static", "DEFAULT"]
+ 	]],
+-	["punctuation", "."],
+-	"BAZ",
+ 	["punctuation", ";"],
++
+ 	["keyword", "import"],
+ 	["keyword", "static"],
+-	["namespace", [
+-		"java",
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"lang",
++			["punctuation", "."]
++		]],
++		["class-name", "Math"],
+ 		["punctuation", "."],
+-		"lang",
+-		["punctuation", "."]
+-	]],
+-	["class-name", [
+-		"Math"
++		["static", "PI"]
+ 	]],
+-	["punctuation", "."],
+-	"PI",
+ 	["punctuation", ";"],
++
+ 	["keyword", "import"],
+ 	["keyword", "static"],
+-	["namespace", [
+-		"java",
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"lang",
++			["punctuation", "."]
++		]],
++		["class-name", "Math"],
+ 		["punctuation", "."],
+-		"lang",
+-		["punctuation", "."]
+-	]],
+-	["class-name", [
+-		"Math"
++		["static", "sin"]
+ 	]],
+-	["punctuation", "."],
+-	"sin",
+ 	["punctuation", ";"],
++
+ 	["keyword", "import"],
+ 	["keyword", "static"],
+-	["namespace", [
+-		"java",
++	["import", [
++		["namespace", [
++			"java",
++			["punctuation", "."],
++			"lang",
++			["punctuation", "."]
++		]],
++		["class-name", "Math"],
+ 		["punctuation", "."],
+-		"lang",
+-		["punctuation", "."]
+-	]],
+-	["class-name", [
+-		"Math"
++		["operator", "*"]
+ 	]],
+-	["punctuation", "."],
+-	"*",
+ 	["punctuation", ";"]
+ ]
+ 
+ ----------------------------------------------------
+ 
+-Checks for packages.
+\ No newline at end of file
++Checks for packages.

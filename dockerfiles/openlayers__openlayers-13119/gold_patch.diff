@@ -1,0 +1,295 @@
+diff --git a/src/ol/render/EventType.js b/src/ol/render/EventType.js
+index 3cb18dc05c8..7ea0db387b8 100644
+--- a/src/ol/render/EventType.js
++++ b/src/ol/render/EventType.js
+@@ -21,16 +21,18 @@ export default {
+   POSTRENDER: 'postrender',
+ 
+   /**
+-   * Triggered before layers are rendered.
+-   * The event object will not have a `context` set.
++   * Triggered before layers are composed.  When dispatched by the map, the event object will not have
++   * a `context` set.  When dispatched by a layer, the event object will have a `context` set.  Only
++   * WebGL layers currently dispatch this event.
+    * @event module:ol/render/Event~RenderEvent#precompose
+    * @api
+    */
+   PRECOMPOSE: 'precompose',
+ 
+   /**
+-   * Triggered after all layers are rendered.
+-   * The event object will not have a `context` set.
++   * Triggered after layers are composed.  When dispatched by the map, the event object will not have
++   * a `context` set.  When dispatched by a layer, the event object will have a `context` set.  Only
++   * WebGL layers currently dispatch this event.
+    * @event module:ol/render/Event~RenderEvent#postcompose
+    * @api
+    */
+diff --git a/src/ol/renderer/webgl/Layer.js b/src/ol/renderer/webgl/Layer.js
+index 39610eb4b06..dfce02f4df5 100644
+--- a/src/ol/renderer/webgl/Layer.js
++++ b/src/ol/renderer/webgl/Layer.js
+@@ -88,6 +88,45 @@ class WebGLLayerRenderer extends LayerRenderer {
+     this.helper;
+ 
+     layer.addChangeListener(LayerProperty.MAP, this.removeHelper_.bind(this));
++
++    this.dispatchPreComposeEvent = this.dispatchPreComposeEvent.bind(this);
++    this.dispatchPostComposeEvent = this.dispatchPostComposeEvent.bind(this);
++  }
++
++  /**
++   * @param {WebGLRenderingContext} context The WebGL rendering context.
++   * @param {import("../../PluggableMap.js").FrameState} frameState Frame state.
++   * @protected
++   */
++  dispatchPreComposeEvent(context, frameState) {
++    const layer = this.getLayer();
++    if (layer.hasListener(RenderEventType.PRECOMPOSE)) {
++      const event = new RenderEvent(
++        RenderEventType.PRECOMPOSE,
++        undefined,
++        frameState,
++        context
++      );
++      layer.dispatchEvent(event);
++    }
++  }
++
++  /**
++   * @param {WebGLRenderingContext} context The WebGL rendering context.
++   * @param {import("../../PluggableMap.js").FrameState} frameState Frame state.
++   * @protected
++   */
++  dispatchPostComposeEvent(context, frameState) {
++    const layer = this.getLayer();
++    if (layer.hasListener(RenderEventType.POSTCOMPOSE)) {
++      const event = new RenderEvent(
++        RenderEventType.POSTCOMPOSE,
++        undefined,
++        frameState,
++        context
++      );
++      layer.dispatchEvent(event);
++    }
+   }
+ 
+   /**
+diff --git a/src/ol/renderer/webgl/PointsLayer.js b/src/ol/renderer/webgl/PointsLayer.js
+index 8752cd134f8..a122651c5a4 100644
+--- a/src/ol/renderer/webgl/PointsLayer.js
++++ b/src/ol/renderer/webgl/PointsLayer.js
+@@ -450,7 +450,11 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
+ 
+     const renderCount = this.indicesBuffer_.getSize();
+     this.helper.drawElements(0, renderCount);
+-    this.helper.finalizeDraw(frameState);
++    this.helper.finalizeDraw(
++      frameState,
++      this.dispatchPreComposeEvent,
++      this.dispatchPostComposeEvent
++    );
+     const canvas = this.helper.getCanvas();
+ 
+     if (this.hitDetectionEnabled_) {
+diff --git a/src/ol/renderer/webgl/TileLayer.js b/src/ol/renderer/webgl/TileLayer.js
+index b94618be2fd..47c39fcc28b 100644
+--- a/src/ol/renderer/webgl/TileLayer.js
++++ b/src/ol/renderer/webgl/TileLayer.js
+@@ -552,7 +552,11 @@ class WebGLTileLayerRenderer extends WebGLLayerRenderer {
+       }
+     }
+ 
+-    this.helper.finalizeDraw(frameState);
++    this.helper.finalizeDraw(
++      frameState,
++      this.dispatchPreComposeEvent,
++      this.dispatchPostComposeEvent
++    );
+ 
+     const canvas = this.helper.getCanvas();
+ 
+diff --git a/src/ol/webgl/Helper.js b/src/ol/webgl/Helper.js
+index ae8358c00d9..f7ceb515b86 100644
+--- a/src/ol/webgl/Helper.js
++++ b/src/ol/webgl/Helper.js
+@@ -637,15 +637,25 @@ class WebGLHelper extends Disposable {
+   /**
+    * Apply the successive post process passes which will eventually render to the actual canvas.
+    * @param {import("../PluggableMap.js").FrameState} frameState current frame state
+-   * @api
++   * @param {function(WebGLRenderingContext, import("../PluggableMap.js").FrameState):void} [preCompose] Called before composing.
++   * @param {function(WebGLRenderingContext, import("../PluggableMap.js").FrameState):void} [postCompose] Called before composing.
+    */
+-  finalizeDraw(frameState) {
++  finalizeDraw(frameState, preCompose, postCompose) {
+     // apply post processes using the next one as target
+-    for (let i = 0; i < this.postProcessPasses_.length; i++) {
+-      this.postProcessPasses_[i].apply(
+-        frameState,
+-        this.postProcessPasses_[i + 1] || null
+-      );
++    for (let i = 0, ii = this.postProcessPasses_.length; i < ii; i++) {
++      if (i === ii - 1) {
++        this.postProcessPasses_[i].apply(
++          frameState,
++          null,
++          preCompose,
++          postCompose
++        );
++      } else {
++        this.postProcessPasses_[i].apply(
++          frameState,
++          this.postProcessPasses_[i + 1]
++        );
++      }
+     }
+   }
+ 
+diff --git a/src/ol/webgl/PostProcessingPass.js b/src/ol/webgl/PostProcessingPass.js
+index 0df00516506..5989ccb3bba 100644
+--- a/src/ol/webgl/PostProcessingPass.js
++++ b/src/ol/webgl/PostProcessingPass.js
+@@ -250,9 +250,11 @@ class WebGLPostProcessingPass {
+    * Render to the next postprocessing pass (or to the canvas if final pass).
+    * @param {import("../PluggableMap.js").FrameState} frameState current frame state
+    * @param {WebGLPostProcessingPass} [nextPass] Next pass, optional
++   * @param {function(WebGLRenderingContext, import("../PluggableMap.js").FrameState):void} [preCompose] Called before composing.
++   * @param {function(WebGLRenderingContext, import("../PluggableMap.js").FrameState):void} [postCompose] Called before composing.
+    * @api
+    */
+-  apply(frameState, nextPass) {
++  apply(frameState, nextPass, preCompose, postCompose) {
+     const gl = this.getGL();
+     const size = frameState.size;
+ 
+@@ -288,7 +290,13 @@ class WebGLPostProcessingPass {
+ 
+     this.applyUniforms(frameState);
+ 
++    if (preCompose) {
++      preCompose(gl, frameState);
++    }
+     gl.drawArrays(gl.TRIANGLES, 0, 6);
++    if (postCompose) {
++      postCompose(gl, frameState);
++    }
+   }
+ 
+   /**
+diff --git a/test/browser/spec/ol/layer/WebGLTile.test.js b/test/browser/spec/ol/layer/WebGLTile.test.js
+index d4b14695f8c..f590af4c265 100644
+--- a/test/browser/spec/ol/layer/WebGLTile.test.js
++++ b/test/browser/spec/ol/layer/WebGLTile.test.js
+@@ -257,6 +257,21 @@ describe('ol/layer/WebGLTile', function () {
+     });
+   });
+ 
++  it('dispatches a precompose event with WebGL context', (done) => {
++    let called = false;
++    layer.on('precompose', (event) => {
++      expect(event.context).to.be.a(WebGLRenderingContext);
++      called = true;
++    });
++
++    map.once('rendercomplete', () => {
++      expect(called).to.be(true);
++      done();
++    });
++
++    map.render();
++  });
++
+   it('dispatches a prerender event with WebGL context and inverse pixel transform', (done) => {
+     let called = false;
+     layer.on('prerender', (event) => {
+diff --git a/test/rendering/cases/webgl-precompose-event/expected.png b/test/rendering/cases/webgl-precompose-event/expected.png
+new file mode 100644
+index 00000000000..d93d3624f65
+Binary files /dev/null and b/test/rendering/cases/webgl-precompose-event/expected.png differ
+diff --git a/test/rendering/cases/webgl-precompose-event/main.js b/test/rendering/cases/webgl-precompose-event/main.js
+new file mode 100644
+index 00000000000..750ef76160a
+--- /dev/null
++++ b/test/rendering/cases/webgl-precompose-event/main.js
+@@ -0,0 +1,80 @@
++import DataTileSource from '../../../../src/ol/source/DataTile.js';
++import Map from '../../../../src/ol/Map.js';
++import TileLayer from '../../../../src/ol/layer/WebGLTile.js';
++import View from '../../../../src/ol/View.js';
++
++const high = new Uint8Array(256 * 256).fill(255);
++const low = new Uint8Array(256 * 256).fill(0);
++
++const red = new TileLayer({
++  transition: 0,
++  source: new DataTileSource({
++    minZoom: 2,
++    loader: function (z, x, y) {
++      if ((x + y) % 2 === 0) {
++        return high;
++      }
++      return low;
++    },
++  }),
++  style: {
++    color: ['array', ['band', 1], 0, 0, 1],
++  },
++});
++
++const green = new TileLayer({
++  transition: 0,
++  source: new DataTileSource({
++    minZoom: 2,
++    loader: (z, x) => {
++      if (x % 2 === 0) {
++        return high;
++      }
++      return low;
++    },
++  }),
++  style: {
++    color: ['array', 0, ['band', 1], 0, 1],
++  },
++});
++
++green.on('precompose', (event) => {
++  const gl = event.context;
++  gl.blendEquation(gl.FUNC_ADD);
++  gl.blendFunc(gl.ONE, gl.ONE);
++});
++
++const blue = new TileLayer({
++  transition: 0,
++  source: new DataTileSource({
++    minZoom: 2,
++    loader: (z, x, y) => {
++      if (y % 2 === 0) {
++        return high;
++      }
++      return low;
++    },
++  }),
++  style: {
++    color: ['array', 0, 0, ['band', 1], 1],
++  },
++});
++
++blue.on('precompose', (event) => {
++  const gl = event.context;
++  gl.blendEquation(gl.FUNC_ADD);
++  gl.blendFunc(gl.ONE, gl.ONE);
++});
++
++new Map({
++  target: 'map',
++  layers: [red, green, blue],
++  view: new View({
++    center: [0, 0],
++    zoom: 0,
++  }),
++});
++
++render({
++  message: 'precompose events can be used to change layer blending',
++});

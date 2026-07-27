@@ -1,0 +1,194 @@
+diff --git a/changelog/upgrade-notes.md b/changelog/upgrade-notes.md
+index 7bda3c37d85..f9dc5a322e6 100644
+--- a/changelog/upgrade-notes.md
++++ b/changelog/upgrade-notes.md
+@@ -6,6 +6,10 @@
+ 
+ Please see https://docs.microsoft.com/en-us/lifecycle/announcements/internet-explorer-11-end-of-support.
+ 
++#### ol/coordinate.js
++
++The `toStringHDMS` function from the `ol/coordinate.js` module now formats longitude, latitude pairs so that the minutes and seconds are omitted if they are zero.  This changes the values displayed on graticules.
++
+ ### 6.15.0
+ 
+ #### Deprecated `tilePixelRatio` option for data tile sources.
+diff --git a/src/ol/coordinate.js b/src/ol/coordinate.js
+index 4be1010142a..83c27e1b642 100644
+--- a/src/ol/coordinate.js
++++ b/src/ol/coordinate.js
+@@ -2,7 +2,7 @@
+  * @module ol/coordinate
+  */
+ import {getWidth} from './extent.js';
+-import {modulo} from './math.js';
++import {modulo, toFixed} from './math.js';
+ import {padNumber} from './string.js';
+ 
+ /**
+@@ -162,13 +162,11 @@ export function createStringXY(opt_fractionDigits) {
+ export function degreesToStringHDMS(hemispheres, degrees, opt_fractionDigits) {
+   const normalizedDegrees = modulo(degrees + 180, 360) - 180;
+   const x = Math.abs(3600 * normalizedDegrees);
+-  const dflPrecision = opt_fractionDigits || 0;
+-  const precision = Math.pow(10, dflPrecision);
++  const decimals = opt_fractionDigits || 0;
+ 
+   let deg = Math.floor(x / 3600);
+   let min = Math.floor((x - deg * 3600) / 60);
+-  let sec = x - deg * 3600 - min * 60;
+-  sec = Math.ceil(sec * precision) / precision;
++  let sec = toFixed(x - deg * 3600 - min * 60, decimals);
+ 
+   if (sec >= 60) {
+     sec = 0;
+@@ -180,17 +178,18 @@ export function degreesToStringHDMS(hemispheres, degrees, opt_fractionDigits) {
+     deg += 1;
+   }
+ 
+-  return (
+-    deg +
+-    '\u00b0 ' +
+-    padNumber(min, 2) +
+-    '\u2032 ' +
+-    padNumber(sec, 2, dflPrecision) +
+-    '\u2033' +
+-    (normalizedDegrees == 0
+-      ? ''
+-      : ' ' + hemispheres.charAt(normalizedDegrees < 0 ? 1 : 0))
+-  );
++  let hdms = deg + '\u00b0';
++  if (min !== 0 || sec !== 0) {
++    hdms += ' ' + padNumber(min, 2) + '\u2032';
++  }
++  if (sec !== 0) {
++    hdms += ' ' + padNumber(sec, 2, decimals) + '\u2033';
++  }
++  if (normalizedDegrees !== 0) {
++    hdms += ' ' + hemispheres.charAt(normalizedDegrees < 0 ? 1 : 0);
++  }
++
++  return hdms;
+ }
+ 
+ /**
+diff --git a/test/browser/spec/ol/graticule.test.js b/test/browser/spec/ol/graticule.test.js
+index 2f3642dd79e..64cbb5a9d81 100644
+--- a/test/browser/spec/ol/graticule.test.js
++++ b/test/browser/spec/ol/graticule.test.js
+@@ -65,23 +65,19 @@ describe('ol.layer.Graticule', function () {
+       };
+       graticule.drawLabels_(event);
+       expect(graticule.meridiansLabels_.length).to.be(13);
+-      expect(graticule.meridiansLabels_[0].text).to.be('0° 00′ 00″');
++      expect(graticule.meridiansLabels_[0].text).to.be('0°');
+       expect(
+         graticule.meridiansLabels_[0].geom.getCoordinates()[0]
+       ).to.roughlyEqual(0, 1e-9);
+       expect(graticule.parallelsLabels_.length).to.be(3);
+-      expect(graticule.parallelsLabels_[0].text).to.be('0° 00′ 00″');
++      expect(graticule.parallelsLabels_[0].text).to.be('0°');
+       expect(
+         graticule.parallelsLabels_[0].geom.getCoordinates()[1]
+       ).to.roughlyEqual(0, 1e-9);
+       feature.set('graticule_label', graticule.meridiansLabels_[0].text);
+-      expect(graticule.lonLabelStyle_(feature).getText().getText()).to.be(
+-        '0° 00′ 00″'
+-      );
++      expect(graticule.lonLabelStyle_(feature).getText().getText()).to.be('0°');
+       feature.set('graticule_label', graticule.parallelsLabels_[0].text);
+-      expect(graticule.latLabelStyle_(feature).getText().getText()).to.be(
+-        '0° 00′ 00″'
+-      );
++      expect(graticule.latLabelStyle_(feature).getText().getText()).to.be('0°');
+     });
+ 
+     it('creates a graticule with wrapped world labels', function () {
+@@ -115,24 +111,20 @@ describe('ol.layer.Graticule', function () {
+       };
+       graticule.drawLabels_(event);
+       expect(graticule.meridiansLabels_.length).to.be(13);
+-      expect(graticule.meridiansLabels_[0].text).to.be('0° 00′ 00″');
++      expect(graticule.meridiansLabels_[0].text).to.be('0°');
+       const coordinates = fromLonLat([360, 0]);
+       expect(
+         graticule.meridiansLabels_[0].geom.getCoordinates()[0]
+       ).to.roughlyEqual(coordinates[0], 1e-9);
+       expect(graticule.parallelsLabels_.length).to.be(3);
+-      expect(graticule.parallelsLabels_[0].text).to.be('0° 00′ 00″');
++      expect(graticule.parallelsLabels_[0].text).to.be('0°');
+       expect(
+         graticule.parallelsLabels_[0].geom.getCoordinates()[1]
+       ).to.roughlyEqual(0, 1e-9);
+       feature.set('graticule_label', graticule.meridiansLabels_[0].text);
+-      expect(graticule.lonLabelStyle_(feature).getText().getText()).to.be(
+-        '0° 00′ 00″'
+-      );
++      expect(graticule.lonLabelStyle_(feature).getText().getText()).to.be('0°');
+       feature.set('graticule_label', graticule.parallelsLabels_[0].text);
+-      expect(graticule.latLabelStyle_(feature).getText().getText()).to.be(
+-        '0° 00′ 00″'
+-      );
++      expect(graticule.latLabelStyle_(feature).getText().getText()).to.be('0°');
+     });
+ 
+     it('has a default stroke style', function () {
+diff --git a/test/node/ol/coordinate.test.js b/test/node/ol/coordinate.test.js
+index 2260acf3111..fc0455717da 100644
+--- a/test/node/ol/coordinate.test.js
++++ b/test/node/ol/coordinate.test.js
+@@ -7,6 +7,7 @@ import {
+   closestOnSegment,
+   equals as coordinatesEqual,
+   createStringXY,
++  degreesToStringHDMS,
+   format as formatCoordinate,
+   rotate as rotateCoordinate,
+   scale as scaleCoordinate,
+@@ -216,6 +217,26 @@ describe('ol/coordinate.js', function () {
+     });
+   });
+ 
++  describe('degreesToStringHDMS', () => {
++    it('includes minutes and seconds if non-zero', () => {
++      expect(degreesToStringHDMS('NS', 10 + 30 / 60 + 30 / 3600)).to.be(
++        '10° 30′ 30″ N'
++      );
++    });
++
++    it('omits minutes if zero', () => {
++      expect(degreesToStringHDMS('NS', 10)).to.be('10° N');
++    });
++
++    it('includes minutes if seconds are non-zero', () => {
++      expect(degreesToStringHDMS('NS', 10 + 30 / 3600)).to.be('10° 00′ 30″ N');
++    });
++
++    it('omits seconds if zero', () => {
++      expect(degreesToStringHDMS('NS', 10.5)).to.be('10° 30′ N');
++    });
++  });
++
+   describe('#toStringHDMS', function () {
+     it('returns the empty string on undefined input', function () {
+       const got = toStringHDMS();
+@@ -225,13 +246,16 @@ describe('ol/coordinate.js', function () {
+     it('formats with zero fractional digits as default', function () {
+       const coord = [7.85, 47.983333];
+       const got = toStringHDMS(coord);
+-      const expected = '47° 59′ 00″ N 7° 51′ 00″ E';
++      const expected = '47° 59′ N 7° 51′ E';
+       expect(got).to.be(expected);
+     });
+     it('formats with given fractional digits, if passed', function () {
+-      const coord = [7.85, 47.983333];
++      const coord = [
++        10 + 20 / 60 + 0.3456 / 3600,
++        20 + 30 / 60 + 0.4321 / 3600,
++      ];
+       const got = toStringHDMS(coord, 3);
+-      const expected = '47° 58′ 59.999″ N 7° 51′ 00.000″ E';
++      const expected = '20° 30′ 00.432″ N 10° 20′ 00.346″ E';
+       expect(got).to.be(expected);
+     });
+   });

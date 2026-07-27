@@ -1,0 +1,3484 @@
+diff --git a/e2e/components/Notifications/Notifications-test.e2e.js b/e2e/components/Notifications/Notifications-test.e2e.js
+index 5b12401a0328..595c41bec074 100644
+--- a/e2e/components/Notifications/Notifications-test.e2e.js
++++ b/e2e/components/Notifications/Notifications-test.e2e.js
+@@ -16,24 +16,24 @@ test.describe('Notifications', () => {
+     test.describe(theme, () => {
+       test('toast @vrt', async ({ page }) => {
+         await snapshotStory(page, {
+-          component: 'Notifications',
+-          id: 'components-notifications--toast',
++          component: 'Toast',
++          id: 'components-notifications-toast--default',
+           theme,
+         });
+       });
+ 
+       test('inline @vrt', async ({ page }) => {
+         await snapshotStory(page, {
+-          component: 'Notifications',
+-          id: 'components-notifications--inline',
++          component: 'Inline',
++          id: 'components-notifications-inline--default',
+           theme,
+         });
+       });
+ 
+       test('actionable @vrt', async ({ page }) => {
+         await snapshotStory(page, {
+-          component: 'Notifications',
+-          id: 'components-notifications--actionable',
++          component: 'Actionable',
++          id: 'components-notifications-actionable--default',
+           theme,
+         });
+       });
+@@ -42,8 +42,8 @@ test.describe('Notifications', () => {
+ 
+   test('accessibility-checker @avt', async ({ page }) => {
+     await visitStory(page, {
+-      component: 'Notifications',
+-      id: 'components-notifications--toast',
++      component: 'Toast',
++      id: 'components-notifications-toast--default',
+       globals: {
+         theme: 'white',
+       },
+diff --git a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+index d1f84f0524bd..8699a9224b97 100644
+--- a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
++++ b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+@@ -91,8 +91,83 @@ Map {
+     },
+   },
+   "ActionableNotification" => Object {
+-    "$$typeof": Symbol(react.forward_ref),
+-    "render": [Function],
++    "defaultProps": Object {
++      "closeOnEscape": true,
++      "hasFocus": true,
++      "hideCloseButton": false,
++      "inline": false,
++      "kind": "error",
++      "onCloseButtonClick": [Function],
++      "role": "alertdialog",
++    },
++    "propTypes": Object {
++      "actionButtonLabel": Object {
++        "isRequired": true,
++        "type": "string",
++      },
++      "ariaLabel": Object {
++        "type": "string",
++      },
++      "caption": Object {
++        "type": "string",
++      },
++      "children": Object {
++        "type": "node",
++      },
++      "className": Object {
++        "type": "string",
++      },
++      "closeOnEscape": Object {
++        "type": "bool",
++      },
++      "hasFocus": Object {
++        "type": "bool",
++      },
++      "hideCloseButton": Object {
++        "type": "bool",
++      },
++      "inline": Object {
++        "type": "bool",
++      },
++      "kind": Object {
++        "args": Array [
++          Array [
++            "error",
++            "info",
++            "info-square",
++            "success",
++            "warning",
++            "warning-alt",
++          ],
++        ],
++        "isRequired": true,
++        "type": "oneOf",
++      },
++      "lowContrast": Object {
++        "type": "bool",
++      },
++      "onActionButtonClick": Object {
++        "type": "func",
++      },
++      "onClose": Object {
++        "type": "func",
++      },
++      "onCloseButtonClick": Object {
++        "type": "func",
++      },
++      "role": Object {
++        "type": "string",
++      },
++      "statusIconDescription": Object {
++        "type": "string",
++      },
++      "subtitle": Object {
++        "type": "string",
++      },
++      "title": Object {
++        "type": "string",
++      },
++    },
+   },
+   "AspectRatio" => Object {
+     "propTypes": Object {
+@@ -3694,8 +3769,64 @@ Map {
+     },
+   },
+   "InlineNotification" => Object {
+-    "$$typeof": Symbol(react.forward_ref),
+-    "render": [Function],
++    "defaultProps": Object {
++      "hideCloseButton": false,
++      "kind": "error",
++      "onCloseButtonClick": [Function],
++      "role": "status",
++    },
++    "propTypes": Object {
++      "children": Object {
++        "type": "node",
++      },
++      "className": Object {
++        "type": "string",
++      },
++      "hideCloseButton": Object {
++        "type": "bool",
++      },
++      "kind": Object {
++        "args": Array [
++          Array [
++            "error",
++            "info",
++            "info-square",
++            "success",
++            "warning",
++            "warning-alt",
++          ],
++        ],
++        "type": "oneOf",
++      },
++      "lowContrast": Object {
++        "type": "bool",
++      },
++      "onClose": Object {
++        "type": "func",
++      },
++      "onCloseButtonClick": Object {
++        "type": "func",
++      },
++      "role": Object {
++        "args": Array [
++          Array [
++            "alert",
++            "log",
++            "status",
++          ],
++        ],
++        "type": "oneOf",
++      },
++      "statusIconDescription": Object {
++        "type": "string",
++      },
++      "subtitle": Object {
++        "type": "string",
++      },
++      "title": Object {
++        "type": "string",
++      },
++    },
+   },
+   "Layer" => Object {
+     "propTypes": Object {
+@@ -4664,16 +4795,83 @@ Map {
+     "render": [Function],
+   },
+   "NotificationActionButton" => Object {
+-    "$$typeof": Symbol(react.forward_ref),
+-    "render": [Function],
++    "propTypes": Object {
++      "children": Object {
++        "type": "node",
++      },
++      "className": Object {
++        "type": "string",
++      },
++      "inline": Object {
++        "type": "bool",
++      },
++      "onClick": Object {
++        "type": "func",
++      },
++    },
+   },
+   "NotificationButton" => Object {
+-    "$$typeof": Symbol(react.forward_ref),
+-    "render": [Function],
+-  },
+-  "NotificationTextDetails" => Object {
+-    "$$typeof": Symbol(react.forward_ref),
+-    "render": [Function],
++    "defaultProps": Object {
++      "ariaLabel": "close notification",
++      "notificationType": "toast",
++      "renderIcon": Object {
++        "$$typeof": Symbol(react.forward_ref),
++        "propTypes": Object {
++          "size": Object {
++            "args": Array [
++              Array [
++                Object {
++                  "type": "number",
++                },
++                Object {
++                  "type": "string",
++                },
++              ],
++            ],
++            "type": "oneOfType",
++          },
++        },
++        "render": [Function],
++      },
++      "type": "button",
++    },
++    "propTypes": Object {
++      "ariaLabel": Object {
++        "type": "string",
++      },
++      "className": Object {
++        "type": "string",
++      },
++      "name": Object {
++        "type": "string",
++      },
++      "notificationType": Object {
++        "args": Array [
++          Array [
++            "toast",
++            "inline",
++            "actionable",
++          ],
++        ],
++        "type": "oneOf",
++      },
++      "renderIcon": Object {
++        "args": Array [
++          Array [
++            Object {
++              "type": "func",
++            },
++            Object {
++              "type": "object",
++            },
++          ],
++        ],
++        "type": "oneOfType",
++      },
++      "type": Object {
++        "type": "string",
++      },
++    },
+   },
+   "NumberInput" => Object {
+     "$$typeof": Symbol(react.forward_ref),
+@@ -7824,8 +8022,74 @@ Map {
+     "render": [Function],
+   },
+   "ToastNotification" => Object {
+-    "$$typeof": Symbol(react.forward_ref),
+-    "render": [Function],
++    "defaultProps": Object {
++      "hideCloseButton": false,
++      "kind": "error",
++      "onCloseButtonClick": [Function],
++      "role": "status",
++      "timeout": 0,
++    },
++    "propTypes": Object {
++      "ariaLabel": Object {
++        "type": "string",
++      },
++      "caption": Object {
++        "type": "string",
++      },
++      "children": Object {
++        "type": "node",
++      },
++      "className": Object {
++        "type": "string",
++      },
++      "hideCloseButton": Object {
++        "type": "bool",
++      },
++      "kind": Object {
++        "args": Array [
++          Array [
++            "error",
++            "info",
++            "info-square",
++            "success",
++            "warning",
++            "warning-alt",
++          ],
++        ],
++        "type": "oneOf",
++      },
++      "lowContrast": Object {
++        "type": "bool",
++      },
++      "onClose": Object {
++        "type": "func",
++      },
++      "onCloseButtonClick": Object {
++        "type": "func",
++      },
++      "role": Object {
++        "args": Array [
++          Array [
++            "alert",
++            "log",
++            "status",
++          ],
++        ],
++        "type": "oneOf",
++      },
++      "statusIconDescription": Object {
++        "type": "string",
++      },
++      "subtitle": Object {
++        "type": "string",
++      },
++      "timeout": Object {
++        "type": "number",
++      },
++      "title": Object {
++        "type": "string",
++      },
++    },
+   },
+   "Toggle" => Object {
+     "propTypes": Object {
+diff --git a/packages/react/src/__tests__/index-test.js b/packages/react/src/__tests__/index-test.js
+index 7bd977da856a..48fc1f658f1d 100644
+--- a/packages/react/src/__tests__/index-test.js
++++ b/packages/react/src/__tests__/index-test.js
+@@ -99,7 +99,6 @@ describe('Carbon Components React', () => {
+         "MultiSelect",
+         "NotificationActionButton",
+         "NotificationButton",
+-        "NotificationTextDetails",
+         "NumberInput",
+         "NumberInputSkeleton",
+         "OrderedList",
+diff --git a/packages/react/src/components/Notification/Notification-story.js b/packages/react/src/components/Notification/Notification-story.js
+deleted file mode 100644
+index dfda68894760..000000000000
+--- a/packages/react/src/components/Notification/Notification-story.js
++++ /dev/null
+@@ -1,93 +0,0 @@
+-/**
+- * Copyright IBM Corp. 2016, 2018
+- *
+- * This source code is licensed under the Apache-2.0 license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-import React from 'react';
+-import { action } from '@storybook/addon-actions';
+-import {
+-  withKnobs,
+-  boolean,
+-  number,
+-  select,
+-  text,
+-} from '@storybook/addon-knobs';
+-import {
+-  ToastNotification,
+-  InlineNotification,
+-  NotificationActionButton,
+-} from './Notification';
+-import mdx from './Notification.mdx';
+-
+-const kinds = {
+-  'Error (error)': 'error',
+-  'Info (info)': 'info',
+-  'Info square (info-square)': 'info-square',
+-  'Success (success)': 'success',
+-  'Warning (warning)': 'warning',
+-  'Warning (warning-alt)': 'warning-alt',
+-};
+-const notificationProps = () => ({
+-  kind: select('The notification kind (kind)', kinds, 'info'),
+-  lowContrast: boolean('Use low contrast variant (lowContrast)', false),
+-  role: text('ARIA role (role)', 'alert'),
+-  title: text('Title (title)', 'Notification title'),
+-  subtitle: text('Subtitle (subtitle)', 'Subtitle text goes here.'),
+-  iconDescription: text(
+-    'Icon description (iconDescription)',
+-    'describes the close button'
+-  ),
+-  statusIconDescription: text(
+-    'Status icon description (statusIconDescription)',
+-    'describes the status icon'
+-  ),
+-  hideCloseButton: boolean('Hide close button (hideCloseButton)', false),
+-  onClose: action('onClose'),
+-  onCloseButtonClick: action('onCloseButtonClick'),
+-});
+-
+-const toastNotificationProps = () => ({
+-  ...notificationProps(),
+-  timeout: number(
+-    'Duration in milliseconds to display notification (timeout)',
+-    0
+-  ),
+-});
+-
+-export default {
+-  title: 'Components/Notifications',
+-  component: ToastNotification,
+-  decorators: [withKnobs],
+-  subcomponents: {
+-    InlineNotification,
+-  },
+-  parameters: {
+-    docs: {
+-      page: mdx,
+-    },
+-  },
+-};
+-
+-export const Toast = () => (
+-  <ToastNotification
+-    {...toastNotificationProps()}
+-    caption={text('Caption (caption)', '00:00:00 AM')}
+-    style={{ marginBottom: '.5rem' }}
+-  />
+-);
+-
+-export const Inline = () => (
+-  <InlineNotification
+-    {...notificationProps()}
+-    actions={
+-      <NotificationActionButton
+-        onClick={action('NotificationActionButton onClick')}>
+-        {text('Action (NotificationActionButton > children)', 'Action')}
+-      </NotificationActionButton>
+-    }
+-  />
+-);
+-
+-Inline.storyName = 'inline';
+diff --git a/packages/react/src/components/Notification/Notification-test.js b/packages/react/src/components/Notification/Notification-test.js
+index 85b8f1c6a5e3..e09faebde6e1 100644
+--- a/packages/react/src/components/Notification/Notification-test.js
++++ b/packages/react/src/components/Notification/Notification-test.js
+@@ -6,356 +6,337 @@
+  */
+ 
+ import React from 'react';
+-import { Close, ErrorFilled, CheckmarkFilled } from '@carbon/icons-react';
++import { ErrorFilled } from '@carbon/icons-react';
+ import {
+   NotificationButton,
+-  NotificationTextDetails,
+   ToastNotification,
+   InlineNotification,
++  ActionableNotification,
+ } from './Notification';
+-import { shallow, mount } from 'enzyme';
++import { render, screen, waitFor } from '@testing-library/react';
++import userEvent from '@testing-library/user-event';
++import { it } from 'window-or-global';
+ 
+ const prefix = 'cds';
+ 
+ describe('NotificationButton', () => {
+-  describe('Renders as expected', () => {
+-    const wrapper = shallow(<NotificationButton className="some-class" />);
+-
+-    it('renders given className', () => {
+-      expect(wrapper.hasClass('some-class')).toBe(true);
+-    });
+-
+-    it('renders only one Icon', () => {
+-      const icon = wrapper.find(Close);
+-      expect(icon.length).toEqual(1);
+-    });
++  it('should place the `className` prop on the outermost DOM node', () => {
++    const { container } = render(<NotificationButton className="test" />);
++    expect(container.firstChild).toHaveClass('test');
++  });
+ 
+-    it('supports custom icon', () => {
+-      const iconButton = mount(
+-        <NotificationButton
+-          renderIcon={(props) => <Close size={20} {...props} />}
+-        />
+-      );
+-      const originalIcon = mount(<Close size={20} />).find('svg');
+-      const icon = iconButton.find('svg');
+-      expect(icon.find(':not(svg):not(title)').html()).toBe(
+-        originalIcon.children().html()
+-      );
+-    });
++  it('supports custom icon', () => {
++    const { rerender } = render(<NotificationButton />);
++    const defaultIcon = screen.queryByRole('button').innerHTML;
+ 
+-    describe('When notificationType equals "toast"', () => {
+-      it('button should have correct className by default', () => {
+-        expect(
+-          wrapper.hasClass(`${prefix}--toast-notification__close-button`)
+-        ).toBe(true);
+-      });
+-
+-      it('icon should have correct className by default', () => {
+-        const icon = wrapper.find(Close);
+-        expect(icon.hasClass(`${prefix}--toast-notification__close-icon`)).toBe(
+-          true
+-        );
+-      });
+-    });
++    rerender(
++      <NotificationButton
++        renderIcon={(props) => <ErrorFilled size={20} {...props} />}
++      />
++    );
++    const customIcon = screen.queryByRole('button').innerHTML;
+ 
+-    describe('When notificationType equals "inline"', () => {
+-      it('button should have correct className', () => {
+-        wrapper.setProps({ notificationType: 'inline' });
+-        expect(
+-          wrapper.hasClass(`${prefix}--inline-notification__close-button`)
+-        ).toBe(true);
+-      });
+-
+-      it('icon should have correct className', () => {
+-        const icon = wrapper.find(Close);
+-        expect(
+-          icon.hasClass(`${prefix}--inline-notification__close-icon`)
+-        ).toBe(true);
+-      });
+-    });
++    expect(defaultIcon).not.toEqual(customIcon);
+   });
+-});
+-
+-describe('NotificationTextDetails', () => {
+-  describe('Renders as expected', () => {
+-    const wrapper = shallow(<NotificationTextDetails />);
+ 
+-    describe('When notificationType equals "toast"', () => {
+-      it('div should have correct className by default', () => {
+-        expect(wrapper.hasClass(`${prefix}--toast-notification__details`)).toBe(
+-          true
+-        );
+-      });
+-    });
++  it('interpolates matching className based on notificationType prop', () => {
++    const { rerender, container } = render(<NotificationButton />);
++    const notificationTypes = ['toast', 'inline'];
+ 
+-    describe('When notificationType equals "inline"', () => {
+-      it('div should have correct className', () => {
+-        wrapper.setProps({ notificationType: 'inline' });
+-        expect(
+-          wrapper.hasClass(`${prefix}--inline-notification__text-wrapper`)
+-        ).toBe(true);
+-      });
++    notificationTypes.forEach((notificationType) => {
++      rerender(<NotificationButton notificationType={notificationType} />);
++      expect(container.firstChild).toHaveClass(
++        `${prefix}--${notificationType}-notification__close-button`
++      );
++      expect(screen.queryByRole('button').firstChild).toHaveClass(
++        `${prefix}--${notificationType}-notification__close-icon`
++      );
+     });
+   });
+ });
+ 
+ describe('ToastNotification', () => {
+-  describe('Renders as expected', () => {
+-    const toast = shallow(
+-      <ToastNotification
+-        kind="error"
+-        title="this is a title"
+-        subtitle="this is a subtitle"
+-        caption="this is a caption"
+-      />
++  it('should have role=status by default', () => {
++    const { container } = render(
++      <ToastNotification title="Notification title" />
+     );
+-    it('renders itself', () => {
+-      expect(toast.length).toEqual(1);
+-    });
++    expect(container.firstChild).toHaveAttribute('role', 'status');
++  });
+ 
+-    it('renders HTML for toast notifications when caption exists', () => {
+-      expect(toast.hasClass(`${prefix}--toast-notification`)).toBe(true);
++  it('should place the `className` prop on the outermost DOM node', () => {
++    const { container } = render(
++      <ToastNotification title="Notification title" className="test" />
++    );
++    expect(container.firstChild).toHaveClass('test');
++  });
++
++  it('interpolates matching className based on kind prop', () => {
++    const { rerender } = render(
++      <ToastNotification title="Notification title" />
++    );
++    const kinds = [
++      'error',
++      'info',
++      'info-square',
++      'success',
++      'warning',
++      'warning-alt',
++    ];
++    kinds.forEach((kind) => {
++      rerender(<ToastNotification kind={kind} />);
++      expect(screen.queryByRole('status')).toHaveClass(
++        `${prefix}--toast-notification--${kind}`
++      );
+     });
++  });
+ 
+-    it('adds extra classes via className', () => {
+-      toast.setProps({ className: 'extra-class' });
++  it('allows non-interactive elements as children', () => {
++    render(
++      <ToastNotification title="Notification title">
++        <p>Sample text</p>
++      </ToastNotification>
++    );
++    expect(screen.queryByText(/Sample text/i)).toBeInTheDocument();
++  });
+ 
+-      expect(toast.hasClass('extra-class')).toBe(true);
+-    });
++  it('does not allow interactive elements as children', () => {
++    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+ 
+-    it('interpolates matching className based on kind prop', () => {
+-      const kinds = ['error', 'info', 'success', 'warning'];
++    expect(() => {
++      render(
++        <ToastNotification title="Notification title">
++          <button type="button">Sample button text</button>
++        </ToastNotification>
++      );
++    }).toThrow();
+ 
+-      kinds.forEach((kind) => {
+-        toast.setProps({ kind });
+-        expect(
+-          toast.hasClass(`${prefix}--toast-notification--${kind}`)
+-        ).toEqual(true);
+-      });
+-    });
++    expect(spy).toHaveBeenCalled();
++    spy.mockRestore();
++  });
+ 
+-    it('has [role="alert"] on wrapping <div>', () => {
+-      expect(toast.props().role).toEqual('alert');
+-    });
++  it('close button is rendered by default and includes aria-hidden=true', () => {
++    render(<ToastNotification title="Notification title" />);
+ 
+-    it('sets a new kind when passed in via props', () => {
+-      toast.setProps({ kind: 'success' });
+-      expect(toast.props().kind).toEqual('success');
++    const closeButton = screen.queryByRole('button', {
++      hidden: true,
+     });
+ 
+-    it('can render any node for the subtitle and caption', () => {
+-      toast.setProps({
+-        subtitle: <button type="button" />,
+-        caption: <button type="button" />,
+-      });
+-      expect(toast.length).toEqual(1);
+-    });
++    expect(closeButton).toBeInTheDocument();
++    expect(closeButton).toHaveAttribute('aria-hidden', 'true');
+   });
+-  describe('events and state', () => {
+-    it('initial open state set to true', () => {
+-      const wrapper = mount(
+-        <ToastNotification
+-          kind="error"
+-          title="this is a title"
+-          subtitle="this is a subtitle"
+-          caption="this is a caption"
+-        />
+-      );
+ 
+-      expect(wrapper.children().length > 0).toBe(true);
++  it('does not render close button when `hideCloseButton` is provided', () => {
++    render(<ToastNotification title="Notification title" hideCloseButton />);
++    const closeButton = screen.queryByRole('button', {
++      hidden: true,
+     });
++    expect(closeButton).not.toBeInTheDocument();
++  });
+ 
+-    it('sets open state to false when close button is clicked', () => {
+-      const wrapper = mount(
+-        <ToastNotification
+-          kind="error"
+-          title="this is a title"
+-          subtitle="this is a subtitle"
+-          caption="this is a caption"
+-        />
+-      );
++  it('calls `onClose` when notification is closed', async () => {
++    const onClose = jest.fn();
++    render(<ToastNotification title="Notification title" onClose={onClose} />);
+ 
+-      wrapper.find('button').simulate('click');
+-      expect(wrapper.children().length).toBe(0);
++    const closeButton = screen.queryByRole('button', {
++      hidden: true,
+     });
+-
+-    it('closes notification if `onClose` is provided', () => {
+-      const wrapper = mount(
+-        <ToastNotification
+-          kind="error"
+-          title="this is a title"
+-          subtitle="this is a subtitle"
+-          caption="this is a caption"
+-          onClose={() => {}}
+-        />
+-      );
+-
+-      wrapper.find('button').simulate('click');
+-      expect(wrapper.children().length).toBe(0);
++    userEvent.click(closeButton);
++    expect(onClose).toHaveBeenCalledTimes(1);
++    await waitFor(() => {
++      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+     });
++  });
+ 
+-    it('keeps notification open if `onClose` returns false', () => {
+-      const wrapper = mount(
+-        <ToastNotification
+-          kind="error"
+-          title="this is a title"
+-          subtitle="this is a subtitle"
+-          caption="this is a caption"
+-          onClose={() => false}
+-        />
+-      );
++  it('keeps notification open if `onClose` returns false', () => {
++    render(
++      <ToastNotification title="Notification title" onClose={() => false} />
++    );
+ 
+-      wrapper.find('button').simulate('click');
+-      expect(wrapper.children().length).not.toBe(0);
++    const closeButton = screen.queryByRole('button', {
++      hidden: true,
+     });
++    userEvent.click(closeButton);
++    expect(screen.queryByRole('status')).toBeInTheDocument();
++  });
+ 
+-    it('renders null when open state is false', () => {
+-      const wrapper = mount(
+-        <ToastNotification
+-          kind="error"
+-          title="this is a title"
+-          subtitle="this is a subtitle"
+-          caption="this is a caption"
+-        />
+-      );
++  it('calls `onCloseButtonClick` when notification is closed', () => {
++    const onCloseButtonClick = jest.fn();
++    render(
++      <ToastNotification
++        title="Notification title"
++        onCloseButtonClick={onCloseButtonClick}
++      />
++    );
+ 
+-      wrapper.find('button').simulate('click');
+-      expect(wrapper.html()).toBeNull();
++    const closeButton = screen.queryByRole('button', {
++      hidden: true,
+     });
++    userEvent.click(closeButton);
++    expect(onCloseButtonClick).toHaveBeenCalledTimes(1);
+   });
+ });
+ 
+ describe('InlineNotification', () => {
+-  describe('Renders as expected', () => {
+-    const inline = mount(
+-      <InlineNotification
+-        title="this is a title"
+-        subtitle="this is a subtitle"
+-        kind="error"
+-      />
++  it('should have role=status by default', () => {
++    const { container } = render(
++      <InlineNotification title="Notification title" />
+     );
++    expect(container.firstChild).toHaveAttribute('role', 'status');
++  });
+ 
+-    it('renders itself', () => {
+-      expect(inline.length).toEqual(1);
+-    });
++  it('should place the `className` prop on the outermost DOM node', () => {
++    const { container } = render(
++      <InlineNotification title="Notification title" className="test" />
++    );
++    expect(container.firstChild).toHaveClass('test');
++  });
+ 
+-    it('renders success notification with matching kind and <icon name=""> values', () => {
+-      inline.setProps({ kind: 'success' });
+-      expect(inline.find(CheckmarkFilled).length).toBe(1);
++  it('interpolates matching className based on kind prop', () => {
++    const { rerender } = render(
++      <InlineNotification title="Notification title" />
++    );
++    const kinds = [
++      'error',
++      'info',
++      'info-square',
++      'success',
++      'warning',
++      'warning-alt',
++    ];
++    kinds.forEach((kind) => {
++      rerender(<InlineNotification title="Notification title" kind={kind} />);
++      expect(screen.queryByRole('status')).toHaveClass(
++        `${prefix}--inline-notification--${kind}`
++      );
+     });
++  });
+ 
+-    it('renders error notification with matching kind and <icon name=""> values', () => {
+-      inline.setProps({ kind: 'error' });
+-      expect(inline.find(ErrorFilled).length).toBe(1);
+-    });
++  it('allows non-interactive elements as children', () => {
++    render(
++      <InlineNotification title="Notification title">
++        <p>Sample text</p>
++      </InlineNotification>
++    );
++    expect(screen.queryByText(/Sample text/i)).toBeInTheDocument();
++  });
+ 
+-    it('renders warning notification with matching kind and <icon name=""> values', () => {
+-      inline.setProps({ kind: 'warning' });
+-      expect(
+-        inline.find(`.${prefix}--inline-notification__icon`).exists()
+-      ).toBe(true);
+-    });
++  it('does not allow interactive elements as children', () => {
++    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+ 
+-    it('renders HTML for inline notifications when caption does not exist', () => {
+-      expect(inline.find(`.${prefix}--inline-notification`).exists()).toBe(
+-        true
++    expect(() => {
++      render(
++        <InlineNotification title="Notification title">
++          <button type="button">Sample button text</button>
++        </InlineNotification>
+       );
+-    });
++    }).toThrow();
+ 
+-    it('adds extra classes via className', () => {
+-      inline.setProps({ className: 'extra-class' });
+-      expect(inline.find('.extra-class').exists()).toBe(true);
+-    });
++    expect(spy).toHaveBeenCalled();
++    spy.mockRestore();
++  });
+ 
+-    it('interpolates matching className based on kind prop', () => {
+-      const kinds = ['error', 'info', 'success', 'warning'];
++  it('close button is rendered by default and includes aria-hidden=true', () => {
++    render(<InlineNotification title="Notification title" />);
+ 
+-      kinds.forEach((kind) => {
+-        inline.setProps({ kind });
+-        expect(
+-          inline.find(`.${prefix}--inline-notification--${kind}`).exists()
+-        ).toEqual(true);
+-      });
++    const closeButton = screen.queryByRole('button', {
++      hidden: true,
+     });
++    expect(closeButton).toBeInTheDocument();
++    expect(closeButton).toHaveAttribute('aria-hidden', 'true');
++  });
+ 
+-    it('has [role="alert"] on wrapping <div>', () => {
+-      expect(inline.props().role).toEqual('alert');
++  it('does not render close button when `hideCloseButton` is provided', () => {
++    render(<InlineNotification title="Notification title" hideCloseButton />);
++    const closeButton = screen.queryByRole('button', {
++      hidden: true,
+     });
++    expect(closeButton).not.toBeInTheDocument();
++  });
+ 
+-    it('sets a new kind when passed in via props', () => {
+-      inline.setProps({ kind: 'success' });
+-      expect(inline.props().kind).toEqual('success');
+-    });
++  it('calls `onClose` when notification is closed', async () => {
++    const onClose = jest.fn();
++    render(<InlineNotification title="Notification title" onClose={onClose} />);
+ 
+-    it('can render any node for the subtitle', () => {
+-      inline.setProps({ subtitle: <button type="button" /> });
+-      expect(inline.length).toEqual(1);
++    const closeButton = screen.queryByRole('button', {
++      hidden: true,
++    });
++    userEvent.click(closeButton);
++    expect(onClose).toHaveBeenCalledTimes(1);
++    await waitFor(() => {
++      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+     });
+   });
+ 
+-  describe('events and state', () => {
+-    it('initial open state set to true', () => {
+-      const wrapper = mount(
+-        <InlineNotification
+-          title="this is a title"
+-          subtitle="this is a subtitle"
+-          kind="error"
+-        />
+-      );
++  it('keeps notification open if `onClose` returns false', () => {
++    render(
++      <InlineNotification title="Notification title" onClose={() => false} />
++    );
+ 
+-      expect(wrapper.children().length > 0).toBe(true);
++    const closeButton = screen.queryByRole('button', {
++      hidden: true,
+     });
++    userEvent.click(closeButton);
++    expect(screen.queryByRole('status')).toBeInTheDocument();
++  });
+ 
+-    it('sets open state to false when close button is clicked', () => {
+-      const wrapper = mount(
+-        <InlineNotification kind="success" title="title" subtitle="subtitle" />
+-      );
++  it('calls `onCloseButtonClick` when notification is closed', () => {
++    const onCloseButtonClick = jest.fn();
++    render(
++      <InlineNotification
++        title="Notification title"
++        onCloseButtonClick={onCloseButtonClick}
++      />
++    );
+ 
+-      wrapper.find('button').simulate('click');
+-      expect(wrapper.children().length).toBe(0);
++    const closeButton = screen.queryByRole('button', {
++      hidden: true,
+     });
++    userEvent.click(closeButton);
++    expect(onCloseButtonClick).toHaveBeenCalledTimes(1);
++  });
++});
+ 
+-    it('closes notification if `onClose` is provided', () => {
+-      const wrapper = mount(
+-        <InlineNotification
+-          kind="success"
+-          title="title"
+-          subtitle="subtitle"
+-          onClose={() => {}}
+-        />
+-      );
++describe('ActionableNotification', () => {
++  it('uses role=alertdialog', () => {
++    const { container } = render(
++      <ActionableNotification actionButtonLabel="My custom action" />
++    );
++
++    expect(container.firstChild).toHaveAttribute('role', 'alertdialog');
++  });
+ 
+-      wrapper.find('button').simulate('click');
+-      expect(wrapper.children().length).toBe(0);
++  it('renders correct action label', () => {
++    render(<ActionableNotification actionButtonLabel="My custom action" />);
++    const actionButton = screen.queryByRole('button', {
++      name: 'My custom action',
+     });
++    expect(actionButton).toBeInTheDocument();
++  });
+ 
+-    it('keeps notification open if `onClose` returns false', () => {
+-      const wrapper = mount(
+-        <InlineNotification
+-          kind="success"
+-          title="title"
+-          subtitle="subtitle"
+-          onClose={() => false}
+-        />
+-      );
++  it('closes notification via escape button when focus is placed on the notification', async () => {
++    const onCloseButtonClick = jest.fn();
++    const onClose = jest.fn();
++    render(
++      <ActionableNotification
++        onClose={onClose}
++        onCloseButtonClick={onCloseButtonClick}
++        actionButtonLabel="My custom action"
++      />
++    );
+ 
+-      wrapper.find('button').simulate('click');
+-      expect(wrapper.children().length).not.toBe(0);
+-    });
++    // without focus being on/in the notification, it should not close via escape
++    userEvent.keyboard('{Escape}');
++    expect(onCloseButtonClick).toHaveBeenCalledTimes(0);
++    expect(onClose).toHaveBeenCalledTimes(0);
+ 
+-    it('renders null when open state is false', () => {
+-      const wrapper = mount(
+-        <InlineNotification
+-          title="this is a title"
+-          subtitle="this is a subtitle"
+-          kind="error"
+-        />
+-      );
++    // after focus is placed, the notification should close via escape
++    userEvent.tab();
++    userEvent.keyboard('{Escape}');
++    expect(onCloseButtonClick).toHaveBeenCalledTimes(1);
++    expect(onClose).toHaveBeenCalledTimes(1);
+ 
+-      wrapper.find('button').simulate('click');
+-      expect(wrapper.html()).toBeNull();
++    await waitFor(() => {
++      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+     });
+   });
+ });
+-
+-// Deprecated
+diff --git a/packages/react/src/components/Notification/Notification.js b/packages/react/src/components/Notification/Notification.js
+index ac312382a396..abac8ecaee39 100644
+--- a/packages/react/src/components/Notification/Notification.js
++++ b/packages/react/src/components/Notification/Notification.js
+@@ -17,27 +17,55 @@ import {
+   InformationFilled,
+   InformationSquareFilled,
+ } from '@carbon/icons-react';
++
+ import Button from '../Button';
++import useIsomorphicEffect from '../../internal/useIsomorphicEffect';
++import { useNoInteractiveChildren } from '../../internal/useNoInteractiveChildren';
++import { keys, matches } from '../../internal/keyboard';
+ import { usePrefix } from '../../internal/usePrefix';
+ 
++/**
++ * Conditionally call a callback when the escape key is pressed
++ * @param {node} ref - ref of the container element to scope the functionality to
++ * @param {func} callback - function to be called
++ * @param {bool} override - escape hatch to conditionally call the callback
++ */
++function useEscapeToClose(ref, callback, override = true) {
++  const handleKeyDown = (event) => {
++    // The callback should only be called when focus is on or within the container
++    const elementContainsFocus =
++      (ref.current && document.activeElement === ref.current) ||
++      ref.current.contains(document.activeElement);
++
++    if (matches(event, [keys.Escape]) && override && elementContainsFocus) {
++      callback(event);
++    }
++  };
++
++  useIsomorphicEffect(() => {
++    document.addEventListener('keydown', handleKeyDown, false);
++    return () => document.removeEventListener('keydown', handleKeyDown, false);
++  });
++}
++
+ export function NotificationActionButton({
+   children,
+   className: customClassName,
+   onClick,
++  inline,
+   ...rest
+ }) {
+   const prefix = usePrefix();
+-  const className = cx(
+-    customClassName,
+-    `${prefix}--inline-notification__action-button`
+-  );
++  const className = cx(customClassName, {
++    [`${prefix}--actionable-notification__action-button`]: true,
++  });
+ 
+   return (
+     <Button
+       className={className}
+-      kind="ghost"
++      kind={inline ? 'ghost' : 'tertiary'}
+       onClick={onClick}
+-      size="small"
++      size="sm"
+       {...rest}>
+       {children}
+     </Button>
+@@ -55,6 +83,11 @@ NotificationActionButton.propTypes = {
+    */
+   className: PropTypes.string,
+ 
++  /**
++   * Specify if the visual treatment of the button should be for an inline notification
++   */
++  inline: PropTypes.bool,
++
+   /**
+    * Optionally specify a click handler for the notification action button.
+    */
+@@ -64,7 +97,6 @@ NotificationActionButton.propTypes = {
+ export function NotificationButton({
+   ariaLabel,
+   className,
+-  iconDescription,
+   type,
+   renderIcon: IconTag,
+   name,
+@@ -86,12 +118,10 @@ export function NotificationButton({
+       {...rest}
+       // eslint-disable-next-line react/button-has-type
+       type={type}
+-      aria-label={iconDescription}
+-      title={iconDescription}
++      aria-label={ariaLabel}
++      title={ariaLabel}
+       className={buttonClassName}>
+-      {IconTag && (
+-        <IconTag aria-label={ariaLabel} className={iconClassName} name={name} />
+-      )}
++      {IconTag && <IconTag className={iconClassName} name={name} />}
+     </button>
+   );
+ }
+@@ -107,11 +137,6 @@ NotificationButton.propTypes = {
+    */
+   className: PropTypes.string,
+ 
+-  /**
+-   * Provide a description for "close" icon that can be read by screen readers
+-   */
+-  iconDescription: PropTypes.string,
+-
+   /**
+    * Specify an optional icon for the Button through a string,
+    * if something but regular "close" icon is desirable
+@@ -121,7 +146,7 @@ NotificationButton.propTypes = {
+   /**
+    * Specify the notification type
+    */
+-  notificationType: PropTypes.oneOf(['toast', 'inline']),
++  notificationType: PropTypes.oneOf(['toast', 'inline', 'actionable']),
+ 
+   /**
+    * Optional prop to allow overriding the icon rendering.
+@@ -136,80 +161,12 @@ NotificationButton.propTypes = {
+ };
+ 
+ NotificationButton.defaultProps = {
+-  ariaLabel: 'close notification', // TODO: deprecate this prop
++  ariaLabel: 'close notification',
+   notificationType: 'toast',
+   type: 'button',
+-  iconDescription: 'close icon',
+   renderIcon: Close,
+ };
+ 
+-export function NotificationTextDetails({
+-  title,
+-  subtitle,
+-  caption,
+-  notificationType,
+-  children,
+-  ...rest
+-}) {
+-  const prefix = usePrefix();
+-  if (notificationType === 'toast') {
+-    return (
+-      <div {...rest} className={`${prefix}--toast-notification__details`}>
+-        <h3 className={`${prefix}--toast-notification__title`}>{title}</h3>
+-        <div className={`${prefix}--toast-notification__subtitle`}>
+-          {subtitle}
+-        </div>
+-        {caption && (
+-          <div className={`${prefix}--toast-notification__caption`}>
+-            {caption}
+-          </div>
+-        )}
+-        {children}
+-      </div>
+-    );
+-  }
+-
+-  if (notificationType === 'inline') {
+-    return (
+-      <div {...rest} className={`${prefix}--inline-notification__text-wrapper`}>
+-        <p className={`${prefix}--inline-notification__title`}>{title}</p>
+-        <div className={`${prefix}--inline-notification__subtitle`}>
+-          {subtitle}
+-        </div>
+-        {children}
+-      </div>
+-    );
+-  }
+-}
+-
+-NotificationTextDetails.propTypes = {
+-  /**
+-   * Specify the caption
+-   */
+-  caption: PropTypes.node,
+-  /**
+-   * Pass in the children that will be rendered in NotificationTextDetails
+-   */
+-  children: PropTypes.node,
+-  /**
+-   * Specify the notification type
+-   */
+-  notificationType: PropTypes.oneOf(['toast', 'inline']),
+-  /**
+-   * Specify the sub-title
+-   */
+-  subtitle: PropTypes.node,
+-  /**
+-   * Specify the title
+-   */
+-  title: PropTypes.string,
+-};
+-
+-NotificationTextDetails.defaultProps = {
+-  title: 'title',
+-  notificationType: 'toast',
+-};
+-
+ const iconTypes = {
+   error: ErrorFilled,
+   success: CheckmarkFilled,
+@@ -248,35 +205,37 @@ NotificationIcon.propTypes = {
+ 
+ export function ToastNotification({
+   role,
+-  notificationType,
+   onClose,
+   onCloseButtonClick,
+-  iconDescription,
+   statusIconDescription,
+   className,
+-  caption,
+-  subtitle,
+-  title,
++  children,
+   kind,
+   lowContrast,
+   hideCloseButton,
+-  children,
+   timeout,
++  title,
++  caption,
++  subtitle,
+   ...rest
+ }) {
+-  const prefix = usePrefix();
+   const [isOpen, setIsOpen] = useState(true);
++  const prefix = usePrefix();
+   const containerClassName = cx(className, {
+     [`${prefix}--toast-notification`]: true,
+     [`${prefix}--toast-notification--low-contrast`]: lowContrast,
+     [`${prefix}--toast-notification--${kind}`]: kind,
+   });
+ 
++  const contentRef = useRef(null);
++  useNoInteractiveChildren(contentRef);
++
+   const handleClose = (evt) => {
+     if (!onClose || onClose(evt) !== false) {
+       setIsOpen(false);
+     }
+   };
++  const ref = useRef(null);
+ 
+   function handleCloseButtonClick(event) {
+     onCloseButtonClick(event);
+@@ -310,24 +269,36 @@ export function ToastNotification({
+   }
+ 
+   return (
+-    <div {...rest} role={role} kind={kind} className={containerClassName}>
++    <div ref={ref} {...rest} role={role} className={containerClassName}>
+       <NotificationIcon
+-        notificationType={notificationType}
++        notificationType="toast"
+         kind={kind}
+         iconDescription={statusIconDescription || `${kind} icon`}
+       />
+-      <NotificationTextDetails
+-        title={title}
+-        subtitle={subtitle}
+-        caption={caption}
+-        notificationType={notificationType}>
++      <div
++        ref={contentRef}
++        className={`${prefix}--toast-notification__details`}>
++        {title && (
++          <div className={`${prefix}--toast-notification__title`}>{title}</div>
++        )}
++        {subtitle && (
++          <div className={`${prefix}--toast-notification__subtitle`}>
++            {subtitle}
++          </div>
++        )}
++        {caption && (
++          <div className={`${prefix}--toast-notification__caption`}>
++            {caption}
++          </div>
++        )}
+         {children}
+-      </NotificationTextDetails>
++      </div>
+       {!hideCloseButton && (
+         <NotificationButton
+-          iconDescription={iconDescription}
+-          notificationType={notificationType}
++          notificationType="toast"
+           onClick={handleCloseButtonClick}
++          aria-hidden="true"
++          tabIndex="-1"
+         />
+       )}
+     </div>
+@@ -335,13 +306,18 @@ export function ToastNotification({
+ }
+ 
+ ToastNotification.propTypes = {
++  /**
++   * Provide a description for "close" icon button that can be read by screen readers
++   */
++  ariaLabel: PropTypes.string,
++
+   /**
+    * Specify the caption
+    */
+-  caption: PropTypes.node,
++  caption: PropTypes.string,
+ 
+   /**
+-   * Pass in the children that will be rendered within the ToastNotification
++   * Specify the content
+    */
+   children: PropTypes.node,
+ 
+@@ -355,11 +331,6 @@ ToastNotification.propTypes = {
+    */
+   hideCloseButton: PropTypes.bool,
+ 
+-  /**
+-   * Provide a description for "close" icon that can be read by screen readers
+-   */
+-  iconDescription: PropTypes.string,
+-
+   /**
+    * Specify what state the notification represents
+    */
+@@ -370,19 +341,13 @@ ToastNotification.propTypes = {
+     'success',
+     'warning',
+     'warning-alt',
+-  ]).isRequired,
++  ]),
+ 
+   /**
+    * Specify whether you are using the low contrast variant of the ToastNotification.
+    */
+   lowContrast: PropTypes.bool,
+ 
+-  /**
+-   * By default, this value is "toast". You can also provide an alternate type
+-   * if it makes sense for the underlying `<NotificationTextDetails>` and `<NotificationButton>`
+-   */
+-  notificationType: PropTypes.string,
+-
+   /**
+    * Provide a function that is called when menu is closed
+    */
+@@ -394,10 +359,10 @@ ToastNotification.propTypes = {
+   onCloseButtonClick: PropTypes.func,
+ 
+   /**
+-   * By default, this value is "alert". You can also provide an alternate
++   * By default, this value is "status". You can also provide an alternate
+    * role if it makes sense from the accessibility-side
+    */
+-  role: PropTypes.string.isRequired,
++  role: PropTypes.oneOf(['alert', 'log', 'status']),
+ 
+   /**
+    * Provide a description for "status" icon that can be read by screen readers
+@@ -407,7 +372,7 @@ ToastNotification.propTypes = {
+   /**
+    * Specify the sub-title
+    */
+-  subtitle: PropTypes.node,
++  subtitle: PropTypes.string,
+ 
+   /**
+    * Specify an optional duration the notification should be closed in
+@@ -417,39 +382,33 @@ ToastNotification.propTypes = {
+   /**
+    * Specify the title
+    */
+-  title: PropTypes.string.isRequired,
++  title: PropTypes.string,
+ };
+ 
+ ToastNotification.defaultProps = {
+   kind: 'error',
+-  title: 'provide a title',
+-  role: 'alert',
+-  notificationType: 'toast',
+-  iconDescription: 'closes notification',
++  role: 'status',
+   onCloseButtonClick: () => {},
+   hideCloseButton: false,
+   timeout: 0,
+ };
+ 
+ export function InlineNotification({
+-  actions,
++  children,
++  title,
++  subtitle,
+   role,
+-  notificationType,
+   onClose,
+   onCloseButtonClick,
+-  iconDescription,
+   statusIconDescription,
+   className,
+-  subtitle,
+-  title,
+   kind,
+   lowContrast,
+   hideCloseButton,
+-  children,
+   ...rest
+ }) {
+-  const prefix = usePrefix();
+   const [isOpen, setIsOpen] = useState(true);
++  const prefix = usePrefix();
+   const containerClassName = cx(className, {
+     [`${prefix}--inline-notification`]: true,
+     [`${prefix}--inline-notification--low-contrast`]: lowContrast,
+@@ -457,11 +416,15 @@ export function InlineNotification({
+     [`${prefix}--inline-notification--hide-close-button`]: hideCloseButton,
+   });
+ 
++  const contentRef = useRef(null);
++  useNoInteractiveChildren(contentRef);
++
+   const handleClose = (evt) => {
+     if (!onClose || onClose(evt) !== false) {
+       setIsOpen(false);
+     }
+   };
++  const ref = useRef(null);
+ 
+   function handleCloseButtonClick(event) {
+     onCloseButtonClick(event);
+@@ -473,26 +436,35 @@ export function InlineNotification({
+   }
+ 
+   return (
+-    <div {...rest} role={role} kind={kind} className={containerClassName}>
++    <div ref={ref} {...rest} role={role} className={containerClassName}>
+       <div className={`${prefix}--inline-notification__details`}>
+         <NotificationIcon
+-          notificationType={notificationType}
++          notificationType="inline"
+           kind={kind}
+           iconDescription={statusIconDescription || `${kind} icon`}
+         />
+-        <NotificationTextDetails
+-          title={title}
+-          subtitle={subtitle}
+-          notificationType={notificationType}>
++        <div
++          ref={contentRef}
++          className={`${prefix}--inline-notification__text-wrapper`}>
++          {title && (
++            <div className={`${prefix}--inline-notification__title`}>
++              {title}
++            </div>
++          )}
++          {subtitle && (
++            <div className={`${prefix}--inline-notification__subtitle`}>
++              {subtitle}
++            </div>
++          )}
+           {children}
+-        </NotificationTextDetails>
++        </div>
+       </div>
+-      {actions}
+       {!hideCloseButton && (
+         <NotificationButton
+-          iconDescription={iconDescription}
+-          notificationType={notificationType}
++          notificationType="inline"
+           onClick={handleCloseButtonClick}
++          aria-hidden="true"
++          tabIndex="-1"
+         />
+       )}
+     </div>
+@@ -501,12 +473,187 @@ export function InlineNotification({
+ 
+ InlineNotification.propTypes = {
+   /**
+-   * Pass in the action nodes that will be rendered within the InlineNotification
++   * Specify the content
++   */
++  children: PropTypes.node,
++
++  /**
++   * Specify an optional className to be applied to the notification box
++   */
++  className: PropTypes.string,
++
++  /**
++   * Specify the close button should be disabled, or not
++   */
++  hideCloseButton: PropTypes.bool,
++
++  /**
++   * Specify what state the notification represents
++   */
++  kind: PropTypes.oneOf([
++    'error',
++    'info',
++    'info-square',
++    'success',
++    'warning',
++    'warning-alt',
++  ]),
++
++  /**
++   * Specify whether you are using the low contrast variant of the InlineNotification.
++   */
++  lowContrast: PropTypes.bool,
++
++  /**
++   * Provide a function that is called when menu is closed
++   */
++  onClose: PropTypes.func,
++
++  /**
++   * Provide a function that is called when the close button is clicked
++   */
++  onCloseButtonClick: PropTypes.func,
++
++  /**
++   * By default, this value is "status". You can also provide an alternate
++   * role if it makes sense from the accessibility-side.
++   */
++  role: PropTypes.oneOf(['alert', 'log', 'status']),
++
++  /**
++   * Provide a description for "status" icon that can be read by screen readers
++   */
++  statusIconDescription: PropTypes.string,
++
++  /**
++   * Specify the sub-title
++   */
++  subtitle: PropTypes.string,
++
++  /**
++   * Specify the title
++   */
++  title: PropTypes.string,
++};
++
++InlineNotification.defaultProps = {
++  kind: 'error',
++  role: 'status',
++  onCloseButtonClick: () => {},
++  hideCloseButton: false,
++};
++
++export function ActionableNotification({
++  actionButtonLabel,
++  ariaLabel,
++  children,
++  role,
++  onActionButtonClick,
++  onClose,
++  onCloseButtonClick,
++  statusIconDescription,
++  className,
++  inline,
++  kind,
++  lowContrast,
++  hideCloseButton,
++  hasFocus,
++  closeOnEscape,
++  title,
++  subtitle,
++  ...rest
++}) {
++  const [isOpen, setIsOpen] = useState(true);
++  const prefix = usePrefix();
++  const containerClassName = cx(className, {
++    [`${prefix}--actionable-notification`]: true,
++    [`${prefix}--actionable-notification--toast`]: !inline,
++    [`${prefix}--actionable-notification--low-contrast`]: lowContrast,
++    [`${prefix}--actionable-notification--${kind}`]: kind,
++    [`${prefix}--actionable-notification--hide-close-button`]: hideCloseButton,
++  });
++
++  const ref = useRef(null);
++  useIsomorphicEffect(() => {
++    if (ref.current && hasFocus) {
++      ref.current.focus();
++    }
++  });
++
++  const handleClose = (evt) => {
++    if (!onClose || onClose(evt) !== false) {
++      setIsOpen(false);
++    }
++  };
++  useEscapeToClose(ref, handleCloseButtonClick, closeOnEscape);
++
++  function handleCloseButtonClick(event) {
++    onCloseButtonClick(event);
++    handleClose(event);
++  }
++
++  if (!isOpen) {
++    return null;
++  }
++
++  return (
++    <div {...rest} ref={ref} role={role} className={containerClassName}>
++      <div className={`${prefix}--actionable-notification__details`}>
++        <NotificationIcon
++          notificationType={inline ? 'inline' : 'toast'}
++          kind={kind}
++          iconDescription={statusIconDescription || `${kind} icon`}
++        />
++        <div className={`${prefix}--actionable-notification__text-wrapper`}>
++          <div className={`${prefix}--actionable-notification__content`}>
++            {title && (
++              <div className={`${prefix}--actionable-notification__title`}>
++                {title}
++              </div>
++            )}
++            {subtitle && (
++              <div className={`${prefix}--actionable-notification__subtitle`}>
++                {subtitle}
++              </div>
++            )}
++            {children}
++          </div>
++        </div>
++      </div>
++
++      <NotificationActionButton onClick={onActionButtonClick} inline={inline}>
++        {actionButtonLabel}
++      </NotificationActionButton>
++
++      {!hideCloseButton && (
++        <NotificationButton
++          aria-label={ariaLabel}
++          notificationType="actionable"
++          onClick={handleCloseButtonClick}
++        />
++      )}
++    </div>
++  );
++}
++
++ActionableNotification.propTypes = {
++  /**
++   * Pass in the action button label that will be rendered within the ActionableNotification.
++   */
++  actionButtonLabel: PropTypes.string.isRequired,
++
++  /**
++   * Provide a description for "close" icon button that can be read by screen readers
+    */
+-  actions: PropTypes.node,
++  ariaLabel: PropTypes.string,
+ 
+   /**
+-   * Pass in the children that will be rendered within the InlineNotification
++   * Specify the caption
++   */
++  caption: PropTypes.string,
++
++  /**
++   * Specify the content
+    */
+   children: PropTypes.node,
+ 
+@@ -515,15 +662,25 @@ InlineNotification.propTypes = {
+    */
+   className: PropTypes.string,
+ 
++  /**
++   * Specify if pressing the escape key should close notifications
++   */
++  closeOnEscape: PropTypes.bool,
++
++  /**
++   * Specify if focus should be moved to the component when the notification contains actions
++   */
++  hasFocus: PropTypes.bool,
++
+   /**
+    * Specify the close button should be disabled, or not
+    */
+   hideCloseButton: PropTypes.bool,
+ 
+-  /**
+-   * Provide a description for "close" icon that can be read by screen readers
++  /*
++   * Specify if the notification should have inline styling applied instead of toast
+    */
+-  iconDescription: PropTypes.string,
++  inline: PropTypes.bool,
+ 
+   /**
+    * Specify what state the notification represents
+@@ -538,15 +695,14 @@ InlineNotification.propTypes = {
+   ]).isRequired,
+ 
+   /**
+-   * Specify whether you are using the low contrast variant of the InlineNotification.
++   * Specify whether you are using the low contrast variant of the ActionableNotification.
+    */
+   lowContrast: PropTypes.bool,
+ 
+   /**
+-   * By default, this value is "inline". You can also provide an alternate type
+-   * if it makes sense for the underlying `<NotificationTextDetails>` and `<NotificationButton>`
++   * Provide a function that is called when the action is clicked
+    */
+-  notificationType: PropTypes.string,
++  onActionButtonClick: PropTypes.func,
+ 
+   /**
+    * Provide a function that is called when menu is closed
+@@ -559,10 +715,10 @@ InlineNotification.propTypes = {
+   onCloseButtonClick: PropTypes.func,
+ 
+   /**
+-   * By default, this value is "alert". You can also provide an alternate
+-   * role if it makes sense from the accessibility-side
++   * By default, this value is "alertdialog". You can also provide an alternate
++   * role if it makes sense from the accessibility-side.
+    */
+-  role: PropTypes.string.isRequired,
++  role: PropTypes.string,
+ 
+   /**
+    * Provide a description for "status" icon that can be read by screen readers
+@@ -572,18 +728,20 @@ InlineNotification.propTypes = {
+   /**
+    * Specify the sub-title
+    */
+-  subtitle: PropTypes.node,
++  subtitle: PropTypes.string,
+ 
+   /**
+    * Specify the title
+    */
+-  title: PropTypes.string.isRequired,
++  title: PropTypes.string,
+ };
+ 
+-InlineNotification.defaultProps = {
+-  role: 'alert',
+-  notificationType: 'inline',
+-  iconDescription: 'closes notification',
++ActionableNotification.defaultProps = {
++  kind: 'error',
++  role: 'alertdialog',
+   onCloseButtonClick: () => {},
+   hideCloseButton: false,
++  hasFocus: true,
++  closeOnEscape: true,
++  inline: false,
+ };
+diff --git a/packages/react/src/components/Notification/Notification.mdx b/packages/react/src/components/Notification/Notification.mdx
+index 477227b95415..eea2568a58f9 100644
+--- a/packages/react/src/components/Notification/Notification.mdx
++++ b/packages/react/src/components/Notification/Notification.mdx
+@@ -1,4 +1,4 @@
+-import { Props } from '@storybook/addon-docs';
++import { Story, Preview, Props } from '@storybook/addon-docs';
+ 
+ # Notification
+ 
+@@ -10,12 +10,39 @@ import { Props } from '@storybook/addon-docs';
+ 
+ ## Table of Contents
+ 
++- [Overview](#overview)
++- [Component API](#component-api)
++- [Actionable](#actionable)
++- [References](#references)
++- [Feedback](#feedback)
++
+ ## Overview
+ 
++There are 3 different types of notification components:
++`ActionableNotification`, `InlineNotification`, and `ToastNotification`.
++
+ ## Component API
+ 
+ <Props />
+ 
++## Actionable
++
++<Preview>
++  <Story id="components-notifications-actionable--playground" />
++</Preview>
++
++## Inline
++
++<Preview>
++  <Story id="components-notifications-inline--playground" />
++</Preview>
++
++## Toast
++
++<Preview>
++  <Story id="components-notifications-toast--playground" />
++</Preview>
++
+ ## Feedback
+ 
+ Help us improve this component by providing feedback, asking questions on Slack,
+diff --git a/packages/react/src/components/Notification/index.js b/packages/react/src/components/Notification/index.js
+index 7d060a62edc0..867e40e34e7b 100644
+--- a/packages/react/src/components/Notification/index.js
++++ b/packages/react/src/components/Notification/index.js
+@@ -5,53 +5,10 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-import {
+-  NotificationActionButton as NotificationActionButtonNext,
+-  NotificationButton as NotificationButtonNext,
+-  ToastNotification as ToastNotificationNext,
+-  InlineNotification as InlineNotificationNext,
+-  ActionableNotification as ActionableNotificationNext,
+-} from './next/Notification';
+-import {
+-  NotificationActionButton as NotificationActionButtonClassic,
+-  NotificationTextDetails as NotificationTextDetailsClassic,
+-  NotificationButton as NotificationButtonClassic,
+-  ToastNotification as ToastNotificationClassic,
+-  InlineNotification as InlineNotificationClassic,
++export {
++  NotificationActionButton,
++  NotificationButton,
++  ToastNotification,
++  InlineNotification,
++  ActionableNotification,
+ } from './Notification';
+-import { createComponentToggle } from '../../internal/ComponentToggle';
+-
+-export const NotificationActionButton = createComponentToggle({
+-  name: 'NotificationActionButton',
+-  next: NotificationActionButtonNext,
+-  classic: NotificationActionButtonClassic,
+-});
+-
+-export const NotificationTextDetails = createComponentToggle({
+-  name: 'NotificationTextDetails',
+-  classic: NotificationTextDetailsClassic,
+-});
+-
+-export const NotificationButton = createComponentToggle({
+-  name: 'NotificationButton',
+-  next: NotificationButtonNext,
+-  classic: NotificationButtonClassic,
+-});
+-
+-export const ToastNotification = createComponentToggle({
+-  name: 'ToastNotification',
+-  next: ToastNotificationNext,
+-  classic: ToastNotificationClassic,
+-});
+-
+-export const InlineNotification = createComponentToggle({
+-  name: 'InlineNotification',
+-  next: InlineNotificationNext,
+-  classic: InlineNotificationClassic,
+-});
+-
+-export const ActionableNotification = createComponentToggle({
+-  name: 'ActionableNotification',
+-  next: ActionableNotificationNext,
+-  classic: null,
+-});
+diff --git a/packages/react/src/components/Notification/next/Notification-test.js b/packages/react/src/components/Notification/next/Notification-test.js
+deleted file mode 100644
+index eacac26e2c6c..000000000000
+--- a/packages/react/src/components/Notification/next/Notification-test.js
++++ /dev/null
+@@ -1,342 +0,0 @@
+-/**
+- * Copyright IBM Corp. 2016, 2018
+- *
+- * This source code is licensed under the Apache-2.0 license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-import React from 'react';
+-import { ErrorFilled } from '@carbon/icons-react';
+-import {
+-  NotificationButton,
+-  ToastNotification,
+-  InlineNotification,
+-  ActionableNotification,
+-} from '../next/Notification';
+-import { render, screen, waitFor } from '@testing-library/react';
+-import userEvent from '@testing-library/user-event';
+-import { it } from 'window-or-global';
+-
+-const prefix = 'cds';
+-
+-describe('NotificationButton', () => {
+-  it('should place the `className` prop on the outermost DOM node', () => {
+-    const { container } = render(<NotificationButton className="test" />);
+-    expect(container.firstChild).toHaveClass('test');
+-  });
+-
+-  it('supports custom icon', () => {
+-    const { rerender } = render(<NotificationButton />);
+-    const defaultIcon = screen.queryByRole('button').innerHTML;
+-
+-    rerender(
+-      <NotificationButton
+-        renderIcon={(props) => <ErrorFilled size={20} {...props} />}
+-      />
+-    );
+-    const customIcon = screen.queryByRole('button').innerHTML;
+-
+-    expect(defaultIcon).not.toEqual(customIcon);
+-  });
+-
+-  it('interpolates matching className based on notificationType prop', () => {
+-    const { rerender, container } = render(<NotificationButton />);
+-    const notificationTypes = ['toast', 'inline'];
+-
+-    notificationTypes.forEach((notificationType) => {
+-      rerender(<NotificationButton notificationType={notificationType} />);
+-      expect(container.firstChild).toHaveClass(
+-        `${prefix}--${notificationType}-notification__close-button`
+-      );
+-      expect(screen.queryByRole('button').firstChild).toHaveClass(
+-        `${prefix}--${notificationType}-notification__close-icon`
+-      );
+-    });
+-  });
+-});
+-
+-describe('ToastNotification', () => {
+-  it('should have role=status by default', () => {
+-    const { container } = render(
+-      <ToastNotification title="Notification title" />
+-    );
+-    expect(container.firstChild).toHaveAttribute('role', 'status');
+-  });
+-
+-  it('should place the `className` prop on the outermost DOM node', () => {
+-    const { container } = render(
+-      <ToastNotification title="Notification title" className="test" />
+-    );
+-    expect(container.firstChild).toHaveClass('test');
+-  });
+-
+-  it('interpolates matching className based on kind prop', () => {
+-    const { rerender } = render(
+-      <ToastNotification title="Notification title" />
+-    );
+-    const kinds = [
+-      'error',
+-      'info',
+-      'info-square',
+-      'success',
+-      'warning',
+-      'warning-alt',
+-    ];
+-    kinds.forEach((kind) => {
+-      rerender(<ToastNotification kind={kind} />);
+-      expect(screen.queryByRole('status')).toHaveClass(
+-        `${prefix}--toast-notification--${kind}`
+-      );
+-    });
+-  });
+-
+-  it('allows non-interactive elements as children', () => {
+-    render(
+-      <ToastNotification title="Notification title">
+-        <p>Sample text</p>
+-      </ToastNotification>
+-    );
+-    expect(screen.queryByText(/Sample text/i)).toBeInTheDocument();
+-  });
+-
+-  it('does not allow interactive elements as children', () => {
+-    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+-
+-    expect(() => {
+-      render(
+-        <ToastNotification title="Notification title">
+-          <button type="button">Sample button text</button>
+-        </ToastNotification>
+-      );
+-    }).toThrow();
+-
+-    expect(spy).toHaveBeenCalled();
+-    spy.mockRestore();
+-  });
+-
+-  it('close button is rendered by default and includes aria-hidden=true', () => {
+-    render(<ToastNotification title="Notification title" />);
+-
+-    const closeButton = screen.queryByRole('button', {
+-      hidden: true,
+-    });
+-
+-    expect(closeButton).toBeInTheDocument();
+-    expect(closeButton).toHaveAttribute('aria-hidden', 'true');
+-  });
+-
+-  it('does not render close button when `hideCloseButton` is provided', () => {
+-    render(<ToastNotification title="Notification title" hideCloseButton />);
+-    const closeButton = screen.queryByRole('button', {
+-      hidden: true,
+-    });
+-    expect(closeButton).not.toBeInTheDocument();
+-  });
+-
+-  it('calls `onClose` when notification is closed', async () => {
+-    const onClose = jest.fn();
+-    render(<ToastNotification title="Notification title" onClose={onClose} />);
+-
+-    const closeButton = screen.queryByRole('button', {
+-      hidden: true,
+-    });
+-    userEvent.click(closeButton);
+-    expect(onClose).toHaveBeenCalledTimes(1);
+-    await waitFor(() => {
+-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+-    });
+-  });
+-
+-  it('keeps notification open if `onClose` returns false', () => {
+-    render(
+-      <ToastNotification title="Notification title" onClose={() => false} />
+-    );
+-
+-    const closeButton = screen.queryByRole('button', {
+-      hidden: true,
+-    });
+-    userEvent.click(closeButton);
+-    expect(screen.queryByRole('status')).toBeInTheDocument();
+-  });
+-
+-  it('calls `onCloseButtonClick` when notification is closed', () => {
+-    const onCloseButtonClick = jest.fn();
+-    render(
+-      <ToastNotification
+-        title="Notification title"
+-        onCloseButtonClick={onCloseButtonClick}
+-      />
+-    );
+-
+-    const closeButton = screen.queryByRole('button', {
+-      hidden: true,
+-    });
+-    userEvent.click(closeButton);
+-    expect(onCloseButtonClick).toHaveBeenCalledTimes(1);
+-  });
+-});
+-
+-describe('InlineNotification', () => {
+-  it('should have role=status by default', () => {
+-    const { container } = render(
+-      <InlineNotification title="Notification title" />
+-    );
+-    expect(container.firstChild).toHaveAttribute('role', 'status');
+-  });
+-
+-  it('should place the `className` prop on the outermost DOM node', () => {
+-    const { container } = render(
+-      <InlineNotification title="Notification title" className="test" />
+-    );
+-    expect(container.firstChild).toHaveClass('test');
+-  });
+-
+-  it('interpolates matching className based on kind prop', () => {
+-    const { rerender } = render(
+-      <InlineNotification title="Notification title" />
+-    );
+-    const kinds = [
+-      'error',
+-      'info',
+-      'info-square',
+-      'success',
+-      'warning',
+-      'warning-alt',
+-    ];
+-    kinds.forEach((kind) => {
+-      rerender(<InlineNotification title="Notification title" kind={kind} />);
+-      expect(screen.queryByRole('status')).toHaveClass(
+-        `${prefix}--inline-notification--${kind}`
+-      );
+-    });
+-  });
+-
+-  it('allows non-interactive elements as children', () => {
+-    render(
+-      <InlineNotification title="Notification title">
+-        <p>Sample text</p>
+-      </InlineNotification>
+-    );
+-    expect(screen.queryByText(/Sample text/i)).toBeInTheDocument();
+-  });
+-
+-  it('does not allow interactive elements as children', () => {
+-    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+-
+-    expect(() => {
+-      render(
+-        <InlineNotification title="Notification title">
+-          <button type="button">Sample button text</button>
+-        </InlineNotification>
+-      );
+-    }).toThrow();
+-
+-    expect(spy).toHaveBeenCalled();
+-    spy.mockRestore();
+-  });
+-
+-  it('close button is rendered by default and includes aria-hidden=true', () => {
+-    render(<InlineNotification title="Notification title" />);
+-
+-    const closeButton = screen.queryByRole('button', {
+-      hidden: true,
+-    });
+-    expect(closeButton).toBeInTheDocument();
+-    expect(closeButton).toHaveAttribute('aria-hidden', 'true');
+-  });
+-
+-  it('does not render close button when `hideCloseButton` is provided', () => {
+-    render(<InlineNotification title="Notification title" hideCloseButton />);
+-    const closeButton = screen.queryByRole('button', {
+-      hidden: true,
+-    });
+-    expect(closeButton).not.toBeInTheDocument();
+-  });
+-
+-  it('calls `onClose` when notification is closed', async () => {
+-    const onClose = jest.fn();
+-    render(<InlineNotification title="Notification title" onClose={onClose} />);
+-
+-    const closeButton = screen.queryByRole('button', {
+-      hidden: true,
+-    });
+-    userEvent.click(closeButton);
+-    expect(onClose).toHaveBeenCalledTimes(1);
+-    await waitFor(() => {
+-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+-    });
+-  });
+-
+-  it('keeps notification open if `onClose` returns false', () => {
+-    render(
+-      <InlineNotification title="Notification title" onClose={() => false} />
+-    );
+-
+-    const closeButton = screen.queryByRole('button', {
+-      hidden: true,
+-    });
+-    userEvent.click(closeButton);
+-    expect(screen.queryByRole('status')).toBeInTheDocument();
+-  });
+-
+-  it('calls `onCloseButtonClick` when notification is closed', () => {
+-    const onCloseButtonClick = jest.fn();
+-    render(
+-      <InlineNotification
+-        title="Notification title"
+-        onCloseButtonClick={onCloseButtonClick}
+-      />
+-    );
+-
+-    const closeButton = screen.queryByRole('button', {
+-      hidden: true,
+-    });
+-    userEvent.click(closeButton);
+-    expect(onCloseButtonClick).toHaveBeenCalledTimes(1);
+-  });
+-});
+-
+-describe('ActionableNotification', () => {
+-  it('uses role=alertdialog', () => {
+-    const { container } = render(
+-      <ActionableNotification actionButtonLabel="My custom action" />
+-    );
+-
+-    expect(container.firstChild).toHaveAttribute('role', 'alertdialog');
+-  });
+-
+-  it('renders correct action label', () => {
+-    render(<ActionableNotification actionButtonLabel="My custom action" />);
+-    const actionButton = screen.queryByRole('button', {
+-      name: 'My custom action',
+-    });
+-    expect(actionButton).toBeInTheDocument();
+-  });
+-
+-  it('closes notification via escape button when focus is placed on the notification', async () => {
+-    const onCloseButtonClick = jest.fn();
+-    const onClose = jest.fn();
+-    render(
+-      <ActionableNotification
+-        onClose={onClose}
+-        onCloseButtonClick={onCloseButtonClick}
+-        actionButtonLabel="My custom action"
+-      />
+-    );
+-
+-    // without focus being on/in the notification, it should not close via escape
+-    userEvent.keyboard('{Escape}');
+-    expect(onCloseButtonClick).toHaveBeenCalledTimes(0);
+-    expect(onClose).toHaveBeenCalledTimes(0);
+-
+-    // after focus is placed, the notification should close via escape
+-    userEvent.tab();
+-    userEvent.keyboard('{Escape}');
+-    expect(onCloseButtonClick).toHaveBeenCalledTimes(1);
+-    expect(onClose).toHaveBeenCalledTimes(1);
+-
+-    await waitFor(() => {
+-      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+-    });
+-  });
+-});
+diff --git a/packages/react/src/components/Notification/next/Notification.js b/packages/react/src/components/Notification/next/Notification.js
+deleted file mode 100644
+index bf51f9941fef..000000000000
+--- a/packages/react/src/components/Notification/next/Notification.js
++++ /dev/null
+@@ -1,747 +0,0 @@
+-/**
+- * Copyright IBM Corp. 2016, 2018
+- *
+- * This source code is licensed under the Apache-2.0 license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-import PropTypes from 'prop-types';
+-import React, { useEffect, useRef, useState } from 'react';
+-import cx from 'classnames';
+-import {
+-  Close,
+-  ErrorFilled,
+-  CheckmarkFilled,
+-  WarningFilled,
+-  WarningAltFilled,
+-  InformationFilled,
+-  InformationSquareFilled,
+-} from '@carbon/icons-react';
+-
+-import Button from '../../Button';
+-import useIsomorphicEffect from '../../../internal/useIsomorphicEffect';
+-import { useNoInteractiveChildren } from '../../../internal/useNoInteractiveChildren';
+-import { keys, matches } from '../../../internal/keyboard';
+-import { usePrefix } from '../../../internal/usePrefix';
+-
+-/**
+- * Conditionally call a callback when the escape key is pressed
+- * @param {node} ref - ref of the container element to scope the functionality to
+- * @param {func} callback - function to be called
+- * @param {bool} override - escape hatch to conditionally call the callback
+- */
+-function useEscapeToClose(ref, callback, override = true) {
+-  const handleKeyDown = (event) => {
+-    // The callback should only be called when focus is on or within the container
+-    const elementContainsFocus =
+-      (ref.current && document.activeElement === ref.current) ||
+-      ref.current.contains(document.activeElement);
+-
+-    if (matches(event, [keys.Escape]) && override && elementContainsFocus) {
+-      callback(event);
+-    }
+-  };
+-
+-  useIsomorphicEffect(() => {
+-    document.addEventListener('keydown', handleKeyDown, false);
+-    return () => document.removeEventListener('keydown', handleKeyDown, false);
+-  });
+-}
+-
+-export function NotificationActionButton({
+-  children,
+-  className: customClassName,
+-  onClick,
+-  inline,
+-  ...rest
+-}) {
+-  const prefix = usePrefix();
+-  const className = cx(customClassName, {
+-    [`${prefix}--actionable-notification__action-button`]: true,
+-  });
+-
+-  return (
+-    <Button
+-      className={className}
+-      kind={inline ? 'ghost' : 'tertiary'}
+-      onClick={onClick}
+-      size="sm"
+-      {...rest}>
+-      {children}
+-    </Button>
+-  );
+-}
+-
+-NotificationActionButton.propTypes = {
+-  /**
+-   * Specify the content of the notification action button.
+-   */
+-  children: PropTypes.node,
+-
+-  /**
+-   * Specify an optional className to be applied to the notification action button
+-   */
+-  className: PropTypes.string,
+-
+-  /**
+-   * Specify if the visual treatment of the button should be for an inline notification
+-   */
+-  inline: PropTypes.bool,
+-
+-  /**
+-   * Optionally specify a click handler for the notification action button.
+-   */
+-  onClick: PropTypes.func,
+-};
+-
+-export function NotificationButton({
+-  ariaLabel,
+-  className,
+-  type,
+-  renderIcon: IconTag,
+-  name,
+-  notificationType,
+-  ...rest
+-}) {
+-  const prefix = usePrefix();
+-  const buttonClassName = cx(className, {
+-    [`${prefix}--${notificationType}-notification__close-button`]:
+-      notificationType,
+-  });
+-  const iconClassName = cx({
+-    [`${prefix}--${notificationType}-notification__close-icon`]:
+-      notificationType,
+-  });
+-
+-  return (
+-    <button
+-      {...rest}
+-      // eslint-disable-next-line react/button-has-type
+-      type={type}
+-      aria-label={ariaLabel}
+-      title={ariaLabel}
+-      className={buttonClassName}>
+-      {IconTag && <IconTag className={iconClassName} name={name} />}
+-    </button>
+-  );
+-}
+-
+-NotificationButton.propTypes = {
+-  /**
+-   * Specify a label to be read by screen readers on the notification button
+-   */
+-  ariaLabel: PropTypes.string,
+-
+-  /**
+-   * Specify an optional className to be applied to the notification button
+-   */
+-  className: PropTypes.string,
+-
+-  /**
+-   * Specify an optional icon for the Button through a string,
+-   * if something but regular "close" icon is desirable
+-   */
+-  name: PropTypes.string,
+-
+-  /**
+-   * Specify the notification type
+-   */
+-  notificationType: PropTypes.oneOf(['toast', 'inline', 'actionable']),
+-
+-  /**
+-   * Optional prop to allow overriding the icon rendering.
+-   * Can be a React component class
+-   */
+-  renderIcon: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
+-
+-  /**
+-   * Optional prop to specify the type of the Button
+-   */
+-  type: PropTypes.string,
+-};
+-
+-NotificationButton.defaultProps = {
+-  ariaLabel: 'close notification',
+-  notificationType: 'toast',
+-  type: 'button',
+-  renderIcon: Close,
+-};
+-
+-const iconTypes = {
+-  error: ErrorFilled,
+-  success: CheckmarkFilled,
+-  warning: WarningFilled,
+-  ['warning-alt']: WarningAltFilled,
+-  info: InformationFilled,
+-  ['info-square']: InformationSquareFilled,
+-};
+-
+-function NotificationIcon({ iconDescription, kind, notificationType }) {
+-  const prefix = usePrefix();
+-  const IconForKind = iconTypes[kind];
+-  if (!IconForKind) {
+-    return null;
+-  }
+-  return (
+-    <IconForKind
+-      className={`${prefix}--${notificationType}-notification__icon`}>
+-      <title>{iconDescription}</title>
+-    </IconForKind>
+-  );
+-}
+-
+-NotificationIcon.propTypes = {
+-  iconDescription: PropTypes.string.isRequired,
+-  kind: PropTypes.oneOf([
+-    'error',
+-    'success',
+-    'warning',
+-    'warning-alt',
+-    'info',
+-    'info-square',
+-  ]).isRequired,
+-  notificationType: PropTypes.oneOf(['inline', 'toast']).isRequired,
+-};
+-
+-export function ToastNotification({
+-  role,
+-  onClose,
+-  onCloseButtonClick,
+-  statusIconDescription,
+-  className,
+-  children,
+-  kind,
+-  lowContrast,
+-  hideCloseButton,
+-  timeout,
+-  title,
+-  caption,
+-  subtitle,
+-  ...rest
+-}) {
+-  const [isOpen, setIsOpen] = useState(true);
+-  const prefix = usePrefix();
+-  const containerClassName = cx(className, {
+-    [`${prefix}--toast-notification`]: true,
+-    [`${prefix}--toast-notification--low-contrast`]: lowContrast,
+-    [`${prefix}--toast-notification--${kind}`]: kind,
+-  });
+-
+-  const contentRef = useRef(null);
+-  useNoInteractiveChildren(contentRef);
+-
+-  const handleClose = (evt) => {
+-    if (!onClose || onClose(evt) !== false) {
+-      setIsOpen(false);
+-    }
+-  };
+-  const ref = useRef(null);
+-
+-  function handleCloseButtonClick(event) {
+-    onCloseButtonClick(event);
+-    handleClose(event);
+-  }
+-
+-  const savedOnClose = useRef(onClose);
+-
+-  useEffect(() => {
+-    savedOnClose.current = onClose;
+-  });
+-
+-  useEffect(() => {
+-    if (!timeout) {
+-      return;
+-    }
+-
+-    const timeoutId = window.setTimeout((event) => {
+-      setIsOpen(false);
+-      if (savedOnClose.current) {
+-        savedOnClose.current(event);
+-      }
+-    }, timeout);
+-    return () => {
+-      window.clearTimeout(timeoutId);
+-    };
+-  }, [timeout]);
+-
+-  if (!isOpen) {
+-    return null;
+-  }
+-
+-  return (
+-    <div ref={ref} {...rest} role={role} className={containerClassName}>
+-      <NotificationIcon
+-        notificationType="toast"
+-        kind={kind}
+-        iconDescription={statusIconDescription || `${kind} icon`}
+-      />
+-      <div
+-        ref={contentRef}
+-        className={`${prefix}--toast-notification__details`}>
+-        {title && (
+-          <div className={`${prefix}--toast-notification__title`}>{title}</div>
+-        )}
+-        {subtitle && (
+-          <div className={`${prefix}--toast-notification__subtitle`}>
+-            {subtitle}
+-          </div>
+-        )}
+-        {caption && (
+-          <div className={`${prefix}--toast-notification__caption`}>
+-            {caption}
+-          </div>
+-        )}
+-        {children}
+-      </div>
+-      {!hideCloseButton && (
+-        <NotificationButton
+-          notificationType="toast"
+-          onClick={handleCloseButtonClick}
+-          aria-hidden="true"
+-          tabIndex="-1"
+-        />
+-      )}
+-    </div>
+-  );
+-}
+-
+-ToastNotification.propTypes = {
+-  /**
+-   * Provide a description for "close" icon button that can be read by screen readers
+-   */
+-  ariaLabel: PropTypes.string,
+-
+-  /**
+-   * Specify the caption
+-   */
+-  caption: PropTypes.string,
+-
+-  /**
+-   * Specify the content
+-   */
+-  children: PropTypes.node,
+-
+-  /**
+-   * Specify an optional className to be applied to the notification box
+-   */
+-  className: PropTypes.string,
+-
+-  /**
+-   * Specify the close button should be disabled, or not
+-   */
+-  hideCloseButton: PropTypes.bool,
+-
+-  /**
+-   * Specify what state the notification represents
+-   */
+-  kind: PropTypes.oneOf([
+-    'error',
+-    'info',
+-    'info-square',
+-    'success',
+-    'warning',
+-    'warning-alt',
+-  ]),
+-
+-  /**
+-   * Specify whether you are using the low contrast variant of the ToastNotification.
+-   */
+-  lowContrast: PropTypes.bool,
+-
+-  /**
+-   * Provide a function that is called when menu is closed
+-   */
+-  onClose: PropTypes.func,
+-
+-  /**
+-   * Provide a function that is called when the close button is clicked
+-   */
+-  onCloseButtonClick: PropTypes.func,
+-
+-  /**
+-   * By default, this value is "status". You can also provide an alternate
+-   * role if it makes sense from the accessibility-side
+-   */
+-  role: PropTypes.oneOf(['alert', 'log', 'status']),
+-
+-  /**
+-   * Provide a description for "status" icon that can be read by screen readers
+-   */
+-  statusIconDescription: PropTypes.string,
+-
+-  /**
+-   * Specify the sub-title
+-   */
+-  subtitle: PropTypes.string,
+-
+-  /**
+-   * Specify an optional duration the notification should be closed in
+-   */
+-  timeout: PropTypes.number,
+-
+-  /**
+-   * Specify the title
+-   */
+-  title: PropTypes.string,
+-};
+-
+-ToastNotification.defaultProps = {
+-  kind: 'error',
+-  role: 'status',
+-  onCloseButtonClick: () => {},
+-  hideCloseButton: false,
+-  timeout: 0,
+-};
+-
+-export function InlineNotification({
+-  children,
+-  title,
+-  subtitle,
+-  role,
+-  onClose,
+-  onCloseButtonClick,
+-  statusIconDescription,
+-  className,
+-  kind,
+-  lowContrast,
+-  hideCloseButton,
+-  ...rest
+-}) {
+-  const [isOpen, setIsOpen] = useState(true);
+-  const prefix = usePrefix();
+-  const containerClassName = cx(className, {
+-    [`${prefix}--inline-notification`]: true,
+-    [`${prefix}--inline-notification--low-contrast`]: lowContrast,
+-    [`${prefix}--inline-notification--${kind}`]: kind,
+-    [`${prefix}--inline-notification--hide-close-button`]: hideCloseButton,
+-  });
+-
+-  const contentRef = useRef(null);
+-  useNoInteractiveChildren(contentRef);
+-
+-  const handleClose = (evt) => {
+-    if (!onClose || onClose(evt) !== false) {
+-      setIsOpen(false);
+-    }
+-  };
+-  const ref = useRef(null);
+-
+-  function handleCloseButtonClick(event) {
+-    onCloseButtonClick(event);
+-    handleClose(event);
+-  }
+-
+-  if (!isOpen) {
+-    return null;
+-  }
+-
+-  return (
+-    <div ref={ref} {...rest} role={role} className={containerClassName}>
+-      <div className={`${prefix}--inline-notification__details`}>
+-        <NotificationIcon
+-          notificationType="inline"
+-          kind={kind}
+-          iconDescription={statusIconDescription || `${kind} icon`}
+-        />
+-        <div
+-          ref={contentRef}
+-          className={`${prefix}--inline-notification__text-wrapper`}>
+-          {title && (
+-            <div className={`${prefix}--inline-notification__title`}>
+-              {title}
+-            </div>
+-          )}
+-          {subtitle && (
+-            <div className={`${prefix}--inline-notification__subtitle`}>
+-              {subtitle}
+-            </div>
+-          )}
+-          {children}
+-        </div>
+-      </div>
+-      {!hideCloseButton && (
+-        <NotificationButton
+-          notificationType="inline"
+-          onClick={handleCloseButtonClick}
+-          aria-hidden="true"
+-          tabIndex="-1"
+-        />
+-      )}
+-    </div>
+-  );
+-}
+-
+-InlineNotification.propTypes = {
+-  /**
+-   * Specify the content
+-   */
+-  children: PropTypes.node,
+-
+-  /**
+-   * Specify an optional className to be applied to the notification box
+-   */
+-  className: PropTypes.string,
+-
+-  /**
+-   * Specify the close button should be disabled, or not
+-   */
+-  hideCloseButton: PropTypes.bool,
+-
+-  /**
+-   * Specify what state the notification represents
+-   */
+-  kind: PropTypes.oneOf([
+-    'error',
+-    'info',
+-    'info-square',
+-    'success',
+-    'warning',
+-    'warning-alt',
+-  ]),
+-
+-  /**
+-   * Specify whether you are using the low contrast variant of the InlineNotification.
+-   */
+-  lowContrast: PropTypes.bool,
+-
+-  /**
+-   * Provide a function that is called when menu is closed
+-   */
+-  onClose: PropTypes.func,
+-
+-  /**
+-   * Provide a function that is called when the close button is clicked
+-   */
+-  onCloseButtonClick: PropTypes.func,
+-
+-  /**
+-   * By default, this value is "status". You can also provide an alternate
+-   * role if it makes sense from the accessibility-side.
+-   */
+-  role: PropTypes.oneOf(['alert', 'log', 'status']),
+-
+-  /**
+-   * Provide a description for "status" icon that can be read by screen readers
+-   */
+-  statusIconDescription: PropTypes.string,
+-
+-  /**
+-   * Specify the sub-title
+-   */
+-  subtitle: PropTypes.string,
+-
+-  /**
+-   * Specify the title
+-   */
+-  title: PropTypes.string,
+-};
+-
+-InlineNotification.defaultProps = {
+-  kind: 'error',
+-  role: 'status',
+-  onCloseButtonClick: () => {},
+-  hideCloseButton: false,
+-};
+-
+-export function ActionableNotification({
+-  actionButtonLabel,
+-  ariaLabel,
+-  children,
+-  role,
+-  onActionButtonClick,
+-  onClose,
+-  onCloseButtonClick,
+-  statusIconDescription,
+-  className,
+-  inline,
+-  kind,
+-  lowContrast,
+-  hideCloseButton,
+-  hasFocus,
+-  closeOnEscape,
+-  title,
+-  subtitle,
+-  ...rest
+-}) {
+-  const [isOpen, setIsOpen] = useState(true);
+-  const prefix = usePrefix();
+-  const containerClassName = cx(className, {
+-    [`${prefix}--actionable-notification`]: true,
+-    [`${prefix}--actionable-notification--toast`]: !inline,
+-    [`${prefix}--actionable-notification--low-contrast`]: lowContrast,
+-    [`${prefix}--actionable-notification--${kind}`]: kind,
+-    [`${prefix}--actionable-notification--hide-close-button`]: hideCloseButton,
+-  });
+-
+-  const ref = useRef(null);
+-  useIsomorphicEffect(() => {
+-    if (ref.current && hasFocus) {
+-      ref.current.focus();
+-    }
+-  });
+-
+-  const handleClose = (evt) => {
+-    if (!onClose || onClose(evt) !== false) {
+-      setIsOpen(false);
+-    }
+-  };
+-  useEscapeToClose(ref, handleCloseButtonClick, closeOnEscape);
+-
+-  function handleCloseButtonClick(event) {
+-    onCloseButtonClick(event);
+-    handleClose(event);
+-  }
+-
+-  if (!isOpen) {
+-    return null;
+-  }
+-
+-  return (
+-    <div {...rest} ref={ref} role={role} className={containerClassName}>
+-      <div className={`${prefix}--actionable-notification__details`}>
+-        <NotificationIcon
+-          notificationType={inline ? 'inline' : 'toast'}
+-          kind={kind}
+-          iconDescription={statusIconDescription || `${kind} icon`}
+-        />
+-        <div className={`${prefix}--actionable-notification__text-wrapper`}>
+-          <div className={`${prefix}--actionable-notification__content`}>
+-            {title && (
+-              <div className={`${prefix}--actionable-notification__title`}>
+-                {title}
+-              </div>
+-            )}
+-            {subtitle && (
+-              <div className={`${prefix}--actionable-notification__subtitle`}>
+-                {subtitle}
+-              </div>
+-            )}
+-            {children}
+-          </div>
+-        </div>
+-      </div>
+-
+-      <NotificationActionButton onClick={onActionButtonClick} inline={inline}>
+-        {actionButtonLabel}
+-      </NotificationActionButton>
+-
+-      {!hideCloseButton && (
+-        <NotificationButton
+-          aria-label={ariaLabel}
+-          notificationType="actionable"
+-          onClick={handleCloseButtonClick}
+-        />
+-      )}
+-    </div>
+-  );
+-}
+-
+-ActionableNotification.propTypes = {
+-  /**
+-   * Pass in the action button label that will be rendered within the ActionableNotification.
+-   */
+-  actionButtonLabel: PropTypes.string.isRequired,
+-
+-  /**
+-   * Provide a description for "close" icon button that can be read by screen readers
+-   */
+-  ariaLabel: PropTypes.string,
+-
+-  /**
+-   * Specify the caption
+-   */
+-  caption: PropTypes.string,
+-
+-  /**
+-   * Specify the content
+-   */
+-  children: PropTypes.node,
+-
+-  /**
+-   * Specify an optional className to be applied to the notification box
+-   */
+-  className: PropTypes.string,
+-
+-  /**
+-   * Specify if pressing the escape key should close notifications
+-   */
+-  closeOnEscape: PropTypes.bool,
+-
+-  /**
+-   * Specify if focus should be moved to the component when the notification contains actions
+-   */
+-  hasFocus: PropTypes.bool,
+-
+-  /**
+-   * Specify the close button should be disabled, or not
+-   */
+-  hideCloseButton: PropTypes.bool,
+-
+-  /*
+-   * Specify if the notification should have inline styling applied instead of toast
+-   */
+-  inline: PropTypes.bool,
+-
+-  /**
+-   * Specify what state the notification represents
+-   */
+-  kind: PropTypes.oneOf([
+-    'error',
+-    'info',
+-    'info-square',
+-    'success',
+-    'warning',
+-    'warning-alt',
+-  ]).isRequired,
+-
+-  /**
+-   * Specify whether you are using the low contrast variant of the ActionableNotification.
+-   */
+-  lowContrast: PropTypes.bool,
+-
+-  /**
+-   * Provide a function that is called when the action is clicked
+-   */
+-  onActionButtonClick: PropTypes.func,
+-
+-  /**
+-   * Provide a function that is called when menu is closed
+-   */
+-  onClose: PropTypes.func,
+-
+-  /**
+-   * Provide a function that is called when the close button is clicked
+-   */
+-  onCloseButtonClick: PropTypes.func,
+-
+-  /**
+-   * By default, this value is "alertdialog". You can also provide an alternate
+-   * role if it makes sense from the accessibility-side.
+-   */
+-  role: PropTypes.string,
+-
+-  /**
+-   * Provide a description for "status" icon that can be read by screen readers
+-   */
+-  statusIconDescription: PropTypes.string,
+-
+-  /**
+-   * Specify the sub-title
+-   */
+-  subtitle: PropTypes.string,
+-
+-  /**
+-   * Specify the title
+-   */
+-  title: PropTypes.string,
+-};
+-
+-ActionableNotification.defaultProps = {
+-  kind: 'error',
+-  role: 'alertdialog',
+-  onCloseButtonClick: () => {},
+-  hideCloseButton: false,
+-  hasFocus: true,
+-  closeOnEscape: true,
+-  inline: false,
+-};
+diff --git a/packages/react/src/components/Notification/next/Notification.stories.js b/packages/react/src/components/Notification/next/Notification.stories.js
+deleted file mode 100644
+index 5767c7557924..000000000000
+--- a/packages/react/src/components/Notification/next/Notification.stories.js
++++ /dev/null
+@@ -1,136 +0,0 @@
+-/**
+- * Copyright IBM Corp. 2016, 2018
+- *
+- * This source code is licensed under the Apache-2.0 license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-import { FeatureFlags } from '../../FeatureFlags';
+-import {
+-  ActionableNotification,
+-  ToastNotification,
+-  InlineNotification,
+-} from './Notification';
+-import React from 'react';
+-import { action } from '@storybook/addon-actions';
+-
+-// eslint-disable-next-line storybook/csf-component
+-export default {
+-  title: 'Components/Notifications',
+-  subscomponents: {
+-    ActionableNotification,
+-    InlineNotification,
+-    ToastNotification,
+-  },
+-  decorators: [
+-    (Story) => (
+-      <FeatureFlags flags={{ 'enable-v11-release': true }}>
+-        <Story />
+-      </FeatureFlags>
+-    ),
+-  ],
+-  argTypes: {
+-    kind: {
+-      options: [
+-        'error',
+-        'info',
+-        'info-square',
+-        'success',
+-        'warning',
+-        'warning-alt',
+-      ],
+-      control: {
+-        type: 'select',
+-      },
+-    },
+-    className: {
+-      control: {
+-        type: 'text',
+-      },
+-    },
+-  },
+-  args: {
+-    kind: 'error',
+-    lowContrast: false,
+-    hideCloseButton: false,
+-    ariaLabel: 'closes notification',
+-    statusIconDescription: 'notification',
+-    onClose: action('onClose'),
+-    onCloseButtonClick: action('onCloseButtonClick'),
+-  },
+-};
+-
+-const ToastStory = (args) => <ToastNotification {...args} />;
+-
+-export const Toast = ToastStory.bind({});
+-
+-Toast.argTypes = {
+-  role: {
+-    options: ['alert', 'log', 'status'],
+-    control: {
+-      type: 'select',
+-    },
+-  },
+-  caption: {
+-    control: {
+-      type: 'text',
+-    },
+-  },
+-  title: {
+-    control: {
+-      type: 'text',
+-    },
+-  },
+-  subtitle: {
+-    control: {
+-      type: 'text',
+-    },
+-  },
+-};
+-Toast.args = {
+-  role: 'status',
+-  caption: '00:00:00 AM',
+-  timeout: 0,
+-  title: 'Notification title',
+-  subtitle: 'Subtitle text goes here',
+-};
+-
+-const InlineStory = (args) => {
+-  return <InlineNotification {...args} />;
+-};
+-
+-export const Inline = InlineStory.bind({});
+-
+-Inline.argTypes = {
+-  role: {
+-    options: ['alert', 'log', 'status'],
+-    control: {
+-      type: 'select',
+-    },
+-  },
+-  title: {
+-    control: {
+-      type: 'text',
+-    },
+-  },
+-  subtitle: {
+-    control: {
+-      type: 'text',
+-    },
+-  },
+-};
+-
+-Inline.args = {
+-  title: 'Notification title',
+-  subtitle: 'Subtitle text goes here',
+-};
+-
+-export const Actionable = (args) => <ActionableNotification {...args} />;
+-
+-Actionable.args = {
+-  actionButtonLabel: 'Action',
+-  inline: false,
+-  closeOnEscape: true,
+-  title: 'Notification title',
+-  subtitle: 'Subtitle text goes here',
+-};
+diff --git a/packages/react/src/components/Notification/stories/ActionableNotification.stories.js b/packages/react/src/components/Notification/stories/ActionableNotification.stories.js
+new file mode 100644
+index 000000000000..dd1a7fd85a25
+--- /dev/null
++++ b/packages/react/src/components/Notification/stories/ActionableNotification.stories.js
+@@ -0,0 +1,76 @@
++/**
++ * Copyright IBM Corp. 2016, 2018
++ *
++ * This source code is licensed under the Apache-2.0 license found in the
++ * LICENSE file in the root directory of this source tree.
++ */
++
++import React from 'react';
++import { ActionableNotification } from '../../Notification';
++import { action } from '@storybook/addon-actions';
++import mdx from '../Notification.mdx';
++
++// eslint-disable-next-line storybook/csf-component
++export default {
++  title: 'Components/Notifications/Actionable',
++  component: ActionableNotification,
++  parameters: {
++    docs: {
++      page: mdx,
++    },
++  },
++  args: {
++    kind: 'error',
++    lowContrast: false,
++    hideCloseButton: false,
++    ariaLabel: 'closes notification',
++    statusIconDescription: 'notification',
++    onClose: action('onClose'),
++    onCloseButtonClick: action('onCloseButtonClick'),
++  },
++};
++
++export const Default = () => (
++  <ActionableNotification
++    title="Notification title"
++    subtitle="Subtitle text goes here"
++    closeOnEscape
++    inline={false}
++    actionButtonLabel="Action"
++  />
++);
++
++export const Playground = (args) => <ActionableNotification {...args} />;
++
++Playground.argTypes = {
++  ariaLabel: {
++    table: {
++      disable: true,
++    },
++  },
++  onActionButtonClick: {
++    action: 'clicked',
++  },
++  onClose: {
++    action: 'clicked',
++  },
++  onCloseButtonClick: {
++    action: 'clicked',
++  },
++  children: {
++    table: {
++      disable: true,
++    },
++  },
++  className: {
++    table: {
++      disable: true,
++    },
++  },
++};
++Playground.args = {
++  actionButtonLabel: 'Action',
++  inline: false,
++  title: 'Notification title',
++  subtitle: 'Subtitle text goes here',
++};
+diff --git a/packages/react/src/components/Notification/stories/InlineNotification.stories.js b/packages/react/src/components/Notification/stories/InlineNotification.stories.js
+new file mode 100644
+index 000000000000..6aaa7264e124
+--- /dev/null
++++ b/packages/react/src/components/Notification/stories/InlineNotification.stories.js
+@@ -0,0 +1,80 @@
++/**
++ * Copyright IBM Corp. 2016, 2018
++ *
++ * This source code is licensed under the Apache-2.0 license found in the
++ * LICENSE file in the root directory of this source tree.
++ */
++
++import React from 'react';
++import { InlineNotification } from '../../Notification';
++import { action } from '@storybook/addon-actions';
++import mdx from '../Notification.mdx';
++
++// eslint-disable-next-line storybook/csf-component
++export default {
++  title: 'Components/Notifications/Inline',
++  component: InlineNotification,
++  parameters: {
++    docs: {
++      page: mdx,
++    },
++  },
++  args: {
++    kind: 'error',
++    lowContrast: false,
++    hideCloseButton: false,
++    ariaLabel: 'closes notification',
++    statusIconDescription: 'notification',
++    onClose: action('onClose'),
++    onCloseButtonClick: action('onCloseButtonClick'),
++  },
++};
++
++export const Default = () => (
++  <InlineNotification
++    title="Notification title"
++    subtitle="Subtitle text goes here"
++  />
++);
++
++export const Playground = (args) => <InlineNotification {...args} />;
++
++Playground.argTypes = {
++  actionButtonLabel: {
++    table: {
++      disable: true,
++    },
++  },
++  ariaLabel: {
++    table: {
++      disable: true,
++    },
++  },
++  onActionButtonClick: {
++    table: {
++      disable: true,
++    },
++  },
++  onClose: {
++    action: 'clicked',
++  },
++  onCloseButtonClick: {
++    action: 'clicked',
++  },
++  children: {
++    table: {
++      disable: true,
++    },
++  },
++  className: {
++    table: {
++      disable: true,
++    },
++  },
++};
++Playground.args = {
++  actionButtonLabel: 'Action',
++  inline: false,
++  title: 'Notification title',
++  subtitle: 'Subtitle text goes here',
++};
+diff --git a/packages/react/src/components/Notification/stories/ToastNotification.stories.js b/packages/react/src/components/Notification/stories/ToastNotification.stories.js
+new file mode 100644
+index 000000000000..b0f1d8a3edcc
+--- /dev/null
++++ b/packages/react/src/components/Notification/stories/ToastNotification.stories.js
+@@ -0,0 +1,84 @@
++/**
++ * Copyright IBM Corp. 2016, 2018
++ *
++ * This source code is licensed under the Apache-2.0 license found in the
++ * LICENSE file in the root directory of this source tree.
++ */
++
++import React from 'react';
++import { ToastNotification } from '../../Notification';
++import { action } from '@storybook/addon-actions';
++import mdx from '../Notification.mdx';
++
++// eslint-disable-next-line storybook/csf-component
++export default {
++  title: 'Components/Notifications/Toast',
++  component: ToastNotification,
++  parameters: {
++    docs: {
++      page: mdx,
++    },
++  },
++  args: {
++    kind: 'error',
++    lowContrast: false,
++    hideCloseButton: false,
++    ariaLabel: 'closes notification',
++    statusIconDescription: 'notification',
++    onClose: action('onClose'),
++    onCloseButtonClick: action('onCloseButtonClick'),
++  },
++};
++
++export const Default = () => (
++  <ToastNotification
++    role="status"
++    caption="00:00:00 AM"
++    timeout={0}
++    title="Notification title"
++    subtitle="Subtitle text goes here"
++  />
++);
++
++export const Playground = (args) => <ToastNotification {...args} />;
++
++Playground.argTypes = {
++  actionButtonLabel: {
++    table: {
++      disable: true,
++    },
++  },
++  ariaLabel: {
++    table: {
++      disable: true,
++    },
++  },
++  onActionButtonClick: {
++    table: {
++      disable: true,
++    },
++  },
++  onClose: {
++    action: 'clicked',
++  },
++  onCloseButtonClick: {
++    action: 'clicked',
++  },
++  children: {
++    table: {
++      disable: true,
++    },
++  },
++  className: {
++    table: {
++      disable: true,
++    },
++  },
++};
++Playground.args = {
++  role: 'status',
++  caption: '00:00:00 AM',
++  timeout: 0,
++  title: 'Notification title',
++  subtitle: 'Subtitle text goes here',
++};
+diff --git a/packages/react/src/index.js b/packages/react/src/index.js
+index cef8a5c8435b..2003f53b6450 100644
+--- a/packages/react/src/index.js
++++ b/packages/react/src/index.js
+@@ -82,7 +82,6 @@ export {
+   InlineNotification,
+   NotificationActionButton,
+   NotificationButton,
+-  NotificationTextDetails,
+ } from './components/Notification';
+ export NumberInput from './components/NumberInput';
+ export OrderedList from './components/OrderedList';

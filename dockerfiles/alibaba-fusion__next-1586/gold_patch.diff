@@ -1,0 +1,26 @@
+diff --git a/src/tree/view/tree.jsx b/src/tree/view/tree.jsx
+index fa27611289..30865ce0a3 100644
+--- a/src/tree/view/tree.jsx
++++ b/src/tree/view/tree.jsx
+@@ -665,7 +665,7 @@ export default class Tree extends Component {
+         if (multiple) {
+             this.processKey(selectedKeys, key, select);
+         } else {
+-            selectedKeys = [key];
++            selectedKeys = select ? [key] : [];
+         }
+ 
+         if (!('selectedKeys' in this.props)) {
+diff --git a/test/tree/index-spec.js b/test/tree/index-spec.js
+index b0bfba2de4..158a4a40a1 100644
+--- a/test/tree/index-spec.js
++++ b/test/tree/index-spec.js
+@@ -403,7 +403,7 @@ describe('Tree', () => {
+         assertSelected('3', true);
+ 
+         selectTreeNode('3');
+-        assertSelected('3', true);
++        assertSelected('3', false);
+     });
+ 
+     it('should support selectedKeys and onSelect', () => {

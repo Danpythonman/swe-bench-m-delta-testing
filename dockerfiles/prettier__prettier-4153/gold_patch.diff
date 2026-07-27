@@ -1,0 +1,70 @@
+diff --git a/src/language-markdown/embed.js b/src/language-markdown/embed.js
+index ed22cbbf2ad5..ee8f25e9147c 100644
+--- a/src/language-markdown/embed.js
++++ b/src/language-markdown/embed.js
+@@ -13,7 +13,9 @@ function embed(path, print, textToDoc, options) {
+   const node = path.getValue();
+ 
+   if (node.type === "code") {
+-    const parser = getParserName(node.lang);
++    // only look for the first string so as to support [markdown-preview-enhanced](https://shd101wyy.github.io/markdown-preview-enhanced/#/code-chunk)
++    const lang = node.lang.split(/\s/, 1)[0];
++    const parser = getParserName(lang);
+     if (parser) {
+       const styleUnit = options.__inJsTemplate ? "~" : "`";
+       const style = styleUnit.repeat(
+diff --git a/tests/multiparser_markdown_js/__snapshots__/jsfmt.spec.js.snap b/tests/multiparser_markdown_js/__snapshots__/jsfmt.spec.js.snap
+index c589b54c6b37..d53c85a951c4 100644
+--- a/tests/multiparser_markdown_js/__snapshots__/jsfmt.spec.js.snap
++++ b/tests/multiparser_markdown_js/__snapshots__/jsfmt.spec.js.snap
+@@ -29,6 +29,33 @@ const Foo = () => {
+ 
+ `;
+ 
++exports[`markdown-preview-enhanced.md 1`] = `
++## plain js block
++
++\`\`\`js   
++console.log(     "hello world"   );
++\`\`\`
++
++## js block with arguments
++
++\`\`\`js {cmd=node .line-numbers}
++console.log(     "hello world"   );
++\`\`\`
++~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++## plain js block
++
++\`\`\`js
++console.log("hello world");
++\`\`\`
++
++## js block with arguments
++
++\`\`\`js {cmd=node .line-numbers}
++console.log("hello world");
++\`\`\`
++
++`;
++
+ exports[`trailing-comma.md 1`] = `
+ ### Some heading
+ 
+diff --git a/tests/multiparser_markdown_js/markdown-preview-enhanced.md b/tests/multiparser_markdown_js/markdown-preview-enhanced.md
+new file mode 100644
+index 000000000000..34f8f3600d4d
+--- /dev/null
++++ b/tests/multiparser_markdown_js/markdown-preview-enhanced.md
+@@ -0,0 +1,11 @@
++## plain js block
++
++```js   
++console.log(     "hello world"   );
++```
++
++## js block with arguments
++
++```js {cmd=node .line-numbers}
++console.log(     "hello world"   );
++```

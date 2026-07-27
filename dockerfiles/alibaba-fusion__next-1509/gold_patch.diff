@@ -1,0 +1,57 @@
+diff --git a/src/dialog/dialog.jsx b/src/dialog/dialog.jsx
+index 5ed513a6b9..39ca9ca14a 100644
+--- a/src/dialog/dialog.jsx
++++ b/src/dialog/dialog.jsx
+@@ -131,6 +131,9 @@ export default class Dialog extends Component {
+          * 对话框的高度样式属性
+          */
+         height: PropTypes.string,
++        // Do not remove this, it's for <ConfigProvider popupContainer={} />
++        // see https://github.com/alibaba-fusion/next/issues/1508
++        popupContainer: PropTypes.any,
+     };
+ 
+     static defaultProps = {
+@@ -351,6 +354,7 @@ export default class Dialog extends Component {
+             afterClose,
+             shouldUpdatePosition,
+             align,
++            popupContainer,
+             overlayProps,
+             rtl,
+         } = this.props;
+@@ -362,6 +366,7 @@ export default class Dialog extends Component {
+         } = this.mapcloseableToConfig(closeable);
+         const newOverlayProps = {
+             disableScroll: true,
++            container: popupContainer,
+             ...overlayProps,
+             prefix,
+             visible,
+diff --git a/test/dialog/index-spec.js b/test/dialog/index-spec.js
+index 28af09cc60..103fa72bdc 100644
+--- a/test/dialog/index-spec.js
++++ b/test/dialog/index-spec.js
+@@ -431,6 +431,22 @@ describe('inner', () => {
+         }, 1000);
+     });
+ 
++    it('should work when set <ConfigProvider popupContainer/> ', () => {
++
++        wrapper = render(<ConfigProvider popupContainer={"dialog-popupcontainer"}>
++        <div id="dialog-popupcontainer" style={{height: 300, overflow: 'auto'}}>
++            <Dialog
++                title="Welcome to Alibaba.com"
++                visible>
++                Start your business here by searching a popular product
++            </Dialog>
++        </div>
++        </ConfigProvider>);
++
++        const overlay = document.querySelector('#dialog-popupcontainer > .next-overlay-wrapper');
++        assert(overlay);
++    });
++
+     it('should not close dialog if onOk return promise and reject', done => {
+         const { hide } = Dialog.show({
+             title: 'Title',

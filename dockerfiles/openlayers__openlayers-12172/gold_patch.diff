@@ -1,0 +1,148 @@
+diff --git a/rendering/cases/regularshape-style/expected.png b/rendering/cases/regularshape-style/expected.png
+index f9ec11d4993..20581d3a2b5 100644
+Binary files a/rendering/cases/regularshape-style/expected.png and b/rendering/cases/regularshape-style/expected.png differ
+diff --git a/rendering/cases/regularshape-style/main.js b/rendering/cases/regularshape-style/main.js
+index 327e466db63..d87ea23231d 100644
+--- a/rendering/cases/regularshape-style/main.js
++++ b/rendering/cases/regularshape-style/main.js
+@@ -8,6 +8,7 @@ import Style from '../../../src/ol/style/Style.js';
+ import VectorLayer from '../../../src/ol/layer/Vector.js';
+ import VectorSource from '../../../src/ol/source/Vector.js';
+ import View from '../../../src/ol/View.js';
++import {Icon} from '../../../src/ol/style.js';
+ 
+ const vectorSource = new VectorSource();
+ function createFeatures(stroke, fill, offSet = [0, 0]) {
+@@ -16,7 +17,7 @@ function createFeatures(stroke, fill, offSet = [0, 0]) {
+     geometry: new Point([offSet[0], offSet[1]]),
+   });
+   // square with offset
+-  feature.setStyle(
++  feature.setStyle([
+     new Style({
+       image: new RegularShape({
+         fill: fill,
+@@ -26,8 +27,18 @@ function createFeatures(stroke, fill, offSet = [0, 0]) {
+         angle: Math.PI / 4,
+         displacement: [-15, 15],
+       }),
+-    })
+-  );
++    }),
++    new Style({
++      image: new Icon({
++        src: '/data/cross.svg',
++        size: [20, 20],
++        anchor: [0.5, 0.5],
++        anchorXUnits: 'fraction',
++        anchorYUnits: 'fraction',
++        displacement: [-15, 15],
++      }),
++    }),
++  ]);
+   vectorSource.addFeature(feature);
+ 
+   feature = new Feature({
+diff --git a/rendering/data/cross.svg b/rendering/data/cross.svg
+new file mode 100644
+index 00000000000..a1e9eeb8e07
+--- /dev/null
++++ b/rendering/data/cross.svg
+@@ -0,0 +1,9 @@
++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
++<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
++<svg width="20" height="20" viewBox="0 0 580 581" version="1.1"
++    xmlns="http://www.w3.org/2000/svg"
++    xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve"
++    xmlns:serif="http://www.serif.com/">
++    <path d="M506.409,236.125L344.102,236.125L344.102,73.819L235.896,73.819L235.896,236.125L73.588,236.125L73.588,344.331L235.896,344.331L235.896,506.639L344.102,506.639L344.102,344.331L506.409,344.331L506.409,236.125Z" style="fill:rgb(8,129,32);"/>
++    <path d="M579.997,0L0,0L0,580.457L579.997,580.457L579.997,0ZM549.997,30L549.997,550.457C549.997,550.457 30,550.457 30,550.457C30,550.457 30,30 30,30C30,30 549.997,30 549.997,30L549.997,30Z" style="fill:rgb(8,129,32);"/>
++</svg>
+diff --git a/src/ol/style/Icon.js b/src/ol/style/Icon.js
+index 916f6c5aa34..cc5cdfcd189 100644
+--- a/src/ol/style/Icon.js
++++ b/src/ol/style/Icon.js
+@@ -285,6 +285,10 @@ class Icon extends ImageStyle {
+         anchor[1] = -anchor[1] + size[1];
+       }
+     }
++    const displacement = this.getDisplacement();
++    anchor[0] -= displacement[0];
++    anchor[1] += displacement[1];
++
+     this.normalizedAnchor_ = anchor;
+     return this.normalizedAnchor_;
+   }
+@@ -368,7 +372,6 @@ class Icon extends ImageStyle {
+       return this.origin_;
+     }
+     let offset = this.offset_;
+-    const displacement = this.getDisplacement();
+ 
+     if (this.offsetOrigin_ != IconOrigin.TOP_LEFT) {
+       const size = this.getSize();
+@@ -390,8 +393,6 @@ class Icon extends ImageStyle {
+         offset[1] = iconImageSize[1] - size[1] - offset[1];
+       }
+     }
+-    offset[0] += displacement[0];
+-    offset[1] += displacement[1];
+     this.origin_ = offset;
+     return this.origin_;
+   }
+diff --git a/test/spec/ol/style/icon.test.js b/test/spec/ol/style/icon.test.js
+index 703e8e6a765..7a3cf48d974 100644
+--- a/test/spec/ol/style/icon.test.js
++++ b/test/spec/ol/style/icon.test.js
+@@ -173,6 +173,32 @@ describe('ol.style.Icon', function () {
+       });
+       expect(iconStyle.getAnchor()).to.eql([27, 12]);
+     });
++
++    it('uses a top right anchor origin + displacement', function () {
++      const iconStyle = new Icon({
++        src: 'test.png',
++        size: size,
++        anchor: fractionAnchor,
++        anchorOrigin: 'top-right',
++        displacement: [20, 10],
++      });
++      expect(iconStyle.getAnchor()).to.eql([
++        size[0] * (1 - fractionAnchor[0]) - 20,
++        size[1] * fractionAnchor[1] + 10,
++      ]);
++    });
++
++    it('uses displacement', function () {
++      const iconStyle = new Icon({
++        src: 'test.png',
++        size: size,
++        displacement: [20, 10],
++      });
++      expect(iconStyle.getAnchor()).to.eql([
++        size[0] / 2 - 20,
++        size[1] / 2 + 10,
++      ]);
++    });
+   });
+ 
+   describe('#setAnchor', function () {
+@@ -234,18 +260,6 @@ describe('ol.style.Icon', function () {
+       iconStyle.iconImage_.size_ = imageSize;
+       expect(iconStyle.getOrigin()).to.eql([92, 20]);
+     });
+-
+-    it('uses a top right offset origin + displacement', function () {
+-      const iconStyle = new Icon({
+-        src: 'test.png',
+-        size: size,
+-        offset: offset,
+-        offsetOrigin: 'top-right',
+-        displacement: [20, 10],
+-      });
+-      iconStyle.iconImage_.size_ = imageSize;
+-      expect(iconStyle.getOrigin()).to.eql([92 + 20, 20 + 10]);
+-    });
+   });
+ 
+   describe('#getImageSize', function () {

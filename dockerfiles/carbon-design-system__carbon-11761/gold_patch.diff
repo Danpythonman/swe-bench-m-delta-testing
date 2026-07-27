@@ -1,0 +1,372 @@
+diff --git a/packages/react/src/components/DataTable/Table.js b/packages/react/src/components/DataTable/Table.js
+index 5efe822199b3..bb338d273126 100644
+--- a/packages/react/src/components/DataTable/Table.js
++++ b/packages/react/src/components/DataTable/Table.js
+@@ -5,10 +5,11 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-import React from 'react';
++import React, { useContext } from 'react';
+ import PropTypes from 'prop-types';
+ import cx from 'classnames';
+ import { usePrefix } from '../../internal/usePrefix';
++import { TableContext } from './TableContext';
+ 
+ export const Table = ({
+   className,
+@@ -21,6 +22,7 @@ export const Table = ({
+   overflowMenuOnHover,
+   ...other
+ }) => {
++  const { titleId, descriptionId } = useContext(TableContext);
+   const prefix = usePrefix();
+   const componentClass = cx(`${prefix}--data-table`, className, {
+     [`${prefix}--data-table--${size}`]: size,
+@@ -32,7 +34,11 @@ export const Table = ({
+   });
+   const table = (
+     <div className={`${prefix}--data-table-content`}>
+-      <table {...other} className={componentClass}>
++      <table
++        aria-labelledby={titleId}
++        aria-describedby={descriptionId}
++        {...other}
++        className={componentClass}>
+         {children}
+       </table>
+     </div>
+diff --git a/packages/react/src/components/DataTable/TableContainer.js b/packages/react/src/components/DataTable/TableContainer.js
+index 1a744a84d012..97d9cd40c456 100644
+--- a/packages/react/src/components/DataTable/TableContainer.js
++++ b/packages/react/src/components/DataTable/TableContainer.js
+@@ -7,8 +7,10 @@
+ 
+ import cx from 'classnames';
+ import PropTypes from 'prop-types';
+-import React from 'react';
++import React, { useMemo } from 'react';
+ import { usePrefix } from '../../internal/usePrefix';
++import { useId } from '../../internal/useId';
++import { TableContext } from './TableContext';
+ 
+ const TableContainer = ({
+   className,
+@@ -19,6 +21,9 @@ const TableContainer = ({
+   useStaticWidth,
+   ...rest
+ }) => {
++  const baseId = useId('tc');
++  const titleId = `${baseId}-title`;
++  const descriptionId = `${baseId}-description`;
+   const prefix = usePrefix();
+   const tableContainerClasses = cx(
+     className,
+@@ -28,19 +33,31 @@ const TableContainer = ({
+       [`${prefix}--data-table-container--static`]: useStaticWidth,
+     }
+   );
++  const value = useMemo(() => {
++    return {
++      titleId: title ? titleId : null,
++      descriptionId: description ? descriptionId : null,
++    };
++  }, [title, description, titleId, descriptionId]);
+ 
+   return (
+-    <div {...rest} className={tableContainerClasses}>
+-      {title && (
+-        <div className={`${prefix}--data-table-header`}>
+-          <h4 className={`${prefix}--data-table-header__title`}>{title}</h4>
+-          <p className={`${prefix}--data-table-header__description`}>
+-            {description}
+-          </p>
+-        </div>
+-      )}
+-      {children}
+-    </div>
++    <TableContext.Provider value={value}>
++      <div {...rest} className={tableContainerClasses}>
++        {title && (
++          <div className={`${prefix}--data-table-header`}>
++            <h4 className={`${prefix}--data-table-header__title`} id={titleId}>
++              {title}
++            </h4>
++            <p
++              className={`${prefix}--data-table-header__description`}
++              id={descriptionId}>
++              {description}
++            </p>
++          </div>
++        )}
++        {children}
++      </div>
++    </TableContext.Provider>
+   );
+ };
+ 
+diff --git a/packages/react/src/components/DataTable/TableContext.js b/packages/react/src/components/DataTable/TableContext.js
+new file mode 100644
+index 000000000000..6da615b4718d
+--- /dev/null
++++ b/packages/react/src/components/DataTable/TableContext.js
+@@ -0,0 +1,13 @@
++/**
++ * Copyright IBM Corp. 2016, 2018
++ *
++ * This source code is licensed under the Apache-2.0 license found in the
++ * LICENSE file in the root directory of this source tree.
++ */
++
++import { createContext } from 'react';
++
++export const TableContext = createContext({
++  titleId: null,
++  descriptionId: null,
++});
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
+index 6d7c331937aa..a4470d90c119 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
+@@ -112,11 +112,13 @@ exports[`DataTable selection -- radio buttons should not have select-all checkbo
+       >
+         <h4
+           className="cds--data-table-header__title"
++          id="tc-71-title"
+         >
+           DataTable with selection
+         </h4>
+         <p
+           className="cds--data-table-header__description"
++          id="tc-71-description"
+         />
+       </div>
+       <Table
+@@ -127,6 +129,8 @@ exports[`DataTable selection -- radio buttons should not have select-all checkbo
+           className="cds--data-table-content"
+         >
+           <table
++            aria-describedby={null}
++            aria-labelledby="tc-71-title"
+             className="cds--data-table"
+           >
+             <TableHead>
+@@ -463,11 +467,13 @@ exports[`DataTable selection -- radio buttons should render 1`] = `
+       >
+         <h4
+           className="cds--data-table-header__title"
++          id="tc-68-title"
+         >
+           DataTable with selection
+         </h4>
+         <p
+           className="cds--data-table-header__description"
++          id="tc-68-description"
+         />
+       </div>
+       <Table
+@@ -478,6 +484,8 @@ exports[`DataTable selection -- radio buttons should render 1`] = `
+           className="cds--data-table-content"
+         >
+           <table
++            aria-describedby={null}
++            aria-labelledby="tc-68-title"
+             className="cds--data-table"
+           >
+             <TableHead>
+@@ -934,11 +942,13 @@ exports[`DataTable selection should have select-all default to un-checked if no
+       >
+         <h4
+           className="cds--data-table-header__title"
++          id="tc-44-title"
+         >
+           DataTable with selection
+         </h4>
+         <p
+           className="cds--data-table-header__description"
++          id="tc-44-description"
+         />
+       </div>
+       <Table
+@@ -949,6 +959,8 @@ exports[`DataTable selection should have select-all default to un-checked if no
+           className="cds--data-table-content"
+         >
+           <table
++            aria-describedby={null}
++            aria-labelledby="tc-44-title"
+             className="cds--data-table"
+           >
+             <TableHead>
+@@ -1334,11 +1346,13 @@ exports[`DataTable selection should render 1`] = `
+       >
+         <h4
+           className="cds--data-table-header__title"
++          id="tc-41-title"
+         >
+           DataTable with selection
+         </h4>
+         <p
+           className="cds--data-table-header__description"
++          id="tc-41-description"
+         />
+       </div>
+       <Table
+@@ -1349,6 +1363,8 @@ exports[`DataTable selection should render 1`] = `
+           className="cds--data-table-content"
+         >
+           <table
++            aria-describedby={null}
++            aria-labelledby="tc-41-title"
+             className="cds--data-table"
+           >
+             <TableHead>
+@@ -1991,11 +2007,13 @@ exports[`DataTable should render 1`] = `
+       >
+         <h4
+           className="cds--data-table-header__title"
++          id="tc-8-title"
+         >
+           DataTable with toolbar
+         </h4>
+         <p
+           className="cds--data-table-header__description"
++          id="tc-8-description"
+         />
+       </div>
+       <TableToolbar
+@@ -2538,6 +2556,8 @@ exports[`DataTable should render 1`] = `
+           className="cds--data-table-content"
+         >
+           <table
++            aria-describedby={null}
++            aria-labelledby="tc-8-title"
+             className="cds--data-table cds--data-table--lg"
+           >
+             <TableHead>
+@@ -3009,11 +3029,13 @@ exports[`DataTable sticky header should render 1`] = `
+       >
+         <h4
+           className="cds--data-table-header__title"
++          id="tc-111-title"
+         >
+           DataTable with toolbar
+         </h4>
+         <p
+           className="cds--data-table-header__description"
++          id="tc-111-description"
+         />
+       </div>
+       <TableToolbar
+@@ -3556,6 +3578,8 @@ exports[`DataTable sticky header should render 1`] = `
+           className="cds--data-table-content"
+         >
+           <table
++            aria-describedby={null}
++            aria-labelledby="tc-111-title"
+             className="cds--data-table cds--data-table--lg"
+           >
+             <TableHead>
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandHeader-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandHeader-test.js.snap
+index be589c6b9e95..4e99cefb58ad 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandHeader-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandHeader-test.js.snap
+@@ -9,6 +9,8 @@ exports[`DataTable.TableExpandHeader should render 1`] = `
+     className="cds--data-table-content"
+   >
+     <table
++      aria-describedby={null}
++      aria-labelledby={null}
+       className="cds--data-table"
+     >
+       <TableHead>
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandRow-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandRow-test.js.snap
+index 94f2ba6af296..06ced6f71274 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandRow-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableExpandRow-test.js.snap
+@@ -9,6 +9,8 @@ exports[`DataTable.TableExpandRow should render 1`] = `
+     className="cds--data-table-content"
+   >
+     <table
++      aria-describedby={null}
++      aria-labelledby={null}
+       className="cds--data-table"
+     >
+       <TableBody
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableHeader-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableHeader-test.js.snap
+index 84c947dd518b..27236e172f21 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableHeader-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableHeader-test.js.snap
+@@ -9,6 +9,8 @@ exports[`DataTable.TableHeader should have an active and ascending class if sort
+     className="cds--data-table-content"
+   >
+     <table
++      aria-describedby={null}
++      aria-labelledby={null}
+       className="cds--data-table"
+     >
+       <TableHead>
+@@ -51,6 +53,8 @@ exports[`DataTable.TableHeader should have an active class if it is the sort hea
+     className="cds--data-table-content"
+   >
+     <table
++      aria-describedby={null}
++      aria-labelledby={null}
+       className="cds--data-table"
+     >
+       <TableHead>
+@@ -93,6 +97,8 @@ exports[`DataTable.TableHeader should render 1`] = `
+     className="cds--data-table-content"
+   >
+     <table
++      aria-describedby={null}
++      aria-labelledby={null}
+       className="cds--data-table"
+     >
+       <TableHead>
+@@ -135,6 +141,8 @@ exports[`DataTable.TableHeader should render 2`] = `
+     className="cds--data-table-content"
+   >
+     <table
++      aria-describedby={null}
++      aria-labelledby={null}
+       className="cds--data-table"
+     >
+       <TableHead>
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableSelectAll-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableSelectAll-test.js.snap
+index b7aa04f70d8c..cfd6eb87031e 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableSelectAll-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableSelectAll-test.js.snap
+@@ -9,6 +9,8 @@ exports[`DataTable.TableSelectAll should render 1`] = `
+     className="cds--data-table-content"
+   >
+     <table
++      aria-describedby={null}
++      aria-labelledby={null}
+       className="cds--data-table"
+     >
+       <TableHead>
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableSelectRow-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableSelectRow-test.js.snap
+index 5289b6d22379..a7e3b1b11fec 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableSelectRow-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableSelectRow-test.js.snap
+@@ -9,6 +9,8 @@ exports[`DataTable.TableSelectRow should render 1`] = `
+     className="cds--data-table-content"
+   >
+     <table
++      aria-describedby={null}
++      aria-labelledby={null}
+       className="cds--data-table"
+     >
+       <TableHead>
+diff --git a/packages/react/src/components/DataTable/__tests__/exports-test.js b/packages/react/src/components/DataTable/__tests__/exports-test.js
+index a17dc9cfa8af..21a9630715aa 100644
+--- a/packages/react/src/components/DataTable/__tests__/exports-test.js
++++ b/packages/react/src/components/DataTable/__tests__/exports-test.js
+@@ -24,6 +24,7 @@ const blocklist = new Set([
+   'DataTable.mdx',
+   'stories',
+   'next',
++  'TableContext.js',
+ ]);
+ const components = fs
+   .readdirSync(COMPONENT_PATH)

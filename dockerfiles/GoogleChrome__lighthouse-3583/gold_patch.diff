@@ -1,0 +1,195 @@
+diff --git a/lighthouse-core/gather/computed/critical-request-chains.js b/lighthouse-core/gather/computed/critical-request-chains.js
+index 7d51fd3707e3..00f8fe1824d6 100644
+--- a/lighthouse-core/gather/computed/critical-request-chains.js
++++ b/lighthouse-core/gather/computed/critical-request-chains.js
+@@ -7,6 +7,7 @@
+ 
+ const ComputedArtifact = require('./computed-artifact');
+ const WebInspector = require('../../lib/web-inspector');
++const assert = require('assert');
+ 
+ class CriticalRequestChains extends ComputedArtifact {
+   get name() {
+@@ -17,11 +18,16 @@ class CriticalRequestChains extends ComputedArtifact {
+    * For now, we use network priorities as a proxy for "render-blocking"/critical-ness.
+    * It's imperfect, but there is not a higher-fidelity signal available yet.
+    * @see https://docs.google.com/document/d/1bCDuq9H1ih9iNjgzyAL0gpwNFiEP4TZS-YLRp_RuMlc
+-   * @param  {any} request
++   * @param {any} request
++   * @param {!WebInspector.NetworkRequest} mainResource
+    */
+-  static isCritical(request) {
++  static isCritical(request, mainResource) {
++    assert.ok(mainResource, 'mainResource not provided');
+     const resourceTypeCategory = request._resourceType && request._resourceType._category;
+ 
++    // Iframes are considered High Priority but they are not render blocking
++    const isIframe = request._resourceType === WebInspector.resourceTypes.Document
++      && request.frameId !== mainResource.frameId;
+     // XHRs are fetched at High priority, but we exclude them, as they are unlikely to be critical
+     // Images are also non-critical.
+     // Treat any images missed by category, primarily favicons, as non-critical resources
+@@ -30,6 +36,7 @@ class CriticalRequestChains extends ComputedArtifact {
+       WebInspector.resourceTypes.XHR._category,
+     ];
+     if (nonCriticalResourceTypes.includes(resourceTypeCategory) ||
++        isIframe ||
+         request.mimeType && request.mimeType.startsWith('image/')) {
+       return false;
+     }
+@@ -37,7 +44,7 @@ class CriticalRequestChains extends ComputedArtifact {
+     return ['VeryHigh', 'High', 'Medium'].includes(request.priority());
+   }
+ 
+-  static extractChain(networkRecords) {
++  static extractChain([networkRecords, mainResource]) {
+     networkRecords = networkRecords.filter(req => req.finished);
+ 
+     // Build a map of requestID -> Node.
+@@ -48,7 +55,8 @@ class CriticalRequestChains extends ComputedArtifact {
+ 
+     // Get all the critical requests.
+     /** @type {!Array<NetworkRequest>} */
+-    const criticalRequests = networkRecords.filter(CriticalRequestChains.isCritical);
++    const criticalRequests = networkRecords.filter(request =>
++      CriticalRequestChains.isCritical(request, mainResource));
+ 
+     const flattenRequest = request => {
+       return {
+@@ -70,7 +78,7 @@ class CriticalRequestChains extends ComputedArtifact {
+       let ancestorRequest = request.initiatorRequest();
+       let node = criticalRequestChains;
+       while (ancestorRequest) {
+-        const ancestorIsCritical = CriticalRequestChains.isCritical(ancestorRequest);
++        const ancestorIsCritical = CriticalRequestChains.isCritical(ancestorRequest, mainResource);
+ 
+         // If the parent request isn't a high priority request it won't be in the
+         // requestIdToRequests map, and so we can break the chain here. We should also
+@@ -130,7 +138,10 @@ class CriticalRequestChains extends ComputedArtifact {
+    * @return {!Promise<!Object>}
+    */
+   compute_(devtoolsLog, artifacts) {
+-    return artifacts.requestNetworkRecords(devtoolsLog)
++    return Promise.all([
++      artifacts.requestNetworkRecords(devtoolsLog),
++      artifacts.requestMainResource(devtoolsLog),
++    ])
+       .then(CriticalRequestChains.extractChain);
+   }
+ }
+diff --git a/lighthouse-core/test/gather/computed/critical-request-chains-test.js b/lighthouse-core/test/gather/computed/critical-request-chains-test.js
+index 8268cabcbb10..ab39cbd6128c 100644
+--- a/lighthouse-core/test/gather/computed/critical-request-chains-test.js
++++ b/lighthouse-core/test/gather/computed/critical-request-chains-test.js
+@@ -9,6 +9,7 @@
+ 
+ const assert = require('assert');
+ const CriticalRequestChains = require('../../../gather/computed/critical-request-chains');
++const WebInspector = require('../../../lib/web-inspector');
+ const Runner = require('../../../runner.js');
+ 
+ const HIGH = 'High';
+@@ -23,6 +24,7 @@ function mockTracingData(prioritiesList, edges) {
+       _resourceType: {
+         _category: 'fake',
+       },
++      frameId: 1,
+       finished: true,
+       priority: () => priority,
+       initiatorRequest: () => null,
+@@ -39,7 +41,8 @@ function mockTracingData(prioritiesList, edges) {
+ 
+ function testGetCriticalChain(data) {
+   const networkRecords = mockTracingData(data.priorityList, data.edges);
+-  const criticalChains = CriticalRequestChains.extractChain(networkRecords);
++  const mainResource = networkRecords[0];
++  const criticalChains = CriticalRequestChains.extractChain([networkRecords, mainResource]);
+   assert.deepEqual(criticalChains, data.expected);
+ }
+ 
+@@ -261,12 +264,13 @@ describe('CriticalRequestChain gatherer: extractChain function', () => {
+ 
+   it('handles redirects', () => {
+     const networkRecords = mockTracingData([HIGH, HIGH, HIGH], [[0, 1], [1, 2]]);
++    const mainResource = networkRecords[0];
+ 
+     // Make a fake redirect
+     networkRecords[1].requestId = '1:redirected.0';
+     networkRecords[2].requestId = '1';
+ 
+-    const criticalChains = CriticalRequestChains.extractChain(networkRecords);
++    const criticalChains = CriticalRequestChains.extractChain([networkRecords, mainResource]);
+     assert.deepEqual(criticalChains, {
+       0: {
+         request: constructEmptyRequest(),
+@@ -287,6 +291,7 @@ describe('CriticalRequestChain gatherer: extractChain function', () => {
+ 
+   it('discards favicons as non-critical', () => {
+     const networkRecords = mockTracingData([HIGH, HIGH, HIGH, HIGH], [[0, 1], [0, 2], [0, 3]]);
++    const mainResource = networkRecords[0];
+ 
+     // 2nd record is a favicon
+     networkRecords[1].url = 'https://example.com/favicon.ico';
+@@ -307,7 +312,35 @@ describe('CriticalRequestChain gatherer: extractChain function', () => {
+       lastPathComponent: 'android-chrome-192x192.png',
+     };
+ 
+-    const criticalChains = CriticalRequestChains.extractChain(networkRecords);
++    const criticalChains = CriticalRequestChains.extractChain([networkRecords, mainResource]);
++    assert.deepEqual(criticalChains, {
++      0: {
++        request: constructEmptyRequest(),
++        children: {},
++      },
++    });
++  });
++
++  it('discards iframes as non-critical', () => {
++    const networkRecords = mockTracingData([HIGH, HIGH, HIGH], [[0, 1], [0, 2]]);
++    const mainResource = networkRecords[0];
++
++    // 1th record is the root document
++    networkRecords[0].url = 'https://example.com';
++    networkRecords[0].mimeType = 'text/html';
++    networkRecords[0]._resourceType = WebInspector.resourceTypes.Document;
++    // 2nd record is an iframe in the page
++    networkRecords[1].url = 'https://example.com/iframe.html';
++    networkRecords[1].mimeType = 'text/html';
++    networkRecords[1]._resourceType = WebInspector.resourceTypes.Document;
++    networkRecords[1].frameId = '2';
++    // 3rd record is an iframe loaded by a script
++    networkRecords[2].url = 'https://youtube.com/';
++    networkRecords[2].mimeType = 'text/html';
++    networkRecords[2]._resourceType = WebInspector.resourceTypes.Document;
++    networkRecords[2].frameId = '3';
++
++    const criticalChains = CriticalRequestChains.extractChain([networkRecords, mainResource]);
+     assert.deepEqual(criticalChains, {
+       0: {
+         request: constructEmptyRequest(),
+@@ -318,10 +351,11 @@ describe('CriticalRequestChain gatherer: extractChain function', () => {
+ 
+   it('handles non-existent nodes when building the tree', () => {
+     const networkRecords = mockTracingData([HIGH, HIGH], [[0, 1]]);
++    const mainResource = networkRecords[0];
+ 
+     // Reverse the records so we force nodes to be made early.
+     networkRecords.reverse();
+-    const criticalChains = CriticalRequestChains.extractChain(networkRecords);
++    const criticalChains = CriticalRequestChains.extractChain([networkRecords, mainResource]);
+     assert.deepEqual(criticalChains, {
+       0: {
+         request: constructEmptyRequest(),
+diff --git a/lighthouse-core/test/runner-test.js b/lighthouse-core/test/runner-test.js
+index 18679cd619ff..2a40c92d94f6 100644
+--- a/lighthouse-core/test/runner-test.js
++++ b/lighthouse-core/test/runner-test.js
+@@ -260,7 +260,7 @@ describe('Runner', () => {
+ 
+     return Runner.run({}, {url, config}).then(results => {
+       const audits = results.audits;
+-      assert.equal(audits['critical-request-chains'].displayValue, 9);
++      assert.equal(audits['critical-request-chains'].displayValue, 5);
+       assert.equal(audits['critical-request-chains'].rawValue, false);
+     });
+   });

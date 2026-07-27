@@ -1,0 +1,48 @@
+diff --git a/src/resources/filters/ast/parse.lua b/src/resources/filters/ast/parse.lua
+index 9bda24eca5e..cc41ed4c348 100644
+--- a/src/resources/filters/ast/parse.lua
++++ b/src/resources/filters/ast/parse.lua
+@@ -4,12 +4,14 @@
+ -- Copyright (C) 2022 by RStudio, PBC
+ 
+ local function parse(node)
+-  local tag = pandoc.utils.stringify(node.attr.classes)
+-  local handler = _quarto.ast.resolve_handler(tag)
+-  if handler == nil then
+-    return node
++  for _, class in ipairs(node.attr.classes) do
++    local tag = pandoc.utils.stringify(class)
++    local handler = _quarto.ast.resolve_handler(tag)
++    if handler ~= nil then
++      return handler.parse(node)
++    end
+   end
+-  return handler.parse(node)
++  return node
+ end
+ 
+ function parseExtendedNodes() 
+diff --git a/tests/docs/smoke-all/2023/02/01/4174.qmd b/tests/docs/smoke-all/2023/02/01/4174.qmd
+new file mode 100644
+index 00000000000..65bd308e731
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/02/01/4174.qmd
+@@ -0,0 +1,18 @@
++---
++title: "issue #4174"
++format: html
++_quarto:
++  tests:
++    html:
++      ensureHtmlElements:
++        - []
++        - ["h2.anchored"]
++---
++
++:::{.panel-tabset .nav-fill}
++
++## A
++
++## B
++
++:::

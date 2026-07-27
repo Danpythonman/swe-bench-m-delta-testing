@@ -1,0 +1,99 @@
+diff --git a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+index cd04e3f10e91..45d28a6fe85a 100644
+--- a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
++++ b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+@@ -4936,7 +4936,6 @@ Map {
+   },
+   "Tabs" => Object {
+     "defaultProps": Object {
+-      "role": "navigation",
+       "selected": 0,
+       "selectionMode": "automatic",
+       "type": "default",
+@@ -4963,10 +4962,6 @@ Map {
+       "onSelectionChange": Object {
+         "type": "func",
+       },
+-      "role": Object {
+-        "isRequired": true,
+-        "type": "string",
+-      },
+       "selected": Object {
+         "type": "number",
+       },
+diff --git a/packages/react/src/components/Tabs/Tabs-test.js b/packages/react/src/components/Tabs/Tabs-test.js
+index 4d84e5b599f7..dd216d048f73 100644
+--- a/packages/react/src/components/Tabs/Tabs-test.js
++++ b/packages/react/src/components/Tabs/Tabs-test.js
+@@ -26,16 +26,6 @@ describe('Tabs', () => {
+         </Tabs>
+       );
+ 
+-      it('renders [role="navigation"] props on wrapping <div> by default', () => {
+-        expect(
+-          wrapper
+-            // TODO: uncomment and replace in next major version
+-            // .find(`.${prefix}--tabs`).props().role
+-            .find(`.${prefix}--tabs--scrollable .${prefix}--tabs--scrollable`)
+-            .props().role
+-        ).toEqual('navigation');
+-      });
+-
+       it('renders [role="tablist"] props on <ul> by default', () => {
+         expect(wrapper.find('ul').props().role).toEqual('tablist');
+       });
+diff --git a/packages/react/src/components/Tabs/Tabs.js b/packages/react/src/components/Tabs/Tabs.js
+index 61e37ec98c4b..6cfd1e6402a8 100644
+--- a/packages/react/src/components/Tabs/Tabs.js
++++ b/packages/react/src/components/Tabs/Tabs.js
+@@ -24,7 +24,7 @@ export default class Tabs extends React.Component {
+     children: PropTypes.node,
+ 
+     /**
+-     * Provide a className that is applied to the root <nav> component for the
++     * Provide a className that is applied to the root <div> component for the
+      * <Tabs>
+      */
+     className: PropTypes.string,
+@@ -58,12 +58,6 @@ export default class Tabs extends React.Component {
+      */
+     onSelectionChange: PropTypes.func,
+ 
+-    /**
+-     * By default, this value is "navigation". You can also provide an alternate
+-     * role if it makes sense from the accessibility-side
+-     */
+-    role: PropTypes.string.isRequired,
+-
+     /**
+      * Optionally provide an index for the currently selected <Tab>
+      */
+@@ -86,7 +80,6 @@ export default class Tabs extends React.Component {
+   };
+ 
+   static defaultProps = {
+-    role: 'navigation',
+     type: 'default',
+     selected: 0,
+     selectionMode: 'automatic',
+@@ -332,7 +325,6 @@ export default class Tabs extends React.Component {
+   render() {
+     const {
+       className,
+-      role,
+       type,
+       light,
+       onSelectionChange,
+@@ -427,11 +419,7 @@ export default class Tabs extends React.Component {
+     return (
+       // TODO: remove classname and revert div to React Fragment after next major release
+       <div className={`${prefix}--tabs--scrollable`}>
+-        <div
+-          {...other}
+-          className={classes.tabs}
+-          role={role}
+-          onScroll={this.handleScroll}>
++        <div {...other} className={classes.tabs} onScroll={this.handleScroll}>
+           <button
+             type="button"
+             className={classes.leftOverflowButtonClasses}

@@ -1,0 +1,133 @@
+diff --git a/src/language-markdown/printer-markdown.js b/src/language-markdown/printer-markdown.js
+index 4b7b03fb9a46..a45b0392627c 100644
+--- a/src/language-markdown/printer-markdown.js
++++ b/src/language-markdown/printer-markdown.js
+@@ -210,10 +210,12 @@ function genericPrint(path, options, print) {
+       return concat(["+++", hardline, node.value, hardline, "+++"]);
+     case "html": {
+       const parentNode = path.getParentNode();
+-      return parentNode.type === "root" &&
++      return replaceNewlinesWithHardlines(
++        parentNode.type === "root" &&
+         privateUtil.getLast(parentNode.children) === node
+-        ? node.value.trimRight()
+-        : node.value;
++          ? node.value.trimRight()
++          : node.value
++      );
+     }
+     case "list": {
+       const nthSiblingIndex = getNthListSiblingIndex(
+@@ -388,6 +390,10 @@ function getNthListSiblingIndex(node, parentNode) {
+   );
+ }
+ 
++function replaceNewlinesWithHardlines(str) {
++  return join(hardline, str.split("\n"));
++}
++
+ function getNthSiblingIndex(node, parentNode, condition) {
+   condition = condition || (() => true);
+ 
+diff --git a/tests/markdown_html/__snapshots__/jsfmt.spec.js.snap b/tests/markdown_html/__snapshots__/jsfmt.spec.js.snap
+index ab27b98f9605..9b031dee39cf 100644
+--- a/tests/markdown_html/__snapshots__/jsfmt.spec.js.snap
++++ b/tests/markdown_html/__snapshots__/jsfmt.spec.js.snap
+@@ -1,5 +1,56 @@
+ // Jest Snapshot v1, https://goo.gl/fbAQLP
+ 
++exports[`multiline.md 1`] = `
++1.  Some test text, the goal is to have the html table below nested within this number. When formating on save Prettier will continue to add an indent each time pushing the table further and further out of sync. 
++
++    <table class="table table-striped">
++    <tr>
++    <th>Test</th>
++    <th>Table</th>
++    </tr>
++    <tbody>
++        <tr>
++        <td>will</td>
++        <td>be</td>
++        </tr>
++        <tr>
++        <td>pushed</td>
++        <td>When</td>
++        </tr>
++        <tr>
++        <td>Format on</td>
++        <td>Save</td>
++        </tr>
++    </tbody>
++    </table>
++~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++1.  Some test text, the goal is to have the html table below nested within this
++    number. When formating on save Prettier will continue to add an indent each
++    time pushing the table further and further out of sync.
++
++    <table class="table table-striped">
++    <tr>
++    <th>Test</th>
++    <th>Table</th>
++    </tr>
++    <tbody>
++        <tr>
++        <td>will</td>
++        <td>be</td>
++        </tr>
++        <tr>
++        <td>pushed</td>
++        <td>When</td>
++        </tr>
++        <tr>
++        <td>Format on</td>
++        <td>Save</td>
++        </tr>
++    </tbody>
++    </table>
++
++`;
++
+ exports[`simple.md 1`] = `
+ <!-- hello world -->
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+diff --git a/tests/markdown_html/multiline.md b/tests/markdown_html/multiline.md
+new file mode 100644
+index 000000000000..16716e4d76ec
+--- /dev/null
++++ b/tests/markdown_html/multiline.md
+@@ -0,0 +1,22 @@
++1.  Some test text, the goal is to have the html table below nested within this number. When formating on save Prettier will continue to add an indent each time pushing the table further and further out of sync. 
++
++    <table class="table table-striped">
++    <tr>
++    <th>Test</th>
++    <th>Table</th>
++    </tr>
++    <tbody>
++        <tr>
++        <td>will</td>
++        <td>be</td>
++        </tr>
++        <tr>
++        <td>pushed</td>
++        <td>When</td>
++        </tr>
++        <tr>
++        <td>Format on</td>
++        <td>Save</td>
++        </tr>
++    </tbody>
++    </table>
+diff --git a/tests/markdown_spec/__snapshots__/jsfmt.spec.js.snap b/tests/markdown_spec/__snapshots__/jsfmt.spec.js.snap
+index 620b215f8a8f..718b77ee05a4 100644
+--- a/tests/markdown_spec/__snapshots__/jsfmt.spec.js.snap
++++ b/tests/markdown_spec/__snapshots__/jsfmt.spec.js.snap
+@@ -1540,7 +1540,7 @@ exports[`example-138.md 1`] = `
+ bar
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ > <div>
+-foo
++> foo
+ 
+ bar
+ 

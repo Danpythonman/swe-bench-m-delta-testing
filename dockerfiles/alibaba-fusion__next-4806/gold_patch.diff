@@ -1,0 +1,223 @@
+diff --git a/components/cascader-select/__docs__/index.en-us.md b/components/cascader-select/__docs__/index.en-us.md
+index c18a9de19e..7181b1f8ad 100644
+--- a/components/cascader-select/__docs__/index.en-us.md
++++ b/components/cascader-select/__docs__/index.en-us.md
+@@ -21,34 +21,34 @@ Inherits partial props from Cascader, support passing props to Cascader: dataSou
+ checkStrictly, resultRender, expandedValue, defaultExpandedValue, expandTriggerType, onExpand, listStyle, listClassName, loadData, i
+ temRender, immutable. Support passing props to Select: other Select props except those listed above and those listed below.
+ 
+-| Param           | Description                                                                                     | Type                                                                                                                                               | Default Value | Required |
+-| --------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------- |
+-| size            | Size                                                                                            | 'small' \| 'medium' \| 'large'                                                                                                                     | 'medium'      |          |
+-| disabled        | Disabled                                                                                        | boolean                                                                                                                                            | false         |          |
+-| hasArrow        | HasArrow                                                                                        | boolean                                                                                                                                            | true          |          |
+-| hasBorder       | HasBorder                                                                                       | boolean                                                                                                                                            | true          |          |
+-| hasClear        | HasClear                                                                                        | boolean                                                                                                                                            | false         |          |
+-| readOnly        | ReadOnly, popup layer can be expanded but cannot be selected in read                            | boolean                                                                                                                                            | -             |          |
+-| defaultValue    | Default value(not controlled)                                                                   | string \| Array\<string>                                                                                                                           | -             |          |
+-| value           | Current value(controlled)                                                                       | string \| Array\<string>                                                                                                                           | -             |          |
+-| onChange        | Callback when selected value changes                                                            | (<br/> value: string \| Array\<string> \| null,<br/> data: CascaderDataItem \| Array\<CascaderDataItem> \| null,<br/> extra?: Extra<br/> ) => void | -             |          |
+-| changeOnSelect  | Whether to call onChange as soon as selected, this property only works in single selection mode | boolean                                                                                                                                            | false         |          |
+-| displayRender   | Custom render function of selected result                                                       | (<br/> label: Array\<React.ReactNode>,<br/> data?: CascaderSelectDataItem<br/> ) => React.ReactNode                                                | -             |          |
+-| showSearch      | Show search box                                                                                 | boolean                                                                                                                                            | false         |          |
+-| filter          | Custom search function                                                                          | (searchValue: string, path: CascaderSelectDataItem[]) => boolean                                                                                   | -             |          |
+-| onSearch        | Callback when search value changes                                                              | (value: string) => void                                                                                                                            | -             |          |
+-| resultAutoWidth | Whether the search result list is the same width as the selection box                           | boolean                                                                                                                                            | true          |          |
+-| notFoundContent | Content when no data                                                                            | React.ReactNode                                                                                                                                    | -             |          |
+-| header          | Custom dropdown header                                                                          | React.ReactNode                                                                                                                                    | -             |          |
+-| footer          | Custom dropdown footer                                                                          | React.ReactNode                                                                                                                                    | -             |          |
+-| defaultVisible  | Visible by default                                                                              | boolean                                                                                                                                            | false         |          |
+-| visible         | Current visible                                                                                 | boolean                                                                                                                                            | -             |          |
+-| onVisibleChange | -                                                                                               | (visible: boolean, type?: CascaderSelectVisibleChangeType) => void                                                                                 | -             |          |
+-| popupProps      | Props object passed to Popup                                                                    | React.ComponentPropsWithRef\<typeof Popup>                                                                                                         | -             |          |
+-| isPreview       | Whether it is in preview mode                                                                   | boolean                                                                                                                                            | false         |          |
+-| renderPreview   | Custom preview                                                                                  | (<br/> value: CascaderSelectDataItem \| CascaderSelectDataItem[],<br/> props: CascaderSelectProps<br/> ) => React.ReactNode                        | -             |          |
+-| treeCheckable   | -                                                                                               | boolean                                                                                                                                            | -             |          |
+-| menuProps       | -                                                                                               | Omit\<CascaderProps, 'onSelect' \| 'onChange'>                                                                                                     | -             |          |
++| Param                | Description                                                                                         | Type                                                                                                                                               | Default Value | Required | Supported Version |
++| -------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------- | ----------------- |
++| size                 | Size                                                                                                | 'small' \| 'medium' \| 'large'                                                                                                                     | 'medium'      |          | -                 |
++| disabled             | Disabled                                                                                            | boolean                                                                                                                                            | false         |          | -                 |
++| hasArrow             | HasArrow                                                                                            | boolean                                                                                                                                            | true          |          | -                 |
++| hasBorder            | HasBorder                                                                                           | boolean                                                                                                                                            | true          |          | -                 |
++| hasClear             | HasClear                                                                                            | boolean                                                                                                                                            | false         |          | -                 |
++| readOnly             | ReadOnly, popup layer can be expanded but cannot be selected in read                                | boolean                                                                                                                                            | -             |          | -                 |
++| defaultValue         | Default value(not controlled)                                                                       | string \| Array\<string>                                                                                                                           | -             |          | -                 |
++| value                | Current value(controlled)                                                                           | string \| Array\<string>                                                                                                                           | -             |          | -                 |
++| onChange             | Callback when selected value changes                                                                | (<br/> value: string \| Array\<string> \| null,<br/> data: CascaderDataItem \| Array\<CascaderDataItem> \| null,<br/> extra?: Extra<br/> ) => void | -             |          | -                 |
++| changeOnSelect       | Whether to call onChange as soon as selected, this property only works in single selection mode     | boolean                                                                                                                                            | false         |          | -                 |
++| displayRender        | Custom render function of selected result                                                           | (<br/> label: Array\<React.ReactNode>,<br/> data: CascaderSelectDataItem<br/> ) => React.ReactNode                                                 | -             |          | -                 |
++| showSearch           | Show search box                                                                                     | boolean                                                                                                                                            | false         |          | -                 |
++| filter               | Custom search function                                                                              | (searchValue: string, path: CascaderSelectDataItem[]) => boolean                                                                                   | -             |          | -                 |
++| onSearch             | Callback when search value changes                                                                  | (value: string) => void                                                                                                                            | -             |          | 1.23              |
++| resultAutoWidth      | Whether the search result list is the same width as the selection box                               | boolean                                                                                                                                            | true          |          | -                 |
++| notFoundContent      | Content when no data                                                                                | React.ReactNode                                                                                                                                    | -             |          | -                 |
++| header               | Custom dropdown header                                                                              | React.ReactNode                                                                                                                                    | -             |          | -                 |
++| footer               | Custom dropdown footer                                                                              | React.ReactNode                                                                                                                                    | -             |          | -                 |
++| defaultVisible       | Visible by default                                                                                  | boolean                                                                                                                                            | false         |          | -                 |
++| visible              | Current visible                                                                                     | boolean                                                                                                                                            | -             |          | -                 |
++| onVisibleChange      | -                                                                                                   | (visible: boolean, type?: CascaderSelectVisibleChangeType) => void                                                                                 | -             |          | -                 |
++| popupProps           | Props object passed to Popup                                                                        | React.ComponentPropsWithRef\<typeof Popup>                                                                                                         | -             |          | -                 |
++| isPreview            | Whether it is in preview mode                                                                       | boolean                                                                                                                                            | false         |          | -                 |
++| renderPreview        | Custom preview                                                                                      | (<br/> value: CascaderSelectDataItem \| CascaderSelectDataItem[],<br/> props: CascaderSelectProps<br/> ) => React.ReactNode                        | -             |          | -                 |
++| menuProps            | Props object passed to Cascader                                                                     | Omit\<CascaderProps, 'onSelect' \| 'onChange'>                                                                                                     | -             |          | -                 |
++| autoClearSearchValue | Whether the current search will be cleared on selecting an item. Only applies when multiple is true | boolean                                                                                                                                            | false         |          | -                 |
+ 
+ <!-- api-extra-start -->
+ 
+diff --git a/components/cascader-select/__docs__/index.md b/components/cascader-select/__docs__/index.md
+index fa1839ea49..dea6676207 100644
+--- a/components/cascader-select/__docs__/index.md
++++ b/components/cascader-select/__docs__/index.md
+@@ -21,34 +21,34 @@
+ checkStrictly, resultRender, expandedValue, defaultExpandedValue, expandTriggerType, onExpand, listStyle,
+ listClassName, loadData, itemRender, immutable。支持透传给 Select 的包括除上面传给 Cascader 和下方单独列出的属性以外的其他全部属性。
+ 
+-| 参数            | 说明                                         | 类型                                                                                                                                               | 默认值   | 是否必填 |
+-| --------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------- |
+-| size            | 选择框大小                                   | 'small' \| 'medium' \| 'large'                                                                                                                     | 'medium' |          |
+-| disabled        | 是否禁用                                     | boolean                                                                                                                                            | false    |          |
+-| hasArrow        | 是否有下拉箭头                               | boolean                                                                                                                                            | true     |          |
+-| hasBorder       | 是否有边框                                   | boolean                                                                                                                                            | true     |          |
+-| hasClear        | 是否有清除按钮                               | boolean                                                                                                                                            | false    |          |
+-| readOnly        | 是否只读，只读模式下可以展开弹层但不能选     | boolean                                                                                                                                            | -        |          |
+-| defaultValue    | （非受控）默认值                             | string \| Array\<string>                                                                                                                           | -        |          |
+-| value           | （受控）当前值                               | string \| Array\<string>                                                                                                                           | -        |          |
+-| onChange        | 选中值改变时触发的回调函数                   | (<br/> value: string \| Array\<string> \| null,<br/> data: CascaderDataItem \| Array\<CascaderDataItem> \| null,<br/> extra?: Extra<br/> ) => void | -        |          |
+-| changeOnSelect  | 是否选中即发生改变，该属性仅在单选模式下有效 | boolean                                                                                                                                            | false    |          |
+-| displayRender   | 选择框单选时展示结果的自定义渲染函数         | (<br/> label: Array\<React.ReactNode>,<br/> data?: CascaderSelectDataItem<br/> ) => React.ReactNode                                                | -        |          |
+-| showSearch      | 是否显示搜索框                               | boolean                                                                                                                                            | false    |          |
+-| filter          | 自定义搜索函数                               | (searchValue: string, path: CascaderSelectDataItem[]) => boolean                                                                                   | -        |          |
+-| onSearch        | 当搜索框值变化时回调                         | (value: string) => void                                                                                                                            | -        |          |
+-| resultAutoWidth | 搜索结果列表是否和选择框等宽                 | boolean                                                                                                                                            | true     |          |
+-| notFoundContent | 无数据时显示内容                             | React.ReactNode                                                                                                                                    | -        |          |
+-| header          | 自定义下拉框头部                             | React.ReactNode                                                                                                                                    | -        |          |
+-| footer          | 自定义下拉框底部                             | React.ReactNode                                                                                                                                    | -        |          |
+-| defaultVisible  | 初始下拉框是否显示                           | boolean                                                                                                                                            | false    |          |
+-| visible         | 当前下拉框是否显示                           | boolean                                                                                                                                            | -        |          |
+-| onVisibleChange | 下拉框显示或关闭时触发事件的回调函数         | (visible: boolean, type?: CascaderSelectVisibleChangeType) => void                                                                                 | -        |          |
+-| popupProps      | 透传到 Popup 的属性对象                      | React.ComponentPropsWithRef\<typeof Popup>                                                                                                         | -        |          |
+-| isPreview       | 是否为预览态                                 | boolean                                                                                                                                            | false    |          |
+-| renderPreview   | 自定义预览态                                 | (<br/> value: CascaderSelectDataItem \| CascaderSelectDataItem[],<br/> props: CascaderSelectProps<br/> ) => React.ReactNode                        | -        |          |
+-| treeCheckable   | -                                            | boolean                                                                                                                                            | -        |          |
+-| menuProps       | -                                            | Omit\<CascaderProps, 'onSelect' \| 'onChange'>                                                                                                     | -        |          |
++| 参数                 | 说明                                                   | 类型                                                                                                                                               | 默认值   | 是否必填 | 支持版本 |
++| -------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------- | -------- |
++| size                 | 选择框大小                                             | 'small' \| 'medium' \| 'large'                                                                                                                     | 'medium' |          | -        |
++| disabled             | 是否禁用                                               | boolean                                                                                                                                            | false    |          | -        |
++| hasArrow             | 是否有下拉箭头                                         | boolean                                                                                                                                            | true     |          | -        |
++| hasBorder            | 是否有边框                                             | boolean                                                                                                                                            | true     |          | -        |
++| hasClear             | 是否有清除按钮                                         | boolean                                                                                                                                            | false    |          | -        |
++| readOnly             | 是否只读，只读模式下可以展开弹层但不能选               | boolean                                                                                                                                            | -        |          | -        |
++| defaultValue         | （非受控）默认值                                       | string \| Array\<string>                                                                                                                           | -        |          | -        |
++| value                | （受控）当前值                                         | string \| Array\<string>                                                                                                                           | -        |          | -        |
++| onChange             | 选中值改变时触发的回调函数                             | (<br/> value: string \| Array\<string> \| null,<br/> data: CascaderDataItem \| Array\<CascaderDataItem> \| null,<br/> extra?: Extra<br/> ) => void | -        |          | -        |
++| changeOnSelect       | 是否选中即发生改变，该属性仅在单选模式下有效           | boolean                                                                                                                                            | false    |          | -        |
++| displayRender        | 选择框单选时展示结果的自定义渲染函数                   | (<br/> label: Array\<React.ReactNode>,<br/> data: CascaderSelectDataItem<br/> ) => React.ReactNode                                                 | -        |          | -        |
++| showSearch           | 是否显示搜索框                                         | boolean                                                                                                                                            | false    |          | -        |
++| filter               | 自定义搜索函数                                         | (searchValue: string, path: CascaderSelectDataItem[]) => boolean                                                                                   | -        |          | -        |
++| onSearch             | 当搜索框值变化时回调                                   | (value: string) => void                                                                                                                            | -        |          | 1.23     |
++| resultAutoWidth      | 搜索结果列表是否和选择框等宽                           | boolean                                                                                                                                            | true     |          | -        |
++| notFoundContent      | 无数据时显示内容                                       | React.ReactNode                                                                                                                                    | -        |          | -        |
++| header               | 自定义下拉框头部                                       | React.ReactNode                                                                                                                                    | -        |          | -        |
++| footer               | 自定义下拉框底部                                       | React.ReactNode                                                                                                                                    | -        |          | -        |
++| defaultVisible       | 初始下拉框是否显示                                     | boolean                                                                                                                                            | false    |          | -        |
++| visible              | 当前下拉框是否显示                                     | boolean                                                                                                                                            | -        |          | -        |
++| onVisibleChange      | 下拉框显示或关闭时触发事件的回调函数                   | (visible: boolean, type?: CascaderSelectVisibleChangeType) => void                                                                                 | -        |          | -        |
++| popupProps           | 透传到 Popup 的属性对象                                | React.ComponentPropsWithRef\<typeof Popup>                                                                                                         | -        |          | -        |
++| isPreview            | 是否为预览态                                           | boolean                                                                                                                                            | false    |          | -        |
++| renderPreview        | 自定义预览态                                           | (<br/> value: CascaderSelectDataItem \| CascaderSelectDataItem[],<br/> props: CascaderSelectProps<br/> ) => React.ReactNode                        | -        |          | -        |
++| menuProps            | 透传到 Cascader 的属性对象                             | Omit\<CascaderProps, 'onSelect' \| 'onChange'>                                                                                                     | -        |          | -        |
++| autoClearSearchValue | 是否在选中项后清空搜索框，只在 multiple 为 true 时有效 | boolean                                                                                                                                            | false    |          | -        |
+ 
+ <!-- api-extra-start -->
+ 
+diff --git a/components/cascader-select/__tests__/index-spec.tsx b/components/cascader-select/__tests__/index-spec.tsx
+index 8c7259dd30..a80851ea2e 100644
+--- a/components/cascader-select/__tests__/index-spec.tsx
++++ b/components/cascader-select/__tests__/index-spec.tsx
+@@ -536,4 +536,26 @@ describe('CascaderSelect', () => {
+         cy.get('input').type('{upArrow}', { force: true });
+         cy.get('.next-cascader-select-dropdown').should('exist');
+     });
++
++    it('should support empty search value after selection , close #3008', () => {
++        const handleChange = cy.spy();
++        cy.mount(
++            <CascaderSelect
++                showSearch
++                style={{ width: '240px' }}
++                dataSource={ChinaArea}
++                placeholder="搜索名字"
++                onChange={handleChange}
++                autoClearSearchValue
++                multiple
++            />
++        );
++        cy.get('.next-select-trigger-search input').type('西安');
++        cy.get('.next-cascader-filtered-list').should('have.length', 1);
++        cy.get('.next-menu-item').first().click();
++        cy.get('.next-cascader-filtered-list').should('have.length', 0);
++        cy.get('.next-cascader > .next-cascader-inner').should('not.be.empty');
++        cy.get('.next-tag').invoke('text').should('eq', '西安');
++        cy.get('.next-select-trigger-search input').should('have.text', '');
++    });
+ });
+diff --git a/components/cascader-select/cascader-select.tsx b/components/cascader-select/cascader-select.tsx
+index 49be8bf38c..84f2d8eeba 100644
+--- a/components/cascader-select/cascader-select.tsx
++++ b/components/cascader-select/cascader-select.tsx
+@@ -104,6 +104,10 @@ class CascaderSelect extends Component<CascaderSelectProps, CascaderSelectState>
+         isPreview: PropTypes.bool,
+         renderPreview: PropTypes.func,
+         immutable: PropTypes.bool,
++        /**
++         * 查询选中后清除查询条件
++         */
++        autoClearSearchValue: PropTypes.bool,
+     };
+ 
+     static defaultProps = {
+@@ -159,6 +163,7 @@ class CascaderSelect extends Component<CascaderSelectProps, CascaderSelectState>
+         popupProps: {},
+         immutable: false,
+         locale: zhCN.Select,
++        autoClearSearchValue: false,
+     };
+ 
+     readonly props: CascaderSelectPropsWithDefault;
+@@ -543,7 +548,7 @@ class CascaderSelect extends Component<CascaderSelectProps, CascaderSelectState>
+     };
+ 
+     handleChange(value: string[], data: CascaderSelectDataItem[], extra: Extra) {
+-        const { multiple, onChange } = this.props;
++        const { multiple, onChange, autoClearSearchValue } = this.props;
+         const { searchValue, value: stateValue } = this.state;
+ 
+         const st = {} as CascaderSelectState;
+@@ -573,7 +578,7 @@ class CascaderSelect extends Component<CascaderSelectProps, CascaderSelectState>
+         if (!('value' in this.props)) {
+             st.value = value;
+         }
+-        if (!multiple && searchValue) {
++        if (searchValue && ((multiple && autoClearSearchValue) || !multiple)) {
+             st.searchValue = '';
+         }
+         if (Object.keys(st).length) {
+diff --git a/components/cascader-select/types.ts b/components/cascader-select/types.ts
+index 6cabe2e653..5c1a9f4e5d 100644
+--- a/components/cascader-select/types.ts
++++ b/components/cascader-select/types.ts
+@@ -246,6 +246,12 @@ export interface CascaderSelectProps
+      * @en props object passed to Cascader
+      */
+     menuProps?: Omit<CascaderProps, 'onSelect' | 'onChange'>;
++    /**
++     * 是否在选中项后清空搜索框，只在 multiple 为 true 时有效
++     * @en Whether the current search will be cleared on selecting an item. Only applies when multiple is true
++     * @defaultValue false
++     */
++    autoClearSearchValue?: boolean;
+ }
+ 
+ export interface CascaderSelectState {

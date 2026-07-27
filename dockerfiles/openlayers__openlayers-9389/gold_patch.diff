@@ -1,0 +1,741 @@
+diff --git a/rendering/cases/layer-tile-render-listener/expected.png b/rendering/cases/layer-tile-render-listener/expected.png
+new file mode 100644
+index 00000000000..e4755778b63
+Binary files /dev/null and b/rendering/cases/layer-tile-render-listener/expected.png differ
+diff --git a/rendering/cases/layer-tile-render-listener/main.js b/rendering/cases/layer-tile-render-listener/main.js
+new file mode 100644
+index 00000000000..ad16f713ba0
+--- /dev/null
++++ b/rendering/cases/layer-tile-render-listener/main.js
+@@ -0,0 +1,46 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import {transform, fromLonLat} from '../../../src/ol/proj';
++import XYZ from '../../../src/ol/source/XYZ';
++import CircleStyle from '../../../src/ol/style/Circle.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import Point from '../../../src/ol/geom/Point.js';
++import {getVectorContext} from '../../../src/ol/render.js';
++
++const center = fromLonLat([8.6, 50.1]);
++
++const layer = new TileLayer({
++  source: new XYZ({
++    url: '/data/tiles/satellite/{z}/{x}/{y}.jpg',
++    transition: 0
++  })
++});
++
++const onRender = function(event) {
++  const context = event.context;
++  context.restore();
++  const vectorContext = getVectorContext(event);
++  vectorContext.setImageStyle(new CircleStyle({
++    radius: 12,
++    fill: new Fill({color: 'yellow'}),
++    stroke: new Stroke({color: 'red', width: 1})
++  }));
++  vectorContext.drawPoint(new Point(
++    transform([13, 37], 'EPSG:4326', 'EPSG:3857')));
++};
++layer.on('postrender', onRender);
++
++const map = new Map({
++  layers: [
++  ],
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 3
++  })
++});
++map.addLayer(layer);
++
++render();
+diff --git a/test/rendering/ol/data/me0.svg b/test/rendering/ol/data/me0.svg
+deleted file mode 100644
+index 55ed860cd35..00000000000
+--- a/test/rendering/ol/data/me0.svg
++++ /dev/null
+@@ -1,58 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+-<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+-
+-<svg
+-   xmlns:dc="http://purl.org/dc/elements/1.1/"
+-   xmlns:cc="http://creativecommons.org/ns#"
+-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+-   xmlns:svg="http://www.w3.org/2000/svg"
+-   xmlns="http://www.w3.org/2000/svg"
+-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+-   version="1.1"
+-   id="Layer_1"
+-   x="0px"
+-   y="0px"
+-   width="512px"
+-   height="512px"
+-   viewBox="0 0 512 512"
+-   enable-background="new 0 0 512 512"
+-   xml:space="preserve"
+-   inkscape:version="0.48.4 r9939"
+-   sodipodi:docname="me0.svg"><metadata
+-   id="metadata3776"><rdf:RDF><cc:Work
+-       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
+-   id="defs3774" /><sodipodi:namedview
+-   pagecolor="#ffffff"
+-   bordercolor="#666666"
+-   borderopacity="1"
+-   objecttolerance="10"
+-   gridtolerance="10"
+-   guidetolerance="10"
+-   inkscape:pageopacity="0"
+-   inkscape:pageshadow="2"
+-   inkscape:window-width="1024"
+-   inkscape:window-height="1258"
+-   id="namedview3772"
+-   showgrid="false"
+-   inkscape:zoom="0.4609375"
+-   inkscape:cx="309.13338"
+-   inkscape:cy="256"
+-   inkscape:window-x="1016"
+-   inkscape:window-y="-8"
+-   inkscape:window-maximized="1"
+-   inkscape:current-layer="Layer_1" />
+-
+-<g
+-   id="g3754"
+-   style="fill:#085095;fill-opacity:1;stroke:#ffffff;stroke-opacity:1;stroke-width:25;stroke-miterlimit:4;stroke-dasharray:none;stroke-linejoin:round;stroke-linecap:round"><path
+-     style="stroke:#ffffff;stroke-width:25;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;fill:#085095;fill-opacity:1;stroke-linejoin:round;stroke-linecap:round"
+-     id="path3770"
+-     d="m 256,25.6 c -95.4279,0 -172.8,77.3721 -172.8,172.8 0,95.4279 144,288 172.8,288 28.8,0 172.8,-192.5721 172.8,-288 C 428.8,102.9721 351.4279,25.6 256,25.6 z m 0,288 c -63.5346,0 -115.2,-51.6942 -115.2,-115.2 0,-63.5058 51.6654,-115.2 115.2,-115.2 63.5346,0 115.2,51.6942 115.2,115.2 0,63.5058 -51.6654,115.2 -115.2,115.2 z"
+-     inkscape:connector-curvature="0" /><polygon
+-     style="fill:#085095;stroke:#ffffff;stroke-width:69.44444444;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;fill-opacity:1"
+-     transform="matrix(0.36,0,0,0.36,160.72934,103.79972)"
+-     id="polygon3"
+-     points="374.185,309.08 401.33,467.31 259.216,392.612 117.104,467.31 144.25,309.08 29.274,197.007 188.165,173.919 259.216,29.942 330.27,173.919 489.16,197.007 "
+-     stroke-miterlimit="10" /></g></svg>
+\ No newline at end of file
+diff --git a/test/rendering/ol/data/tiles/192x256/5/6/9.png b/test/rendering/ol/data/tiles/192x256/5/6/9.png
+deleted file mode 100644
+index 787fbe4fe2a..00000000000
+Binary files a/test/rendering/ol/data/tiles/192x256/5/6/9.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/192x256/5/7/9.png b/test/rendering/ol/data/tiles/192x256/5/7/9.png
+deleted file mode 100644
+index 5a0db7a5553..00000000000
+Binary files a/test/rendering/ol/data/tiles/192x256/5/7/9.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/4326/0/0/0.png b/test/rendering/ol/data/tiles/4326/0/0/0.png
+deleted file mode 100644
+index 0b99038d5a3..00000000000
+Binary files a/test/rendering/ol/data/tiles/4326/0/0/0.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/512x256/5/3/12.png b/test/rendering/ol/data/tiles/512x256/5/3/12.png
+deleted file mode 100644
+index 00f5a328572..00000000000
+Binary files a/test/rendering/ol/data/tiles/512x256/5/3/12.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/mvt/14-8938-5680.vector.pbf b/test/rendering/ol/data/tiles/mvt/14-8938-5680.vector.pbf
+deleted file mode 100644
+index 0ed0c1ee240..00000000000
+Binary files a/test/rendering/ol/data/tiles/mvt/14-8938-5680.vector.pbf and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/osm-512x256/5/3/12.png b/test/rendering/ol/data/tiles/osm-512x256/5/3/12.png
+deleted file mode 100644
+index b25a05ace1c..00000000000
+Binary files a/test/rendering/ol/data/tiles/osm-512x256/5/3/12.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/osm/0/0/0.png b/test/rendering/ol/data/tiles/osm/0/0/0.png
+deleted file mode 100644
+index 732e9096b14..00000000000
+Binary files a/test/rendering/ol/data/tiles/osm/0/0/0.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/osm/5/4/12.png b/test/rendering/ol/data/tiles/osm/5/4/12.png
+deleted file mode 100644
+index 4468321919a..00000000000
+Binary files a/test/rendering/ol/data/tiles/osm/5/4/12.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/osm/5/5/12.png b/test/rendering/ol/data/tiles/osm/5/5/12.png
+deleted file mode 100644
+index ada08786c98..00000000000
+Binary files a/test/rendering/ol/data/tiles/osm/5/5/12.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/osm/5/5/13.png b/test/rendering/ol/data/tiles/osm/5/5/13.png
+deleted file mode 100644
+index 84a6879b3e3..00000000000
+Binary files a/test/rendering/ol/data/tiles/osm/5/5/13.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/osm/5/6/12.png b/test/rendering/ol/data/tiles/osm/5/6/12.png
+deleted file mode 100644
+index 54b877726e1..00000000000
+Binary files a/test/rendering/ol/data/tiles/osm/5/6/12.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/osm/5/6/13.png b/test/rendering/ol/data/tiles/osm/5/6/13.png
+deleted file mode 100644
+index 9fe6d7bc550..00000000000
+Binary files a/test/rendering/ol/data/tiles/osm/5/6/13.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/stamen-labels/5/5/12.png b/test/rendering/ol/data/tiles/stamen-labels/5/5/12.png
+deleted file mode 100644
+index b88d09eb76a..00000000000
+Binary files a/test/rendering/ol/data/tiles/stamen-labels/5/5/12.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/wms/wms0.png b/test/rendering/ol/data/tiles/wms/wms0.png
+deleted file mode 100644
+index 55c3ce686fa..00000000000
+Binary files a/test/rendering/ol/data/tiles/wms/wms0.png and /dev/null differ
+diff --git a/test/rendering/ol/data/tiles/wms/wms20.png b/test/rendering/ol/data/tiles/wms/wms20.png
+deleted file mode 100644
+index 34a5a73d2f6..00000000000
+Binary files a/test/rendering/ol/data/tiles/wms/wms20.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/192x256-canvas.png b/test/rendering/ol/layer/expected/192x256-canvas.png
+deleted file mode 100644
+index 3ce0b9d27f1..00000000000
+Binary files a/test/rendering/ol/layer/expected/192x256-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/192x256-webgl.png b/test/rendering/ol/layer/expected/192x256-webgl.png
+deleted file mode 100644
+index 3ce0b9d27f1..00000000000
+Binary files a/test/rendering/ol/layer/expected/192x256-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/2-layers-canvas-extent-hidpi.png b/test/rendering/ol/layer/expected/2-layers-canvas-extent-hidpi.png
+deleted file mode 100644
+index fff644a6759..00000000000
+Binary files a/test/rendering/ol/layer/expected/2-layers-canvas-extent-hidpi.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/2-layers-canvas-extent-rotate-hidpi.png b/test/rendering/ol/layer/expected/2-layers-canvas-extent-rotate-hidpi.png
+deleted file mode 100644
+index d0b115cca4c..00000000000
+Binary files a/test/rendering/ol/layer/expected/2-layers-canvas-extent-rotate-hidpi.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/2-layers-canvas-extent-rotate.png b/test/rendering/ol/layer/expected/2-layers-canvas-extent-rotate.png
+deleted file mode 100644
+index 806e3313578..00000000000
+Binary files a/test/rendering/ol/layer/expected/2-layers-canvas-extent-rotate.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/2-layers-canvas-extent.png b/test/rendering/ol/layer/expected/2-layers-canvas-extent.png
+deleted file mode 100644
+index 2ec76c289f6..00000000000
+Binary files a/test/rendering/ol/layer/expected/2-layers-canvas-extent.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/2-layers-webgl.png b/test/rendering/ol/layer/expected/2-layers-webgl.png
+deleted file mode 100644
+index a982b089de1..00000000000
+Binary files a/test/rendering/ol/layer/expected/2-layers-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/512x256-canvas.png b/test/rendering/ol/layer/expected/512x256-canvas.png
+deleted file mode 100644
+index e78df46f517..00000000000
+Binary files a/test/rendering/ol/layer/expected/512x256-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/512x256-webgl.png b/test/rendering/ol/layer/expected/512x256-webgl.png
+deleted file mode 100644
+index e78df46f517..00000000000
+Binary files a/test/rendering/ol/layer/expected/512x256-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/image-canvas.png b/test/rendering/ol/layer/expected/image-canvas.png
+deleted file mode 100644
+index 86f9bedd38c..00000000000
+Binary files a/test/rendering/ol/layer/expected/image-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/image-scaled.png b/test/rendering/ol/layer/expected/image-scaled.png
+deleted file mode 100644
+index a1b50feb2a9..00000000000
+Binary files a/test/rendering/ol/layer/expected/image-scaled.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/image-webgl.png b/test/rendering/ol/layer/expected/image-webgl.png
+deleted file mode 100644
+index c258cb1ac2f..00000000000
+Binary files a/test/rendering/ol/layer/expected/image-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/inverted-star.png b/test/rendering/ol/layer/expected/inverted-star.png
+deleted file mode 100644
+index 07399ffcb4a..00000000000
+Binary files a/test/rendering/ol/layer/expected/inverted-star.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/opacity-canvas.png b/test/rendering/ol/layer/expected/opacity-canvas.png
+deleted file mode 100644
+index a69bb84d854..00000000000
+Binary files a/test/rendering/ol/layer/expected/opacity-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/opacity-webgl.png b/test/rendering/ol/layer/expected/opacity-webgl.png
+deleted file mode 100644
+index 389d1380422..00000000000
+Binary files a/test/rendering/ol/layer/expected/opacity-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/osm-canvas.png b/test/rendering/ol/layer/expected/osm-canvas.png
+deleted file mode 100644
+index 86f9bedd38c..00000000000
+Binary files a/test/rendering/ol/layer/expected/osm-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/osm-webgl.png b/test/rendering/ol/layer/expected/osm-webgl.png
+deleted file mode 100644
+index 86f9bedd38c..00000000000
+Binary files a/test/rendering/ol/layer/expected/osm-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/render-canvas.png b/test/rendering/ol/layer/expected/render-canvas.png
+deleted file mode 100644
+index 1f24f744343..00000000000
+Binary files a/test/rendering/ol/layer/expected/render-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-declutter-group.png b/test/rendering/ol/layer/expected/vector-canvas-declutter-group.png
+deleted file mode 100644
+index 790327f5dea..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-declutter-group.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-declutter-image-zindex.png b/test/rendering/ol/layer/expected/vector-canvas-declutter-image-zindex.png
+deleted file mode 100644
+index 1a8896618e9..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-declutter-image-zindex.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-declutter-line-zindex.png b/test/rendering/ol/layer/expected/vector-canvas-declutter-line-zindex.png
+deleted file mode 100644
+index b4a115521f9..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-declutter-line-zindex.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-declutter-zindex.png b/test/rendering/ol/layer/expected/vector-canvas-declutter-zindex.png
+deleted file mode 100644
+index dd44e26090a..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-declutter-zindex.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-opaque.png b/test/rendering/ol/layer/expected/vector-canvas-opaque.png
+deleted file mode 100644
+index dcdff4669b4..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-opaque.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-rotated.png b/test/rendering/ol/layer/expected/vector-canvas-rotated.png
+deleted file mode 100644
+index fb1efcf21f5..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-rotated.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-simplified-fill.png b/test/rendering/ol/layer/expected/vector-canvas-simplified-fill.png
+deleted file mode 100644
+index 47956d70114..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-simplified-fill.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-simplified-stroke.png b/test/rendering/ol/layer/expected/vector-canvas-simplified-stroke.png
+deleted file mode 100644
+index 035e1537d27..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-simplified-stroke.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-simplified.png b/test/rendering/ol/layer/expected/vector-canvas-simplified.png
+deleted file mode 100644
+index 26c028bcda5..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-simplified.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-stroke.png b/test/rendering/ol/layer/expected/vector-canvas-stroke.png
+deleted file mode 100644
+index 9627e9c34fb..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-stroke.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas-transparent.png b/test/rendering/ol/layer/expected/vector-canvas-transparent.png
+deleted file mode 100644
+index 4bf3ff79d4c..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas-transparent.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector-canvas.png b/test/rendering/ol/layer/expected/vector-canvas.png
+deleted file mode 100644
+index 988080016e4..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vector.png b/test/rendering/ol/layer/expected/vector.png
+deleted file mode 100644
+index 9227b572084..00000000000
+Binary files a/test/rendering/ol/layer/expected/vector.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vectortile-canvas-declutter.png b/test/rendering/ol/layer/expected/vectortile-canvas-declutter.png
+deleted file mode 100644
+index 2f44b10f35a..00000000000
+Binary files a/test/rendering/ol/layer/expected/vectortile-canvas-declutter.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vectortile-canvas-hidpi.png b/test/rendering/ol/layer/expected/vectortile-canvas-hidpi.png
+deleted file mode 100644
+index 0b864fea623..00000000000
+Binary files a/test/rendering/ol/layer/expected/vectortile-canvas-hidpi.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vectortile-canvas-rotated-hidpi.png b/test/rendering/ol/layer/expected/vectortile-canvas-rotated-hidpi.png
+deleted file mode 100644
+index 9b2be43351a..00000000000
+Binary files a/test/rendering/ol/layer/expected/vectortile-canvas-rotated-hidpi.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vectortile-canvas-rotated.png b/test/rendering/ol/layer/expected/vectortile-canvas-rotated.png
+deleted file mode 100644
+index 1323da23994..00000000000
+Binary files a/test/rendering/ol/layer/expected/vectortile-canvas-rotated.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vectortile-canvas.png b/test/rendering/ol/layer/expected/vectortile-canvas.png
+deleted file mode 100644
+index 8c34f9259c7..00000000000
+Binary files a/test/rendering/ol/layer/expected/vectortile-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/expected/vectortile-vector-rotated.png b/test/rendering/ol/layer/expected/vectortile-vector-rotated.png
+deleted file mode 100644
+index e15480331e0..00000000000
+Binary files a/test/rendering/ol/layer/expected/vectortile-vector-rotated.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/tile.test.js b/test/rendering/ol/layer/tile.test.js
+deleted file mode 100644
+index 266d3a59dae..00000000000
+--- a/test/rendering/ol/layer/tile.test.js
++++ /dev/null
+@@ -1,100 +0,0 @@
+-import Map from '../../../../src/ol/Map.js';
+-import View from '../../../../src/ol/View.js';
+-import Point from '../../../../src/ol/geom/Point.js';
+-import TileLayer from '../../../../src/ol/layer/Tile.js';
+-import {assign} from '../../../../src/ol/obj.js';
+-import {transform} from '../../../../src/ol/proj.js';
+-import XYZ from '../../../../src/ol/source/XYZ.js';
+-import CircleStyle from '../../../../src/ol/style/Circle.js';
+-import Fill from '../../../../src/ol/style/Fill.js';
+-import Stroke from '../../../../src/ol/style/Stroke.js';
+-
+-describe('ol.rendering.layer.Tile', function() {
+-
+-  let map;
+-
+-  function createMap(renderer, opt_center, opt_size, opt_pixelRatio, opt_resolutions) {
+-    const MapConstructor = Map;
+-    const size = opt_size !== undefined ? opt_size : [50, 50];
+-
+-    map = new MapConstructor({
+-      pixelRatio: opt_pixelRatio || 1,
+-      target: createMapDiv(size[0], size[1]),
+-      view: new View({
+-        center: opt_center !== undefined ? opt_center : transform(
+-          [-122.416667, 37.783333], 'EPSG:4326', 'EPSG:3857'),
+-        resolutions: opt_resolutions,
+-        zoom: 5
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    if (map) {
+-      disposeMap(map);
+-    }
+-    map = null;
+-  });
+-
+-  function waitForTiles(renderer, sources, layerOptions, onTileLoaded) {
+-    const LayerConstructor = TileLayer;
+-    let tilesLoading = 0;
+-    let tileLoaded = 0;
+-
+-    const update = function() {
+-      if (tilesLoading === tileLoaded) {
+-        onTileLoaded();
+-      }
+-    };
+-
+-    sources.forEach(function(source, i) {
+-      source.on('tileloadstart', function(event) {
+-        tilesLoading++;
+-      });
+-      source.on('tileloadend', function(event) {
+-        tileLoaded++;
+-        update();
+-      });
+-      source.on('tileloaderror', function(event) {
+-        expect().fail('Tile failed to load');
+-      });
+-
+-      const options = {
+-        source: source
+-      };
+-      assign(options, layerOptions[i] || layerOptions);
+-      map.addLayer(new LayerConstructor(options));
+-    });
+-  }
+-
+-  describe('tile layer with render listener', function() {
+-    let source, onAddLayer;
+-
+-    beforeEach(function() {
+-      source = new XYZ({
+-        url: 'rendering/ol/data/tiles/osm/{z}/{x}/{y}.png',
+-        transition: 0
+-      });
+-      onAddLayer = function(evt) {
+-        evt.element.on('render', function(e) {
+-          e.vectorContext.setImageStyle(new CircleStyle({
+-            radius: 5,
+-            fill: new Fill({color: 'yellow'}),
+-            stroke: new Stroke({color: 'red', width: 1})
+-          }));
+-          e.vectorContext.drawPoint(new Point(
+-            transform([-123, 38], 'EPSG:4326', 'EPSG:3857')));
+-        });
+-      };
+-    });
+-
+-    it('works with the canvas renderer', function(done) {
+-      createMap('canvas', undefined, [100, 100]);
+-      map.getLayers().on('add', onAddLayer);
+-      waitForTiles('canvas', [source], {}, function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/render-canvas.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-  });
+-});
+diff --git a/test/rendering/ol/reproj/expected/4326-to-3857.png b/test/rendering/ol/reproj/expected/4326-to-3857.png
+deleted file mode 100644
+index 8374eb0028c..00000000000
+Binary files a/test/rendering/ol/reproj/expected/4326-to-3857.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/512x256-to-64x128.png b/test/rendering/ol/reproj/expected/512x256-to-64x128.png
+deleted file mode 100644
+index 78230716887..00000000000
+Binary files a/test/rendering/ol/reproj/expected/512x256-to-64x128.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/dateline-merc-180.png b/test/rendering/ol/reproj/expected/dateline-merc-180.png
+deleted file mode 100644
+index eaec26b4282..00000000000
+Binary files a/test/rendering/ol/reproj/expected/dateline-merc-180.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/dateline-pole.png b/test/rendering/ol/reproj/expected/dateline-pole.png
+deleted file mode 100644
+index 30ff7dcf126..00000000000
+Binary files a/test/rendering/ol/reproj/expected/dateline-pole.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/image-3857-to-4326.png b/test/rendering/ol/reproj/expected/image-3857-to-4326.png
+deleted file mode 100644
+index a32f5c02649..00000000000
+Binary files a/test/rendering/ol/reproj/expected/image-3857-to-4326.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/image-dateline-merc-180.png b/test/rendering/ol/reproj/expected/image-dateline-merc-180.png
+deleted file mode 100644
+index b99cee83438..00000000000
+Binary files a/test/rendering/ol/reproj/expected/image-dateline-merc-180.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/image-dateline-pole.png b/test/rendering/ol/reproj/expected/image-dateline-pole.png
+deleted file mode 100644
+index ee93205125c..00000000000
+Binary files a/test/rendering/ol/reproj/expected/image-dateline-pole.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/osm4326.png b/test/rendering/ol/reproj/expected/osm4326.png
+deleted file mode 100644
+index af1a03b9be5..00000000000
+Binary files a/test/rendering/ol/reproj/expected/osm4326.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/osm5070.png b/test/rendering/ol/reproj/expected/osm5070.png
+deleted file mode 100644
+index 2de3fa8a3e1..00000000000
+Binary files a/test/rendering/ol/reproj/expected/osm5070.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/osm54009.png b/test/rendering/ol/reproj/expected/osm54009.png
+deleted file mode 100644
+index 655e02eb20e..00000000000
+Binary files a/test/rendering/ol/reproj/expected/osm54009.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/stitch-osm3740.png b/test/rendering/ol/reproj/expected/stitch-osm3740.png
+deleted file mode 100644
+index 9f67ee4acf4..00000000000
+Binary files a/test/rendering/ol/reproj/expected/stitch-osm3740.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/expected/stitch-osm4326.png b/test/rendering/ol/reproj/expected/stitch-osm4326.png
+deleted file mode 100644
+index d0b67e4e0fe..00000000000
+Binary files a/test/rendering/ol/reproj/expected/stitch-osm4326.png and /dev/null differ
+diff --git a/test/rendering/ol/reproj/image.test.js b/test/rendering/ol/reproj/image.test.js
+deleted file mode 100644
+index 965faebc8c3..00000000000
+--- a/test/rendering/ol/reproj/image.test.js
++++ /dev/null
+@@ -1,60 +0,0 @@
+-import {listen} from '../../../../src/ol/events.js';
+-import {get as getProjection} from '../../../../src/ol/proj.js';
+-import {HALF_SIZE} from '../../../../src/ol/proj/epsg3857.js';
+-import ReprojImage from '../../../../src/ol/reproj/Image.js';
+-import Static from '../../../../src/ol/source/ImageStatic.js';
+-import {createXYZ, createForProjection} from '../../../../src/ol/tilegrid.js';
+-
+-
+-describe('ol.rendering.reproj.Image', function() {
+-
+-  function testSingleImage(source, targetProj,
+-    targetExtent, targetResolution, pixelRatio, expectedUrl, done) {
+-    const sourceProj = source.getProjection();
+-
+-    let imagesRequested = 0;
+-
+-    const image = new ReprojImage(sourceProj, getProjection(targetProj),
+-      targetExtent, targetResolution, pixelRatio,
+-      function(extent, resolution, pixelRatio) {
+-        imagesRequested++;
+-        return source.getImage(extent, resolution, pixelRatio, sourceProj);
+-      });
+-    if (image.getState() == 0) { // IDLE
+-      listen(image, 'change', function(e) {
+-        if (image.getState() == 2) { // LOADED
+-          expect(imagesRequested).to.be(1);
+-          resembleCanvas(image.getImage(), expectedUrl, IMAGE_TOLERANCE, done);
+-        }
+-      });
+-      image.load();
+-    }
+-  }
+-
+-  let source;
+-
+-  describe('image reprojections from EPSG:3857', function() {
+-    beforeEach(function() {
+-      source = new Static({
+-        url: 'rendering/ol/data/tiles/osm/5/5/12.png',
+-        imageExtent: createXYZ().getTileCoordExtent([5, 5, -13]),
+-        projection: getProjection('EPSG:3857')
+-      });
+-    });
+-
+-    it('works for identity reprojection', function(done) {
+-      testSingleImage(source, 'EPSG:3857',
+-        createXYZ().getTileCoordExtent([5, 5, -13]),
+-        2 * HALF_SIZE / (256 * (1 << 5)), 1,
+-        'rendering/ol/data/tiles/osm/5/5/12.png', done);
+-    });
+-
+-    it('to EPSG:4326', function(done) {
+-      testSingleImage(source, 'EPSG:4326',
+-        createForProjection('EPSG:4326').
+-          getTileCoordExtent([6, 10, -10]),
+-        360 / (256 * (1 << 4)), 1,
+-        'rendering/ol/reproj/expected/image-3857-to-4326.png', done);
+-    });
+-  });
+-});
+diff --git a/test/rendering/ol/reproj/tile.test.js b/test/rendering/ol/reproj/tile.test.js
+deleted file mode 100644
+index 259bb64c72a..00000000000
+--- a/test/rendering/ol/reproj/tile.test.js
++++ /dev/null
+@@ -1,186 +0,0 @@
+-import TileState from '../../../../src/ol/TileState.js';
+-import {listen} from '../../../../src/ol/events.js';
+-import {get as getProjection} from '../../../../src/ol/proj.js';
+-import ReprojTile from '../../../../src/ol/reproj/Tile.js';
+-import XYZ from '../../../../src/ol/source/XYZ.js';
+-import {createForProjection} from '../../../../src/ol/tilegrid.js';
+-import {register} from '../../../../src/ol/proj/proj4.js';
+-
+-
+-describe('ol.rendering.reproj.Tile', function() {
+-
+-  function testSingleTile(source, targetProjection, targetTileGrid, z, x, y,
+-    pixelRatio, expectedUrl, expectedRequests, done) {
+-    const sourceProjection = source.getProjection();
+-    const sourceGutter = source.getGutterForProjection(sourceProjection);
+-
+-    let tilesRequested = 0;
+-
+-    const tile = new ReprojTile(sourceProjection, source.getTileGrid(),
+-      getProjection(targetProjection), targetTileGrid,
+-      [z, x, y], null, pixelRatio, sourceGutter,
+-      function(z, x, y, pixelRatio) {
+-        tilesRequested++;
+-        return source.getTile(z, x, y, pixelRatio, sourceProjection);
+-      });
+-    if (tile.getState() == TileState.IDLE) {
+-      listen(tile, 'change', function(e) {
+-        if (tile.getState() == TileState.LOADED) {
+-          expect(tilesRequested).to.be(expectedRequests);
+-          resembleCanvas(tile.getImage(), expectedUrl, 7.5, done);
+-        }
+-      });
+-      tile.load();
+-    }
+-  }
+-
+-  let source;
+-
+-  describe('single tile reprojections from EPSG:3857', function() {
+-    beforeEach(function() {
+-      source = new XYZ({
+-        projection: 'EPSG:3857',
+-        url: 'rendering/ol/data/tiles/osm/{z}/{x}/{y}.png'
+-      });
+-    });
+-
+-    it('works for identity reprojection', function(done) {
+-      testSingleTile(source, 'EPSG:3857', source.getTileGrid(), 5, 5, -13, 1,
+-        'rendering/ol/data/tiles/osm/5/5/12.png', 1, done);
+-    });
+-
+-    it('to EPSG:4326', function(done) {
+-      const tileGrid = createForProjection('EPSG:4326', 7, [64, 64]);
+-      testSingleTile(source, 'EPSG:4326', tileGrid, 7, 21, -20, 1,
+-        'rendering/ol/reproj/expected/osm4326.png', 1, done);
+-    });
+-
+-    it('to EPSG:5070', function(done) {
+-      proj4.defs('EPSG:5070',
+-        '+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 ' +
+-          '+y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+-      register(proj4);
+-      const proj5070 = getProjection('EPSG:5070');
+-      proj5070.setExtent([-6e6, 0, 4e6, 6e6]);
+-
+-      const tileGrid = createForProjection('EPSG:5070', 5, [64, 64]);
+-      testSingleTile(source, 'EPSG:5070', tileGrid, 5, 13, -15, 1,
+-        'rendering/ol/reproj/expected/osm5070.png', 1, done);
+-    });
+-
+-    it('to ESRI:54009', function(done) {
+-      proj4.defs('ESRI:54009',
+-        '+proj=moll +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs');
+-      register(proj4);
+-      const proj54009 = getProjection('ESRI:54009');
+-      proj54009.setExtent([-18e6, -9e6, 18e6, 9e6]);
+-
+-      const tileGrid = createForProjection('ESRI:54009', 7, [64, 64]);
+-      testSingleTile(source, 'ESRI:54009', tileGrid, 7, 27, -16, 1,
+-        'rendering/ol/reproj/expected/osm54009.png', 1, done);
+-    });
+-  });
+-
+-  describe('stitching several tiles from EPSG:3857', function() {
+-    beforeEach(function() {
+-      source = new XYZ({
+-        projection: 'EPSG:3857',
+-        url: 'rendering/ol/data/tiles/osm/{z}/{x}/{y}.png'
+-      });
+-    });
+-
+-    it('to EPSG:4326', function(done) {
+-      const tileGrid = createForProjection('EPSG:4326', 7, [64, 64]);
+-      testSingleTile(source, 'EPSG:4326', tileGrid, 7, 23, -21, 1,
+-        'rendering/ol/reproj/expected/stitch-osm4326.png', 2, done);
+-    });
+-
+-    it('to EPSG:3740', function(done) {
+-      proj4.defs('EPSG:3740',
+-        '+proj=utm +zone=10 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 ' +
+-          '+units=m +no_defs');
+-      register(proj4);
+-      const proj3740 = getProjection('EPSG:3740');
+-      proj3740.setExtent([318499.05, 2700792.39, 4359164.89, 7149336.98]);
+-
+-      const tileGrid = createForProjection('EPSG:3740', 4, [64, 64]);
+-      testSingleTile(source, 'EPSG:3740', tileGrid, 4, 4, -13, 1,
+-        'rendering/ol/reproj/expected/stitch-osm3740.png', 4, done);
+-    });
+-  });
+-
+-  describe('tile projection from EPSG:4326', function() {
+-    beforeEach(function() {
+-      source = new XYZ({
+-        projection: 'EPSG:4326',
+-        maxZoom: 0,
+-        url: 'rendering/ol/data/tiles/4326/{z}/{x}/{y}.png'
+-      });
+-    });
+-
+-    it('works for identity reprojection', function(done) {
+-      testSingleTile(source, 'EPSG:4326', source.getTileGrid(), 0, 0, -1, 1,
+-        'rendering/ol/data/tiles/4326/0/0/0.png', 1, done);
+-    });
+-
+-    it('to EPSG:3857', function(done) {
+-      const tileGrid = createForProjection('EPSG:3857', 0, [64, 64]);
+-      testSingleTile(source, 'EPSG:3857', tileGrid, 0, 0, -1, 1,
+-        'rendering/ol/reproj/expected/4326-to-3857.png', 1, done);
+-    });
+-  });
+-
+-  describe('non-square source tiles', function() {
+-    beforeEach(function() {
+-      source = new XYZ({
+-        projection: 'EPSG:3857',
+-        url: 'rendering/ol/data/tiles/osm-512x256/{z}/{x}/{y}.png',
+-        tileSize: [512, 256]
+-      });
+-    });
+-
+-    it('works for identity reprojection', function(done) {
+-      testSingleTile(source, 'EPSG:3857', source.getTileGrid(), 5, 3, -13, 1,
+-        'rendering/ol/data/tiles/osm-512x256/5/3/12.png', 1, done);
+-    });
+-
+-    it('to 64x128 EPSG:4326', function(done) {
+-      const tileGrid = createForProjection('EPSG:4326', 7, [64, 128]);
+-      testSingleTile(source, 'EPSG:4326', tileGrid, 7, 27, -10, 1,
+-        'rendering/ol/reproj/expected/512x256-to-64x128.png', 1, done);
+-    });
+-  });
+-
+-  describe('dateline wrapping', function() {
+-    beforeEach(function() {
+-      source = new XYZ({
+-        projection: 'EPSG:4326',
+-        maxZoom: 0,
+-        url: 'rendering/ol/data/tiles/4326/{z}/{x}/{y}.png'
+-      });
+-    });
+-
+-    it('wraps X when prime meridian is shifted', function(done) {
+-      proj4.defs('merc_180', '+proj=merc +lon_0=180 +units=m +no_defs');
+-      register(proj4);
+-      const proj_ = getProjection('merc_180');
+-      proj_.setExtent([-20026376.39, -20048966.10, 20026376.39, 20048966.10]);
+-
+-      const tileGrid = createForProjection('merc_180', 0, [64, 64]);
+-      testSingleTile(source, 'merc_180', tileGrid, 0, 0, -1, 1,
+-        'rendering/ol/reproj/expected/dateline-merc-180.png', 2, done);
+-    });
+-
+-    it('displays north pole correctly (EPSG:3413)', function(done) {
+-      proj4.defs('EPSG:3413', '+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 ' +
+-          '+k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs');
+-      register(proj4);
+-      const proj3413 = getProjection('EPSG:3413');
+-      proj3413.setExtent([-4194304, -4194304, 4194304, 4194304]);
+-
+-      const tileGrid = createForProjection('EPSG:3413', 0, [64, 64]);
+-      testSingleTile(source, 'EPSG:3413', tileGrid, 0, 0, -1, 1,
+-        'rendering/ol/reproj/expected/dateline-pole.png', 2, done);
+-    });
+-  });
+-});

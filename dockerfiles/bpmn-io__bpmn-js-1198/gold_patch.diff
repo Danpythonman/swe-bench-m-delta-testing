@@ -1,0 +1,47 @@
+diff --git a/lib/features/modeling/BpmnUpdater.js b/lib/features/modeling/BpmnUpdater.js
+index feb972759a..d029189937 100644
+--- a/lib/features/modeling/BpmnUpdater.js
++++ b/lib/features/modeling/BpmnUpdater.js
+@@ -19,6 +19,10 @@ import {
+   is
+ } from '../../util/ModelUtil';
+ 
++import {
++  isAny
++} from './util/ModelingUtil';
++
+ import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
+ 
+ /**
+@@ -230,10 +234,13 @@ export default function BpmnUpdater(
+ 
+     // on reconnectEnd -> default flow
+     if ((businessObject.sourceRef && businessObject.sourceRef.default) &&
+-        !(is(newTarget, 'bpmn:Activity') ||
+-          is(newTarget, 'bpmn:EndEvent') ||
+-          is(newTarget, 'bpmn:Gateway') ||
+-          is(newTarget, 'bpmn:IntermediateThrowEvent'))) {
++        !isAny(newTarget, [
++          'bpmn:Activity',
++          'bpmn:EndEvent',
++          'bpmn:Gateway',
++          'bpmn:IntermediateThrowEvent',
++          'bpmn:IntermediateCatchEvent'
++        ])) {
+       context.default = businessObject.sourceRef.default;
+       businessObject.sourceRef.default = undefined;
+     }
+diff --git a/test/spec/features/popup-menu/ReplaceMenuProviderSpec.js b/test/spec/features/popup-menu/ReplaceMenuProviderSpec.js
+index f9461f0732..7efccb5931 100644
+--- a/test/spec/features/popup-menu/ReplaceMenuProviderSpec.js
++++ b/test/spec/features/popup-menu/ReplaceMenuProviderSpec.js
+@@ -1459,7 +1459,8 @@ describe('features/popup-menu - replace menu provider', function() {
+       [
+         'bpmn:Activity',
+         'bpmn:EndEvent',
+-        'bpmn:IntermediateThrowEvent'
++        'bpmn:IntermediateThrowEvent',
++        'bpmn:IntermediateCatchEvent'
+       ].forEach(function(type) {
+ 
+         it('should keep DefaultFlow when changing target to ' + type,

@@ -1,0 +1,38 @@
+diff --git a/src/lib/drag-recognizer.js b/src/lib/drag-recognizer.js
+index 1f507785ae0..da7173f8bc4 100644
+--- a/src/lib/drag-recognizer.js
++++ b/src/lib/drag-recognizer.js
+@@ -109,8 +109,10 @@ class DragRecognizer {
+     }
+ 
+     _handleEnd () {
+-        this._onDragEnd();
+         this.reset();
++        // Call the callback after reset to make sure if gestureInProgress()
++        // is used in response, it get the correct value (i.e. no gesture in progress)
++        this._onDragEnd();
+     }
+ 
+     _isDrag () {
+diff --git a/test/unit/util/drag-recognizer.test.js b/test/unit/util/drag-recognizer.test.js
+index 825917ba8ed..643ded52815 100644
+--- a/test/unit/util/drag-recognizer.test.js
++++ b/test/unit/util/drag-recognizer.test.js
+@@ -56,6 +56,17 @@ describe('DragRecognizer', () => {
+         expect(onDrag).toHaveBeenCalledTimes(1); // Still 1
+     });
+ 
++    test('start -> end calls dragEnd callback after resetting internal state', done => {
++        onDragEnd = () => {
++            expect(dragRecognizer.gestureInProgress()).toBe(false);
++            done();
++        };
++        dragRecognizer = new DragRecognizer({onDrag, onDragEnd});
++        dragRecognizer.start({clientX: 100, clientY: 100});
++        window.dispatchEvent(new MouseEvent('touchmove', {clientX: 150, clientY: 106}));
++        window.dispatchEvent(new MouseEvent('touchend', {clientX: 150, clientY: 106}));
++    });
++
+     test('start -> reset unbinds', () => {
+         dragRecognizer.start({clientX: 100, clientY: 100});
+         window.dispatchEvent(new MouseEvent('touchmove', {clientX: 150, clientY: 106}));

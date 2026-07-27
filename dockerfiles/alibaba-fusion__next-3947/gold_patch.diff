@@ -1,0 +1,76 @@
+diff --git a/src/form/item.jsx b/src/form/item.jsx
+index e95a672f44..6532bbc332 100644
+--- a/src/form/item.jsx
++++ b/src/form/item.jsx
+@@ -205,6 +205,10 @@ export default class Item extends React.Component {
+          * @param {any} value 根据包裹的组件的 value 类型而决定
+          */
+         renderPreview: PropTypes.func,
++        /**
++         * 替代校验信息的 name 字段，useLabelForErrorMessage 开启的情况下比 label 优先级高
++         */
++        errorMessageName: PropTypes.string,
+         /**
+          * 是否使用 label 替换校验信息的 name 字段
+          */
+@@ -311,20 +315,21 @@ export default class Item extends React.Component {
+     }
+ 
+     getLabelForErrorMessage() {
+-        let label = this.props.label;
++        const { errorMessageName, label, useLabelForErrorMessage } = this.props;
++
++        if (errorMessageName) {
++            return errorMessageName;
++        }
+ 
+         if (!label || typeof label !== 'string') {
+             return null;
+         }
+ 
+-        label = label.replace(':', '').replace('：', '');
++        const newLabel = label.replace(':', '').replace('：', '');
+ 
+-        const labelForErrorMessage =
+-            'useLabelForErrorMessage' in this.props
+-                ? this.props.useLabelForErrorMessage
+-                : this.context._formLabelForErrorMessage;
+-        if (labelForErrorMessage && label) {
+-            return label;
++        const labelForErrorMessage = useLabelForErrorMessage || this.context._formLabelForErrorMessage;
++        if (labelForErrorMessage && newLabel) {
++            return newLabel;
+         }
+ 
+         return null;
+diff --git a/test/form/validate-spec.js b/test/form/validate-spec.js
+index ef16d185d8..8ddbab254b 100644
+--- a/test/form/validate-spec.js
++++ b/test/form/validate-spec.js
+@@ -356,6 +356,26 @@ describe('Submit', () => {
+                 .text() === '姓名 是必填字段'
+         );
+     });
++    it('validate errorMessageName', () => {
++        const wrapper = mount(
++            <Form useLabelForErrorMessage>
++                <FormItem required label="姓名:" errorMessageName="我的姓名">
++                    <Input name="first" />
++                </FormItem>
++            </Form>
++        );
++
++        wrapper
++            .find('input#first')
++            .simulate('change', { target: { value: '' } });
++        wrapper.update();
++        assert(
++            wrapper
++                .find('.next-form-item-help')
++                .first()
++                .text() === '我的姓名 是必填字段'
++        );
++    });
+ });
+ 
+ describe('Reset', () => {

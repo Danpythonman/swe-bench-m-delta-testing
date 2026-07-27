@@ -1,0 +1,48 @@
+diff --git a/packages/react/src/components/FileUploader/FileUploader-story.js b/packages/react/src/components/FileUploader/FileUploader-story.js
+index 0e981783e9f9..40ed152c364d 100644
+--- a/packages/react/src/components/FileUploader/FileUploader-story.js
++++ b/packages/react/src/components/FileUploader/FileUploader-story.js
+@@ -54,7 +54,7 @@ const props = {
+         'Prevent the label from being replaced with file selected file (disableLabelChanges)',
+         false
+       ),
+-      role: text('ARIA role of the button (role)', ''),
++      role: text('ARIA role of the button (role)', 'button'),
+       tabIndex: number('Tab index (tabIndex)', 0),
+       onChange: action('onChange'),
+     };
+diff --git a/packages/react/src/components/FileUploader/FileUploader-test.js b/packages/react/src/components/FileUploader/FileUploader-test.js
+index 9e9d0424b02e..c4d4c5552f1c 100644
+--- a/packages/react/src/components/FileUploader/FileUploader-test.js
++++ b/packages/react/src/components/FileUploader/FileUploader-test.js
+@@ -74,8 +74,8 @@ describe('FileUploaderButton', () => {
+       expect(wrapper.find('input').prop('disabled')).toEqual(true);
+     });
+ 
+-    it('does not have default role', () => {
+-      expect(mountWrapper.props().role).not.toBeTruthy();
++    it('does have default role', () => {
++      expect(mountWrapper.props().role).toBeTruthy();
+     });
+ 
+     it('resets the input value onClick', () => {
+diff --git a/packages/react/src/components/FileUploader/FileUploader.js b/packages/react/src/components/FileUploader/FileUploader.js
+index b7285d60cd5c..05a9f16caed6 100644
+--- a/packages/react/src/components/FileUploader/FileUploader.js
++++ b/packages/react/src/components/FileUploader/FileUploader.js
+@@ -106,6 +106,7 @@ export class FileUploaderButton extends Component {
+     onClick: () => {},
+     accept: [],
+     disabled: false,
++    role: 'button',
+   };
+ 
+   static getDerivedStateFromProps({ labelText }, state) {
+@@ -159,7 +160,6 @@ export class FileUploaderButton extends Component {
+     return (
+       <>
+         <label
+-          role="button"
+           tabIndex={tabIndex || 0}
+           className={classes}
+           onKeyDown={evt => {

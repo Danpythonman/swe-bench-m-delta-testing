@@ -1,0 +1,98 @@
+diff --git a/components/prism-cpp.js b/components/prism-cpp.js
+index ba709be38e..412d65e444 100644
+--- a/components/prism-cpp.js
++++ b/components/prism-cpp.js
+@@ -4,8 +4,12 @@ Prism.languages.cpp = Prism.languages.extend('c', {
+ 		lookbehind: true
+ 	},
+ 	'keyword': /\b(?:alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,
+-	'boolean': /\b(?:true|false)\b/,
+-	'operator': />>=?|<<=?|->|([-+&|:])\1|[?:~]|[-+*/%&|^!=<>]=?|\b(?:and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/
++	'number': {
++		pattern: /(?:\b0b[01']+|\b0x(?:[\da-f']+\.?[\da-f']*|\.[\da-f']+)(?:p[+-]?[\d']+)?|(?:\b[\d']+\.?[\d']*|\B\.[\d']+)(?:e[+-]?[\d']+)?)[ful]*/i,
++		greedy: true
++	},
++	'operator': />>=?|<<=?|->|([-+&|:])\1|[?:~]|[-+*/%&|^!=<>]=?|\b(?:and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/,
++	'boolean': /\b(?:true|false)\b/
+ });
+ 
+ Prism.languages.insertBefore('cpp', 'string', {
+diff --git a/components/prism-cpp.min.js b/components/prism-cpp.min.js
+index ddd3bda895..6e8c5dd6eb 100644
+--- a/components/prism-cpp.min.js
++++ b/components/prism-cpp.min.js
+@@ -1 +1 @@
+-Prism.languages.cpp=Prism.languages.extend("c",{"class-name":{pattern:/(\b(?:class|enum|struct)\s+)\w+/,lookbehind:!0},keyword:/\b(?:alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,boolean:/\b(?:true|false)\b/,operator:/>>=?|<<=?|->|([-+&|:])\1|[?:~]|[-+*/%&|^!=<>]=?|\b(?:and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/}),Prism.languages.insertBefore("cpp","string",{"raw-string":{pattern:/R"([^()\\ ]{0,16})\([\s\S]*?\)\1"/,alias:"string",greedy:!0}});
+\ No newline at end of file
++Prism.languages.cpp=Prism.languages.extend("c",{"class-name":{pattern:/(\b(?:class|enum|struct)\s+)\w+/,lookbehind:!0},keyword:/\b(?:alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,number:{pattern:/(?:\b0b[01']+|\b0x(?:[\da-f']+\.?[\da-f']*|\.[\da-f']+)(?:p[+-]?[\d']+)?|(?:\b[\d']+\.?[\d']*|\B\.[\d']+)(?:e[+-]?[\d']+)?)[ful]*/i,greedy:!0},operator:/>>=?|<<=?|->|([-+&|:])\1|[?:~]|[-+*/%&|^!=<>]=?|\b(?:and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/,boolean:/\b(?:true|false)\b/}),Prism.languages.insertBefore("cpp","string",{"raw-string":{pattern:/R"([^()\\ ]{0,16})\([\s\S]*?\)\1"/,alias:"string",greedy:!0}});
+\ No newline at end of file
+diff --git a/tests/languages/cpp/number_feature.test b/tests/languages/cpp/number_feature.test
+new file mode 100644
+index 0000000000..47d15d9a61
+--- /dev/null
++++ b/tests/languages/cpp/number_feature.test
+@@ -0,0 +1,64 @@
++42
++3.14159
++4e10
++2.1e-10
++0.4e+2
++0xbabe
++0xBABE
++0x1.2
++0x0.3p-3
++0x0.3p4L
++42f
++42F
++42u
++42U
++42l
++42L
++0b0101
++0B0101
++
++18446744073709550592ull
++18'446'744'073'709'550'592llu
++1844'6744'0737'0955'0592uLL
++184467'440737'0'95505'92LLU
++1'048'576
++0x10'0000
++0'004'000'000
++1.602'176'565e-19
++0b010'01010
++
++----------------------------------------------------
++
++[
++	["number", "42"],
++	["number", "3.14159"],
++	["number", "4e10"],
++	["number", "2.1e-10"],
++	["number", "0.4e+2"],
++	["number", "0xbabe"],
++	["number", "0xBABE"],
++	["number", "0x1.2"],
++	["number", "0x0.3p-3"],
++	["number", "0x0.3p4L"],
++	["number", "42f"],
++	["number", "42F"],
++	["number", "42u"],
++	["number", "42U"],
++	["number", "42l"],
++	["number", "42L"],
++	["number", "0b0101"],
++	["number", "0B0101"],
++	["number", "18446744073709550592ull"],
++	["number", "18'446'744'073'709'550'592llu"],
++	["number", "1844'6744'0737'0955'0592uLL"],
++	["number", "184467'440737'0'95505'92LLU"],
++	["number", "1'048'576"],
++	["number", "0x10'0000"],
++	["number", "0'004'000'000"],
++	["number", "1.602'176'565e-19"],
++	["number", "0b010'01010"]
++]
++
++----------------------------------------------------
++
++Checks for binary, decimal, and hexadecimal numbers.

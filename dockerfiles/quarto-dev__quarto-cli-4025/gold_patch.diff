@@ -1,0 +1,279 @@
+diff --git a/news/changelog-1.3.md b/news/changelog-1.3.md
+index 94b4a7be9d0..61dbeae4e55 100644
+--- a/news/changelog-1.3.md
++++ b/news/changelog-1.3.md
+@@ -2,6 +2,7 @@
+ 
+ - Add support for embedding cell outputs in quarto documents using `{{< embed >}}`. You can address cells by Id, Tag, or label, such as `{{< embed mynotebook.ipynb#fig-output >}}` which would embed the output of a cell with the label `fig-output`). You can also provide a list of ids like `{{< embed mynotebook.ipynb#fig-output,tbl-out >}}`.
+ - Only attempt to postprocess `text/plain` output if it's nonempty ([#3896](https://github.com/quarto-dev/quarto-cli/issues/3896)).
++- Fix output of bokeh plots so the right number of cells is generated ([#2107](https://github.com/quarto-dev/quarto-cli/issues/2107)).
+ 
+ ## Code Annotation
+ 
+diff --git a/src/core/jupyter/jupyter-fixups.ts b/src/core/jupyter/jupyter-fixups.ts
+new file mode 100644
+index 00000000000..da77224d747
+--- /dev/null
++++ b/src/core/jupyter/jupyter-fixups.ts
+@@ -0,0 +1,103 @@
++/*
++* jupyter-shared.ts
++*
++* Copyright (C) 2020-2023 Posit Software, PBC
++*
++*/
++
++import {
++  JupyterNotebook,
++  JupyterOutput,
++  JupyterToMarkdownOptions,
++} from "./types.ts";
++
++function fixupBokehCells(
++  nb: JupyterNotebook,
++  _options: JupyterToMarkdownOptions,
++): JupyterNotebook {
++  for (const cell of nb.cells) {
++    if (cell.cell_type === "code") {
++      let needsFixup = false;
++      for (const output of cell?.outputs ?? []) {
++        if (output.data === undefined) {
++          continue;
++        }
++        if (output.data["application/vnd.bokehjs_load.v0+json"]) {
++          needsFixup = true;
++        }
++      }
++
++      if (!needsFixup) {
++        continue;
++      }
++      const asTextHtml = (data: Record<string, unknown>) => {
++        if (data["text/html"]) {
++          return data["text/html"];
++        }
++        if (data["application/javascript"]) {
++          return [
++            "<script>",
++            ...data["application/javascript"] as string[],
++            "</script>",
++          ];
++        }
++        throw new Error(
++          "Internal Error: Unknown data types " +
++            JSON.stringify(Object.keys(data)),
++        );
++      };
++
++      // bokeh emits one 'initialization' cell once per notebook,
++      // and then two cells per plot. So we merge the three first cells into
++      // one, and then merge every two cells after that.
++
++      const oldOutputs = cell.outputs!;
++
++      const newOutputs: JupyterOutput[] = [
++        {
++          metadata: {},
++          output_type: "display_data",
++          data: {
++            "text/html": [
++              asTextHtml(oldOutputs[0].data!),
++              asTextHtml(oldOutputs[1].data!),
++              asTextHtml(oldOutputs[2].data!),
++            ].flat(),
++          },
++        },
++      ];
++      for (let i = 3; i < oldOutputs.length; i += 2) {
++        newOutputs.push({
++          metadata: {},
++          output_type: "display_data",
++          data: {
++            "text/html": [
++              asTextHtml(oldOutputs[i].data!),
++              asTextHtml(oldOutputs[i + 1].data!),
++            ].flat(),
++          },
++        });
++      }
++      cell.outputs = newOutputs;
++    }
++  }
++
++  return nb;
++}
++
++const fixups: ((
++  nb: JupyterNotebook,
++  options: JupyterToMarkdownOptions,
++) => JupyterNotebook)[] = [
++  fixupBokehCells,
++];
++
++export function fixupJupyterNotebook(
++  nb: JupyterNotebook,
++  options: JupyterToMarkdownOptions,
++): JupyterNotebook {
++  for (const fixup of fixups) {
++    nb = fixup(nb, options);
++  }
++  return nb;
++}
+diff --git a/src/core/jupyter/jupyter.ts b/src/core/jupyter/jupyter.ts
+index 793fb3a681f..55592b08dfe 100644
+--- a/src/core/jupyter/jupyter.ts
++++ b/src/core/jupyter/jupyter.ts
+@@ -151,6 +151,7 @@ import { ProjectContext } from "../../project/types.ts";
+ import { mergeConfigs } from "../config.ts";
+ import { encode as encodeBase64 } from "encoding/base64.ts";
+ import { isIpynbOutput } from "../../config/format.ts";
++import { fixupJupyterNotebook } from "./jupyter-fixups.ts";
+ 
+ export const kQuartoMimeType = "quarto_mimetype";
+ export const kQuartoOutputOrder = "quarto_order";
+@@ -631,6 +632,9 @@ export async function jupyterToMarkdown(
+   nb: JupyterNotebook,
+   options: JupyterToMarkdownOptions,
+ ): Promise<JupyterToMarkdownResult> {
++  // perform fixups
++  nb = fixupJupyterNotebook(nb, options);
++
+   // optional content injection / html preservation for html output
+   // that isn't an ipynb
+   const isHtml = options.toHtml && !options.toIpynb;
+diff --git a/src/core/jupyter/types.ts b/src/core/jupyter/types.ts
+index 3d60a63d0f9..5a496458251 100644
+--- a/src/core/jupyter/types.ts
++++ b/src/core/jupyter/types.ts
+@@ -144,6 +144,7 @@ export interface JupyterOutput {
+   execution_count?: null | number;
+   isolated?: boolean;
+   metadata?: Record<string, unknown>;
++  data?: Record<string, unknown>;
+ }
+ 
+ export interface JupyterOutputStream extends JupyterOutput {
+diff --git a/tests/docs/smoke-all/2023/01/19/2107-2.qmd b/tests/docs/smoke-all/2023/01/19/2107-2.qmd
+new file mode 100644
+index 00000000000..8479457efc0
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/01/19/2107-2.qmd
+@@ -0,0 +1,37 @@
++---
++title: "test webpage"
++format:
++  html:
++    code-fold: true
++jupyter: python3
++_quarto:
++  tests:
++    html:
++      ensureFileRegexMatches:
++        - []
++        - ["\\?\\(caption\\)"]
++---
++
++```{python}
++#| label: fig-demo
++#| fig-subcap:
++#|   - "subcap 1"
++#|   - "subcap 2"
++#| fig-cap: "This is a demo figure for debug"
++
++from bokeh.io import output_notebook
++output_notebook(hide_banner=True)
++
++from bokeh.palettes import Spectral5
++from bokeh.plotting import figure, show
++from bokeh.sampledata.autompg import autompg as df
++from bokeh.transform import factor_cmap
++
++df.cyl = df.cyl.astype(str)
++group = df.groupby('cyl')
++cyl_cmap = factor_cmap('cyl', palette=Spectral5, factors=sorted(df.cyl.unique()))
++p = figure(height=350, x_range=group, title="MPG by # Cylinders", toolbar_location=None, tools="")
++p.vbar(x='cyl', top='mpg_mean', width=1, source=group, line_color=cyl_cmap, fill_color=cyl_cmap)
++show(p)
++show(p)
++```
+diff --git a/tests/docs/smoke-all/2023/01/19/2107.qmd b/tests/docs/smoke-all/2023/01/19/2107.qmd
+new file mode 100644
+index 00000000000..415eeb6cd24
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/01/19/2107.qmd
+@@ -0,0 +1,34 @@
++---
++title: "test webpage"
++format:
++  html:
++    code-fold: true
++jupyter: python3
++_quarto:
++  tests:
++    html:
++      ensureFileRegexMatches:
++        - []
++        - ["\\?\\(caption\\)"]
++
++---
++
++```{python}
++#| label: fig-demo
++#| fig-cap: "This is a demo figure for debug"
++
++from bokeh.io import output_notebook
++output_notebook(hide_banner=True)
++
++from bokeh.palettes import Spectral5
++from bokeh.plotting import figure, show
++from bokeh.sampledata.autompg import autompg as df
++from bokeh.transform import factor_cmap
++
++df.cyl = df.cyl.astype(str)
++group = df.groupby('cyl')
++cyl_cmap = factor_cmap('cyl', palette=Spectral5, factors=sorted(df.cyl.unique()))
++p = figure(height=350, x_range=group, title="MPG by # Cylinders", toolbar_location=None, tools="")
++p.vbar(x='cyl', top='mpg_mean', width=1, source=group, line_color=cyl_cmap, fill_color=cyl_cmap)
++show(p)
++```
+diff --git a/tests/requirements.txt b/tests/requirements.txt
+index 44de1e6a9c1..135cafcf85d 100644
+--- a/tests/requirements.txt
++++ b/tests/requirements.txt
+@@ -4,11 +4,14 @@ async-generator==1.10
+ attrs==21.2.0
+ backcall==0.2.0
+ bleach==3.3.0
++bokeh==3.0.3
+ cffi==1.14.5
++contourpy==1.0.7
+ cycler==0.10.0
+ decorator==5.0.9
+ defusedxml==0.7.1
+ entrypoints==0.3
++fonttools==4.38.0
+ ipykernel==5.5.5
+ ipython==7.25.0
+ ipython-genutils==0.2.0
+@@ -34,6 +37,7 @@ nest-asyncio==1.5.1
+ notebook==6.4.0
+ numpy==1.23.2
+ packaging==20.9
++pandas==1.5.3
+ pandocfilters==1.4.3
+ parso==0.8.2
+ pexpect==4.8.0
+@@ -47,6 +51,8 @@ Pygments==2.9.0
+ pyparsing==3.0.9
+ pyrsistent==0.17.3
+ python-dateutil==2.8.1
++pytz==2022.7.1
++PyYAML==6.0
+ pyzmq==24.0.1
+ qtconsole==5.1.0
+ QtPy==1.9.0
+@@ -59,3 +65,4 @@ traitlets==5.0.5
+ wcwidth==0.2.5
+ webencodings==0.5.1
+ widgetsnbextension==3.5.1
++xyzservices==2022.9.0

@@ -1,0 +1,52 @@
+diff --git a/CHANGES.md b/CHANGES.md
+index 8d836e49c7..6a704fce78 100644
+--- a/CHANGES.md
++++ b/CHANGES.md
+@@ -40,6 +40,7 @@ Grammar improvements:
+ - enh(dart) Fix empty doc-comment eating next line [Jan Pilzer][]
+ - enh(asciidoc) Adds support for unconstrained bold syntax (#2869) [Guillaume Grossetie][]
+ - enh(c-like) Incorrect highlighting for interger suffix (#2919) [Vaibhav Chanana][]
++- enh(properties) Correctly handle trailing backslash (#2922) [Vaibhav Chanana][]
+ 
+ Deprecations (*these will be mentioned in every release*):
+ 
+diff --git a/src/languages/properties.js b/src/languages/properties.js
+index 64cd341f69..4f5fa8d0f5 100644
+--- a/src/languages/properties.js
++++ b/src/languages/properties.js
+@@ -27,6 +27,7 @@ export default function(hljs) {
+             end: /$/,
+             relevance: 0,
+             contains: [
++              { begin: '\\\\\\\\'},
+               { begin: '\\\\\\n' }
+             ]
+           }
+diff --git a/test/markup/properties/syntax.expect.txt b/test/markup/properties/syntax.expect.txt
+index 45b473a320..5281acd45e 100644
+--- a/test/markup/properties/syntax.expect.txt
++++ b/test/markup/properties/syntax.expect.txt
+@@ -12,3 +12,9 @@
+       val</span>
+ <span class="hljs-attr">key\ key\:\=</span> <span class="hljs-string">val</span>
+ <span class="hljs-attr">key</span>
++<span class="hljs-comment"># if the number of backslashes at the end of the line is even, the next line is not included in the value</span>
++<span class="hljs-attr">key</span> = <span class="hljs-string">val\\</span>
++<span class="hljs-attr">key</span> = <span class="hljs-string">diffValue\\\\</span>
++<span class="hljs-comment"># val with odd number of backslash, here val2 is part of the key</span>
++<span class="hljs-attr">key</span> = <span class="hljs-string">val\\\
++      val2</span>
+diff --git a/test/markup/properties/syntax.txt b/test/markup/properties/syntax.txt
+index 76a4a2b1cc..d85b04971b 100644
+--- a/test/markup/properties/syntax.txt
++++ b/test/markup/properties/syntax.txt
+@@ -12,3 +12,9 @@ key = val\
+       val
+ key\ key\:\= val
+ key
++# if the number of backslashes at the end of the line is even, the next line is not included in the value
++key = val\\
++key = diffValue\\\\
++# val with odd number of backslash, here val2 is part of the key
++key = val\\\
++      val2

@@ -1,0 +1,227 @@
+diff --git a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+index 95e718146d54..e03c76540c95 100644
+--- a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
++++ b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+@@ -5879,6 +5879,9 @@ Map {
+         ],
+         "type": "oneOf",
+       },
++      "readOnly": Object {
++        "type": "bool",
++      },
+       "valueSelected": Object {
+         "args": Array [
+           Array [
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
+index b1c00a31dcf8..ccf053c71244 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
+@@ -587,10 +587,10 @@ exports[`DataTable selection -- radio buttons should render 1`] = `
+                                 className="cds--radio-button__appearance"
+                               />
+                               <Text
+-                                className="cds--visually-hidden"
++                                className="cds--radio-button__label-text cds--visually-hidden"
+                               >
+                                 <span
+-                                  className="cds--visually-hidden"
++                                  className="cds--radio-button__label-text cds--visually-hidden"
+                                   dir="auto"
+                                 >
+                                   Select row
+@@ -664,10 +664,10 @@ exports[`DataTable selection -- radio buttons should render 1`] = `
+                                 className="cds--radio-button__appearance"
+                               />
+                               <Text
+-                                className="cds--visually-hidden"
++                                className="cds--radio-button__label-text cds--visually-hidden"
+                               >
+                                 <span
+-                                  className="cds--visually-hidden"
++                                  className="cds--radio-button__label-text cds--visually-hidden"
+                                   dir="auto"
+                                 >
+                                   Select row
+@@ -741,10 +741,10 @@ exports[`DataTable selection -- radio buttons should render 1`] = `
+                                 className="cds--radio-button__appearance"
+                               />
+                               <Text
+-                                className="cds--visually-hidden"
++                                className="cds--radio-button__label-text cds--visually-hidden"
+                               >
+                                 <span
+-                                  className="cds--visually-hidden"
++                                  className="cds--radio-button__label-text cds--visually-hidden"
+                                   dir="auto"
+                                 >
+                                   Select row
+diff --git a/packages/react/src/components/RadioButton/RadioButton.js b/packages/react/src/components/RadioButton/RadioButton.js
+index 9f9424334d37..d3725bcf6ae7 100644
+--- a/packages/react/src/components/RadioButton/RadioButton.js
++++ b/packages/react/src/components/RadioButton/RadioButton.js
+@@ -35,7 +35,7 @@ const RadioButton = React.forwardRef(function RadioButton(
+     onChange(value, name, event);
+   }
+ 
+-  const innerLabelClasses = classNames({
++  const innerLabelClasses = classNames(`${prefix}--radio-button__label-text`, {
+     [`${prefix}--visually-hidden`]: hideLabel,
+   });
+ 
+diff --git a/packages/react/src/components/RadioButton/RadioButton.stories.js b/packages/react/src/components/RadioButton/RadioButton.stories.js
+index 780a1f5a7836..f5c9ef146f7a 100644
+--- a/packages/react/src/components/RadioButton/RadioButton.stories.js
++++ b/packages/react/src/components/RadioButton/RadioButton.stories.js
+@@ -23,6 +23,14 @@ export default {
+       page: mdx,
+     },
+   },
++  argTypes: {
++    readOnly: {
++      description: 'Specify whether the RadioButtonGroup is read-only',
++      control: {
++        type: 'boolean',
++      },
++    },
++  },
+ };
+ 
+ export const Default = () => {
+diff --git a/packages/react/src/components/RadioButtonGroup/RadioButtonGroup-test.js b/packages/react/src/components/RadioButtonGroup/RadioButtonGroup-test.js
+index 5c9060c7ad6c..2227e9967899 100644
+--- a/packages/react/src/components/RadioButtonGroup/RadioButtonGroup-test.js
++++ b/packages/react/src/components/RadioButtonGroup/RadioButtonGroup-test.js
+@@ -94,6 +94,31 @@ describe('RadioButtonGroup', () => {
+       expect(fieldset).toBeDisabled();
+     });
+ 
++    it('should support readonly to prevent changes', () => {
++      render(
++        <RadioButtonGroup
++          defaultSelected="test-1"
++          readOnly={true}
++          name="test"
++          legendText="test">
++          <RadioButton labelText="test-1" value="test-1" />
++          <RadioButton labelText="test-2" value="test-2" />
++        </RadioButtonGroup>
++      );
++
++      const radio1 = screen.getByLabelText('test-1');
++      const radio2 = screen.getByLabelText('test-2');
++
++      expect(radio1).toBeChecked();
++      expect(radio2).not.toBeChecked();
++
++      userEvent.click(radio2);
++
++      // no change
++      expect(radio1).toBeChecked();
++      expect(radio2).not.toBeChecked();
++    });
++
+     it('should support `defaultSelected` as a way to select a radio button', () => {
+       render(
+         <RadioButtonGroup
+diff --git a/packages/react/src/components/RadioButtonGroup/RadioButtonGroup.js b/packages/react/src/components/RadioButtonGroup/RadioButtonGroup.js
+index 32933f834be9..87f592224d6d 100644
+--- a/packages/react/src/components/RadioButtonGroup/RadioButtonGroup.js
++++ b/packages/react/src/components/RadioButtonGroup/RadioButtonGroup.js
+@@ -6,11 +6,13 @@
+  */
+ 
+ import PropTypes from 'prop-types';
+-import React, { useState } from 'react';
++import React, { createContext, useState } from 'react';
+ import classNames from 'classnames';
+ import { Legend } from '../Text';
+ import { usePrefix } from '../../internal/usePrefix';
+ 
++export const RadioButtonGroupContext = createContext();
++
+ const RadioButtonGroup = React.forwardRef(function RadioButtonGroup(
+   {
+     children,
+@@ -22,6 +24,7 @@ const RadioButtonGroup = React.forwardRef(function RadioButtonGroup(
+     name,
+     onChange = () => {},
+     orientation = 'horizontal',
++    readOnly,
+     valueSelected,
+   },
+   ref
+@@ -63,9 +66,11 @@ const RadioButtonGroup = React.forwardRef(function RadioButtonGroup(
+   }
+ 
+   function handleOnChange(newSelection, value, evt) {
+-    if (newSelection !== selected) {
+-      setSelected(newSelection);
+-      onChange(newSelection, name, evt);
++    if (!readOnly) {
++      if (newSelection !== selected) {
++        setSelected(newSelection);
++        onChange(newSelection, name, evt);
++      }
+     }
+   }
+ 
+@@ -73,13 +78,17 @@ const RadioButtonGroup = React.forwardRef(function RadioButtonGroup(
+     [`${prefix}--radio-button-group--${orientation}`]:
+       orientation === 'vertical',
+     [`${prefix}--radio-button-group--label-${labelPosition}`]: labelPosition,
++    [`${prefix}--radio-button-group--readonly`]: readOnly,
+   });
+ 
+   const wrapperClasses = classNames(`${prefix}--form-item`, className);
+ 
+   return (
+     <div className={wrapperClasses} ref={ref}>
+-      <fieldset className={fieldsetClasses} disabled={disabled}>
++      <fieldset
++        className={fieldsetClasses}
++        disabled={disabled}
++        aria-readonly={readOnly}>
+         {legendText && (
+           <Legend className={`${prefix}--label`}>{legendText}</Legend>
+         )}
+@@ -137,6 +146,11 @@ RadioButtonGroup.propTypes = {
+    */
+   orientation: PropTypes.oneOf(['horizontal', 'vertical']),
+ 
++  /**
++   * Whether the RadioButtonGroup should be read-only
++   */
++  readOnly: PropTypes.bool,
++
+   /**
+    * Specify the value that is currently selected in the group
+    */
+diff --git a/packages/styles/scss/components/radio-button/_radio-button.scss b/packages/styles/scss/components/radio-button/_radio-button.scss
+index eb2bd627a11d..45f43ba08c1e 100644
+--- a/packages/styles/scss/components/radio-button/_radio-button.scss
++++ b/packages/styles/scss/components/radio-button/_radio-button.scss
+@@ -135,6 +135,24 @@ $radio-border-width: 1px !default;
+     }
+   }
+ 
++  // readonly
++  .#{$prefix}--radio-button-group--readonly
++    .#{$prefix}--radio-button
++    + .#{$prefix}--radio-button__label
++    .#{$prefix}--radio-button__appearance {
++    border-color: $icon-disabled;
++  }
++
++  .#{$prefix}--radio-button-group--readonly .#{$prefix}--radio-button__label {
++    cursor: default;
++  }
++
++  .#{$prefix}--radio-button-group--readonly
++    .#{$prefix}--radio-button__label-text {
++    cursor: text;
++    user-select: text;
++  }
++
+   // Focus
+ 
+   .#{$prefix}--radio-button:focus

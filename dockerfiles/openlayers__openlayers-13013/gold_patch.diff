@@ -1,0 +1,246 @@
+diff --git a/src/ol/webgl/TileTexture.js b/src/ol/webgl/TileTexture.js
+index 6dea0f11dbb..d67a804d9b1 100644
+--- a/src/ol/webgl/TileTexture.js
++++ b/src/ol/webgl/TileTexture.js
+@@ -41,6 +41,16 @@ function uploadDataTexture(helper, texture, data, size, bandCount) {
+   const gl = helper.getGL();
+   bindAndConfigure(gl, texture);
+ 
++  const bytesPerRow = data.byteLength / size[1];
++  let unpackAlignment = 1;
++  if (bytesPerRow % 8 === 0) {
++    unpackAlignment = 8;
++  } else if (bytesPerRow % 4 === 0) {
++    unpackAlignment = 4;
++  } else if (bytesPerRow % 2 === 0) {
++    unpackAlignment = 2;
++  }
++
+   let format;
+   switch (bandCount) {
+     case 1: {
+@@ -73,6 +83,8 @@ function uploadDataTexture(helper, texture, data, size, bandCount) {
+     textureType = gl.UNSIGNED_BYTE;
+   }
+ 
++  const oldUnpackAlignment = gl.getParameter(gl.UNPACK_ALIGNMENT);
++  gl.pixelStorei(gl.UNPACK_ALIGNMENT, unpackAlignment);
+   gl.texImage2D(
+     gl.TEXTURE_2D,
+     0,
+@@ -84,6 +96,7 @@ function uploadDataTexture(helper, texture, data, size, bandCount) {
+     textureType,
+     data
+   );
++  gl.pixelStorei(gl.UNPACK_ALIGNMENT, oldUnpackAlignment);
+ }
+ 
+ /**
+@@ -168,10 +181,11 @@ class TileTexture extends EventTarget {
+     const data = tile.getData();
+     const isFloat = data instanceof Float32Array;
+     const pixelCount = this.size[0] * this.size[1];
+-    // Float arrays feature four bytes per element,
+-    //  BYTES_PER_ELEMENT throws a TypeScript exception but would handle
+-    //  this better for more varied typed arrays.
+-    this.bandCount = data.byteLength / (isFloat ? 4 : 1) / pixelCount;
++    const DataType = isFloat ? Float32Array : Uint8Array;
++    const bytesPerElement = DataType.BYTES_PER_ELEMENT;
++    const bytesPerRow = data.byteLength / this.size[1];
++
++    this.bandCount = Math.floor(bytesPerRow / bytesPerElement / this.size[0]);
+     const textureCount = Math.ceil(this.bandCount / 4);
+ 
+     if (textureCount === 1) {
+@@ -181,8 +195,6 @@ class TileTexture extends EventTarget {
+       return;
+     }
+ 
+-    const DataType = isFloat ? Float32Array : Uint8Array;
+-
+     const textureDataArrays = new Array(textureCount);
+     for (let textureIndex = 0; textureIndex < textureCount; ++textureIndex) {
+       const texture = gl.createTexture();
+@@ -193,25 +205,31 @@ class TileTexture extends EventTarget {
+       textureDataArrays[textureIndex] = new DataType(pixelCount * bandCount);
+     }
+ 
+-    const valueCount = pixelCount * this.bandCount;
+-    for (let dataIndex = 0; dataIndex < valueCount; ++dataIndex) {
+-      const bandIndex = dataIndex % this.bandCount;
+-      const textureBandIndex = bandIndex % 4;
+-      const textureIndex = Math.floor(bandIndex / 4);
+-      const bandCount =
+-        textureIndex < textureCount - 1 ? 4 : this.bandCount % 4;
+-      const pixelIndex = Math.floor(dataIndex / this.bandCount);
+-      textureDataArrays[textureIndex][
+-        pixelIndex * bandCount + textureBandIndex
+-      ] = data[dataIndex];
++    let dataIndex = 0;
++    let rowOffset = 0;
++    const colCount = this.size[0] * this.bandCount;
++    for (let rowIndex = 0; rowIndex < this.size[1]; ++rowIndex) {
++      for (let colIndex = 0; colIndex < colCount; ++colIndex) {
++        const dataValue = data[rowOffset + colIndex];
++
++        const pixelIndex = Math.floor(dataIndex / this.bandCount);
++        const bandIndex = colIndex % this.bandCount;
++        const textureIndex = Math.floor(bandIndex / 4);
++        const textureData = textureDataArrays[textureIndex];
++        const bandCount = textureData.length / pixelCount;
++        const textureBandIndex = bandIndex % 4;
++        textureData[pixelIndex * bandCount + textureBandIndex] = dataValue;
++
++        ++dataIndex;
++      }
++      rowOffset += bytesPerRow / bytesPerElement;
+     }
+ 
+     for (let textureIndex = 0; textureIndex < textureCount; ++textureIndex) {
+-      const bandCount =
+-        textureIndex < textureCount - 1 ? 4 : this.bandCount % 4;
+       const texture = this.textures[textureIndex];
+-      const data = textureDataArrays[textureIndex];
+-      uploadDataTexture(helper, texture, data, this.size, bandCount);
++      const textureData = textureDataArrays[textureIndex];
++      const bandCount = textureData.length / pixelCount;
++      uploadDataTexture(helper, texture, textureData, this.size, bandCount);
+     }
+   }
+ 
+diff --git a/test/rendering/cases/webgl-data-tile-3-band/expected.png b/test/rendering/cases/webgl-data-tile-3-band/expected.png
+new file mode 100644
+index 00000000000..890747aca61
+Binary files /dev/null and b/test/rendering/cases/webgl-data-tile-3-band/expected.png differ
+diff --git a/test/rendering/cases/webgl-data-tile-3-band/main.js b/test/rendering/cases/webgl-data-tile-3-band/main.js
+new file mode 100644
+index 00000000000..951710c3a14
+--- /dev/null
++++ b/test/rendering/cases/webgl-data-tile-3-band/main.js
+@@ -0,0 +1,49 @@
++import DataTile from '../../../../src/ol/source/DataTile.js';
++import Map from '../../../../src/ol/Map.js';
++import TileLayer from '../../../../src/ol/layer/WebGLTile.js';
++import View from '../../../../src/ol/View.js';
++
++const size = [81, 99];
++
++const canvas = document.createElement('canvas');
++canvas.width = size[0];
++canvas.height = size[1];
++
++const context = canvas.getContext('2d');
++context.strokeStyle = 'white';
++context.textAlign = 'center';
++const lineHeight = 16;
++context.font = `${lineHeight}px sans-serif`;
++
++new Map({
++  target: 'map',
++  layers: [
++    new TileLayer({
++      source: new DataTile({
++        loader: function (z, x, y) {
++          const halfWidth = size[0] / 2;
++          const halfHeight = size[1] / 2;
++          context.fillStyle = '#00AAFF';
++          context.fillRect(0, 0, size[0], size[1]);
++          context.fillStyle = 'white';
++          context.fillText(`z: ${z}`, halfWidth, halfHeight - lineHeight);
++          context.fillText(`x: ${x}`, halfWidth, halfHeight);
++          context.fillText(`y: ${y}`, halfWidth, halfHeight + lineHeight);
++          context.strokeRect(0, 0, size[0], size[1]);
++          const data = context.getImageData(0, 0, size[0], size[1]).data;
++
++          const bandCount = 3;
++          const result = data.filter((_, index) => index % 4 < bandCount);
++          return Promise.resolve(result);
++        },
++        tileSize: size,
++      }),
++    }),
++  ],
++  view: new View({
++    center: [0, 0],
++    zoom: 4,
++  }),
++});
++
++render({tolerance: 0.03});
+diff --git a/test/rendering/cases/webgl-data-tile-loosely-packed/expected.png b/test/rendering/cases/webgl-data-tile-loosely-packed/expected.png
+new file mode 100644
+index 00000000000..890747aca61
+Binary files /dev/null and b/test/rendering/cases/webgl-data-tile-loosely-packed/expected.png differ
+diff --git a/test/rendering/cases/webgl-data-tile-loosely-packed/main.js b/test/rendering/cases/webgl-data-tile-loosely-packed/main.js
+new file mode 100644
+index 00000000000..d7bf1260af5
+--- /dev/null
++++ b/test/rendering/cases/webgl-data-tile-loosely-packed/main.js
+@@ -0,0 +1,67 @@
++import DataTile from '../../../../src/ol/source/DataTile.js';
++import Map from '../../../../src/ol/Map.js';
++import TileLayer from '../../../../src/ol/layer/WebGLTile.js';
++import View from '../../../../src/ol/View.js';
++
++const size = [81, 99];
++
++const canvas = document.createElement('canvas');
++canvas.width = size[0];
++canvas.height = size[1];
++
++const context = canvas.getContext('2d');
++context.strokeStyle = 'white';
++context.textAlign = 'center';
++const lineHeight = 16;
++context.font = `${lineHeight}px sans-serif`;
++
++new Map({
++  target: 'map',
++  layers: [
++    new TileLayer({
++      source: new DataTile({
++        tileSize: size,
++        loader: function (z, x, y) {
++          const halfW = size[0] / 2;
++          const halfH = size[1] / 2;
++          context.fillStyle = '#00AAFF';
++          context.fillRect(0, 0, size[0], size[1]);
++          context.fillStyle = 'white';
++          context.fillText(`z: ${z}`, halfW, halfH - lineHeight);
++          context.fillText(`x: ${x}`, halfW, halfH);
++          context.fillText(`y: ${y}`, halfW, halfH + lineHeight);
++          context.strokeRect(0, 0, size[0], size[1]);
++
++          const input = context.getImageData(0, 0, size[0], size[1]).data;
++          const bandCount = input.length / (size[0] * size[1]);
++          const inputColCount = bandCount * size[0];
++
++          const packAlignment = 8;
++          const outputColCount =
++            Math.ceil((bandCount * size[0]) / packAlignment) * packAlignment;
++          const output = new Uint8Array(outputColCount * size[1]);
++
++          for (let row = 0; row < size[1]; ++row) {
++            let inputOffset = row * inputColCount;
++            let outputOffset = row * outputColCount;
++            for (let col = 0; col < inputColCount; col += bandCount) {
++              for (let band = 0; band < bandCount; ++band) {
++                output[outputOffset] = input[inputOffset];
++                inputOffset += 1;
++                outputOffset += 1;
++              }
++            }
++          }
++
++          return Promise.resolve(output);
++        },
++      }),
++    }),
++  ],
++  view: new View({
++    center: [0, 0],
++    zoom: 4,
++  }),
++});
++
++render({tolerance: 0.03});

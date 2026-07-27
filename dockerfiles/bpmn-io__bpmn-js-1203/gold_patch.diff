@@ -1,0 +1,2009 @@
+diff --git a/lib/features/modeling/behavior/AttachEventBehavior.js b/lib/features/modeling/behavior/AttachEventBehavior.js
+index 985453e2b6..22107901f4 100644
+--- a/lib/features/modeling/behavior/AttachEventBehavior.js
++++ b/lib/features/modeling/behavior/AttachEventBehavior.js
+@@ -2,68 +2,97 @@ import inherits from 'inherits';
+ 
+ import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
+ 
+-import { isAny } from '../util/ModelingUtil';
+ import { getBusinessObject } from '../../../util/ModelUtil';
+ 
++import { isAny } from '../util/ModelingUtil';
++
++import { isLabel } from '../../../util/LabelUtil';
++
++var LOW_PRIORITY = 500;
++
+ 
+ /**
+- * BPMN specific attach event behavior
++ * Replace intermediate event with boundary event when creating or moving results in attached event.
+  */
+-export default function AttachEventBehavior(eventBus, bpmnReplace) {
++export default function AttachEventBehavior(bpmnReplace, injector) {
++  injector.invoke(CommandInterceptor, this);
+ 
+-  CommandInterceptor.call(this, eventBus);
++  this._bpmnReplace = bpmnReplace;
+ 
+-  /**
+-   * replace intermediate event with boundary event when
+-   * attaching it to a shape
+-   */
++  var self = this;
+ 
+-  this.preExecute('elements.move', function(context) {
+-    var shapes = context.shapes,
+-        host = context.newHost,
+-        shape,
+-        eventDefinition,
+-        boundaryEvent,
+-        newShape;
++  this.postExecuted('elements.create', LOW_PRIORITY, function(context) {
++    var elements = context.elements;
+ 
+-    if (shapes.length !== 1) {
++    elements = elements.filter(function(shape) {
++      var host = shape.host;
++
++      return shouldReplace(shape, host);
++    });
++
++    if (elements.length !== 1) {
+       return;
+     }
+ 
+-    shape = shapes[0];
++    elements.map(function(element) {
++      return elements.indexOf(element);
++    }).forEach(function(index) {
++      var host = elements[ index ];
+ 
+-    if (host && isAny(shape, [ 'bpmn:IntermediateThrowEvent', 'bpmn:IntermediateCatchEvent' ])) {
++      context.elements[ index ] = self.replaceShape(elements[ index ], host);
++    });
++  }, true);
+ 
+-      eventDefinition = getEventDefinition(shape);
+ 
+-      boundaryEvent = {
+-        type: 'bpmn:BoundaryEvent',
+-        host: host
+-      };
++  this.preExecute('elements.move', LOW_PRIORITY, function(context) {
++    var shapes = context.shapes,
++        host = context.newHost;
+ 
+-      if (eventDefinition) {
+-        boundaryEvent.eventDefinitionType = eventDefinition.$type;
+-      }
++    if (shapes.length !== 1) {
++      return;
++    }
+ 
+-      newShape = bpmnReplace.replaceElement(shape, boundaryEvent, { layoutConnection: false });
++    var shape = shapes[0];
+ 
+-      context.shapes = [ newShape ];
++    if (shouldReplace(shape, host)) {
++      context.shapes = [ self.replaceShape(shape, host) ];
+     }
+   }, true);
+ }
+ 
+ AttachEventBehavior.$inject = [
+-  'eventBus',
+-  'bpmnReplace'
++  'bpmnReplace',
++  'injector'
+ ];
+ 
+ inherits(AttachEventBehavior, CommandInterceptor);
+ 
++AttachEventBehavior.prototype.replaceShape = function(shape, host) {
++  var eventDefinition = getEventDefinition(shape);
++
++  var boundaryEvent = {
++    type: 'bpmn:BoundaryEvent',
++    host: host
++  };
+ 
++  if (eventDefinition) {
++    boundaryEvent.eventDefinitionType = eventDefinition.$type;
++  }
++
++  return this._bpmnReplace.replaceElement(shape, boundaryEvent, { layoutConnection: false });
++};
++
++
++// helpers //////////
+ 
+-// helper /////
+ function getEventDefinition(element) {
+-  var bo = getBusinessObject(element);
++  var businessObject = getBusinessObject(element),
++      eventDefinitions = businessObject.eventDefinitions;
++
++  return eventDefinitions && eventDefinitions[0];
++}
+ 
+-  return bo && bo.eventDefinitions && bo.eventDefinitions[0];
++function shouldReplace(shape, host) {
++  return !isLabel(shape) &&
++    isAny(shape, [ 'bpmn:IntermediateThrowEvent', 'bpmn:IntermediateCatchEvent' ]) && !!host;
+ }
+diff --git a/lib/features/modeling/behavior/CreateBoundaryEventBehavior.js b/lib/features/modeling/behavior/CreateBoundaryEventBehavior.js
+deleted file mode 100644
+index a4685049fb..0000000000
+--- a/lib/features/modeling/behavior/CreateBoundaryEventBehavior.js
++++ /dev/null
+@@ -1,54 +0,0 @@
+-import inherits from 'inherits';
+-
+-import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
+-
+-import { is } from '../../../util/ModelUtil';
+-
+-
+-/**
+- * BPMN specific create boundary event behavior
+- */
+-export default function CreateBoundaryEventBehavior(
+-    eventBus, modeling, elementFactory,
+-    bpmnFactory) {
+-
+-  CommandInterceptor.call(this, eventBus);
+-
+-  /**
+-   * replace intermediate event with boundary event when
+-   * attaching it to a shape
+-   */
+-
+-  this.preExecute('shape.create', function(context) {
+-    var shape = context.shape,
+-        host = context.host,
+-        businessObject,
+-        boundaryEvent;
+-
+-    var attrs = {
+-      cancelActivity: true
+-    };
+-
+-    if (host && is(shape, 'bpmn:IntermediateThrowEvent')) {
+-      attrs.attachedToRef = host.businessObject;
+-
+-      businessObject = bpmnFactory.create('bpmn:BoundaryEvent', attrs);
+-
+-      boundaryEvent = {
+-        type: 'bpmn:BoundaryEvent',
+-        businessObject: businessObject
+-      };
+-
+-      context.shape = elementFactory.createShape(boundaryEvent);
+-    }
+-  }, true);
+-}
+-
+-CreateBoundaryEventBehavior.$inject = [
+-  'eventBus',
+-  'modeling',
+-  'elementFactory',
+-  'bpmnFactory'
+-];
+-
+-inherits(CreateBoundaryEventBehavior, CommandInterceptor);
+diff --git a/lib/features/modeling/behavior/DetachEventBehavior.js b/lib/features/modeling/behavior/DetachEventBehavior.js
+index e8d359eae3..ae64a63615 100644
+--- a/lib/features/modeling/behavior/DetachEventBehavior.js
++++ b/lib/features/modeling/behavior/DetachEventBehavior.js
+@@ -9,67 +9,86 @@ import {
+ 
+ import { isLabel } from '../../../util/LabelUtil';
+ 
++var LOW_PRIORITY = 500;
++
+ 
+ /**
+- * BPMN specific detach event behavior
++ * Replace boundary event with intermediate event when creating or moving results in detached event.
+  */
+-export default function DetachEventBehavior(eventBus, bpmnReplace) {
++export default function DetachEventBehavior(bpmnReplace, injector) {
++  injector.invoke(CommandInterceptor, this);
++
++  this._bpmnReplace = bpmnReplace;
+ 
+-  CommandInterceptor.call(this, eventBus);
++  var self = this;
+ 
+-  /**
+-   * replace boundary event with intermediate event when
+-   * detaching from a shape
+-   */
++  this.postExecuted('elements.create', LOW_PRIORITY, function(context) {
++    var elements = context.elements;
+ 
+-  this.preExecute('elements.move', function(context) {
++    elements.filter(function(shape) {
++      var host = shape.host;
++
++      return shouldReplace(shape, host);
++    }).map(function(shape) {
++      return elements.indexOf(shape);
++    }).forEach(function(index) {
++      context.elements[ index ] = self.replaceShape(elements[ index ]);
++    });
++  }, true);
++
++  this.preExecute('elements.move', LOW_PRIORITY, function(context) {
+     var shapes = context.shapes,
+-        host = context.newHost,
+-        shape,
+-        eventDefinition,
+-        intermediateEvent,
+-        newShape;
+-
+-    if (shapes.length !== 1) {
+-      return;
+-    }
+-
+-    shape = shapes[0];
+-
+-    if (!isLabel(shape) && !host && is(shape, 'bpmn:BoundaryEvent')) {
+-
+-      eventDefinition = getEventDefinition(shape);
+-
+-      if (eventDefinition) {
+-        intermediateEvent = {
+-          type: 'bpmn:IntermediateCatchEvent',
+-          eventDefinitionType: eventDefinition.$type
+-        };
+-      } else {
+-        intermediateEvent = {
+-          type: 'bpmn:IntermediateThrowEvent'
+-        };
+-      }
++        newHost = context.newHost;
+ 
+-      newShape = bpmnReplace.replaceElement(shape, intermediateEvent, { layoutConnection: false });
++    shapes.forEach(function(shape, index) {
++      var host = shape.host;
+ 
+-      context.shapes = [ newShape ];
+-    }
++      if (shouldReplace(shape, includes(shapes, host) ? host : newHost)) {
++        shapes[ index ] = self.replaceShape(shape);
++      }
++    });
+   }, true);
+ }
+ 
+ DetachEventBehavior.$inject = [
+-  'eventBus',
+-  'bpmnReplace'
++  'bpmnReplace',
++  'injector'
+ ];
+ 
+ inherits(DetachEventBehavior, CommandInterceptor);
+ 
++DetachEventBehavior.prototype.replaceShape = function(shape) {
++  var eventDefinition = getEventDefinition(shape),
++      intermediateEvent;
+ 
++  if (eventDefinition) {
++    intermediateEvent = {
++      type: 'bpmn:IntermediateCatchEvent',
++      eventDefinitionType: eventDefinition.$type
++    };
++  } else {
++    intermediateEvent = {
++      type: 'bpmn:IntermediateThrowEvent'
++    };
++  }
++
++  return this._bpmnReplace.replaceElement(shape, intermediateEvent, { layoutConnection: false });
++};
++
++
++// helpers //////////
+ 
+-// helper /////
+ function getEventDefinition(element) {
+-  var bo = getBusinessObject(element);
++  var businessObject = getBusinessObject(element),
++      eventDefinitions = businessObject.eventDefinitions;
+ 
+-  return bo && bo.eventDefinitions && bo.eventDefinitions[0];
++  return eventDefinitions && eventDefinitions[0];
+ }
++
++function shouldReplace(shape, host) {
++  return !isLabel(shape) && is(shape, 'bpmn:BoundaryEvent') && !host;
++}
++
++function includes(array, item) {
++  return array.indexOf(item) !== -1;
++}
+\ No newline at end of file
+diff --git a/lib/features/modeling/behavior/ReplaceElementBehaviour.js b/lib/features/modeling/behavior/ReplaceElementBehaviour.js
+index 01ed6fbef2..d0648d8356 100644
+--- a/lib/features/modeling/behavior/ReplaceElementBehaviour.js
++++ b/lib/features/modeling/behavior/ReplaceElementBehaviour.js
+@@ -1,35 +1,31 @@
+ import inherits from 'inherits';
+ 
+-import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
+-
+-import {
+-  forEach
+-} from 'min-dash';
++import { forEach } from 'min-dash';
+ 
+-import {
+-  isEventSubProcess
+-} from '../../../util/DiUtil';
++import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
+ 
+-import { is } from '../../../util/ModelUtil';
++import { isEventSubProcess } from '../../../util/DiUtil';
+ 
+ 
+ /**
+- * Defines the behaviour of what happens to the elements inside a container
+- * that morphs into another BPMN element
++ * BPMN-specific replace behavior.
+  */
+ export default function ReplaceElementBehaviour(
+-    eventBus, bpmnReplace, bpmnRules,
+-    elementRegistry, selection, modeling) {
+-
+-  CommandInterceptor.call(this, eventBus);
++    bpmnReplace,
++    bpmnRules,
++    elementRegistry,
++    injector,
++    modeling,
++    selection
++) {
++  injector.invoke(CommandInterceptor, this);
+ 
+   this._bpmnReplace = bpmnReplace;
+   this._elementRegistry = elementRegistry;
+   this._selection = selection;
+-  this._modeling = modeling;
+ 
++  // replace elements on move
+   this.postExecuted([ 'elements.move' ], 500, function(event) {
+-
+     var context = event.context,
+         target = context.newParent,
+         newHost = context.newHost,
+@@ -43,7 +39,7 @@ export default function ReplaceElementBehaviour(
+       }
+     });
+ 
+-    // Change target to host when the moving element is a `bpmn:BoundaryEvent`
++    // set target to host if attaching
+     if (elements.length === 1 && newHost) {
+       target = newHost;
+     }
+@@ -55,9 +51,8 @@ export default function ReplaceElementBehaviour(
+     }
+   }, this);
+ 
+-  // update attachments if the host is replaced
++  // update attachments on host replace
+   this.postExecute([ 'shape.replace' ], 1500, function(e) {
+-
+     var context = e.context,
+         oldShape = context.oldShape,
+         newShape = context.newShape,
+@@ -72,6 +67,7 @@ export default function ReplaceElementBehaviour(
+ 
+   }, this);
+ 
++  // keep ID on shape replace
+   this.postExecuted([ 'shape.replace' ], 1500, function(e) {
+     var context = e.context,
+         oldShape = context.oldShape,
+@@ -84,32 +80,21 @@ export default function ReplaceElementBehaviour(
+ 
+ inherits(ReplaceElementBehaviour, CommandInterceptor);
+ 
+-
+-ReplaceElementBehaviour.prototype.replaceElements = function(elements, newElements, newHost) {
++ReplaceElementBehaviour.prototype.replaceElements = function(elements, newElements) {
+   var elementRegistry = this._elementRegistry,
+       bpmnReplace = this._bpmnReplace,
+-      selection = this._selection,
+-      modeling = this._modeling;
++      selection = this._selection;
+ 
+   forEach(newElements, function(replacement) {
+-
+     var newElement = {
+       type: replacement.newElementType
+     };
+ 
+     var oldElement = elementRegistry.get(replacement.oldElementId);
+ 
+-    if (newHost && is(oldElement, 'bpmn:BoundaryEvent')) {
+-      modeling.updateAttachment(oldElement, null);
+-    }
+-
+     var idx = elements.indexOf(oldElement);
+ 
+     elements[idx] = bpmnReplace.replaceElement(oldElement, newElement, { select: false });
+-
+-    if (newHost && is(elements[idx], 'bpmn:BoundaryEvent')) {
+-      modeling.updateAttachment(elements[idx], newHost);
+-    }
+   });
+ 
+   if (newElements) {
+@@ -118,10 +103,10 @@ ReplaceElementBehaviour.prototype.replaceElements = function(elements, newElemen
+ };
+ 
+ ReplaceElementBehaviour.$inject = [
+-  'eventBus',
+   'bpmnReplace',
+   'bpmnRules',
+   'elementRegistry',
+-  'selection',
+-  'modeling'
++  'injector',
++  'modeling',
++  'selection'
+ ];
+diff --git a/lib/features/modeling/behavior/index.js b/lib/features/modeling/behavior/index.js
+index 5f62e78eb7..2d3b86f842 100644
+--- a/lib/features/modeling/behavior/index.js
++++ b/lib/features/modeling/behavior/index.js
+@@ -4,7 +4,6 @@ import AttachEventBehavior from './AttachEventBehavior';
+ import BoundaryEventBehavior from './BoundaryEventBehavior';
+ import CreateBehavior from './CreateBehavior';
+ import FixHoverBehavior from './FixHoverBehavior';
+-import CreateBoundaryEventBehavior from './CreateBoundaryEventBehavior';
+ import CreateDataObjectBehavior from './CreateDataObjectBehavior';
+ import CreateParticipantBehavior from './CreateParticipantBehavior';
+ import DataInputAssociationBehavior from './DataInputAssociationBehavior';
+@@ -38,7 +37,6 @@ export default {
+     'boundaryEventBehavior',
+     'createBehavior',
+     'fixHoverBehavior',
+-    'createBoundaryEventBehavior',
+     'createDataObjectBehavior',
+     'createParticipantBehavior',
+     'dataStoreBehavior',
+@@ -70,7 +68,6 @@ export default {
+   boundaryEventBehavior: [ 'type', BoundaryEventBehavior ],
+   createBehavior: [ 'type', CreateBehavior ],
+   fixHoverBehavior: [ 'type', FixHoverBehavior ],
+-  createBoundaryEventBehavior: [ 'type', CreateBoundaryEventBehavior ],
+   createDataObjectBehavior: [ 'type', CreateDataObjectBehavior ],
+   createParticipantBehavior: [ 'type', CreateParticipantBehavior ],
+   dataInputAssociationBehavior: [ 'type', DataInputAssociationBehavior ],
+diff --git a/lib/features/rules/BpmnRules.js b/lib/features/rules/BpmnRules.js
+index fbfc1abe92..3256da62ab 100644
+--- a/lib/features/rules/BpmnRules.js
++++ b/lib/features/rules/BpmnRules.js
+@@ -908,10 +908,6 @@ function canCopy(elements, element) {
+     return false;
+   }
+ 
+-  if (is(element, 'bpmn:BoundaryEvent') && !includes(elements, element.host)) {
+-    return false;
+-  }
+-
+   return true;
+ }
+ 
+@@ -930,4 +926,4 @@ function areOutgoingEventBasedGatewayConnections(connections) {
+ 
+ function getRootElement(element) {
+   return getParent(element, 'bpmn:Process') || getParent(element, 'bpmn:Collaboration');
+-}
+\ No newline at end of file
++}
+diff --git a/lib/features/snapping/BpmnCreateMoveSnapping.js b/lib/features/snapping/BpmnCreateMoveSnapping.js
+index 392048aeae..186c593b65 100644
+--- a/lib/features/snapping/BpmnCreateMoveSnapping.js
++++ b/lib/features/snapping/BpmnCreateMoveSnapping.js
+@@ -9,9 +9,7 @@ import {
+   bottomRight
+ } from 'diagram-js/lib/features/snapping/SnapUtil';
+ 
+-import {
+-  isExpanded
+-} from '../../util/DiUtil';
++import { isExpanded } from '../../util/DiUtil';
+ 
+ import { is } from '../../util/ModelUtil';
+ 
+@@ -30,20 +28,15 @@ var HIGH_PRIORITY = 1500;
+ /**
+  * Snap during create and move.
+  *
+- * @param {BpmnRules} bpmnRules
+  * @param {EventBus} eventBus
+  * @param {Injector} injector
+  */
+-export default function BpmnCreateMoveSnapping(bpmnRules, eventBus, injector) {
++export default function BpmnCreateMoveSnapping(eventBus, injector) {
+   injector.invoke(CreateMoveSnapping, this);
+ 
+   // creating first participant
+   eventBus.on([ 'create.move', 'create.end' ], HIGH_PRIORITY, setSnappedIfConstrained);
+ 
+-  function canAttach(shape, target, position) {
+-    return bpmnRules.canAttach([ shape ], target, null, position) === 'attach';
+-  }
+-
+   // snap boundary events
+   eventBus.on([
+     'create.move',
+@@ -52,10 +45,12 @@ export default function BpmnCreateMoveSnapping(bpmnRules, eventBus, injector) {
+     'shape.move.end'
+   ], HIGH_PRIORITY, function(event) {
+     var context = event.context,
+-        target = context.target,
+-        shape = context.shape;
++        canExecute = context.canExecute,
++        target = context.target;
+ 
+-    if (target && canAttach(shape, target, event) && !isSnapped(event)) {
++    var canAttach = canExecute && (canExecute === 'attach' || canExecute.attach);
++
++    if (canAttach && !isSnapped(event)) {
+       snapBoundaryEvent(event, target);
+     }
+   });
+@@ -64,7 +59,6 @@ export default function BpmnCreateMoveSnapping(bpmnRules, eventBus, injector) {
+ inherits(BpmnCreateMoveSnapping, CreateMoveSnapping);
+ 
+ BpmnCreateMoveSnapping.$inject = [
+-  'bpmnRules',
+   'eventBus',
+   'injector'
+ ];
+@@ -171,18 +165,27 @@ function snapBoundaryEvent(event, target) {
+ 
+   var direction = getBoundaryAttachment(event, target);
+ 
++  var context = event.context,
++      shape = context.shape;
++
++  var offset;
++
++  if (shape.parent) {
++    offset = { x: 0, y: 0 };
++  } else {
++    offset = getMid(shape);
++  }
++
+   if (/top/.test(direction)) {
+-    setSnapped(event, 'y', targetTRBL.top);
+-  } else
+-  if (/bottom/.test(direction)) {
+-    setSnapped(event, 'y', targetTRBL.bottom);
++    setSnapped(event, 'y', targetTRBL.top - offset.y);
++  } else if (/bottom/.test(direction)) {
++    setSnapped(event, 'y', targetTRBL.bottom - offset.y);
+   }
+ 
+   if (/left/.test(direction)) {
+-    setSnapped(event, 'x', targetTRBL.left);
+-  } else
+-  if (/right/.test(direction)) {
+-    setSnapped(event, 'x', targetTRBL.right);
++    setSnapped(event, 'x', targetTRBL.left - offset.x);
++  } else if (/right/.test(direction)) {
++    setSnapped(event, 'x', targetTRBL.right - offset.x);
+   }
+ }
+ 
+@@ -225,4 +228,4 @@ function setSnappedIfConstrained(event) {
+ 
+ function includes(array, value) {
+   return array.indexOf(value) !== -1;
+-}
+\ No newline at end of file
++}
+diff --git a/test/spec/features/copy-paste/BpmnCopyPasteSpec.js b/test/spec/features/copy-paste/BpmnCopyPasteSpec.js
+index 4a3253e92f..5615f41b73 100644
+--- a/test/spec/features/copy-paste/BpmnCopyPasteSpec.js
++++ b/test/spec/features/copy-paste/BpmnCopyPasteSpec.js
+@@ -71,6 +71,83 @@ describe('features/copy-paste', function() {
+       }));
+ 
+ 
++      describe('should copy boundary events without host', function() {
++
++        it('should copy/paste', inject(function(elementRegistry, canvas, copyPaste) {
++
++          // given
++          var boundaryEvent = elementRegistry.get('BoundaryEvent_1'),
++              rootElement = canvas.getRootElement();
++
++          // when
++          copyPaste.copy(boundaryEvent);
++
++          var copiedElements = copyPaste.paste({
++            element: rootElement,
++            point: {
++              x: 1000,
++              y: 1000
++            }
++          });
++
++          // then
++          expect(rootElement.children).to.have.length(2);
++
++          expect(copiedElements).to.have.length(1);
++
++          expect(copiedElements[0].type).to.eql('bpmn:IntermediateCatchEvent');
++
++          expect(copiedElements[0].attachedToRef).to.be.undefined;
++
++          expect(copiedElements[0].host).to.be.undefined;
++
++          expect(copiedElements[0].id).not.to.eql(boundaryEvent.id);
++        }));
++
++
++        it('should copy/paste and reattach', inject(function(elementRegistry, canvas, copyPaste) {
++
++          // given
++          var boundaryEvent = elementRegistry.get('BoundaryEvent_1'),
++              task = elementRegistry.get('Task_1'),
++              rootElement = canvas.getRootElement();
++
++          // when
++          copyPaste.copy(boundaryEvent);
++
++          var copiedElement = copyPaste.paste({
++            element: rootElement,
++            point: {
++              x: 1000,
++              y: 1000
++            }
++          })[0];
++
++          copyPaste.copy(copiedElement);
++
++          var attachedBoundaryEvent = copyPaste.paste({
++            element: task,
++            point: {
++              x: task.x,
++              y: task.y
++            },
++            hints: {
++              attach: 'attach'
++            }
++          })[0];
++
++          // then
++          expect(attachedBoundaryEvent.businessObject.attachedToRef).to.eql(task.businessObject);
++
++          expect(attachedBoundaryEvent.host).to.be.eql(task);
++
++          expect(attachedBoundaryEvent.type).to.eql('bpmn:BoundaryEvent');
++
++        }));
++
++      });
++
++
+       it('should NOT override type property of descriptor', inject(function(elementRegistry) {
+ 
+         // given
+@@ -309,7 +386,7 @@ describe('features/copy-paste', function() {
+ 
+     describe('rules', function() {
+ 
+-      it('should NOT allow copying boundary event without host', inject(function(elementRegistry) {
++      it('should allow copying boundary event without host', inject(function(elementRegistry) {
+ 
+         var boundaryEvent1 = elementRegistry.get('BoundaryEvent_1'),
+             boundaryEvent2 = elementRegistry.get('BoundaryEvent_2');
+@@ -317,7 +394,7 @@ describe('features/copy-paste', function() {
+         // when
+         var tree = copy([ boundaryEvent1, boundaryEvent2 ]);
+ 
+-        expect(keys(tree)).to.have.length(0);
++        expect(keys(tree)).to.have.length(1);
+       }));
+ 
+     });
+diff --git a/test/spec/features/modeling/behavior/AttachEventBehavior.bpmn b/test/spec/features/modeling/behavior/AttachEventBehavior.bpmn
+new file mode 100644
+index 0000000000..a82dfade1e
+--- /dev/null
++++ b/test/spec/features/modeling/behavior/AttachEventBehavior.bpmn
+@@ -0,0 +1,68 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0mwxlvp" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="3.3.5">
++  <bpmn:process id="Process_1" isExecutable="true">
++    <bpmn:intermediateThrowEvent id="IntermediateThrowEvent_1" name="foo">
++      <bpmn:documentation>bar</bpmn:documentation>
++      <bpmn:incoming>SequenceFlow_1</bpmn:incoming>
++      <bpmn:outgoing>SequenceFlow_2</bpmn:outgoing>
++    </bpmn:intermediateThrowEvent>
++    <bpmn:task id="Task_1">
++      <bpmn:incoming>SequenceFlow_2</bpmn:incoming>
++    </bpmn:task>
++    <bpmn:sequenceFlow id="SequenceFlow_2" sourceRef="IntermediateThrowEvent_1" targetRef="Task_1" />
++    <bpmn:startEvent id="StartEvent_1">
++      <bpmn:outgoing>SequenceFlow_1</bpmn:outgoing>
++    </bpmn:startEvent>
++    <bpmn:sequenceFlow id="SequenceFlow_1" sourceRef="StartEvent_1" targetRef="IntermediateThrowEvent_1" />
++    <bpmn:intermediateCatchEvent id="ConditionalCatchEvent">
++      <bpmn:conditionalEventDefinition>
++        <bpmn:condition xsi:type="bpmn:tFormalExpression" />
++      </bpmn:conditionalEventDefinition>
++    </bpmn:intermediateCatchEvent>
++    <bpmn:intermediateCatchEvent id="MessageCatchEvent">
++      <bpmn:messageEventDefinition />
++    </bpmn:intermediateCatchEvent>
++    <bpmn:intermediateCatchEvent id="SignalCatchEvent">
++      <bpmn:signalEventDefinition />
++    </bpmn:intermediateCatchEvent>
++    <bpmn:intermediateCatchEvent id="TimerCatchEvent">
++      <bpmn:timerEventDefinition />
++    </bpmn:intermediateCatchEvent>
++  </bpmn:process>
++  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
++    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
++      <bpmndi:BPMNShape id="IntermediateThrowEvent_0zpvfc7_di" bpmnElement="IntermediateThrowEvent_1">
++        <dc:Bounds x="182" y="82" width="36" height="36" />
++        <bpmndi:BPMNLabel>
++          <dc:Bounds x="192" y="125" width="16" height="14" />
++        </bpmndi:BPMNLabel>
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="Task_06yfm3r_di" bpmnElement="Task_1">
++        <dc:Bounds x="250" y="60" width="100" height="80" />
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNEdge id="SequenceFlow_1tkizp1_di" bpmnElement="SequenceFlow_2">
++        <di:waypoint x="218" y="100" />
++        <di:waypoint x="250" y="100" />
++      </bpmndi:BPMNEdge>
++      <bpmndi:BPMNShape id="StartEvent_1s1jnio_di" bpmnElement="StartEvent_1">
++        <dc:Bounds x="82" y="82" width="36" height="36" />
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNEdge id="SequenceFlow_139qjys_di" bpmnElement="SequenceFlow_1">
++        <di:waypoint x="118" y="100" />
++        <di:waypoint x="182" y="100" />
++      </bpmndi:BPMNEdge>
++      <bpmndi:BPMNShape id="IntermediateCatchEvent_0bwzxs9_di" bpmnElement="ConditionalCatchEvent">
++        <dc:Bounds x="82" y="182" width="36" height="36" />
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="IntermediateCatchEvent_1rlh3w8_di" bpmnElement="MessageCatchEvent">
++        <dc:Bounds x="132" y="182" width="36" height="36" />
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="IntermediateCatchEvent_0o6ghdv_di" bpmnElement="SignalCatchEvent">
++        <dc:Bounds x="82" y="232" width="36" height="36" />
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="IntermediateCatchEvent_054kymd_di" bpmnElement="TimerCatchEvent">
++        <dc:Bounds x="132" y="232" width="36" height="36" />
++      </bpmndi:BPMNShape>
++    </bpmndi:BPMNPlane>
++  </bpmndi:BPMNDiagram>
++</bpmn:definitions>
+diff --git a/test/spec/features/modeling/behavior/AttachEventBehaviorSpec.js b/test/spec/features/modeling/behavior/AttachEventBehaviorSpec.js
+index 4f04430293..66b76733c4 100644
+--- a/test/spec/features/modeling/behavior/AttachEventBehaviorSpec.js
++++ b/test/spec/features/modeling/behavior/AttachEventBehaviorSpec.js
+@@ -5,171 +5,276 @@ import {
+   inject
+ } from 'test/TestHelper';
+ 
+-import modelingModule from 'lib/features/modeling';
+ import coreModule from 'lib/core';
++import modelingModule from 'lib/features/modeling';
++
++import { getBusinessObject } from '../../../../../lib/util/ModelUtil';
+ 
+ 
+ describe('features/modeling/behavior - attach events', function() {
+ 
+-  var testModules = [ coreModule, modelingModule ];
++  var testModules = [
++    coreModule,
++    modelingModule
++  ];
+ 
+-  var processDiagramXML = require('test/spec/features/rules/BpmnRules.attaching.bpmn');
++  var attachEventBehaviorXML = require('./AttachEventBehavior.bpmn');
+ 
+-  beforeEach(bootstrapModeler(processDiagramXML, { modules: testModules }));
++  beforeEach(bootstrapModeler(attachEventBehaviorXML, { modules: testModules }));
+ 
+ 
+   describe('basics', function() {
+ 
+-    it('should execute on attach', inject(function(elementRegistry, modeling) {
++    describe('create', function() {
+ 
+-      // given
+-      var eventId = 'IntermediateThrowEvent',
+-          intermediateThrowEvent = elementRegistry.get(eventId),
+-          subProcess = elementRegistry.get('SubProcess_1'),
+-          boundaryEvent;
++      it('should replace', inject(function(elementFactory, elementRegistry, modeling) {
+ 
+-      var elements = [ intermediateThrowEvent ];
++        // given
++        var task = elementRegistry.get('Task_1'),
++            taskBo = getBusinessObject(task),
++            intermediateEvent = elementFactory.createShape({ type: 'bpmn:IntermediateThrowEvent' });
+ 
+-      // when
+-      modeling.moveElements(elements, { x: 0, y: -90 }, subProcess, { attach: true });
++        // when
++        var boundaryEvent = modeling.createElements(
++          [ intermediateEvent ], { x: 300, y: 140 }, task, { attach: true }
++        )[0];
+ 
+-      // then
+-      boundaryEvent = elementRegistry.get(eventId);
++        // then
++        var boundaryEventBo = getBusinessObject(boundaryEvent);
+ 
+-      expect(intermediateThrowEvent.parent).to.not.exist;
+-      expect(boundaryEvent).to.exist;
+-      expect(boundaryEvent.type).to.equal('bpmn:BoundaryEvent');
+-      expect(boundaryEvent.businessObject.attachedToRef).to.equal(subProcess.businessObject);
+-    }));
++        expect(boundaryEventBo.$type).to.equal('bpmn:BoundaryEvent');
++        expect(boundaryEventBo.attachedToRef).to.equal(taskBo);
++      }));
+ 
+ 
+-    it('should NOT execute on drop', inject(function(elementRegistry, modeling) {
++      it('should NOT replace', inject(function(elementFactory, elementRegistry, modeling) {
+ 
+-      // given
+-      var eventId = 'IntermediateThrowEvent',
+-          intermediateThrowEvent = elementRegistry.get(eventId),
+-          subProcess = elementRegistry.get('SubProcess_1');
++        // given
++        var process = elementRegistry.get('Process_1'),
++            intermediateEvent = elementFactory.createShape({ type: 'bpmn:IntermediateThrowEvent' });
+ 
+-      var elements = [ intermediateThrowEvent ];
++        // when
++        intermediateEvent = modeling.createElements([ intermediateEvent ], { x: 300, y: 240 }, process)[0];
+ 
+-      // when
+-      modeling.moveElements(elements, { x: 0, y: -150 }, subProcess);
++        // then
++        var intermediateEventBo = getBusinessObject(intermediateEvent);
+ 
+-      // then
+-      expect(intermediateThrowEvent.parent).to.eql(subProcess);
+-      expect(intermediateThrowEvent.type).to.equal('bpmn:IntermediateThrowEvent');
+-    }));
+-  });
++        expect(intermediateEventBo.$type).to.equal('bpmn:IntermediateThrowEvent');
++        expect(intermediateEventBo.attachedToRef).not.to.exist;
++      }));
+ 
+ 
+-  describe('event definition', function() {
++      it('should copy properties', inject(
++        function(bpmnFactory, elementFactory, elementRegistry, modeling) {
+ 
+-    it('should copy event definitions', inject(function(elementRegistry, modeling) {
++          // given
++          var task = elementRegistry.get('Task_1');
+ 
+-      // given
+-      var attachableEvents = [
+-        'IntermediateThrowEvent',
+-        'MessageCatchEvent',
+-        'TimerCatchEvent',
+-        'SignalCatchEvent',
+-        'ConditionalCatchEvent'
+-      ];
++          var intermediateThrowEventBo = bpmnFactory.create('bpmn:IntermediateThrowEvent', {
++            name: 'foo'
++          });
++
++          var documentation = bpmnFactory.create('bpmn:Documentation', {
++            text: 'bar'
++          });
++
++          intermediateThrowEventBo.documentation = [ documentation ];
++
++          documentation.$parent = intermediateThrowEventBo;
++
++          var intermediateThrowEvent = elementFactory.createShape({
++            type: 'bpmn:IntermediateThrowEvent',
++            businessObject: intermediateThrowEventBo
++          });
++
++          // when
++          var boundaryEvent = modeling.createElements(
++            [ intermediateThrowEvent ], { x: 300, y: 140 }, task, { attach: true }
++          )[0];
++
++          // then
++          var boundaryEventBo = getBusinessObject(boundaryEvent);
++
++          expect(boundaryEventBo.name).to.equal('foo');
++          expect(boundaryEventBo.documentation).to.have.lengthOf(1);
++          expect(boundaryEventBo.documentation[0].text).to.equal('bar');
++        }
++      ));
+ 
+-      attachableEvents.forEach(function(eventId) {
++    });
+ 
+-        var event = elementRegistry.get(eventId),
+-            subProcess = elementRegistry.get('SubProcess_1'),
+-            eventDefinitions = event.businessObject.eventDefinitions,
+-            boundaryEvent, bo;
+ 
+-        var elements = [ event ];
++    describe('move', function() {
++
++      it('should replace', inject(function(elementRegistry, modeling) {
++
++        // given
++        var task = elementRegistry.get('Task_1'),
++            taskBo = getBusinessObject(task),
++            intermediateThrowEvent = elementRegistry.get('IntermediateThrowEvent_1');
+ 
+         // when
+-        modeling.moveElements(elements, { x: 0, y: -90 }, subProcess, { attach: true });
++        modeling.moveElements([ intermediateThrowEvent ], { x: 100, y: 40 }, task, { attach: true });
+ 
+         // then
+-        boundaryEvent = elementRegistry.get(eventId);
+-        bo = boundaryEvent.businessObject;
++        var boundaryEvent = elementRegistry.get('IntermediateThrowEvent_1'),
++            boundaryEventBo = getBusinessObject(boundaryEvent);
++
++        expect(boundaryEvent).to.exist;
++        expect(boundaryEventBo.$type).to.equal('bpmn:BoundaryEvent');
++        expect(boundaryEventBo.attachedToRef).to.equal(taskBo);
++      }));
++
++
++      it('should NOT replace', inject(function(elementRegistry, modeling) {
++
++        // given
++        var process = elementRegistry.get('Process_1'),
++            intermediateThrowEvent = elementRegistry.get('IntermediateThrowEvent_1'),
++            intermediateThrowEventBo = getBusinessObject(intermediateThrowEvent);
++
++        // when
++        modeling.moveElements([ intermediateThrowEvent ], { x: 100, y: 100 }, process);
++
++        // then
++        expect(intermediateThrowEvent).to.exist;
++        expect(intermediateThrowEventBo.$type).to.equal('bpmn:IntermediateThrowEvent');
++        expect(intermediateThrowEventBo.attachedToRef).not.to.exist;
++      }));
++
++
++      describe('properties', function() {
++
++        it('should copy properties', inject(function(elementRegistry, modeling) {
++
++          // given
++          var task = elementRegistry.get('Task_1'),
++              intermediateThrowEvent = elementRegistry.get('IntermediateThrowEvent_1');
++
++          // when
++          modeling.moveElements([ intermediateThrowEvent ], { x: 100, y: 40 }, task, { attach: true });
++
++          // then
++          var boundaryEvent = elementRegistry.get('IntermediateThrowEvent_1'),
++              boundaryEventBo = getBusinessObject(boundaryEvent);
++
++          expect(boundaryEventBo.name).to.equal('foo');
++          expect(boundaryEventBo.documentation).to.have.lengthOf(1);
++          expect(boundaryEventBo.documentation[0].text).to.equal('bar');
++        }));
++
++
++        describe('event definitions', function() {
++
++          var ids = [
++            'ConditionalCatchEvent',
++            'IntermediateThrowEvent_1',
++            'MessageCatchEvent',
++            'SignalCatchEvent',
++            'TimerCatchEvent',
++          ];
++
++          function getDelta(element, task) {
++            return {
++              x: task.x + task.width / 2 - element.x - element.width / 2,
++              y: task.y + task.height - element.y - element.height / 2
++            };
++          }
++
++          ids.forEach(function(id) {
++
++            it('should copy event definition', inject(function(elementRegistry, modeling) {
++
++              // given
++              var element = elementRegistry.get(id),
++                  elementBo = getBusinessObject(element),
++                  eventDefinitions = elementBo.eventDefinitions,
++                  task = elementRegistry.get('Task_1');
++
++              // when
++              modeling.moveElements([ element ], getDelta(element, task), task, { attach: true });
++
++              // then
++              var boundaryEvent = elementRegistry.get(id),
++                  boundaryEventBo = getBusinessObject(boundaryEvent);
++
++              expect(boundaryEventBo.$type).to.equal('bpmn:BoundaryEvent');
++              expect(boundaryEventBo.eventDefinitions).to.jsonEqual(eventDefinitions, skipId);
++            }));
++
++          });
++
++        });
+ 
+-        expect(boundaryEvent.type).to.equal('bpmn:BoundaryEvent');
+-        expect(bo.eventDefinitions).to.jsonEqual(eventDefinitions, skipId);
+       });
+-    }));
++
++    });
++
+   });
+ 
+ 
+   describe('connections', function() {
+ 
+-    var eventId = 'IntermediateThrowEventWithConnections';
+-
+     it('should remove incoming connection', inject(function(elementRegistry, modeling) {
+ 
+       // given
+-      var event = elementRegistry.get(eventId),
+-          subProcess = elementRegistry.get('SubProcess_1'),
+-          gateway = elementRegistry.get('Gateway_1'),
+-          boundaryEvent;
+-
+-      var elements = [ event ];
++      var intermediateThrowEvent = elementRegistry.get('IntermediateThrowEvent_1'),
++          startEvent = elementRegistry.get('StartEvent_1'),
++          task = elementRegistry.get('Task_1');
+ 
+       // when
+-      modeling.moveElements(elements, { x: 0, y: -90 }, subProcess, { attach: true });
++      modeling.moveElements([ intermediateThrowEvent ], { x: 100, y: 40 }, task, { attach: true });
+ 
+       // then
+-      boundaryEvent = elementRegistry.get(eventId);
++      var boundaryEvent = elementRegistry.get('IntermediateThrowEvent_1');
+ 
+       expect(boundaryEvent.incoming).to.have.lengthOf(0);
+-      expect(gateway.outgoing).to.have.lengthOf(0);
++      expect(startEvent.outgoing).to.have.lengthOf(0);
+     }));
+ 
+ 
+-    it('should keep outgoing connection', inject(function(elementRegistry, modeling) {
++    it('should NOT remove outgoing connection', inject(function(elementRegistry, modeling) {
+ 
+       // given
+-      var event = elementRegistry.get(eventId),
+-          subProcess = elementRegistry.get('SubProcess_1'),
+-          task = elementRegistry.get('Task_1'),
+-          boundaryEvent;
+-
+-      var elements = [ event ];
++      var intermediateThrowEvent = elementRegistry.get('IntermediateThrowEvent_1'),
++          task = elementRegistry.get('Task_1');
+ 
+       // when
+-      modeling.moveElements(elements, { x: 0, y: -90 }, subProcess, { attach: true });
++      modeling.moveElements([ intermediateThrowEvent ], { x: 100, y: 40 }, task, { attach: true });
+ 
+       // then
+-      boundaryEvent = elementRegistry.get(eventId);
++      var boundaryEvent = elementRegistry.get('IntermediateThrowEvent_1');
+ 
+       expect(boundaryEvent.outgoing).to.have.lengthOf(1);
+       expect(task.incoming).to.have.lengthOf(1);
+     }));
+ 
+ 
+-    it('should lay out connection once', inject(function(eventBus, elementRegistry, modeling) {
++    it('should lay out connection once', inject(function(elementRegistry, eventBus, modeling) {
+ 
+       // given
+-      var layoutSpy = sinon.spy(),
+-          event = elementRegistry.get(eventId),
+-          subProcess = elementRegistry.get('SubProcess_1');
++      var intermediateThrowEvent = elementRegistry.get('IntermediateThrowEvent_1'),
++          task = elementRegistry.get('Task_1');
+ 
+-      eventBus.on('commandStack.connection.layout.execute', layoutSpy);
++      var layoutSpy = sinon.spy();
+ 
+-      var elements = [ event ];
++      eventBus.on('commandStack.connection.layout.execute', layoutSpy);
+ 
+       // when
+-      modeling.moveElements(elements, { x: 0, y: -90 }, subProcess, { attach: true });
++      modeling.moveElements([ intermediateThrowEvent ], { x: 100, y: 40 }, task, { attach: true });
+ 
+       // then
+       expect(layoutSpy).to.be.calledOnce;
+     }));
++
+   });
+ 
+ });
+ 
+ 
+ 
+-// helper //////
++// helpers //////////
+ function skipId(key, value) {
+-
+   if (key === 'id') {
+     return;
+   }
+diff --git a/test/spec/features/modeling/behavior/CreateBoundaryEventBehaviorSpec.js b/test/spec/features/modeling/behavior/CreateBoundaryEventBehaviorSpec.js
+deleted file mode 100644
+index 16ce881818..0000000000
+--- a/test/spec/features/modeling/behavior/CreateBoundaryEventBehaviorSpec.js
++++ /dev/null
+@@ -1,56 +0,0 @@
+-import {
+-  bootstrapModeler,
+-  inject
+-} from 'test/TestHelper';
+-
+-import modelingModule from 'lib/features/modeling';
+-import coreModule from 'lib/core';
+-
+-
+-describe('features/modeling/behavior - create boundary events', function() {
+-
+-  var testModules = [ coreModule, modelingModule ];
+-
+-
+-  var processDiagramXML = require('../../../../fixtures/bpmn/collaboration/process-empty.bpmn');
+-
+-  beforeEach(bootstrapModeler(processDiagramXML, { modules: testModules }));
+-
+-
+-  it('should execute on attach', inject(function(canvas, elementFactory, modeling) {
+-
+-    // given
+-    var rootElement = canvas.getRootElement(),
+-        task = elementFactory.createShape({ type: 'bpmn:Task' }),
+-        intermediateEvent = elementFactory.createShape({ type: 'bpmn:IntermediateThrowEvent' });
+-
+-    modeling.createShape(task, { x: 100, y: 100 }, rootElement);
+-
+-    // when
+-    var newEvent = modeling.createShape(intermediateEvent, { x: 50 + 15, y: 100 }, task, { attach: true });
+-
+-    // then
+-    expect(newEvent.type).to.equal('bpmn:BoundaryEvent');
+-    expect(newEvent.businessObject.attachedToRef).to.equal(task.businessObject);
+-  }));
+-
+-
+-  it('should NOT execute on drop', inject(function(canvas, elementFactory, modeling) {
+-
+-    // given
+-    var rootElement = canvas.getRootElement(),
+-        subProcess = elementFactory.createShape({ type: 'bpmn:SubProcess', isExpanded: true }),
+-        intermediateEvent = elementFactory.createShape({ type: 'bpmn:IntermediateThrowEvent' });
+-
+-
+-    modeling.createShape(subProcess, { x: 300, y: 200 }, rootElement);
+-
+-    // when
+-    var newEvent = modeling.createShape(intermediateEvent, { x: 300, y: 200 }, subProcess);
+-
+-    // then
+-    expect(newEvent).to.exist;
+-    expect(newEvent.type).to.equal('bpmn:IntermediateThrowEvent');
+-  }));
+-
+-});
+diff --git a/test/spec/features/modeling/behavior/DetachEventBehavior.bpmn b/test/spec/features/modeling/behavior/DetachEventBehavior.bpmn
+new file mode 100644
+index 0000000000..23331e84a2
+--- /dev/null
++++ b/test/spec/features/modeling/behavior/DetachEventBehavior.bpmn
+@@ -0,0 +1,60 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0mwxlvp" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="3.3.5">
++  <bpmn:process id="Process_1" isExecutable="true">
++    <bpmn:task id="Task_1" />
++    <bpmn:sequenceFlow id="SequenceFlow_2" sourceRef="BoundaryEvent_1" targetRef="EndEvent_1" />
++    <bpmn:boundaryEvent id="BoundaryEvent_1" name="foo" attachedToRef="Task_1">
++      <bpmn:documentation>bar</bpmn:documentation>
++      <bpmn:outgoing>SequenceFlow_2</bpmn:outgoing>
++    </bpmn:boundaryEvent>
++    <bpmn:endEvent id="EndEvent_1">
++      <bpmn:incoming>SequenceFlow_2</bpmn:incoming>
++    </bpmn:endEvent>
++    <bpmn:boundaryEvent id="BoundaryConditionalEvent" attachedToRef="Task_1">
++      <bpmn:conditionalEventDefinition id="ConditionalEventDefinition_0gz47ju">
++        <bpmn:condition xsi:type="bpmn:tFormalExpression" />
++      </bpmn:conditionalEventDefinition>
++    </bpmn:boundaryEvent>
++    <bpmn:boundaryEvent id="BoundaryMessageEvent" attachedToRef="Task_1">
++      <bpmn:messageEventDefinition id="MessageEventDefinition_1yr9oic" />
++    </bpmn:boundaryEvent>
++    <bpmn:boundaryEvent id="BoundarySignalEvent" attachedToRef="Task_1">
++      <bpmn:signalEventDefinition id="SignalEventDefinition_1c2akhc" />
++    </bpmn:boundaryEvent>
++    <bpmn:boundaryEvent id="BoundaryTimerEvent" attachedToRef="Task_1">
++      <bpmn:timerEventDefinition id="TimerEventDefinition_1dp1bzw" />
++    </bpmn:boundaryEvent>
++  </bpmn:process>
++  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
++    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
++      <bpmndi:BPMNShape id="Task_06yfm3r_di" bpmnElement="Task_1">
++        <dc:Bounds x="50" y="60" width="100" height="80" />
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNEdge id="SequenceFlow_1tkizp1_di" bpmnElement="SequenceFlow_2">
++        <di:waypoint x="100" y="158" />
++        <di:waypoint x="100" y="182" />
++      </bpmndi:BPMNEdge>
++      <bpmndi:BPMNShape id="BoundaryEvent_171mrac_di" bpmnElement="BoundaryEvent_1">
++        <dc:Bounds x="82" y="122" width="36" height="36" />
++        <bpmndi:BPMNLabel>
++          <dc:Bounds x="92" y="165" width="16" height="14" />
++        </bpmndi:BPMNLabel>
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="EndEvent_0n5etz4_di" bpmnElement="EndEvent_1">
++        <dc:Bounds x="82" y="182" width="36" height="36" />
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="BoundaryEvent_0cj6ht4_di" bpmnElement="BoundaryConditionalEvent">
++        <dc:Bounds x="32" y="42" width="36" height="36" />
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="BoundaryEvent_0epopzx_di" bpmnElement="BoundaryMessageEvent">
++        <dc:Bounds x="132" y="42" width="36" height="36" />
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="BoundaryEvent_1ocm5xo_di" bpmnElement="BoundarySignalEvent">
++        <dc:Bounds x="32" y="122" width="36" height="36" />
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="BoundaryEvent_041ew22_di" bpmnElement="BoundaryTimerEvent">
++        <dc:Bounds x="132" y="122" width="36" height="36" />
++      </bpmndi:BPMNShape>
++    </bpmndi:BPMNPlane>
++  </bpmndi:BPMNDiagram>
++</bpmn:definitions>
+diff --git a/test/spec/features/modeling/behavior/DetachEventBehaviorSpec.js b/test/spec/features/modeling/behavior/DetachEventBehaviorSpec.js
+index d6fc2d473f..2458546ffd 100644
+--- a/test/spec/features/modeling/behavior/DetachEventBehaviorSpec.js
++++ b/test/spec/features/modeling/behavior/DetachEventBehaviorSpec.js
+@@ -5,197 +5,317 @@ import {
+   inject
+ } from 'test/TestHelper';
+ 
+-import modelingModule from 'lib/features/modeling';
+ import coreModule from 'lib/core';
++import modelingModule from 'lib/features/modeling';
++
++import { getBusinessObject } from '../../../../../lib/util/ModelUtil';
+ 
+ 
+ describe('features/modeling/behavior - detach events', function() {
+ 
+-  var testModules = [ coreModule, modelingModule ];
++  var testModules = [
++    coreModule,
++    modelingModule
++  ];
+ 
+-  var processDiagramXML = require('test/spec/features/rules/BpmnRules.detaching.bpmn');
++  var detachEventBehaviorXML = require('./DetachEventBehavior.bpmn');
+ 
+-  beforeEach(bootstrapModeler(processDiagramXML, { modules: testModules }));
++  beforeEach(bootstrapModeler(detachEventBehaviorXML, { modules: testModules }));
+ 
+ 
+   describe('basics', function() {
+ 
+-    it('should execute on detach', inject(function(canvas, elementRegistry, modeling) {
++    describe('create', function() {
+ 
+-      // given
+-      var eventId = 'BoundaryEvent',
+-          boundaryEvent = elementRegistry.get(eventId),
+-          root = canvas.getRootElement(),
+-          intermediateThrowEvent;
++      it('should replace', inject(function(elementFactory, elementRegistry, modeling) {
+ 
+-      var elements = [ boundaryEvent ];
++        // given
++        var process = elementRegistry.get('Process_1');
+ 
+-      // when
+-      modeling.moveElements(elements, { x: 0, y: 100 }, root);
++        var boundaryEvent = elementFactory.createShape({ type: 'bpmn:BoundaryEvent' });
+ 
+-      // then
+-      intermediateThrowEvent = elementRegistry.get(eventId);
++        // when
++        var intermediateThrowEvent = modeling.createElements(
++          boundaryEvent, { x: 200, y: 100 }, process
++        )[0];
+ 
+-      expect(boundaryEvent.parent).to.not.exist;
+-      expect(intermediateThrowEvent).to.exist;
+-      expect(intermediateThrowEvent.type).to.equal('bpmn:IntermediateThrowEvent');
+-      expect(intermediateThrowEvent.businessObject.attachedToRef).to.not.exist;
+-      expect(intermediateThrowEvent.parent).to.equal(root);
+-    }));
++        // then
++        var intermediateThrowEventBo = getBusinessObject(intermediateThrowEvent);
+ 
++        expect(intermediateThrowEventBo.$type).to.equal('bpmn:IntermediateThrowEvent');
++      }));
+ 
+-    it('should NOT execute on move to another host', inject(function(elementRegistry, modeling) {
+ 
+-      // given
+-      var eventId = 'BoundaryEvent',
+-          boundaryEvent = elementRegistry.get(eventId),
+-          subProcess = elementRegistry.get('SubProcess_1');
++      it('should NOT replace', inject(function(elementFactory, elementRegistry, modeling) {
+ 
+-      var elements = [ boundaryEvent ];
++        // given
++        var task = elementRegistry.get('Task_1'),
++            taskBo = getBusinessObject(task);
+ 
+-      // when
+-      modeling.moveElements(elements, { x: -20, y: 0 }, subProcess, { attach: true });
++        var boundaryEvent = elementFactory.createShape({ type: 'bpmn:BoundaryEvent' }),
++            boundaryEventBo = getBusinessObject(boundaryEvent);
+ 
+-      // then
+-      expect(boundaryEvent.host).to.eql(subProcess);
+-      expect(boundaryEvent.type).to.equal('bpmn:BoundaryEvent');
+-      expect(boundaryEvent.businessObject.attachedToRef).to.equal(subProcess.businessObject);
+-    }));
+-  });
++        // when
++        boundaryEvent = modeling.createElements(
++          boundaryEvent, { x: 100, y: 60 }, task, { attach: true }
++        )[0];
+ 
++        // then
++        expect(boundaryEventBo.$type).to.equal('bpmn:BoundaryEvent');
++        expect(boundaryEventBo.attachedToRef).to.equal(taskBo);
++      }));
+ 
+-  describe('event definition', function() {
+ 
+-    it('should leave event definitions empty if not present',
+-      inject(function(canvas, elementRegistry, modeling) {
++      it('should copy properties', inject(
++        function(bpmnFactory, elementFactory, elementRegistry, modeling) {
+ 
+-        // given
+-        var boundaryEvent = elementRegistry.get('BoundaryEvent'),
+-            root = canvas.getRootElement(),
+-            eventDefinitions = boundaryEvent.businessObject.eventDefinitions,
+-            intermediateEvent, bo;
++          // given
++          var process = elementRegistry.get('Process_1');
++
++          var boundaryEventBo = bpmnFactory.create('bpmn:BoundaryEvent', {
++            name: 'foo'
++          });
++
++          var documentation = bpmnFactory.create('bpmn:Documentation', {
++            text: 'bar'
++          });
++
++          boundaryEventBo.documentation = [ documentation ];
+ 
+-        var elements = [ boundaryEvent ];
++          documentation.$parent = boundaryEventBo;
++
++          var boundaryEvent = elementFactory.createShape({
++            type: 'bpmn:BoundaryEvent',
++            businessObject: boundaryEventBo
++          });
++
++          // when
++          var intermediateThrowEvent = modeling.createElements(
++            boundaryEvent, { x: 200, y: 100 }, process
++          )[0];
++
++          // then
++          var intermediateThrowEventBo = getBusinessObject(intermediateThrowEvent);
++
++          expect(intermediateThrowEventBo.name).to.equal('foo');
++          expect(intermediateThrowEventBo.documentation).to.have.lengthOf(1);
++          expect(intermediateThrowEventBo.documentation[0].text).to.equal('bar');
++        }
++      ));
++
++    });
++
++
++    describe('move', function() {
++
++      it('should replace', inject(function(elementRegistry, modeling) {
++
++        // given
++        var process = elementRegistry.get('Process_1'),
++            boundaryEvent = elementRegistry.get('BoundaryEvent_1');
+ 
+         // when
+-        modeling.moveElements(elements, { x: 0, y: 90 }, root);
++        modeling.moveElements([ boundaryEvent ], { x: 0, y: 100 }, process);
+ 
+         // then
+-        intermediateEvent = elementRegistry.get('BoundaryEvent');
+-        bo = intermediateEvent.businessObject;
++        var intermediateThrowEvent = elementRegistry.get('BoundaryEvent_1'),
++            intermediateThrowEventBo = getBusinessObject(intermediateThrowEvent);
+ 
+-        expect(intermediateEvent.type).to.equal('bpmn:IntermediateThrowEvent');
+-        expect(bo.eventDefinitions).to.jsonEqual(eventDefinitions, skipId);
+-      })
+-    );
++        expect(intermediateThrowEvent).to.exist;
++        expect(intermediateThrowEventBo.$type).to.equal('bpmn:IntermediateThrowEvent');
++        expect(intermediateThrowEventBo.attachedToRef).not.to.exist;
++      }));
+ 
+ 
+-    it('should copy event definitions', inject(function(canvas, elementRegistry, modeling) {
++      it('should NOT replace', inject(function(elementRegistry, modeling) {
+ 
+-      // given
+-      var detachableEvents = [
+-        'BoundaryMessageEvent',
+-        'BoundaryTimerEvent',
+-        'BoundarySignalEvent',
+-        'BoundaryConditionalEvent'
+-      ];
++        // given
++        var task = elementRegistry.get('Task_1'),
++            taskBo = getBusinessObject(task),
++            boundaryEvent = elementRegistry.get('BoundaryEvent_1');
++
++        // when
++        modeling.moveElements([ boundaryEvent ], { x: 0, y: -80 }, task, { attach: true });
++
++        // then
++        boundaryEvent = elementRegistry.get('BoundaryEvent_1');
++
++        var boundaryEventBo = getBusinessObject(boundaryEvent);
+ 
+-      detachableEvents.forEach(function(eventId) {
++        expect(boundaryEventBo.$type).to.equal('bpmn:BoundaryEvent');
++        expect(boundaryEventBo.attachedToRef).to.equal(taskBo);
++      }));
+ 
+-        var boundaryEvent = elementRegistry.get(eventId),
+-            root = canvas.getRootElement(),
+-            eventDefinitions = boundaryEvent.businessObject.eventDefinitions,
+-            intermediateEvent, bo;
+ 
+-        var elements = [ boundaryEvent ];
++      it('should replace multiple', inject(function(canvas, elementRegistry, modeling) {
++
++        // given
++        var boundaryEvent = elementRegistry.get('BoundaryEvent_1'),
++            boundaryConditionalEvent = elementRegistry.get('BoundaryConditionalEvent'),
++            root = canvas.getRootElement();
+ 
+         // when
+-        modeling.moveElements(elements, { x: 0, y: 90 }, root);
++        modeling.moveElements([ boundaryEvent, boundaryConditionalEvent ], { x: 0, y: 200 }, root);
+ 
+         // then
+-        intermediateEvent = elementRegistry.get(eventId);
+-        bo = intermediateEvent.businessObject;
++        var intermediateThrowEvent = elementRegistry.get('BoundaryEvent_1'),
++            intermediateCatchEvent = elementRegistry.get('BoundaryConditionalEvent'),
++            intermediateThrowEventBo = getBusinessObject(intermediateThrowEvent),
++            intermediateCatchEventBo = getBusinessObject(intermediateCatchEvent);
++
++        expect(intermediateCatchEventBo.$type).to.equal('bpmn:IntermediateCatchEvent');
++        expect(intermediateCatchEventBo.attachedToRef).not.to.exist;
++
++        expect(intermediateThrowEventBo.$type).to.equal('bpmn:IntermediateThrowEvent');
++        expect(intermediateThrowEventBo.attachedToRef).not.to.exist;
++      }));
++
++
++      describe('properties', function() {
++
++        it('should copy properties', inject(function(elementRegistry, modeling) {
++
++          // given
++          var process = elementRegistry.get('Process_1'),
++              boundaryEvent = elementRegistry.get('BoundaryEvent_1');
++
++          // when
++          modeling.moveElements([ boundaryEvent ], { x: 0, y: 100 }, process);
++
++          // then
++          var intermediateThrowEvent = elementRegistry.get('BoundaryEvent_1'),
++              intermediateThrowEventBo = getBusinessObject(intermediateThrowEvent);
++
++          expect(intermediateThrowEventBo.name).to.equal('foo');
++          expect(intermediateThrowEventBo.documentation).to.have.lengthOf(1);
++          expect(intermediateThrowEventBo.documentation[0].text).to.equal('bar');
++        }));
++
++
++        describe('event definitions', function() {
++
++          var ids = [
++            'BoundaryConditionalEvent',
++            'BoundaryMessageEvent',
++            'BoundarySignalEvent',
++            'BoundaryTimerEvent'
++          ];
++
++          ids.forEach(function(id) {
++
++            it('should copy event definition', inject(function(elementRegistry, modeling) {
++
++              // given
++              var process = elementRegistry.get('Process_1'),
++                  boundaryEvent = elementRegistry.get(id),
++                  boundaryEventBo = getBusinessObject(boundaryEvent),
++                  eventDefinitions = boundaryEventBo.eventDefinitions;
++
++              // when
++              modeling.moveElements([ boundaryEvent ], { x: 0, y: 100 }, process);
++
++              // then
++              var intermediateCatchEvent = elementRegistry.get(id),
++                  intermediateCatchEventBo = getBusinessObject(intermediateCatchEvent);
++
++              expect(intermediateCatchEventBo.$type).to.equal('bpmn:IntermediateCatchEvent');
++              expect(intermediateCatchEventBo.eventDefinitions).to.jsonEqual(eventDefinitions, skipId);
++            }));
++
++          });
++
++
++          it('should NOT create event definition', inject(function(elementRegistry, modeling) {
++
++            // given
++            var process = elementRegistry.get('Process_1'),
++                boundaryEvent = elementRegistry.get('BoundaryEvent_1'),
++                boundaryEventBo = getBusinessObject(boundaryEvent),
++                eventDefinitions = boundaryEventBo.eventDefinitions;
++
++            // when
++            modeling.moveElements([ boundaryEvent ], { x: 0, y: 100 }, process);
++
++            // then
++            var intermediateThrowEvent = elementRegistry.get('BoundaryEvent_1'),
++                intermediateThrowEventBo = getBusinessObject(intermediateThrowEvent);
++
++            expect(intermediateThrowEventBo.$type).to.equal('bpmn:IntermediateThrowEvent');
++            expect(intermediateThrowEventBo.eventDefinitions).to.jsonEqual(eventDefinitions, skipId);
++          }));
++
++        });
+ 
+-        expect(intermediateEvent.type).to.equal('bpmn:IntermediateCatchEvent');
+-        expect(bo.eventDefinitions).to.jsonEqual(eventDefinitions, skipId);
+       });
+-    }));
+-  });
+ 
++    });
+ 
+-  describe('connections', function() {
++  });
+ 
+-    var eventId = 'BoundaryEventWithConnections';
+ 
+-    it('should keep outgoing connection', inject(function(canvas, elementRegistry, modeling) {
++  describe('connections', function() {
+ 
+-      var event = elementRegistry.get(eventId),
+-          root = canvas.getRootElement(),
+-          task = elementRegistry.get('Task_1'),
+-          intermediateEvent;
++    it('should NOT remove outgoing connection', inject(function(elementRegistry, modeling) {
+ 
+-      var elements = [ event ];
++      // given
++      var process = elementRegistry.get('Process_1'),
++          endEvent = elementRegistry.get('EndEvent_1'),
++          boundaryEvent = elementRegistry.get('BoundaryEvent_1');
+ 
+       // when
+-      modeling.moveElements(elements, { x: 0, y: 100 }, root);
++      modeling.moveElements([ boundaryEvent ], { x: 0, y: 100 }, process);
+ 
+       // then
+-      intermediateEvent = elementRegistry.get(eventId);
++      var intermediateThrowEvent = elementRegistry.get('BoundaryEvent_1');
+ 
+-      expect(intermediateEvent.outgoing).to.have.lengthOf(1);
+-      expect(task.incoming).to.have.lengthOf(1);
++      expect(intermediateThrowEvent.outgoing).to.have.lengthOf(1);
++      expect(endEvent.incoming).to.have.lengthOf(1);
+     }));
+ 
+ 
+-    it('should lay out connection once',
+-      inject(function(eventBus, canvas, elementRegistry, modeling) {
++    it('should lay out connection once', inject(function(eventBus, elementRegistry, modeling) {
+ 
+-        // given
+-        var layoutSpy = sinon.spy(),
+-            event = elementRegistry.get(eventId),
+-            root = canvas.getRootElement();
++      // given
++      var process = elementRegistry.get('Process_1'),
++          boundaryEvent = elementRegistry.get('BoundaryEvent_1');
+ 
+-        eventBus.on('commandStack.connection.layout.execute', layoutSpy);
++      var layoutSpy = sinon.spy();
+ 
+-        var elements = [ event ];
++      eventBus.on('commandStack.connection.layout.execute', layoutSpy);
+ 
+-        // when
+-        modeling.moveElements(elements, { x: 0, y: 100 }, root);
++      // when
++      modeling.moveElements([ boundaryEvent ], { x: 0, y: 100 }, process);
++
++      // then
++      expect(layoutSpy).to.be.calledOnce;
++    }));
+ 
+-        // then
+-        expect(layoutSpy).to.be.calledOnce;
+-      })
+-    );
+   });
+ 
+ 
+   describe('labels', function() {
+ 
+-    var eventId = 'BoundaryEventWithLabel';
+-
+-    it('should ignore label movement', inject(function(canvas, elementRegistry, modeling) {
+-
+-      var event = elementRegistry.get(eventId),
+-          root = canvas.getRootElement(),
+-          initialElements = elementRegistry.getAll().slice();
++    it('should NOT replace', inject(function(elementRegistry, modeling) {
+ 
+-      var elements = [ event.label ];
++      var process = elementRegistry.get('Process_1'),
++          boundaryEvent = elementRegistry.get('BoundaryEvent_1'),
++          label = boundaryEvent.label;
+ 
+       // when
+-      modeling.moveElements(elements, { x: 0, y: 300 }, root);
++      modeling.moveElements([ label ], { x: 0, y: 100 }, process);
+ 
+       // then
+-      expect(elementRegistry.getAll()).to.eql(initialElements);
++      expect(elementRegistry.get('BoundaryEvent_1')).to.equal(boundaryEvent);
+     }));
++
+   });
+ 
+ });
+ 
+ 
+ 
+-// helper //////
++// helpers //////////
+ function skipId(key, value) {
+-
+   if (key === 'id') {
+     return;
+   }
+diff --git a/test/spec/features/rules/BpmnRulesSpec.js b/test/spec/features/rules/BpmnRulesSpec.js
+index 40cb6473ed..55941133fa 100644
+--- a/test/spec/features/rules/BpmnRulesSpec.js
++++ b/test/spec/features/rules/BpmnRulesSpec.js
+@@ -183,7 +183,7 @@ describe('features/modeling/rules - BpmnRules', function() {
+           boundaryEvent = elementFactory.createShape({ type: 'bpmn:BoundaryEvent', host: task });
+ 
+       // then
+-      expectCanCopy(boundaryEvent, [], false);
++      expectCanCopy(boundaryEvent, [ boundaryEvent ], true);
+     }));
+ 
+   });
+diff --git a/test/spec/features/snapping/BpmnCreateMoveSnappingSpec.js b/test/spec/features/snapping/BpmnCreateMoveSnappingSpec.js
+index fae59f1733..fe8bcf027d 100644
+--- a/test/spec/features/snapping/BpmnCreateMoveSnappingSpec.js
++++ b/test/spec/features/snapping/BpmnCreateMoveSnappingSpec.js
+@@ -20,6 +20,11 @@ import {
+ 
+ import { createCanvasEvent as canvasEvent } from '../../../util/MockEvents';
+ 
++import {
++  DEFAULT_LABEL_SIZE,
++  getExternalLabelMid
++} from 'lib/util/LabelUtil';
++
+ import { queryAll as domQueryAll } from 'min-dom';
+ 
+ import { attr as svgAttr } from 'tiny-svg';
+@@ -155,86 +160,201 @@ describe('features/snapping - BpmnCreateMoveSnapping', function() {
+ 
+       var task, taskGfx, intermediateThrowEvent;
+ 
+-      beforeEach(inject(function(create, dragging, elementRegistry, elementFactory) {
+-        task = elementRegistry.get('Task_1');
+-        taskGfx = elementRegistry.getGraphics(task);
+ 
+-        intermediateThrowEvent = elementFactory.createShape({
+-          type: 'bpmn:IntermediateThrowEvent'
+-        });
++      describe('without label', function() {
+ 
+-        create.start(canvasEvent({ x: 0, y: 0 }), intermediateThrowEvent);
++        beforeEach(inject(function(create, dragging, elementRegistry, elementFactory) {
++          task = elementRegistry.get('Task_1');
+ 
+-        dragging.hover({ element: task, gfx: taskGfx });
+-      }));
++          taskGfx = elementRegistry.getGraphics(task);
+ 
++          intermediateThrowEvent = elementFactory.createShape({
++            type: 'bpmn:IntermediateThrowEvent'
++          });
+ 
+-      it('should snap to top', inject(function(dragging) {
++          create.start(canvasEvent({ x: 0, y: 0 }), intermediateThrowEvent);
+ 
+-        // when
+-        dragging.move(canvasEvent({ x: 150, y: 95 }));
++          dragging.hover({ element: task, gfx: taskGfx });
++        }));
+ 
+-        dragging.end();
+ 
+-        // then
+-        var boundaryEvent = getBoundaryEvent(task);
++        it('should snap to top', inject(function(dragging) {
+ 
+-        expect(mid(boundaryEvent)).to.eql({
+-          x: 150,
+-          y: 100 // 95 snapped to 100
+-        });
+-      }));
++          // when
++          dragging.move(canvasEvent({ x: 150, y: 95 }));
+ 
++          dragging.end();
+ 
+-      it('should snap to right', inject(function(dragging) {
++          // then
++          var boundaryEvent = getBoundaryEvent(task);
+ 
+-        // when
+-        dragging.move(canvasEvent({ x: 195, y: 140 }));
++          expect(mid(boundaryEvent)).to.eql({
++            x: 150,
++            y: 100 // 95 snapped to 100
++          });
++        }));
+ 
+-        dragging.end();
+ 
+-        // then
+-        var boundaryEvent = getBoundaryEvent(task);
++        it('should snap to right', inject(function(dragging) {
+ 
+-        expect(mid(boundaryEvent)).to.eql({
+-          x: 200, // 195 snapped to 200
+-          y: 140
+-        });
+-      }));
++          // when
++          dragging.move(canvasEvent({ x: 195, y: 140 }));
+ 
++          dragging.end();
+ 
+-      it('should snap to bottom', inject(function(dragging) {
++          // then
++          var boundaryEvent = getBoundaryEvent(task);
+ 
+-        // when
+-        dragging.move(canvasEvent({ x: 150, y: 175 }));
++          expect(mid(boundaryEvent)).to.eql({
++            x: 200, // 195 snapped to 200
++            y: 140
++          });
++        }));
+ 
+-        dragging.end();
+ 
+-        // then
+-        var boundaryEvent = getBoundaryEvent(task);
++        it('should snap to bottom', inject(function(dragging) {
+ 
+-        expect(mid(boundaryEvent)).to.eql({
+-          x: 150,
+-          y: 180 // 175 snapped to 180
+-        });
+-      }));
++          // when
++          dragging.move(canvasEvent({ x: 150, y: 175 }));
+ 
++          dragging.end();
+ 
+-      it('should snap to left', inject(function(dragging) {
++          // then
++          var boundaryEvent = getBoundaryEvent(task);
+ 
+-        // when
+-        dragging.move(canvasEvent({ x: 95, y: 140 }));
++          expect(mid(boundaryEvent)).to.eql({
++            x: 150,
++            y: 180 // 175 snapped to 180
++          });
++        }));
+ 
+-        dragging.end();
+ 
+-        // then
+-        var boundaryEvent = getBoundaryEvent(task);
++        it('should snap to left', inject(function(dragging) {
+ 
+-        expect(mid(boundaryEvent)).to.eql({
+-          x: 100, // 95 snapped to 100
+-          y: 140
+-        });
+-      }));
++          // when
++          dragging.move(canvasEvent({ x: 95, y: 140 }));
++
++          dragging.end();
++
++          // then
++          var boundaryEvent = getBoundaryEvent(task);
++
++          expect(mid(boundaryEvent)).to.eql({
++            x: 100, // 95 snapped to 100
++            y: 140
++          });
++        }));
++      });
++
++
++      describe('with label', function() {
++
++        beforeEach(inject(function(
++            bpmnFactory,
++            create,
++            dragging,
++            elementFactory,
++            elementRegistry,
++            textRenderer
++        ) {
++          task = elementRegistry.get('Task_1');
++
++          taskGfx = elementRegistry.getGraphics(task);
++
++          intermediateThrowEvent = elementFactory.createShape({
++            businessObject: bpmnFactory.create('bpmn:IntermediateThrowEvent', {
++              name: 'Foo'
++            }),
++            type: 'bpmn:IntermediateThrowEvent',
++            x: 0,
++            y: 0
++          });
++
++          var externalLabelMid = getExternalLabelMid(intermediateThrowEvent);
++
++          var externalLabelBounds = textRenderer.getExternalLabelBounds(DEFAULT_LABEL_SIZE, 'Foo');
++
++          var label = elementFactory.createLabel({
++            labelTarget: intermediateThrowEvent,
++            x: externalLabelMid.x - externalLabelBounds.width / 2,
++            y: externalLabelMid.y - externalLabelBounds.height / 2,
++            width: externalLabelBounds.width,
++            height: externalLabelBounds.height
++          });
++
++          create.start(canvasEvent({ x: 0, y: 0 }), [ intermediateThrowEvent, label ]);
++
++          dragging.hover({ element: task, gfx: taskGfx });
++        }));
++
++
++        it('should snap to top-left', inject(function(dragging) {
++
++          // when
++          dragging.move(canvasEvent({ x: 90, y: 95 }));
++
++          dragging.end();
++
++          // then
++          var boundaryEvent = getBoundaryEvent(task);
++
++          expect(mid(boundaryEvent)).to.eql({
++            x: 100, // 90 snapped to 100
++            y: 100 // 95 snapped to 100
++          });
++        }));
++
++
++        it('should snap to top-right', inject(function(dragging) {
++
++          // when
++          dragging.move(canvasEvent({ x: 210, y: 95 }));
++
++          dragging.end();
++
++          // then
++          var boundaryEvent = getBoundaryEvent(task);
++
++          expect(mid(boundaryEvent)).to.eql({
++            x: 200, // 210 snapped to 200
++            y: 100 // 95 snapped to 100
++          });
++        }));
++
++
++        it('should snap to bottom-left', inject(function(dragging) {
++
++          // when
++          dragging.move(canvasEvent({ x: 90, y: 190 }));
++
++          dragging.end();
++
++          // then
++          var boundaryEvent = getBoundaryEvent(task);
++
++          expect(mid(boundaryEvent)).to.eql({
++            x: 100, // 90 snapped to 100
++            y: 180 // 190 snapped to 180
++          });
++        }));
++
++
++        it('should snap to bottom-right', inject(function(dragging) {
++
++          // when
++          dragging.move(canvasEvent({ x: 210, y: 190 }));
++
++          dragging.end();
++
++          // then
++          var boundaryEvent = getBoundaryEvent(task);
++
++          expect(mid(boundaryEvent)).to.eql({
++            x: 200, // 210 snapped to 200
++            y: 180 // 190 snapped to 180
++          });
++        }));
++      });
+ 
+     });
+ 
+@@ -562,4 +682,4 @@ function canvasEventTopLeft(position, shape) {
+ 
+ function getBoundaryEvent(element) {
+   return element.attachers[0];
+-}
+\ No newline at end of file
++}

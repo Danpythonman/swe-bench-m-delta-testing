@@ -1,0 +1,48 @@
+diff --git a/packages/react/src/components/Tab/Tab-test.js b/packages/react/src/components/Tab/Tab-test.js
+index b7d526f8b9c1..11db72768bb9 100644
+--- a/packages/react/src/components/Tab/Tab-test.js
++++ b/packages/react/src/components/Tab/Tab-test.js
+@@ -27,12 +27,8 @@ describe('Tab', () => {
+       );
+     });
+ 
+-    it('renders <li> with [role="presentation"]', () => {
+-      expect(wrapper.props().role).toEqual('presentation');
+-    });
+-
+-    it('renders <a> with [role="tab"]', () => {
+-      expect(wrapper.find('a').props().role).toEqual('tab');
++    it('renders <li> with [role="tab"]', () => {
++      expect(wrapper.props().role).toEqual('tab');
+     });
+ 
+     it('renders <a> with tabindex set to 0', () => {
+diff --git a/packages/react/src/components/Tab/Tab.js b/packages/react/src/components/Tab/Tab.js
+index ead5751e62c3..43ef38b5c72c 100644
+--- a/packages/react/src/components/Tab/Tab.js
++++ b/packages/react/src/components/Tab/Tab.js
+@@ -135,11 +135,7 @@ export default class Tab extends React.Component {
+       id,
+       className: `${prefix}--tabs__nav-link`,
+       href,
+-      role: 'tab',
+       tabIndex: !disabled ? tabIndex : -1,
+-      ['aria-selected']: selected,
+-      ['aria-disabled']: disabled,
+-      ['aria-controls']: id && `${id}__panel`,
+       ref: e => {
+         this.tabAnchor = e;
+       },
+@@ -164,8 +160,10 @@ export default class Tab extends React.Component {
+           handleTabKeyDown(index, evt);
+           onKeyDown(evt);
+         }}
+-        role="presentation"
+-        selected={selected}>
++        role="tab"
++        aria-selected={selected}
++        aria-disabled={disabled}
++        aria-controls={`${id}__panel`}>
+         {renderAnchor ? (
+           renderAnchor(anchorProps)
+         ) : (

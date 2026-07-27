@@ -46,6 +46,20 @@ class Pred:
         return pred.model_name_or_path
 
     @staticmethod
+    def from_file_contents(contents: str | bytes) -> Pred:
+        """Load a :class:`Pred` from JSON file contents.
+
+        Args:
+            contents: JSON string or bytes containing the same keys as
+                :meth:`from_file` expects.
+
+        Returns:
+            A :class:`Pred` populated from the contents.
+        """
+        j = json.loads(contents)
+        return Pred(**j)
+
+    @staticmethod
     def from_file(pred_filepath: Path) -> Pred:
         """Load a :class:`Pred` from a JSON file.
 
@@ -59,5 +73,4 @@ class Pred:
             A :class:`Pred` populated from the file contents.
         """
         with open(pred_filepath) as f:
-            j = json.load(f)
-            return Pred(**j)
+            return Pred.from_file_contents(f.read())

@@ -1,0 +1,63 @@
+diff --git a/news/changelog-1.3.md b/news/changelog-1.3.md
+index 36b4b47ff7e..231798882ed 100644
+--- a/news/changelog-1.3.md
++++ b/news/changelog-1.3.md
+@@ -28,6 +28,7 @@
+ ## Revealjs Format
+ 
+ - reduce font size of `df-print: paged` tables ([#3380](https://github.com/quarto-dev/quarto-cli/issues/3380))
++- `width` and `height` in percent are now correctly supported ([#4063](https://github.com/quarto-dev/quarto-cli/issues/4063))
+ 
+ ## Dates
+ 
+diff --git a/src/format/reveal/format-reveal.ts b/src/format/reveal/format-reveal.ts
+index 242f04a1304..364a3ba85a5 100644
+--- a/src/format/reveal/format-reveal.ts
++++ b/src/format/reveal/format-reveal.ts
+@@ -257,7 +257,7 @@ export function revealjsFormat() {
+             navigationMode === "grid";
+ 
+           // if the user set slideNumber to true then provide
+-          // linear slides (if they havne't specified vertical slides)
++          // linear slides (if they haven't specified vertical slides)
+           if (format.metadata["slideNumber"] === true) {
+             extras.metadataOverride!["slideNumber"] = verticalSlides
+               ? "h.v"
+@@ -408,6 +408,16 @@ function revealHtmlPostprocessor(
+           "slideNumber: '$1'",
+         );
+ 
++        // quote width and heigh if in %
++        scriptEl.innerText = scriptEl.innerText.replace(
++          /width: (\d+(\.\d+)?%)/,
++          "width: '$1'",
++        );
++        scriptEl.innerText = scriptEl.innerText.replace(
++          /height: (\d+(\.\d+)?%)/,
++          "height: '$1'",
++        );
++
+         // plugin registration
+         if (pluginInit.register.length > 0) {
+           const kRevealPluginArray = "plugins: [";
+diff --git a/tests/docs/smoke-all/2023/01/23/reveal-config-quote-4063.qmd b/tests/docs/smoke-all/2023/01/23/reveal-config-quote-4063.qmd
+new file mode 100644
+index 00000000000..17ad621a81b
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/01/23/reveal-config-quote-4063.qmd
+@@ -0,0 +1,14 @@
++---
++format: 
++  revealjs:
++    width: 5.3%
++    height: 53%
++_quarto:
++  tests:
++    revealjs:
++      ensureFileRegexMatches:
++        - ["width: '5\\.3%',", "height: '53%',"]
++        - ["width: 5\\.3%,", "height: 53%,"]
++---
++
++# Slide
+\ No newline at end of file

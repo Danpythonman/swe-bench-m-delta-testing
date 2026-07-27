@@ -1,0 +1,27 @@
+diff --git a/packages/react/src/components/Pagination/Pagination-test.js b/packages/react/src/components/Pagination/Pagination-test.js
+index 6748c7279594..673bb4b4ab40 100644
+--- a/packages/react/src/components/Pagination/Pagination-test.js
++++ b/packages/react/src/components/Pagination/Pagination-test.js
+@@ -224,7 +224,7 @@ describe('Pagination', () => {
+         const pager = mount(<Pagination pageSizes={[5, 10]} totalItems={0} />);
+         const labels = pager.find(`.${prefix}--pagination__text`);
+         expect(labels.at(1).text()).toBe('0–0 of 0 items');
+-        expect(labels.at(2).text()).toBe('of 1 pages');
++        expect(labels.at(2).text()).toBe('of 1 page');
+       });
+ 
+       it('should have two buttons for navigation', () => {
+diff --git a/packages/react/src/components/Pagination/Pagination.js b/packages/react/src/components/Pagination/Pagination.js
+index 2cc859b50fc5..130fbc3b2332 100644
+--- a/packages/react/src/components/Pagination/Pagination.js
++++ b/packages/react/src/components/Pagination/Pagination.js
+@@ -140,7 +140,8 @@ export default class Pagination extends Component {
+     forwardText: 'Next page',
+     itemsPerPageText: 'Items per page:',
+     pageNumberText: 'Page Number',
+-    pageRangeText: (current, total) => `of ${total} pages`,
++    pageRangeText: (current, total) =>
++      `of ${total} ${total === 1 ? 'page' : 'pages'}`,
+     disabled: false,
+     page: 1,
+     pagesUnknown: false,

@@ -1,0 +1,73 @@
+diff --git a/CHANGES.md b/CHANGES.md
+index 62e7dbd3a0..f5deb1dc1c 100644
+--- a/CHANGES.md
++++ b/CHANGES.md
+@@ -2,8 +2,9 @@
+ 
+ Language Improvements:
+ 
+-- enh(javascipt/typescript) Highlight class methods as functions (#2727) [Josh Goebel][]
+-- fix(javascipt/typescript) `constructor` is now highlighted as a function title (not keyword) (#2727) [Josh Goebel][]
++- fix(js/ts) Fix nesting of `{}` inside template literals SUBST expression (#2748) [Josh Goebel][]
++- enh(js/ts) Highlight class methods as functions (#2727) [Josh Goebel][]
++- fix(js/ts) `constructor` is now highlighted as a function title (not keyword) (#2727) [Josh Goebel][]
+ - fix(c-like) preprocessor directives not detected after else (#2738) [Josh Goebel][]
+ - enh(javascript) allow `#` for private class fields (#2701) [Chris Krycho][]
+ - fix(js) prevent runaway regex (#2746) [Josh Goebel][]
+diff --git a/src/languages/javascript.js b/src/languages/javascript.js
+index 656a43a4ae..875a930b34 100644
+--- a/src/languages/javascript.js
++++ b/src/languages/javascript.js
+@@ -169,7 +169,7 @@ export default function(hljs) {
+       hljs.C_LINE_COMMENT_MODE
+     ]
+   };
+-  SUBST.contains = [
++  const SUBST_INTERNALS = [
+     hljs.APOS_STRING_MODE,
+     hljs.QUOTE_STRING_MODE,
+     HTML_TEMPLATE,
+@@ -178,6 +178,17 @@ export default function(hljs) {
+     NUMBER,
+     hljs.REGEXP_MODE
+   ];
++  SUBST.contains = SUBST_INTERNALS
++    .concat({
++      // we need to pair up {} inside our subst to prevent
++      // it from ending too early by matching another }
++      begin: /{/,
++      end: /}/,
++      keywords: KEYWORDS,
++      contains: [
++        "self"
++      ].concat(SUBST_INTERNALS)
++    });
+   const SUBST_AND_COMMENTS = [].concat(COMMENT, SUBST.contains);
+   const PARAMS_CONTAINS = SUBST_AND_COMMENTS.concat([
+     // eat recursive parens in sub expressions
+diff --git a/test/markup/javascript/inline-languages.expect.txt b/test/markup/javascript/inline-languages.expect.txt
+index 370f041a57..d9c1d31305 100644
+--- a/test/markup/javascript/inline-languages.expect.txt
++++ b/test/markup/javascript/inline-languages.expect.txt
+@@ -10,7 +10,7 @@ html`<span class="xml">
+   <span class="hljs-tag">&lt;<span class="hljs-name">ul</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;list&quot;</span>&gt;</span>
+     </span><span class="hljs-subst">${repeat([<span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-string">&#x27;c&#x27;</span>], (v) =&gt; {
+       <span class="hljs-keyword">return</span> html`<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;item&quot;</span>&gt;</span></span><span class="hljs-subst">${v}</span><span class="xml"><span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>`</span>;
+-    }</span><span class="xml">}
++    }}</span><span class="xml">
+   <span class="hljs-tag">&lt;/<span class="hljs-name">ul</span>&gt;</span>
+ `</span>;
+ 
+diff --git a/test/markup/typescript/inline-languages.expect.txt b/test/markup/typescript/inline-languages.expect.txt
+index 27e2c8f3cb..1ae73fefe0 100644
+--- a/test/markup/typescript/inline-languages.expect.txt
++++ b/test/markup/typescript/inline-languages.expect.txt
+@@ -10,7 +10,7 @@ html`<span class="xml">
+   <span class="hljs-tag">&lt;<span class="hljs-name">ul</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;list&quot;</span>&gt;</span>
+     </span><span class="hljs-subst">${repeat([<span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-string">&#x27;c&#x27;</span>], (v) =&gt; {
+       <span class="hljs-keyword">return</span> html`<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;item&quot;</span>&gt;</span></span><span class="hljs-subst">${v}</span><span class="xml"><span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>`</span>;
+-    }</span><span class="xml">}
++    }}</span><span class="xml">
+   <span class="hljs-tag">&lt;/<span class="hljs-name">ul</span>&gt;</span>
+ `</span>;
+ 

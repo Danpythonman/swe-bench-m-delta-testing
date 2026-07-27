@@ -1,0 +1,186 @@
+diff --git a/src/resources/filters/customnodes/floatreftarget.lua b/src/resources/filters/customnodes/floatreftarget.lua
+index 98a75b49ab2..c46d2b2e9dd 100644
+--- a/src/resources/filters/customnodes/floatreftarget.lua
++++ b/src/resources/filters/customnodes/floatreftarget.lua
+@@ -310,12 +310,9 @@ end, function(float)
+   end
+ 
+   if float.parent_id then
+-    local width = float.width or "0.50"
+-    return quarto.LatexEnvironment({
+-      name = "minipage",
+-      pos = "[t]{" .. width .. "\\linewidth}",
+-      content = figure_content
+-    })
++    -- the environment here is handled by the parent float and
++    -- the panel layout code
++    return figure_content
+   else
+     return quarto.LatexEnvironment({
+       name = figEnv,
+diff --git a/src/resources/filters/layout/latex.lua b/src/resources/filters/layout/latex.lua
+index b57956e7b3e..fc3547cfb01 100644
+--- a/src/resources/filters/layout/latex.lua
++++ b/src/resources/filters/layout/latex.lua
+@@ -48,15 +48,9 @@ function latexPanel(layout)
+       local endOfTable = i == #layout.rows.content
+       local endOfRow = j == #row.content
+       local prefix, content, suffix = latexCell(cell, vAlign, endOfRow, endOfTable)
+-      -- local align = cell.attributes[kLayoutAlign]
+-      -- if align == "center" then
+-      --   panel.content.content:insert(pandoc.RawBlock("latex", latexBeginAlign(align)))
+-      -- end
++      panel.content.content:insert(prefix)
+       tappend(panel.content.content, content)
+-      -- if align == "center" then
+-      --   panel.content.content:insert(pandoc.RawBlock("latex", latexEndAlign(align)))
+-      -- end
+-      -- panel.content.content:insert(suffix)
++      panel.content.content:insert(suffix)
+     end
+     
+   end
+@@ -250,12 +244,29 @@ function latexCell(cell, vAlign, endOfRow, endOfTable)
+   -- figure out what we are dealing with
+   local label = cell.identifier
+   local image = figureImageFromLayoutCell(cell)
++  local has_pandoc_3_figure = false
++  if image == nil then
++    -- attempt to unwrap a Pandoc Figure
++    cell = _quarto.ast.walk(cell, {
++      Figure = function(figure)
++        has_pandoc_3_figure = true
++        _quarto.ast.walk(figure, {
++          Image = function(img)
++            image = img
++          end
++        })
++        if image ~= nil then
++          return image
++        end
++      end
++    })
++  end
+   if (label == "") and image then
+     label = image.identifier
+   end
+   local isFigure = isFigureRef(label)
+   local isTable = isTableRef(label)
+-  local isSubRef = hasRefParent(cell) or (image and hasRefParent(image))
++  local isSubRef = hasRefParent(cell) or (image and hasRefParent(image)) or has_pandoc_3_figure
+   local tbl = tableFromLayoutCell(cell)
+   
+   -- determine width 
+@@ -267,7 +278,6 @@ function latexCell(cell, vAlign, endOfRow, endOfTable)
+   local content = pandoc.List()
+   local suffix = pandoc.List()
+ 
+-  -- sub-captioned always uses \subfloat
+   if isSubRef then
+     
+     -- lift the caption out it it's current location and onto the \subfloat
+@@ -293,12 +303,16 @@ function latexCell(cell, vAlign, endOfRow, endOfTable)
+         caption = pandoc.List()
+       end
+     end
+-    
+-    -- subcap
+-    latexAppend(subcap, "\\subcaption{\\label{" .. label .. "}")
+-    tappend(subcap, caption)
+-    latexAppend(subcap, "}\n")
++
++    -- only subcap in the passthrough Figure special case
++    if has_pandoc_3_figure then
++      -- subcap
++      latexAppend(subcap, "\\subcaption{\\label{" .. label .. "}")
++      tappend(subcap, caption)
++      latexAppend(subcap, "}\n")
++    end
+   end
++
+   
+   -- convert to latex percent as necessary
+   width = asLatexSize(width)
+diff --git a/src/resources/filters/layout/pandoc3_figure.lua b/src/resources/filters/layout/pandoc3_figure.lua
+index a611c9297bb..c50dd0b02be 100644
+--- a/src/resources/filters/layout/pandoc3_figure.lua
++++ b/src/resources/filters/layout/pandoc3_figure.lua
+@@ -65,6 +65,17 @@ function render_pandoc3_figure()
+   elseif _quarto.format.isLatexOutput() then
+     return {
+       traverse = "topdown",
++      FloatRefTarget = function(float)
++        local count = 0
++        _quarto.ast.walk(float.content, {
++          Figure = function()
++            count = count + 1
++          end
++        })
++        if count > 0 then
++          return nil, false
++        end
++      end,
+       Figure = function(figure)
+         local image
+         _quarto.ast.walk(figure, {
+diff --git a/tests/docs/smoke-all/2023/09/19/issue-2492-b.qmd b/tests/docs/smoke-all/2023/09/19/issue-2492-b.qmd
+new file mode 100644
+index 00000000000..b53fa0c313c
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/09/19/issue-2492-b.qmd
+@@ -0,0 +1,26 @@
++---
++title: "MWE"
++format: latex
++_quarto:
++  tests:
++    latex:
++      ensureFileRegexMatches:
++        - 
++          - "\\\\label\\{fig-e1b\\}"
++          - "\\\\label\\{fig-e1a\\}"
++          - "\\\\subcaption\\{.*Surus\\}"
++          - "\\\\subcaption\\{.*Hanno\\}"
++        - []
++---
++
++Figures
++
++::: {#fig-elephants layout-ncol="2"}
++
++![Surus](elephant.jpg){#fig-e1a}
++
++![Hanno](elephant.jpg){#fig-e1b}
++
++Famous Elephants
++:::
++
+diff --git a/tests/docs/smoke-all/2023/09/19/issue-2492.qmd b/tests/docs/smoke-all/2023/09/19/issue-2492.qmd
+new file mode 100644
+index 00000000000..0f7a45b3ff4
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/09/19/issue-2492.qmd
+@@ -0,0 +1,23 @@
++---
++title: "MWE"
++format: latex
++_quarto:
++  tests:
++    latex:
++      ensureFileRegexMatches:
++        - 
++          - "\\\\subcaption\\{.*Surus\\}"
++          - "\\\\subcaption\\{.*Hanno\\}"
++        - []
++---
++
++Figures
++
++::: {#fig-elephants layout-ncol="2"}
++
++![Surus](elephant.jpg)
++
++![Hanno](elephant.jpg)
++
++Famous Elephants
++:::

@@ -1,0 +1,71 @@
+diff --git a/src/project/types/website/listing/website-listing-read.ts b/src/project/types/website/listing/website-listing-read.ts
+index 4079ad7f20b..7f5efe01853 100644
+--- a/src/project/types/website/listing/website-listing-read.ts
++++ b/src/project/types/website/listing/website-listing-read.ts
+@@ -106,6 +106,7 @@ import {
+ import { mergeConfigs } from "../../../../core/config.ts";
+ import { globToRegExp } from "../../../../core/lib/glob.ts";
+ import { cslNames } from "../../../../core/csl.ts";
++import { isHttpUrl } from "../../../../core/url.ts";
+ 
+ // Defaults (a card listing that contains everything
+ // in the source document's directory)
+@@ -361,13 +362,26 @@ export function completeListingItems(
+           });
+ 
+           if (contents.previewImage) {
+-            const imgAbsPath = isAbsolute(contents.previewImage.src)
+-              ? contents.previewImage.src
+-              : join(dirname(docAbsPath), contents.previewImage.src);
++            const resolveUrl = (path: string) => {
++              if (isHttpUrl(path)) {
++                return path;
++              } else {
++                const imgAbsPath = isAbsolute(path)
++                  ? path
++                  : join(dirname(docAbsPath), path);
++                const imgRelPath = relative(
++                  dirname(outputFile.file),
++                  imgAbsPath,
++                );
++                return imgRelPath;
++              }
++            };
+ 
+-            const imgRelPath = relative(dirname(outputFile.file), imgAbsPath);
+             const imgHtml = imageSrc(
+-              { ...contents.previewImage, src: imgRelPath },
++              {
++                ...contents.previewImage,
++                src: resolveUrl(contents.previewImage.src),
++              },
+               progressive,
+               imgHeight,
+             );
+diff --git a/tests/docs/blog-grid/posts/remote-img/index.qmd b/tests/docs/blog-grid/posts/remote-img/index.qmd
+new file mode 100644
+index 00000000000..43e09dd5958
+--- /dev/null
++++ b/tests/docs/blog-grid/posts/remote-img/index.qmd
+@@ -0,0 +1,10 @@
++---
++title: "This has remote"
++author: "Tristan O'Malley"
++date: 10-10-2019
++categories: [news]
++---
++
++This post should have a remote preview image.
++
++![](https://www.charlesteague.com/blog/writing-style/west.jpg)
+diff --git a/tests/smoke/site/render-blog.test.ts b/tests/smoke/site/render-blog.test.ts
+index a0e33c8cc81..810581a7484 100644
+--- a/tests/smoke/site/render-blog.test.ts
++++ b/tests/smoke/site/render-blog.test.ts
+@@ -23,5 +23,6 @@ testSite(docs("blog-grid/index.qmd"), docs("blog-grid"), [
+   "div.list.grid.quarto-listing-cols-3 > div:nth-child(1) div.listing-item-img-placeholder.card-img-top", // Placeholder structure correct
+   "div.list.grid.quarto-listing-cols-3 > div:nth-child(2) p.card-img-top > img", // The grid image structure is correct
+   "div.list.grid.quarto-listing-cols-3 > div:nth-child(3) p.card-img-top > img", // The grid image structure is correct
++  "div.list.grid.quarto-listing-cols-3 > div:nth-child(4) p.card-img-top > img[src ^= 'https://www.charlesteague.com/blog/writing-style/west.jpg']" // The image path isn't mangled
+ ], []);
+ 

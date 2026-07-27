@@ -1,0 +1,131 @@
+diff --git a/src/publish/confluence/confluence-helper.ts b/src/publish/confluence/confluence-helper.ts
+index 51f2771c993..512fce775a1 100644
+--- a/src/publish/confluence/confluence-helper.ts
++++ b/src/publish/confluence/confluence-helper.ts
+@@ -688,6 +688,14 @@ export const updateLinks = (
+         }
+       }
+ 
++      if (!documentFileName.endsWith(".xml")) {
++        //this is a flattened index in a folder with contents
++        const siteFilePathParent = `${documentFileName}/${linkFullFileName}`;
++        if (fileMetadataTable[siteFilePathParent]) {
++          siteFilePath = siteFilePathParent;
++        }
++      }
++
+       const sitePage: SitePage | null = fileMetadataTable[siteFilePath] ?? null;
+ 
+       if (sitePage) {
+diff --git a/src/publish/confluence/confluence.ts b/src/publish/confluence/confluence.ts
+index 59faf1a6a6b..2cb96b040b3 100644
+--- a/src/publish/confluence/confluence.ts
++++ b/src/publish/confluence/confluence.ts
+@@ -678,6 +678,9 @@ async function publish(
+ 
+     changeList = flattenIndexes(changeList, metadataByFilename);
+ 
++    console.log("updateLinks");
++    console.log("metadataByFilename", metadataByFilename);
++
+     const { pass1Changes, pass2Changes } = updateLinks(
+       metadataByFilename,
+       changeList,
+@@ -685,6 +688,11 @@ async function publish(
+       siteParent
+     );
+ 
++    console.log("{ pass1Changes, pass2Changes }", {
++      pass1Changes,
++      pass2Changes,
++    });
++
+     changeList = pass1Changes;
+ 
+     trace("changelist Pass 1", changeList);
+diff --git a/tests/configure-test-env.sh b/tests/configure-test-env.sh
+index 0ef8a95c2b6..40c465cf375 100755
+--- a/tests/configure-test-env.sh
++++ b/tests/configure-test-env.sh
+@@ -17,7 +17,7 @@ python_exists=$(command -v python)
+ if [ -z $python_exists ] 
+ then 
+   python_exists=$(command -v python3)
+-  if [ -z python_exists] 
++  if [ -z python_exists]
+   then
+     echo "No python found in PATH - Check your PATH or install python add to PATH."
+   fi
+diff --git a/tests/unit/confluence.test.ts b/tests/unit/confluence.test.ts
+index 2e728dec48a..ff1e670ef4b 100644
+--- a/tests/unit/confluence.test.ts
++++ b/tests/unit/confluence.test.ts
+@@ -3741,7 +3741,7 @@ const runUpdateLinks = () => {
+     fileName: "release-planning.xml",
+   };
+ 
+-  const UPDATE_LINKS_INDEX: ContentUpdate = {
++  const UPDATE_LINK_TO_INDEX: ContentUpdate = {
+     contentChangeType: ContentChangeType.update,
+     id: "19890228",
+     version: null,
+@@ -3758,6 +3758,23 @@ const runUpdateLinks = () => {
+     fileName: "release-planning.xml",
+   };
+ 
++  const UPDATE_SELF_LINK_FROM_INDEX: ContentUpdate = {
++    contentChangeType: ContentChangeType.update,
++    id: "fake-folder-id",
++    version: null,
++    title: "fake-folder-title",
++    type: "page",
++    status: "current",
++    ancestors: [{ id: "19759105" }],
++    body: {
++      storage: {
++        value: "<a href='index.qmd'>self</a>",
++        representation: "storage",
++      },
++    },
++    fileName: "folder",
++  };
++
+   const UPDATE_LINKS_SPECIAL_CHAR: ContentUpdate = {
+     contentChangeType: ContentChangeType.update,
+     id: "19890228",
+@@ -3918,10 +3935,10 @@ const runUpdateLinks = () => {
+   });
+ 
+   test(suiteLabel("one_update_link_index"), async () => {
+-    const changes: ConfluenceSpaceChange[] = [UPDATE_LINKS_INDEX];
++    const changes: ConfluenceSpaceChange[] = [UPDATE_LINK_TO_INDEX];
+     const rootURL = "fake-server/wiki/spaces/QUARTOCONF/pages";
+     const expectedUpdate: ContentUpdate = {
+-      ...UPDATE_LINKS_INDEX,
++      ...UPDATE_LINK_TO_INDEX,
+       body: {
+         storage: {
+           value: `<a href=\'fake-server/wiki/spaces/QUARTOCONF/pages/fake-folder-id'>team</a>`,
+@@ -3933,6 +3950,22 @@ const runUpdateLinks = () => {
+     check(expected, changes, fileMetadataTable, "fake-server", FAKE_PARENT);
+   });
+ 
++  test(suiteLabel("one_update_link_from_index"), async () => {
++    const changes: ConfluenceSpaceChange[] = [UPDATE_SELF_LINK_FROM_INDEX];
++    const rootURL = "fake-server/wiki/spaces/QUARTOCONF/pages";
++    const expectedUpdate: ContentUpdate = {
++      ...UPDATE_SELF_LINK_FROM_INDEX,
++      body: {
++        storage: {
++          value: `<a href=\'fake-server/wiki/spaces/QUARTOCONF/pages/fake-index-id'>self</a>`,
++          representation: "storage",
++        },
++      },
++    };
++    const expected: ConfluenceSpaceChange[] = [expectedUpdate];
++    check(expected, changes, fileMetadataTable, "fake-server", FAKE_PARENT);
++  });
++
+   test(suiteLabel("one_update_link_special_char"), async () => {
+     const changes: ConfluenceSpaceChange[] = [UPDATE_LINKS_SPECIAL_CHAR];
+     const rootURL = "fake-server/wiki/spaces/QUARTOCONF/pages";

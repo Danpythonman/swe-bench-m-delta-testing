@@ -1,0 +1,107 @@
+diff --git a/rendering/cases/icon-scale/expected.png b/rendering/cases/icon-scale/expected.png
+index a3ef37e19c3..bc25213de8f 100644
+Binary files a/rendering/cases/icon-scale/expected.png and b/rendering/cases/icon-scale/expected.png differ
+diff --git a/rendering/cases/icon-scale/main.js b/rendering/cases/icon-scale/main.js
+index ae6165ae817..cb3744c6fe2 100644
+--- a/rendering/cases/icon-scale/main.js
++++ b/rendering/cases/icon-scale/main.js
+@@ -7,7 +7,14 @@ import VectorLayer from '../../../src/ol/layer/Vector.js';
+ import VectorSource from '../../../src/ol/source/Vector.js';
+ import View from '../../../src/ol/View.js';
+ 
+-const features = [];
++const features = [
++  new Feature({
++    geometry: new Point([-1, 12]),
++    scale: [-8, -8],
++    anchor: [0.5, 0.5],
++    rotated: 0,
++  }),
++];
+ for (let i = 0; i < 2; ++i) {
+   const x = i * 5;
+   features.push(
+@@ -104,6 +111,7 @@ const vectorLayer = new VectorLayer({
+     style.getImage().setRotation((feature.get('rotated') * Math.PI) / 4);
+     return style;
+   },
++  renderBuffer: 25,
+ });
+ 
+ const map = new Map({
+diff --git a/src/ol/render/canvas/Executor.js b/src/ol/render/canvas/Executor.js
+index aca55d89b37..adc7a3dcb59 100644
+--- a/src/ol/render/canvas/Executor.js
++++ b/src/ol/render/canvas/Executor.js
+@@ -409,7 +409,13 @@ class Executor {
+         tmpExtent
+       );
+     } else {
+-      createOrUpdate(boxX, boxY, boxX + boxW, boxY + boxH, tmpExtent);
++      createOrUpdate(
++        Math.min(boxX, boxX + boxW),
++        Math.min(boxY, boxY + boxH),
++        Math.max(boxX, boxX + boxW),
++        Math.max(boxY, boxY + boxH),
++        tmpExtent
++      );
+     }
+     let renderBufferX = 0;
+     let renderBufferY = 0;
+diff --git a/test/spec/ol/renderer/map.test.js b/test/spec/ol/renderer/map.test.js
+index 92cad661236..86358389bc4 100644
+--- a/test/spec/ol/renderer/map.test.js
++++ b/test/spec/ol/renderer/map.test.js
+@@ -22,7 +22,7 @@ describe('ol.renderer.Map', function () {
+   });
+ 
+   describe('#forEachFeatureAtCoordinate', function () {
+-    let map, source;
++    let map, source, style;
+     beforeEach(function () {
+       const target = document.createElement('div');
+       target.style.width = '100px';
+@@ -36,20 +36,21 @@ describe('ol.renderer.Map', function () {
+         projection: projection,
+         features: [new Feature(new Point([660000, 190000]))],
+       });
++      style = new Style({
++        image: new Circle({
++          radius: 6,
++          fill: new Fill({
++            color: 'fuchsia',
++          }),
++        }),
++      });
+       map = new Map({
+         target: target,
+         layers: [
+           new VectorLayer({
+             source: source,
+             renderBuffer: 12,
+-            style: new Style({
+-              image: new Circle({
+-                radius: 6,
+-                fill: new Fill({
+-                  color: 'fuchsia',
+-                }),
+-              }),
+-            }),
++            style: style,
+           }),
+         ],
+         view: new View({
+@@ -72,6 +73,13 @@ describe('ol.renderer.Map', function () {
+       expect(features.length).to.be(1);
+     });
+ 
++    it('works with negative image scale', function () {
++      style.getImage().setScale([-1, -1]);
++      map.renderSync();
++      const features = map.getFeaturesAtPixel([50, 50]);
++      expect(features.length).to.be(1);
++    });
++
+     it('only draws features that intersect the hit detection viewport', function () {
+       const resolution = map.getView().getResolution();
+       source.addFeature(

@@ -1,0 +1,161 @@
+diff --git a/lib/features/modeling/behavior/GroupBehavior.js b/lib/features/modeling/behavior/GroupBehavior.js
+index 2cba24533c..fd43293b50 100644
+--- a/lib/features/modeling/behavior/GroupBehavior.js
++++ b/lib/features/modeling/behavior/GroupBehavior.js
+@@ -24,7 +24,7 @@ var HIGH_PRIORITY = 2000;
+  */
+ export default function GroupBehavior(
+     bpmnFactory,
+-    canvas,
++    bpmnjs,
+     elementRegistry,
+     eventBus,
+     injector,
+@@ -32,18 +32,6 @@ export default function GroupBehavior(
+ ) {
+   injector.invoke(CommandInterceptor, this);
+ 
+-  /**
+-   * Gets process definitions
+-   *
+-   * @return {ModdleElement} definitions
+-   */
+-  function getDefinitions() {
+-    var rootElement = canvas.getRootElement(),
+-        businessObject = getBusinessObject(rootElement);
+-
+-    return businessObject.$parent;
+-  }
+-
+   /**
+    * Removes a referenced category value for a given group shape
+    *
+@@ -79,7 +67,7 @@ export default function GroupBehavior(
+    */
+   function removeCategory(category) {
+ 
+-    var definitions = getDefinitions();
++    var definitions = bpmnjs.getDefinitions();
+ 
+     collectionRemove(definitions.get('rootElements'), category);
+   }
+@@ -144,7 +132,7 @@ export default function GroupBehavior(
+ 
+       var businessObject = getBusinessObject(shape),
+           categoryValueRef = businessObject.categoryValueRef,
+-          definitions = getDefinitions(),
++          definitions = bpmnjs.getDefinitions(),
+           category = categoryValueRef ? categoryValueRef.$parent : null;
+ 
+       collectionAdd(category.get('categoryValue'), categoryValueRef);
+@@ -162,7 +150,7 @@ export default function GroupBehavior(
+ 
+     if (is(businessObject, 'bpmn:Group') && !businessObject.categoryValueRef) {
+ 
+-      var definitions = getDefinitions(),
++      var definitions = bpmnjs.getDefinitions(),
+           categoryValue = createCategoryValue(definitions, bpmnFactory);
+ 
+       // link the reference to the Group
+@@ -190,7 +178,7 @@ export default function GroupBehavior(
+         categoryValue;
+ 
+     if (is(property, 'bpmn:CategoryValue')) {
+-      categoryValue = createCategoryValue(getDefinitions(), bpmnFactory);
++      categoryValue = createCategoryValue(bpmnjs.getDefinitions(), bpmnFactory);
+ 
+       // return copy of category
+       return moddleCopy.copyElement(property, categoryValue);
+@@ -201,7 +189,7 @@ export default function GroupBehavior(
+ 
+ GroupBehavior.$inject = [
+   'bpmnFactory',
+-  'canvas',
++  'bpmnjs',
+   'elementRegistry',
+   'eventBus',
+   'injector',
+diff --git a/test/spec/features/modeling/behavior/GroupBehaviorSpec.bpmn b/test/spec/features/modeling/behavior/GroupBehaviorSpec.bpmn
+index 940a1d757a..2729d3a0b3 100644
+--- a/test/spec/features/modeling/behavior/GroupBehaviorSpec.bpmn
++++ b/test/spec/features/modeling/behavior/GroupBehaviorSpec.bpmn
+@@ -8,6 +8,7 @@
+     <categoryValue id="CategoryValue_3" value="Value 3" />
+   </category>
+   <process id="Process_1" isExecutable="false">
++    <subProcess id="Subprocess_1" />
+     <group id="Group_1" categoryValueRef="CategoryValue_1" />
+     <group id="Group_2" categoryValueRef="CategoryValue_1" />
+     <group id="Group_3" categoryValueRef="CategoryValue_2" />
+@@ -15,6 +16,9 @@
+   </process>
+   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+     <bpmndi:BPMNPlane bpmnElement="Process_1">
++      <bpmndi:BPMNShape id="Activity_0zvwgk9_di" bpmnElement="Subprocess_1">
++        <omgdc:Bounds x="160" y="360" width="100" height="80" />
++      </bpmndi:BPMNShape>
+       <bpmndi:BPMNShape id="Group_1_di" bpmnElement="Group_1">
+         <omgdc:Bounds x="162" y="75" width="200" height="200" />
+         <bpmndi:BPMNLabel>
+@@ -32,4 +36,7 @@
+       </bpmndi:BPMNShape>
+     </bpmndi:BPMNPlane>
+   </bpmndi:BPMNDiagram>
+-</definitions>
++  <bpmndi:BPMNDiagram id="BPMNDiagram_1g3s90h">
++    <bpmndi:BPMNPlane id="BPMNPlane_1ezo7xu" bpmnElement="Subprocess_1" />
++  </bpmndi:BPMNDiagram>
++</definitions>
+\ No newline at end of file
+diff --git a/test/spec/features/modeling/behavior/GroupBehaviorSpec.js b/test/spec/features/modeling/behavior/GroupBehaviorSpec.js
+index d21d5f5acd..b6d3bf119f 100644
+--- a/test/spec/features/modeling/behavior/GroupBehaviorSpec.js
++++ b/test/spec/features/modeling/behavior/GroupBehaviorSpec.js
+@@ -220,6 +220,47 @@ describe('features/modeling/behavior - groups', function() {
+ 
+     });
+ 
++
++    it('should always create new Category in definitions',
++      inject(function(canvas, elementFactory, modeling, bpmnjs) {
++
++        // given
++        var group = elementFactory.createShape({ type: 'bpmn:Group' }),
++            root = canvas.findRoot('Subprocess_1_plane'),
++            rootParent = getBusinessObject(root).$parent,
++            definitions = bpmnjs._definitions;
++
++        canvas.setRootElement(root);
++
++        // when
++        var groupShape = modeling.createShape(group, { x: 100, y: 100 }, root),
++            categoryValueRef = getBusinessObject(groupShape).categoryValueRef,
++            category = categoryValueRef.$parent;
++
++        // then
++        expect(categoryValueRef).to.exist;
++        expect(category).to.exist;
++
++        expectIncludedOrNot(
++          category.get('categoryValue'),
++          categoryValueRef,
++          true
++        );
++
++        expectIncludedOrNot(
++          definitions.get('rootElements'),
++          category,
++          true
++        );
++
++        expectIncludedOrNot(
++          rootParent.get('rootElements'),
++          category,
++          false
++        );
++
++      }));
++
+   });
+ 
+ 

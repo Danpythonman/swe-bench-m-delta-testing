@@ -1,0 +1,55 @@
+diff --git a/CHANGES.md b/CHANGES.md
+index afed41aab0..358345934d 100644
+--- a/CHANGES.md
++++ b/CHANGES.md
+@@ -11,6 +11,7 @@ Grammars:
+ - enh(elixir) much improved regular expression sigil support (#3207) [Josh Goebel][]
+ - enh(elixir) updated list of keywords (#3212) [Angelika Tyborska][]
+ - fix(elixir) fixed number detection when numbers start with a zero (#3212) [Angelika Tyborska][]
++- fix(ps1) Flag highlighted incorrectly (#3167) [Pankaj Patil][]
+ 
+ [Stel Abrego]: https://github.com/stelcodes
+ [Josh Goebel]: https://github.com/joshgoebel
+@@ -19,6 +20,7 @@ Grammars:
+ [Angelika Tyborska]: https://github.com/angelikatyborska
+ [Konrad Rudolph]: https://github.com/klmr
+ [tebeco]: https://github.com/tebeco
++[Pankaj Patil]: https://github.com/patil2099
+ 
+ 
+ ## Version 11.0.0
+diff --git a/src/languages/powershell.js b/src/languages/powershell.js
+index 6c5a9a832b..451c535da4 100644
+--- a/src/languages/powershell.js
++++ b/src/languages/powershell.js
+@@ -236,7 +236,7 @@ export default function(hljs) {
+       },
+       {
+         className: 'literal',
+-        begin: /(-)[\w\d]+/,
++        begin: /(-){1,2}[\w\d-]+/,
+         relevance: 0
+       }
+     ]
+diff --git a/test/markup/powershell/flags.expect.txt b/test/markup/powershell/flags.expect.txt
+new file mode 100644
+index 0000000000..c1c2ecefe1
+--- /dev/null
++++ b/test/markup/powershell/flags.expect.txt
+@@ -0,0 +1,4 @@
++<span class="hljs-string">&quot;Good Dog&quot;</span> <span class="hljs-literal">--match-lower-case</span> <span class="hljs-string">&quot;Dog&quot;</span>
++<span class="hljs-number">2</span> <span class="hljs-literal">--equality-check</span> <span class="hljs-number">2</span>
++<span class="hljs-string">&quot;abc&quot;</span> <span class="hljs-literal">--format-drive-fully</span> <span class="hljs-string">&quot;def&quot;</span>
++format /dev/devices/driveA <span class="hljs-literal">--format-drive-fully</span> <span class="hljs-literal">-yes</span>
+\ No newline at end of file
+diff --git a/test/markup/powershell/flags.txt b/test/markup/powershell/flags.txt
+new file mode 100644
+index 0000000000..78c60e70f5
+--- /dev/null
++++ b/test/markup/powershell/flags.txt
+@@ -0,0 +1,4 @@
++"Good Dog" --match-lower-case "Dog"
++2 --equality-check 2
++"abc" --format-drive-fully "def"
++format /dev/devices/driveA --format-drive-fully -yes
+\ No newline at end of file

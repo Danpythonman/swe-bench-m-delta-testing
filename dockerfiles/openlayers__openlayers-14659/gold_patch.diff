@@ -1,0 +1,79 @@
+diff --git a/src/ol/render/canvas/Immediate.js b/src/ol/render/canvas/Immediate.js
+index e8bf8cf0621..e54f362daaf 100644
+--- a/src/ol/render/canvas/Immediate.js
++++ b/src/ol/render/canvas/Immediate.js
+@@ -485,6 +485,14 @@ class CanvasImmediateRenderer extends VectorContext {
+    * @api
+    */
+   drawCircle(geometry) {
++    if (this.squaredTolerance_) {
++      geometry = /** @type {import("../../geom/Circle.js").default} */ (
++        geometry.simplifyTransformed(
++          this.squaredTolerance_,
++          this.userTransform_
++        )
++      );
++    }
+     if (!intersects(this.extent_, geometry.getExtent())) {
+       return;
+     }
+@@ -614,7 +622,7 @@ class CanvasImmediateRenderer extends VectorContext {
+    */
+   drawFeature(feature, style) {
+     const geometry = style.getGeometryFunction()(feature);
+-    if (!geometry || !intersects(this.extent_, geometry.getExtent())) {
++    if (!geometry) {
+       return;
+     }
+     this.setStyle(style);
+diff --git a/test/rendering/cases/immediate-geographic-feature/expected.png b/test/rendering/cases/immediate-geographic-feature/expected.png
+new file mode 100644
+index 00000000000..c5155b9a178
+Binary files /dev/null and b/test/rendering/cases/immediate-geographic-feature/expected.png differ
+diff --git a/test/rendering/cases/immediate-geographic-feature/main.js b/test/rendering/cases/immediate-geographic-feature/main.js
+new file mode 100644
+index 00000000000..76b170aa608
+--- /dev/null
++++ b/test/rendering/cases/immediate-geographic-feature/main.js
+@@ -0,0 +1,41 @@
++import TileLayer from '../../../../src/ol/layer/Tile.js';
++import XYZ from '../../../../src/ol/source/XYZ.js';
++import {Circle} from '../../../../src/ol/geom.js';
++import {Feature, Map, View} from '../../../../src/ol/index.js';
++import {Stroke, Style} from '../../../../src/ol/style.js';
++import {getVectorContext} from '../../../../src/ol/render.js';
++import {useGeographic} from '../../../../src/ol/proj.js';
++
++useGeographic();
++
++const center = [8.6, 50.1];
++
++const layer = new TileLayer({
++  source: new XYZ({
++    url: '/data/tiles/satellite/{z}/{x}/{y}.jpg',
++    transition: 0,
++  }),
++});
++
++layer.on('postrender', (event) => {
++  const context = getVectorContext(event);
++  const style = new Style({
++    stroke: new Stroke({
++      width: 5,
++      color: 'red',
++    }),
++  });
++  const feature = new Feature(new Circle(center, 5));
++  context.drawFeature(feature, style);
++});
++
++new Map({
++  target: 'map',
++  layers: [layer],
++  view: new View({
++    center: center,
++    zoom: 3,
++  }),
++});
++
++render();

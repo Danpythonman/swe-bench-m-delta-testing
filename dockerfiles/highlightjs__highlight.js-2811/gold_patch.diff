@@ -1,0 +1,127 @@
+diff --git a/AUTHORS.txt b/AUTHORS.txt
+index 7b48423b6e..ec9525f059 100644
+--- a/AUTHORS.txt
++++ b/AUTHORS.txt
+@@ -295,3 +295,4 @@ Contributors:
+ - Richard Gibson <gibson042@github>
+ - Fredrik Ekre <ekrefredrik@gmail.com>
+ - Jan Pilzer <Hirse@github>
++- Jonathan Sharpe <mail@jonrshar.pe>
+diff --git a/CHANGES.md b/CHANGES.md
+index f4a2c9d127..b713560245 100644
+--- a/CHANGES.md
++++ b/CHANGES.md
+@@ -8,6 +8,7 @@ Language Improvements:
+ - enh(javascript) Match numeric literals per ECMA-262 spec [Richard Gibson][]
+ - enh(java) Match numeric literals per Java Language Specification [Richard Gibson][]
+ - enh(php) highlight variables (#2785) [Taufik Nurrohman][]
++- fix(python) Handle comments on decorators (#2804) [Jonathan Sharpe][]
+ 
+ Dev Improvements:
+ 
+@@ -23,6 +24,7 @@ New themes:
+ [Josh Goebel]: https://github.com/joshgoebel
+ [Taufik Nurrohman]: https://github.com/taufik-nurrohman
+ [Jan Pilzer]: https://github.com/Hirse
++[Jonathan Sharpe]: https://github.com/textbook
+ 
+ 
+ ## Version 10.3.1
+diff --git a/src/languages/python.js b/src/languages/python.js
+index e9151e7560..3840c57b62 100644
+--- a/src/languages/python.js
++++ b/src/languages/python.js
+@@ -275,7 +275,8 @@ export default function(hljs) {
+       },
+       {
+         className: 'meta',
+-        begin: /^[\t ]*@/, end: /$/
++        begin: /^[\t ]*@/, end: /(?=#)|$/,
++        contains: [NUMBER, PARAMS, STRING]
+       },
+       {
+         begin: /\b(print|exec)\(/ // don’t highlight keywords-turned-functions in Python 3
+diff --git a/test/detect/python/default.txt b/test/detect/python/default.txt
+index 1216323cbb..17811a2d23 100644
+--- a/test/detect/python/default.txt
++++ b/test/detect/python/default.txt
+@@ -1,4 +1,4 @@
+-@requires_authorization
++@requires_authorization(roles=["ADMIN"])
+ def somefunc(param1='', param2=0):
+     r'''A docstring'''
+     if param1 > param2: # interesting
+diff --git a/test/markup/python/decorators.expect.txt b/test/markup/python/decorators.expect.txt
+new file mode 100644
+index 0000000000..a0ab79766f
+--- /dev/null
++++ b/test/markup/python/decorators.expect.txt
+@@ -0,0 +1,31 @@
++<span class="hljs-meta">@foo</span>
++<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">bar</span>():</span>
++    <span class="hljs-keyword">pass</span>
++
++<span class="hljs-meta">@foo  </span><span class="hljs-comment"># bar</span>
++<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">baz</span>():</span>
++    <span class="hljs-keyword">pass</span>
++
++<span class="hljs-meta">@foo.bar.baz</span>
++<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">qux</span>():</span>
++    <span class="hljs-keyword">pass</span>
++
++<span class="hljs-meta">@surround_with(<span class="hljs-params"><span class="hljs-string">&quot;#&quot;</span>, repeat=<span class="hljs-number">3</span></span>)</span>
++<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">text</span>():</span>
++    <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;hi!&quot;</span>
++
++<span class="hljs-meta">@py38.style</span>
++<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">func</span>():</span>
++    <span class="hljs-keyword">pass</span>
++
++<span class="hljs-meta">@py[<span class="hljs-string">&quot;3.9&quot;</span>].style</span>
++<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">func</span>():</span>
++    <span class="hljs-keyword">pass</span>
++
++<span class="hljs-meta">@py[<span class="hljs-number">3.9</span>].style</span>
++<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">func</span>():</span>
++    <span class="hljs-keyword">pass</span>
++
++<span class="hljs-meta">@<span class="hljs-number">2</span> + <span class="hljs-number">2</span> == <span class="hljs-number">5</span></span>
++<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">func</span>():</span>
++    <span class="hljs-keyword">pass</span>
+diff --git a/test/markup/python/decorators.txt b/test/markup/python/decorators.txt
+new file mode 100644
+index 0000000000..950d759319
+--- /dev/null
++++ b/test/markup/python/decorators.txt
+@@ -0,0 +1,31 @@
++@foo
++def bar():
++    pass
++
++@foo  # bar
++def baz():
++    pass
++
++@foo.bar.baz
++def qux():
++    pass
++
++@surround_with("#", repeat=3)
++def text():
++    return "hi!"
++
++@py38.style
++def func():
++    pass
++
++@py["3.9"].style
++def func():
++    pass
++
++@py[3.9].style
++def func():
++    pass
++
++@2 + 2 == 5
++def func():
++    pass

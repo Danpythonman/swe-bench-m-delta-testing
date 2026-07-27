@@ -1,0 +1,95 @@
+diff --git a/src/language-js/printer-estree.js b/src/language-js/printer-estree.js
+index 68875559ab90..cf4a211c78c4 100644
+--- a/src/language-js/printer-estree.js
++++ b/src/language-js/printer-estree.js
+@@ -449,12 +449,17 @@ function printPathNoParens(path, options, print, args) {
+ 
+       return concat(parts);
+ 
+-    case "Program":
++    case "Program": {
++      const hasContents =
++        !n.body.every(({ type }) => type === "EmptyStatement") || n.comments;
++
+       // Babel 6
+       if (n.directives) {
+-        path.each((childPath) => {
++        const directivesCount = n.directives.length;
++        path.map((childPath, index) => {
+           parts.push(print(childPath), semi, hardline);
+           if (
++            (index < directivesCount - 1 || hasContents) &&
+             isNextLineEmpty(
+               options.originalText,
+               childPath.getValue(),
+@@ -477,14 +482,12 @@ function printPathNoParens(path, options, print, args) {
+       );
+ 
+       // Only force a trailing newline if there were any contents.
+-      if (
+-        !n.body.every(({ type }) => type === "EmptyStatement") ||
+-        n.comments
+-      ) {
++      if (hasContents) {
+         parts.push(hardline);
+       }
+ 
+       return concat(parts);
++    }
+     // Babel extension.
+     case "EmptyStatement":
+       return "";
+diff --git a/tests/js/directives/jsfmt.spec.js b/tests/js/directives/jsfmt.spec.js
+index eb85eda6bd02..f5b37cd79521 100644
+--- a/tests/js/directives/jsfmt.spec.js
++++ b/tests/js/directives/jsfmt.spec.js
+@@ -1 +1,48 @@
+-run_spec(__dirname, ["babel", "flow", "typescript"]);
++const { outdent } = require("outdent");
++
++run_spec(
++  {
++    dirname: __dirname,
++    snippets: [
++      {
++        code: outdent`
++          'use strict';
++
++          // comment
++        `,
++        output:
++          outdent`
++            "use strict";
++
++            // comment
++          ` + "\n",
++      },
++      {
++        code: outdent`
++          'use strict';
++          // comment
++        `,
++        output:
++          outdent`
++            "use strict";
++            // comment
++          ` + "\n",
++      },
++      {
++        code:
++          outdent`
++            'use strict';
++
++            // comment
++          ` + "\n",
++        output:
++          outdent`
++            "use strict";
++
++            // comment
++          ` + "\n",
++      },
++    ],
++  },
++  ["babel", "flow", "typescript"]
++);

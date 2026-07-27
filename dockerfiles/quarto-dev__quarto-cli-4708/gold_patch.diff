@@ -1,0 +1,92 @@
+diff --git a/src/format/reveal/format-reveal.ts b/src/format/reveal/format-reveal.ts
+index 81ed58b7eff..9db1e30d239 100644
+--- a/src/format/reveal/format-reveal.ts
++++ b/src/format/reveal/format-reveal.ts
+@@ -391,6 +391,8 @@ function revealHtmlPostprocessor(
+       const titleSlide = doc.getElementById("title-slide");
+       if (titleSlide) {
+         titleSlide.removeAttribute("id");
++        // required for title-slide-style: pandoc
++        titleSlide.classList.add("quarto-title-block");
+       }
+     }
+ 
+@@ -520,7 +522,9 @@ function revealHtmlPostprocessor(
+     // doing this now the odds a user would want all of their
+     // slides cnetered but NOT the title slide are close to zero
+     if (format.metadata[kCenterTitleSlide] !== false) {
+-      const titleSlide = doc.getElementById("title-slide") as Element;
++      const titleSlide = doc.getElementById("title-slide") as Element ??
++        // when hash-type: number, id are removed
++        doc.querySelector(".reveal .slides section.quarto-title-block");
+       if (titleSlide) {
+         titleSlide.classList.add("center");
+       }
+diff --git a/src/resources/formats/revealjs/quarto.scss b/src/resources/formats/revealjs/quarto.scss
+index 1736f11b59c..69f9535a562 100644
+--- a/src/resources/formats/revealjs/quarto.scss
++++ b/src/resources/formats/revealjs/quarto.scss
+@@ -203,12 +203,13 @@ section.has-dark-background {
+   }
+ }
+ 
+-#title-slide {
++#title-slide,
++/* for when hash-type: number as identifier removed*/
++div.reveal div.slides section.quarto-title-block {
+   text-align: $presentation-title-slide-text-align;
+-}
+-
+-#title-slide .subtitle {
+-  margin-bottom: 2.5rem;
++  .subtitle {
++    margin-bottom: 2.5rem;
++  }
+ }
+ 
+ .reveal .slides {
+diff --git a/tests/docs/smoke-all/2023/03/08/revealjs-hash-number-pandoc-style.qmd b/tests/docs/smoke-all/2023/03/08/revealjs-hash-number-pandoc-style.qmd
+new file mode 100644
+index 00000000000..1114ce86702
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/03/08/revealjs-hash-number-pandoc-style.qmd
+@@ -0,0 +1,17 @@
++---
++title: Slide title
++format:
++  revealjs:
++    hash-type: number
++title-slide-style: pandoc
++_quarto:
++  tests:
++    revealjs:
++      ensureHtmlElements:
++        - ["div.reveal > div.slides > section.quarto-title-block" ]
++        - ["#title-slide"]
++---
++
++## slide 1
++
++Content
+diff --git a/tests/docs/smoke-all/2023/03/08/revealjs-hash-number.qmd b/tests/docs/smoke-all/2023/03/08/revealjs-hash-number.qmd
+new file mode 100644
+index 00000000000..921b5b93d6e
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/03/08/revealjs-hash-number.qmd
+@@ -0,0 +1,16 @@
++---
++title: Slide title
++format:
++  revealjs:
++    hash-type: number
++_quarto:
++  tests:
++    revealjs:
++      ensureHtmlElements:
++        - ["div.reveal > div.slides > section.quarto-title-block" ]
++        - ["#title-slide"]
++---
++
++## slide 1
++
++Content

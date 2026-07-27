@@ -41,8 +41,9 @@ log = logging.getLogger(__name__)
 JEST_OUTPUT_FILE: Final[str] = '/tmp/jest-results.json'
 
 JEST_CMD: Final[list[str]] = [
-    '/bin/sh', '-c',
-    f'yarn jest --json --outputFile={JEST_OUTPUT_FILE}'
+    '/bin/sh',
+    '-c',
+    f'yarn jest --json --outputFile={JEST_OUTPUT_FILE}',
 ]
 
 
@@ -76,6 +77,7 @@ class PrettierEvaluator(Evaluator):
             self.patch_type,
             self.agent_name,
             results_json,
+            self.timestamp,
         )
 
     @override

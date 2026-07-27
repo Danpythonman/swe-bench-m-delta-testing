@@ -1,0 +1,91 @@
+diff --git a/src/core/handlers/base.ts b/src/core/handlers/base.ts
+index 65f100d1e51..fc71135d233 100644
+--- a/src/core/handlers/base.ts
++++ b/src/core/handlers/base.ts
+@@ -279,8 +279,15 @@ function makeHandlerContext(
+   return { context, results };
+ }
+ 
++// return cell language handler only
+ export function languages(): string[] {
+-  return Object.keys(handlers);
++  const cellLanguage = [];
++  for (const [k, v] of Object.entries(handlers)) {
++    if (v.type === "cell") {
++      cellLanguage.push(k);
++    }
++  }
++  return cellLanguage;
+ }
+ 
+ export async function languageSchema(
+diff --git a/src/resources/rmd/hooks.R b/src/resources/rmd/hooks.R
+index 4bd1f1a539d..94322b5aabe 100644
+--- a/src/resources/rmd/hooks.R
++++ b/src/resources/rmd/hooks.R
+@@ -44,6 +44,11 @@ knitr_hooks <- function(format, resourceDir, handledLanguages) {
+         options[["results"]] <- "hold"
+       }
+     }
++    # for source-only engine, always set `echo: TRUE`
++    if (options[["engine"]] %in% c("embed", "verbatim")) {
++      options[["echo"]] <- TRUE
++    }
++
+     options
+   }
+ 
+@@ -162,9 +167,8 @@ knitr_hooks <- function(format, resourceDir, handledLanguages) {
+       return(x)
+     }
+ 
+-    # verbatim and comment should do nothing
+-    if (identical(options[["engine"]], "verbatim") ||
+-        identical(options[["engine"]], "comment")) {
++    # verbatim-like and comment knitr's engine should do nothing
++    if (options[["engine"]] %in% c("verbatim", "embed", "comment")) {
+       return(x)
+     }
+ 
+diff --git a/tests/docs/smoke-all/2023/03/09/code.R b/tests/docs/smoke-all/2023/03/09/code.R
+new file mode 100644
+index 00000000000..041a291f37c
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/03/09/code.R
+@@ -0,0 +1 @@
++cat("this is code.R\n")
+\ No newline at end of file
+diff --git a/tests/docs/smoke-all/2023/03/09/revealjs-knitr-embed-verbatim.qmd b/tests/docs/smoke-all/2023/03/09/revealjs-knitr-embed-verbatim.qmd
+new file mode 100644
+index 00000000000..e9bf9d1bf69
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/03/09/revealjs-knitr-embed-verbatim.qmd
+@@ -0,0 +1,28 @@
++---
++format: 
++  revealjs: default
++engine: knitr
++_quarto:
++  tests:
++    revealjs:
++      ensureHtmlElements:
++        - ["#verbatim div.sourceCode pre code", "#embed div.sourceCode pre code"]
++        - ["#verbatim div.cell", "#embed div.cell"]
++      ensureFileRegexMatches:
++        - ["this is code\\.R"]
++        - []
++---
++
++From issue : https://github.com/quarto-dev/quarto-cli/issues/4712
++
++## Verbatim {#verbatim}
++
++````{verbatim}
++Some content
++````
++
++## Embed {#embed}
++
++````{embed, file = "code.R"}
++````
++

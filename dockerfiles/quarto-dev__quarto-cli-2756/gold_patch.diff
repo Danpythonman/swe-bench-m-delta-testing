@@ -1,0 +1,68 @@
+diff --git a/news/changelog-1.2.md b/news/changelog-1.2.md
+index 4935c992d56..f60aeaa8e68 100644
+--- a/news/changelog-1.2.md
++++ b/news/changelog-1.2.md
+@@ -47,6 +47,7 @@
+ - Support installation of extensions from with subdirectories of a github repo
+ - Lua `require` can now find modules adjacent to the current script
+ - Use snake case for Quarto Lua API functions (match Pandoc API)
++- Fix theorem captions when there's no text (#2166, #2228)
+ 
+ ## Projects
+ 
+diff --git a/src/resources/filters/crossref/theorems.lua b/src/resources/filters/crossref/theorems.lua
+index 5b3707c7dbd..fe76dec73dd 100644
+--- a/src/resources/filters/crossref/theorems.lua
++++ b/src/resources/filters/crossref/theorems.lua
+@@ -78,18 +78,27 @@ function theorems()
+           end
+ 
+           -- If this theorem has no content, then create a placeholder
+-          if #el.content == 0 then
+-            el.content[1] = pandoc.Para({})
++          if #el.content == 0 or el.content[1].t ~= "Para" then
++            tprepend(el.content, {pandoc.Para({})})
+           end
+ 
+           -- prepend the prefix
+           local caption = el.content[1]
+-          tprepend(caption.content, { 
++          local prefix = { 
+             pandoc.Span(
+               pandoc.Strong(prefix), 
+               pandoc.Attr("", { "theorem-title" })
+             )
+-          })
++          }
++
++          if caption.content == nil then
++            -- https://github.com/quarto-dev/quarto-cli/issues/2228
++            -- caption doesn't always have a content field; in that case,
++            -- use the parent?
++            tprepend(el.content, prefix)
++          else
++            tprepend(caption.content, prefix)
++          end
+         end
+ 
+       else
+diff --git a/tests/docs/smoke-all/2022/10/06/issue-2228.qmd b/tests/docs/smoke-all/2022/10/06/issue-2228.qmd
+new file mode 100644
+index 00000000000..b38139b57fa
+--- /dev/null
++++ b/tests/docs/smoke-all/2022/10/06/issue-2228.qmd
+@@ -0,0 +1,13 @@
++---
++format: html
++---
++
++::: {#thm-line}
++
++## Line (with or without the Lua filter error occurs)
++
++```
++1+1
++```
++
++:::
+\ No newline at end of file

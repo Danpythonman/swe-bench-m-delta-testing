@@ -1,0 +1,631 @@
+diff --git a/lighthouse-core/audits/byte-efficiency/unminified-css.js b/lighthouse-core/audits/byte-efficiency/unminified-css.js
+index 61b533f28d16..c5ec4a95429e 100644
+--- a/lighthouse-core/audits/byte-efficiency/unminified-css.js
++++ b/lighthouse-core/audits/byte-efficiency/unminified-css.js
+@@ -8,6 +8,7 @@
+ const ByteEfficiencyAudit = require('./byte-efficiency-audit');
+ const UnusedCSSRules = require('./unused-css-rules');
+ const i18n = require('../../lib/i18n/i18n.js');
++const computeTokenLength = require('../../lib/minification-estimator').computeCSSTokenLength;
+ 
+ const UIStrings = {
+   /** Imperative title of a Lighthouse audit that tells the user to minify (remove whitespace) the page's CSS code. This is displayed in a list of audit titles that Lighthouse generates. */
+@@ -46,58 +47,7 @@ class UnminifiedCSS extends ByteEfficiencyAudit {
+    * @return {number}
+    */
+   static computeTokenLength(content) {
+-    let totalTokenLength = 0;
+-    let isInComment = false;
+-    let isInLicenseComment = false;
+-    let isInString = false;
+-    let stringOpenChar = null;
+-
+-    for (let i = 0; i < content.length; i++) {
+-      const twoChars = content.substr(i, 2);
+-      const char = twoChars.charAt(0);
+-
+-      const isWhitespace = char === ' ' || char === '\n' || char === '\t';
+-      const isAStringOpenChar = char === `'` || char === '"';
+-
+-      if (isInComment) {
+-        if (isInLicenseComment) totalTokenLength++;
+-
+-        if (twoChars === '*/') {
+-          if (isInLicenseComment) totalTokenLength++;
+-          isInComment = false;
+-          i++;
+-        }
+-      } else if (isInString) {
+-        totalTokenLength++;
+-        if (char === '\\') {
+-          totalTokenLength++;
+-          i++;
+-        } else if (char === stringOpenChar) {
+-          isInString = false;
+-        }
+-      } else {
+-        if (twoChars === '/*') {
+-          isInComment = true;
+-          isInLicenseComment = content.charAt(i + 2) === '!';
+-          if (isInLicenseComment) totalTokenLength += 2;
+-          i++;
+-        } else if (isAStringOpenChar) {
+-          isInString = true;
+-          stringOpenChar = char;
+-          totalTokenLength++;
+-        } else if (!isWhitespace) {
+-          totalTokenLength++;
+-        }
+-      }
+-    }
+-
+-    // If the content contained unbalanced comments, it's either invalid or we had a parsing error.
+-    // Report the token length as the entire string so it will be ignored.
+-    if (isInComment || isInString) {
+-      return content.length;
+-    }
+-
+-    return totalTokenLength;
++    return computeTokenLength(content);
+   }
+ 
+   /**
+diff --git a/lighthouse-core/audits/byte-efficiency/unminified-javascript.js b/lighthouse-core/audits/byte-efficiency/unminified-javascript.js
+index 6b505aaf494d..441a297334bd 100644
+--- a/lighthouse-core/audits/byte-efficiency/unminified-javascript.js
++++ b/lighthouse-core/audits/byte-efficiency/unminified-javascript.js
+@@ -6,8 +6,8 @@
+ 'use strict';
+ 
+ const ByteEfficiencyAudit = require('./byte-efficiency-audit');
+-const esprima = require('esprima');
+ const i18n = require('../../lib/i18n/i18n.js');
++const computeTokenLength = require('../../lib/minification-estimator').computeJSTokenLength;
+ 
+ const UIStrings = {
+   /** Imperative title of a Lighthouse audit that tells the user to minify the page’s JS code to reduce file size. This is displayed in a list of audit titles that Lighthouse generates. */
+@@ -53,17 +53,7 @@ class UnminifiedJavaScript extends ByteEfficiencyAudit {
+    */
+   static computeWaste(scriptContent, networkRecord) {
+     const contentLength = scriptContent.length;
+-    let totalTokenLength = 0;
+-
+-    /** @type {Array<esprima.Token> & {errors: Error[]}} */
+-    const tokens = (esprima.tokenize(scriptContent, {tolerant: true}));
+-    if (!tokens.length && tokens.errors && tokens.errors.length) {
+-      throw tokens.errors[0];
+-    }
+-
+-    for (const token of tokens) {
+-      totalTokenLength += token.value.length;
+-    }
++    const totalTokenLength = computeTokenLength(scriptContent);
+ 
+     const totalBytes = ByteEfficiencyAudit.estimateTransferSize(networkRecord, contentLength,
+       'Script');
+diff --git a/lighthouse-core/lib/minification-estimator.js b/lighthouse-core/lib/minification-estimator.js
+new file mode 100644
+index 000000000000..88686e1ca802
+--- /dev/null
++++ b/lighthouse-core/lib/minification-estimator.js
+@@ -0,0 +1,162 @@
++/**
++ * @license Copyright 2018 Google Inc. All Rights Reserved.
++ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
++ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
++ */
++'use strict';
++
++// https://www.ecma-international.org/ecma-262/9.0/index.html#sec-punctuators
++// eslint-disable-next-line max-len
++const PUNCTUATOR_REGEX = /(return|{|\(|\[|\.\.\.|;|,|<|>|<=|>=|==|!=|===|!==|\+|-|\*|%|\*\*|\+\+|--|<<|>>|>>>|&|\||\^|!|~|&&|\|\||\?|:|=|\+=|-=|\*=|%=|\*\*=|<<=|>>=|>>>=|&=|\|=|\^=|=>|\/|\/=|\})$/;
++const WHITESPACE_REGEX = /( |\n|\t)+$/;
++
++/**
++ * Look backwards from `startPosition` in `content` for an ECMAScript punctuator.
++ * This is used to differentiate a RegExp from a divide statement.
++ * If a punctuator immediately precedes a lone `/`, the `/` must be the start of a RegExp.
++ *
++ * @param {string} content
++ * @param {number} startPosition
++ */
++function hasPunctuatorBefore(content, startPosition) {
++  for (let i = startPosition; i > 0; i--) {
++    // Try to grab at least 6 characters so we can check for `return`
++    const sliceStart = Math.max(0, i - 6);
++    const precedingCharacters = content.slice(sliceStart, i);
++    // Skip over any ending whitespace
++    if (WHITESPACE_REGEX.test(precedingCharacters)) continue;
++    // Check if it's a punctuator
++    return PUNCTUATOR_REGEX.test(precedingCharacters);
++  }
++
++  // The beginning of the content counts too for our purposes.
++  // i.e. a script can't start with a divide symbol
++  return true;
++}
++
++
++/**
++ *
++ * @param {string} content
++ * @param {{singlelineComments: boolean, regex: boolean}} features
++ */
++function computeTokenLength(content, features) {
++  let totalTokenLength = 0;
++  let isInSinglelineComment = false;
++  let isInMultilineComment = false;
++  let isInLicenseComment = false;
++  let isInString = false;
++  let isInRegex = false;
++  let stringOpenChar = null;
++
++  for (let i = 0; i < content.length; i++) {
++    const twoChars = content.substr(i, 2);
++    const char = twoChars.charAt(0);
++
++    const isWhitespace = char === ' ' || char === '\n' || char === '\t';
++    const isAStringOpenChar = char === `'` || char === '"' || char === '`';
++
++    if (isInSinglelineComment) {
++      if (char === '\n') {
++        // End the comment when you hit a newline
++        isInSinglelineComment = false;
++      }
++    } else if (isInMultilineComment) {
++      // License comments count
++      if (isInLicenseComment) totalTokenLength++;
++
++      if (twoChars === '*/') {
++        // License comments count, account for the '/' character we're skipping over
++        if (isInLicenseComment) totalTokenLength++;
++        // End the comment when we hit the closing sequence
++        isInMultilineComment = false;
++        // Skip over the '/' character since we've already processed it
++        i++;
++      }
++    } else if (isInString) {
++      // String characters count
++      totalTokenLength++;
++
++      if (char === '\\') {
++        // Skip over any escaped characters
++        totalTokenLength++;
++        i++;
++      } else if (char === stringOpenChar) {
++        // End the string when we hit the same stringOpenCharacter
++        isInString = false;
++        // console.log(i, 'exiting string', stringOpenChar)
++      }
++    } else if (isInRegex) {
++      // Regex characters count
++      totalTokenLength++;
++
++      if (char === '\\') {
++        // Skip over any escaped characters
++        totalTokenLength++;
++        i++;
++      } else if (char === '/') {
++        // End the string when we hit the regex close character
++        isInRegex = false;
++        // console.log(i, 'leaving regex', char)
++      }
++    } else {
++      // We're not in any particular token mode, look for the start of different
++      if (twoChars === '/*') {
++        // Start the multi-line comment
++        isInMultilineComment = true;
++        // Check if it's a license comment so we know whether to count it
++        isInLicenseComment = content.charAt(i + 2) === '!';
++        // += 2 because we are processing 2 characters, not just 1
++        if (isInLicenseComment) totalTokenLength += 2;
++        // Skip over the '*' character since we've already processed it
++        i++;
++      } else if (twoChars === '//' && features.singlelineComments) {
++        // Start the single-line comment
++        isInSinglelineComment = true;
++        isInMultilineComment = false;
++        isInLicenseComment = false;
++        // Skip over the second '/' character since we've already processed it
++        i++;
++      } else if (char === '/' && features.regex && hasPunctuatorBefore(content, i)) {
++        // Start the regex
++        isInRegex = true;
++        // Regex characters count
++        totalTokenLength++;
++      } else if (isAStringOpenChar) {
++        // Start the string
++        isInString = true;
++        // Save the open character for later so we know when to close it
++        stringOpenChar = char;
++        // String characters count
++        totalTokenLength++;
++      } else if (!isWhitespace) {
++        // All non-whitespace characters count
++        totalTokenLength++;
++      }
++    }
++  }
++
++  // If the content contained unbalanced comments, it's either invalid or we had a parsing error.
++  // Report the token length as the entire string so it will be ignored.
++  if (isInMultilineComment || isInString) {
++    return content.length;
++  }
++
++  return totalTokenLength;
++}
++
++/**
++ * @param {string} content
++ */
++function computeJSTokenLength(content) {
++  return computeTokenLength(content, {singlelineComments: true, regex: true});
++}
++
++/**
++ * @param {string} content
++ */
++function computeCSSTokenLength(content) {
++  return computeTokenLength(content, {singlelineComments: false, regex: false});
++}
++
++module.exports = {computeJSTokenLength, computeCSSTokenLength};
+diff --git a/lighthouse-core/test/audits/byte-efficiency/unminified-css-test.js b/lighthouse-core/test/audits/byte-efficiency/unminified-css-test.js
+index d2f358eb02fe..9d9d55aa3f1c 100644
+--- a/lighthouse-core/test/audits/byte-efficiency/unminified-css-test.js
++++ b/lighthouse-core/test/audits/byte-efficiency/unminified-css-test.js
+@@ -13,109 +13,6 @@ const assert = require('assert');
+ 
+ const resourceType = 'Stylesheet';
+ describe('Page uses optimized css', () => {
+-  describe('#computeTokenLength', () => {
+-    it('should compute length of meaningful content', () => {
+-      const full = `
+-        /*
+-         * a complicated comment
+-         * that is
+-         * several
+-         * lines
+-         */
+-        .my-class {
+-          /* a simple comment */
+-          width: 100px;
+-          height: 100px;
+-        }
+-      `;
+-
+-      const minified = '.my-class{width:100px;height:100px;}';
+-      assert.equal(UnminifiedCssAudit.computeTokenLength(full), minified.length);
+-    });
+-
+-    it('should handle string edge cases', () => {
+-      const pairs = [
+-        ['.my-class { content: "/*"; }', '.my-class{content:"/*";}'],
+-        ['.my-class { content: \'/* */\'; }', '.my-class{content:\'/* */\';}'],
+-        ['.my-class { content: "/*\\\\a"; }', '.my-class{content:"/*\\\\a";}'],
+-        ['.my-class { content: "/*\\"a"; }', '.my-class{content:"/*\\"a";}'],
+-        ['.my-class { content: "hello }', '.my-class { content: "hello }'],
+-        ['.my-class { content: "hello" }', '.my-class{content:"hello"}'],
+-      ];
+-
+-      for (const [full, minified] of pairs) {
+-        assert.equal(
+-          UnminifiedCssAudit.computeTokenLength(full),
+-          minified.length,
+-          `did not handle ${full} properly`
+-        );
+-      }
+-    });
+-
+-    it('should handle comment edge cases', () => {
+-      const full = `
+-        /* here is a cool "string I found" */
+-        .my-class {
+-          content: "/*";
+-        }
+-      `;
+-
+-      const minified = '.my-class{content:"/*";}';
+-      assert.equal(UnminifiedCssAudit.computeTokenLength(full), minified.length);
+-    });
+-
+-    it('should handle license comments', () => {
+-      const full = `
+-        /*!
+-         * @LICENSE
+-         * Apache 2.0
+-         */
+-        .my-class {
+-          width: 100px;
+-        }
+-      `;
+-
+-      const minified = `/*!
+-         * @LICENSE
+-         * Apache 2.0
+-         */.my-class{width:100px;}`;
+-      assert.equal(UnminifiedCssAudit.computeTokenLength(full), minified.length);
+-    });
+-
+-    it('should handle unbalanced comments', () => {
+-      const full = `
+-        /*
+-        .my-class {
+-          width: 100px;
+-        }
+-      `;
+-
+-      assert.equal(UnminifiedCssAudit.computeTokenLength(full), full.length);
+-    });
+-
+-    it('should handle data URIs', () => {
+-      const uri = 'data:image/jpeg;base64,asdfadiosgjwiojasfaasd';
+-      const full = `
+-        .my-other-class {
+-          background: data("${uri}");
+-          height: 100px;
+-        }
+-     `;
+-
+-      const minified = `.my-other-class{background:data("${uri}");height:100px;}`;
+-      assert.equal(UnminifiedCssAudit.computeTokenLength(full), minified.length);
+-    });
+-
+-    it('should handle reeally long strings', () => {
+-      let hugeCss = '';
+-      for (let i = 0; i < 10000; i++) {
+-        hugeCss += `.my-class-${i} { width: 100px; height: 100px; }\n`;
+-      }
+-
+-      assert.ok(UnminifiedCssAudit.computeTokenLength(hugeCss) < 0.9 * hugeCss.length);
+-    });
+-  });
+-
+   it('fails when given unminified stylesheets', () => {
+     const auditResult = UnminifiedCssAudit.audit_(
+       {
+diff --git a/lighthouse-core/test/audits/byte-efficiency/unminified-javascript-test.js b/lighthouse-core/test/audits/byte-efficiency/unminified-javascript-test.js
+index c11662888099..cd285fd9ab34 100644
+--- a/lighthouse-core/test/audits/byte-efficiency/unminified-javascript-test.js
++++ b/lighthouse-core/test/audits/byte-efficiency/unminified-javascript-test.js
+@@ -43,7 +43,7 @@ describe('Page uses optimized responses', () => {
+             const foo = 1
+             /Edge\/\d*\.\d*/.exec('foo')
+           `,
+-        '123.4': '#$*% non sense',
++        '123.4': '#$*%dense',
+       },
+     }, [
+       {requestId: '123.1', url: 'foo.js', transferSize: 20 * KB, resourceType},
+@@ -52,17 +52,16 @@ describe('Page uses optimized responses', () => {
+       {requestId: '123.4', url: 'invalid.js', transferSize: 100 * KB, resourceType},
+     ]);
+ 
+-    assert.ok(auditResult.warnings.length);
+-    assert.equal(auditResult.items.length, 3);
+-    assert.equal(auditResult.items[0].url, 'foo.js');
+-    assert.equal(Math.round(auditResult.items[0].wastedPercent), 57);
+-    assert.equal(Math.round(auditResult.items[0].wastedBytes / 1024), 11);
+-    assert.equal(auditResult.items[1].url, 'other.js');
+-    assert.equal(Math.round(auditResult.items[1].wastedPercent), 53);
+-    assert.equal(Math.round(auditResult.items[1].wastedBytes / 1024), 27);
+-    assert.equal(auditResult.items[2].url, 'valid-ish.js');
+-    assert.equal(Math.round(auditResult.items[2].wastedPercent), 72);
+-    assert.equal(Math.round(auditResult.items[2].wastedBytes / 1024), 72);
++    const results = auditResult.items.map(item => Object.assign(item, {
++      wastedKB: Math.round(item.wastedBytes / 1024),
++      wastedPercent: Math.round(item.wastedPercent),
++    }));
++
++    expect(results).toMatchObject([
++      {url: 'foo.js', wastedPercent: 57, wastedKB: 11},
++      {url: 'other.js', wastedPercent: 53, wastedKB: 27},
++      {url: 'valid-ish.js', wastedPercent: 39, wastedKB: 39},
++    ]);
+   });
+ 
+   it('passes when scripts are already minified', () => {
+@@ -85,7 +84,7 @@ describe('Page uses optimized responses', () => {
+       },
+     }, [
+       {requestId: '123.1', url: 'foo.js', transferSize: 20 * KB, resourceType},
+-      {requestId: '123.2', url: 'other.js', transferSize: 3 * KB, resourceType},
++      {requestId: '123.2', url: 'other.js', transferSize: 3 * KB, resourceType}, // too small
+       {requestId: '123.3', url: 'invalid.js', transferSize: 20 * KB, resourceType},
+     ]);
+ 
+diff --git a/lighthouse-core/test/lib/minification-estimator-test.js b/lighthouse-core/test/lib/minification-estimator-test.js
+new file mode 100644
+index 000000000000..07cbf7b98bca
+--- /dev/null
++++ b/lighthouse-core/test/lib/minification-estimator-test.js
+@@ -0,0 +1,188 @@
++/**
++ * @license Copyright 2018 Google Inc. All Rights Reserved.
++ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
++ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
++ */
++'use strict';
++
++const assert = require('assert');
++const {computeCSSTokenLength, computeJSTokenLength} = require('../../lib/minification-estimator');
++
++/* eslint-env jest */
++
++describe('minification estimator', () => {
++  describe('CSS', () => {
++    it('should compute length of meaningful content', () => {
++      const full = `
++        /*
++         * a complicated comment
++         * that is
++         * several
++         * lines
++         */
++        .my-class {
++          /* a simple comment */
++          width: 100px;
++          height: 100px;
++        }
++      `;
++
++      const minified = '.my-class{width:100px;height:100px;}';
++      assert.equal(computeCSSTokenLength(full), minified.length);
++    });
++
++    it('should handle string edge cases', () => {
++      const pairs = [
++        ['.my-class { content: "/*"; }', '.my-class{content:"/*";}'],
++        ['.my-class { content: \'/* */\'; }', '.my-class{content:\'/* */\';}'],
++        ['.my-class { content: "/*\\\\a"; }', '.my-class{content:"/*\\\\a";}'],
++        ['.my-class { content: "/*\\"a"; }', '.my-class{content:"/*\\"a";}'],
++        ['.my-class { content: "hello }', '.my-class { content: "hello }'],
++        ['.my-class { content: "hello" }', '.my-class{content:"hello"}'],
++      ];
++
++      for (const [full, minified] of pairs) {
++        assert.equal(
++          computeCSSTokenLength(full),
++          minified.length,
++          `did not handle ${full} properly`
++        );
++      }
++    });
++
++    it('should handle comment edge cases', () => {
++      const full = `
++        /* here is a cool "string I found" */
++        .my-class {
++          content: "/*";
++        }
++      `;
++
++      const minified = '.my-class{content:"/*";}';
++      assert.equal(computeCSSTokenLength(full), minified.length);
++    });
++
++    it('should handle license comments', () => {
++      const full = `
++        /*!
++         * @LICENSE
++         * Apache 2.0
++         */
++        .my-class {
++          width: 100px;
++        }
++      `;
++
++      const minified = `/*!
++         * @LICENSE
++         * Apache 2.0
++         */.my-class{width:100px;}`;
++      assert.equal(computeCSSTokenLength(full), minified.length);
++    });
++
++    it('should handle unbalanced comments', () => {
++      const full = `
++        /*
++        .my-class {
++          width: 100px;
++        }
++      `;
++
++      assert.equal(computeCSSTokenLength(full), full.length);
++    });
++
++    it('should handle data URIs', () => {
++      const uri = 'data:image/jpeg;base64,asdfadiosgjwiojasfaasd';
++      const full = `
++        .my-other-class {
++          background: data("${uri}");
++          height: 100px;
++        }
++     `;
++
++      const minified = `.my-other-class{background:data("${uri}");height:100px;}`;
++      assert.equal(computeCSSTokenLength(full), minified.length);
++    });
++
++    it('should handle reeally long strings', () => {
++      let hugeCss = '';
++      for (let i = 0; i < 10000; i++) {
++        hugeCss += `.my-class-${i} { width: 100px; height: 100px; }\n`;
++      }
++
++      assert.ok(computeCSSTokenLength(hugeCss) < 0.9 * hugeCss.length);
++    });
++  });
++
++  describe('JS', () => {
++    it('should compute the length of tokens', () => {
++      const js = `
++        const foo = 1;
++        const bar = 2;
++        console.log(foo + bar);
++      `;
++
++      const tokensOnly = 'constfoo=1;constbar=2;console.log(foo+bar);';
++      assert.equal(computeJSTokenLength(js), tokensOnly.length);
++    });
++
++    it('should handle single-line comments', () => {
++      const js = `
++        // ignore me
++        12345
++      `;
++
++      assert.equal(computeJSTokenLength(js), 5);
++    });
++
++    it('should handle multi-line comments', () => {
++      const js = `
++        /* ignore
++         * me
++         * too
++         */
++        12345
++      `;
++
++      assert.equal(computeJSTokenLength(js), 5);
++    });
++
++    it('should handle strings', () => {
++      const pairs = [
++        [`'//123' // ignored`, 7], // single quotes
++        [`"//123" // ignored`, 7], // double quotes
++        [`'     ' // ignored`, 7], // whitespace in strings count
++        [`"\\" // not ignored"`, 19], // escaped quotes handled
++      ];
++
++      for (const [js, len] of pairs) {
++        assert.equal(computeJSTokenLength(js), len, `expected '${js}' to have token length ${len}`);
++      }
++    });
++
++    it('should handle template literals', () => {
++      const js = `
++        \`/* don't ignore this */\` // 25 characters
++        12345
++      `;
++
++      assert.equal(computeJSTokenLength(js), 25 + 5);
++    });
++
++    it('should handle regular expressions', () => {
++      const js = `
++        /regex '/ // this should be in comment not string 123456789
++      `;
++
++      assert.equal(computeJSTokenLength(js), 9);
++    });
++
++    it('should distinguish regex from divide', () => {
++      const js = `
++        return 1 / 2 // hello
++      `;
++
++      assert.equal(computeJSTokenLength(js), 9);
++    });
++  });
++});

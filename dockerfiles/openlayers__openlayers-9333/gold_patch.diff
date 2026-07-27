@@ -1,0 +1,4519 @@
+diff --git a/rendering/cases/layer-image/expected.png b/rendering/cases/layer-image/expected.png
+new file mode 100644
+index 00000000000..abe61291b4e
+Binary files /dev/null and b/rendering/cases/layer-image/expected.png differ
+diff --git a/rendering/cases/layer-image/main.js b/rendering/cases/layer-image/main.js
+new file mode 100644
+index 00000000000..6f44ba8e531
+--- /dev/null
++++ b/rendering/cases/layer-image/main.js
+@@ -0,0 +1,28 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import Static from '../../../src/ol/source/ImageStatic.js';
++import {
++  get as getProjection,
++  transform,
++  transformExtent
++} from '../../../src/ol/proj';
++import ImageLayer from '../../../src/ol/layer/Image.js';
++const center = transform([-122.416667, 37.783333], 'EPSG:4326', 'EPSG:3857');
++
++new Map({
++  pixelRatio: 1,
++  target: 'map',
++  layers: [new ImageLayer({
++    source: new Static({
++      url: '/data/tiles/osm/5/5/12.png',
++      imageExtent: transformExtent([-123, 37, -122, 38], 'EPSG:4326', 'EPSG:3857'),
++      projection: getProjection('EPSG:3857')
++    })
++  })],
++  view: new View({
++    center,
++    zoom: 8
++  })
++});
++
++render();
+diff --git a/rendering/cases/layer-tile-none-square/expected.png b/rendering/cases/layer-tile-none-square/expected.png
+new file mode 100644
+index 00000000000..9807e3f5084
+Binary files /dev/null and b/rendering/cases/layer-tile-none-square/expected.png differ
+diff --git a/rendering/cases/layer-tile-none-square/main.js b/rendering/cases/layer-tile-none-square/main.js
+new file mode 100644
+index 00000000000..c490ed252af
+--- /dev/null
++++ b/rendering/cases/layer-tile-none-square/main.js
+@@ -0,0 +1,30 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import XYZ from '../../../src/ol/source/XYZ';
++import {createXYZ} from '../../../src/ol/tilegrid.js';
++
++const center = [-10997148, 4569099];
++
++const layer = new TileLayer({
++  source: new XYZ({
++    url: '/data/tiles/512x256/{z}/{x}/{y}.png',
++    tileGrid: createXYZ({
++      tileSize: [512, 256]
++    }),
++    transition: 0
++  })
++});
++
++const map = new Map({
++  target: 'map',
++  pixelRatio: 1,
++  view: new View({
++    center: center,
++    zoom: 5
++  })
++});
++
++map.addLayer(layer);
++
++render();
+diff --git a/rendering/cases/layer-tile-opacity/expected.png b/rendering/cases/layer-tile-opacity/expected.png
+new file mode 100644
+index 00000000000..ab8f230eb1a
+Binary files /dev/null and b/rendering/cases/layer-tile-opacity/expected.png differ
+diff --git a/rendering/cases/layer-tile-opacity/main.js b/rendering/cases/layer-tile-opacity/main.js
+new file mode 100644
+index 00000000000..c34fc5d55d1
+--- /dev/null
++++ b/rendering/cases/layer-tile-opacity/main.js
+@@ -0,0 +1,26 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import {fromLonLat} from '../../../src/ol/proj';
++import XYZ from '../../../src/ol/source/XYZ';
++
++const center = fromLonLat([8.6, 50.1]);
++
++new Map({
++  layers: [
++    new TileLayer({
++      source: new XYZ({
++        url: '/data/tiles/satellite/{z}/{x}/{y}.jpg',
++        transition: 0
++      }),
++      opacity: 0.2
++    })
++  ],
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 3
++  })
++});
++
++render();
+diff --git a/rendering/cases/layer-tile-two-layers/expected.png b/rendering/cases/layer-tile-two-layers/expected.png
+new file mode 100644
+index 00000000000..e037067f81c
+Binary files /dev/null and b/rendering/cases/layer-tile-two-layers/expected.png differ
+diff --git a/rendering/cases/layer-tile-two-layers/main.js b/rendering/cases/layer-tile-two-layers/main.js
+new file mode 100644
+index 00000000000..709636fdfd3
+--- /dev/null
++++ b/rendering/cases/layer-tile-two-layers/main.js
+@@ -0,0 +1,35 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import {fromLonLat} from '../../../src/ol/proj';
++import XYZ from '../../../src/ol/source/XYZ';
++
++const center = fromLonLat([8.6, 50.1]);
++
++const layer1 = new TileLayer({
++  source: new XYZ({
++    url: '/data/tiles/satellite/{z}/{x}/{y}.jpg',
++    transition: 0
++  }),
++  opacity: 0.2
++});
++const layer2 = new TileLayer({
++  source: new XYZ({
++    url: '/data/tiles/stamen-labels/{z}/{x}/{y}.png',
++    transition: 0
++  })
++});
++
++const map = new Map({
++  pixelRatio: 1,
++  layers: [layer1, layer2],
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 3
++  })
++});
++
++map.getView().setRotation(Math.PI / 2);
++
++render();
+diff --git a/rendering/cases/layer-vector-decluttering/expected.png b/rendering/cases/layer-vector-decluttering/expected.png
+new file mode 100644
+index 00000000000..9e862e38d80
+Binary files /dev/null and b/rendering/cases/layer-vector-decluttering/expected.png differ
+diff --git a/rendering/cases/layer-vector-decluttering/main.js b/rendering/cases/layer-vector-decluttering/main.js
+new file mode 100644
+index 00000000000..a709c5d207d
+--- /dev/null
++++ b/rendering/cases/layer-vector-decluttering/main.js
+@@ -0,0 +1,161 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import Style from '../../../src/ol/style/Style.js';
++import Text from '../../../src/ol/style/Text.js';
++import CircleStyle from '../../../src/ol/style/Circle.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++
++let center = [1825927.7316762917, 6143091.089223046];
++const map = new Map({
++  pixelRatio: 1,
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 13
++  })
++});
++
++const source1 = new VectorSource();
++const layer1 = new VectorLayer({
++  declutter: true,
++  source: source1
++});
++
++const source2 = new VectorSource();
++const layer2 = new VectorLayer({
++  declutter: true,
++  source: source2
++});
++
++const source3 = new VectorSource();
++const layer3 = new VectorLayer({
++  declutter: true,
++  source: source3
++});
++
++const source4 = new VectorSource();
++const layer4 = new VectorLayer({
++  declutter: true,
++  source: source4
++});
++
++const feature1 = new Feature({
++  geometry: new Point(center),
++  zIndex: 2
++});
++source1.addFeature(feature1);
++source1.addFeature(new Feature({
++  geometry: new Point([center[0] - 540, center[1]]),
++  zIndex: 3
++}));
++source1.addFeature(new Feature({
++  geometry: new Point([center[0] + 540, center[1]]),
++  zIndex: 1
++}));
++layer1.setStyle(function(feature) {
++  return new Style({
++    image: new CircleStyle({
++      radius: 15,
++      stroke: new Stroke({
++        color: 'blue'
++      })
++    })
++  });
++});
++map.addLayer(layer1);
++
++center = [center[0] + 500, center[1] + 500];
++const feature2 = new Feature({
++  geometry: new Point(center),
++  text: 'center',
++  zIndex: 2
++});
++source2.addFeature(feature2);
++source2.addFeature(new Feature({
++  geometry: new Point([center[0] - 540, center[1]]),
++  text: 'west',
++  zIndex: 3
++}));
++source2.addFeature(new Feature({
++  geometry: new Point([center[0] + 540, center[1]]),
++  text: 'east',
++  zIndex: 1
++}));
++layer2.setStyle(function(feature) {
++  return new Style({
++    text: new Text({
++      text: feature.get('text'),
++      font: '12px sans-serif'
++    })
++  });
++});
++map.addLayer(layer2);
++
++center = [center[0] + 500, center[1] + 500];
++source3.addFeature(new Feature({
++  geometry: new Point(center),
++  text: 'center'
++}));
++source3.addFeature(new Feature({
++  geometry: new Point([center[0] - 540, center[1]]),
++  text: 'west'
++}));
++source3.addFeature(new Feature({
++  geometry: new Point([center[0] + 540, center[1]]),
++  text: 'east'
++}));
++layer3.setStyle(function(feature) {
++  return new Style({
++    image: new CircleStyle({
++      radius: 5,
++      stroke: new Stroke({
++        color: 'red'
++      })
++    }),
++    text: new Text({
++      text: feature.get('text'),
++      font: '12px sans-serif',
++      textBaseline: 'bottom',
++      offsetY: -5
++    })
++  });
++});
++map.addLayer(layer3);
++
++center = [center[0] - 2000, center[1] - 2000];
++const point = new Feature(new Point(center));
++point.setStyle(new Style({
++  zIndex: 2,
++  image: new CircleStyle({
++    radius: 8,
++    stroke: new Stroke({
++      color: 'blue'
++    })
++  })
++}));
++const line = new Feature(new LineString([
++  [center[0] - 650, center[1] - 200],
++  [center[0] + 650, center[1] - 200]
++]));
++line.setStyle(new Style({
++  zIndex: 1,
++  stroke: new Stroke({
++    color: '#CCC',
++    width: 12
++  }),
++  text: new Text({
++    placement: 'line',
++    text: 'east-west',
++    font: '12px sans-serif'
++  })
++}));
++source4.addFeature(point);
++source4.addFeature(line);
++map.addLayer(layer4);
++
++render({tolerance: 0.02});
+diff --git a/rendering/cases/layer-vector-polygon-partial/expected.png b/rendering/cases/layer-vector-polygon-partial/expected.png
+new file mode 100644
+index 00000000000..56e2fa461bd
+Binary files /dev/null and b/rendering/cases/layer-vector-polygon-partial/expected.png differ
+diff --git a/rendering/cases/layer-vector-polygon-partial/main.js b/rendering/cases/layer-vector-polygon-partial/main.js
+new file mode 100644
+index 00000000000..83706491019
+--- /dev/null
++++ b/rendering/cases/layer-vector-polygon-partial/main.js
+@@ -0,0 +1,54 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Feature from '../../../src/ol/Feature.js';
++import Polygon from '../../../src/ol/geom/Polygon.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import Fill from '../../../src/ol/style/Fill.js';
++
++const src = new VectorSource({
++  features: [
++    new Feature(new Polygon([[
++      [-22, 18],
++      [-22, 78],
++      [-9, 78],
++      [-9, 18],
++      [-22, 18]
++    ]])),
++    new Feature(new Polygon([[
++      [-9, 18],
++      [-9, 78],
++      [4, 78],
++      [4, 18],
++      [-9, 18]
++    ]]))
++  ]
++});
++const layer = new VectorLayer({
++  renderBuffer: 0,
++  source: src,
++  style: new Style({
++    stroke: new Stroke({
++      color: [0, 0, 0, 1],
++      width: 2
++    }),
++    fill: new Fill({
++      color: [255, 0, 0, 1]
++    })
++  })
++});
++const view = new View({
++  center: [-9.5, 78],
++  zoom: 2,
++  projection: 'EPSG:4326'
++});
++new Map({
++  pixelRatio: 1,
++  layers: [layer],
++  target: 'map',
++  view: view
++});
++
++render();
+diff --git a/rendering/cases/layer-vector-polygon/expected.png b/rendering/cases/layer-vector-polygon/expected.png
+new file mode 100644
+index 00000000000..f205b88c891
+Binary files /dev/null and b/rendering/cases/layer-vector-polygon/expected.png differ
+diff --git a/rendering/cases/layer-vector-polygon/main.js b/rendering/cases/layer-vector-polygon/main.js
+new file mode 100644
+index 00000000000..811c6d7673b
+--- /dev/null
++++ b/rendering/cases/layer-vector-polygon/main.js
+@@ -0,0 +1,43 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Feature from '../../../src/ol/Feature.js';
++import Polygon from '../../../src/ol/geom/Polygon.js';
++import Style from '../../../src/ol/style/Style.js';
++import Fill from '../../../src/ol/style/Fill.js';
++
++const feature = new Feature({
++  geometry: new Polygon([
++    [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]],
++    [[0, 60], [-17.6336, 24.2705], [-57.0634, 18.5410], [-28.5317, -9.2705], [-35.2671, -48.5410], [0, -30], [35.2671, -48.5410], [28.5317, -9.2705], [57.0634, 18.5410], [17.6336, 24.2705], [0, 60]]
++  ])
++});
++
++const src = new VectorSource({
++  features: [
++    feature
++  ]
++});
++const layer = new VectorLayer({
++  renderBuffer: 0,
++  source: src,
++  style: new Style({
++    fill: new Fill({
++      color: 'blue'
++    })
++  })
++});
++const view = new View({
++  center: [0, 0],
++  zoom: 1,
++  projection: 'EPSG:4326'
++});
++new Map({
++  pixelRatio: 1,
++  layers: [layer],
++  target: 'map',
++  view: view
++});
++
++render();
+diff --git a/rendering/cases/layer-vector/expected.png b/rendering/cases/layer-vector/expected.png
+new file mode 100644
+index 00000000000..e1a9deecf72
+Binary files /dev/null and b/rendering/cases/layer-vector/expected.png differ
+diff --git a/rendering/cases/layer-vector/main.js b/rendering/cases/layer-vector/main.js
+new file mode 100644
+index 00000000000..2b178d53518
+--- /dev/null
++++ b/rendering/cases/layer-vector/main.js
+@@ -0,0 +1,110 @@
++import Feature from '../../../src/ol/Feature.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import Polygon from '../../../src/ol/geom/Polygon.js';
++import Circle from '../../../src/ol/geom/Circle.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++
++const center = [1825927.7316762917, 6143091.089223046];
++
++const source1 = new VectorSource();
++const source2 = new VectorSource();
++const vectorLayer1 = new VectorLayer({
++  source: source1,
++  style: new Style({
++    stroke: new Stroke({
++      color: '#3399CC',
++      width: 1.25
++    })
++  })
++});
++const vectorLayer2 = new VectorLayer({
++  source: source2,
++  opacity: 0.6
++});
++
++function addCircle(r, source) {
++  source.addFeature(new Feature(new Circle(center, r)));
++}
++
++function addPolygon(r, source) {
++  source.addFeature(new Feature(new Polygon([
++    [
++      [center[0] - r, center[1] - r],
++      [center[0] + r, center[1] - r],
++      [center[0] + r, center[1] + r],
++      [center[0] - r, center[1] + r],
++      [center[0] - r, center[1] - r]
++    ]
++  ])));
++}
++
++const smallLine = new Feature(new LineString([
++  [center[0], center[1] - 1],
++  [center[0], center[1] + 1]
++]));
++smallLine.setStyle(new Style({
++  zIndex: -99,
++  stroke: new Stroke({width: 75, color: 'red'})
++}));
++smallLine.getGeometry().translate(-1000, 1000);
++source1.addFeature(smallLine);
++addPolygon(100, source1);
++addCircle(200, source1);
++addPolygon(250, source1);
++addCircle(500, source1);
++addPolygon(600, source1);
++addPolygon(720, source1);
++
++const smallLine2 = new Feature(new LineString([
++  [center[0], center[1] - 1000],
++  [center[0], center[1] + 1000]
++]));
++smallLine2.setStyle([
++  new Style({
++    stroke: new Stroke({width: 35, color: 'blue'})
++  }),
++  new Style({
++    stroke: new Stroke({width: 15, color: 'green'})
++  })
++]);
++smallLine2.getGeometry().translate(1000, 1000);
++source1.addFeature(smallLine2);
++
++const smallLine3 = new Feature(new LineString([
++  [center[0], center[1] - 1],
++  [center[0], center[1] + 1]
++]));
++smallLine3.setStyle([
++  new Style({
++    stroke: new Stroke({width: 75, color: 'red'})
++  }),
++  new Style({
++    stroke: new Stroke({width: 45, color: 'white'})
++  })
++]);
++smallLine3.getGeometry().translate(-1000, -1000);
++
++addPolygon(400, source2);
++addCircle(400, source2);
++source2.addFeature(smallLine3);
++
++const map = new Map({
++  layers: [
++    vectorLayer1,
++    vectorLayer2
++  ],
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 13
++  })
++});
++
++map.getView().setRotation(Math.PI + Math.PI / 4);
++
++render();
+diff --git a/rendering/cases/layer-vectorimage/expected.png b/rendering/cases/layer-vectorimage/expected.png
+new file mode 100644
+index 00000000000..63ecb9b426b
+Binary files /dev/null and b/rendering/cases/layer-vectorimage/expected.png differ
+diff --git a/rendering/cases/layer-vectorimage/main.js b/rendering/cases/layer-vectorimage/main.js
+new file mode 100644
+index 00000000000..e14f3eaa2c3
+--- /dev/null
++++ b/rendering/cases/layer-vectorimage/main.js
+@@ -0,0 +1,110 @@
++import Feature from '../../../src/ol/Feature.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import Polygon from '../../../src/ol/geom/Polygon.js';
++import Circle from '../../../src/ol/geom/Circle.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++import VectorImageLayer from '../../../src/ol/layer/VectorImage.js';
++
++const center = [1825927.7316762917, 6143091.089223046];
++
++const source1 = new VectorSource();
++const source2 = new VectorSource();
++const vectorLayer1 = new VectorImageLayer({
++  source: source1,
++  style: new Style({
++    stroke: new Stroke({
++      color: '#3399CC',
++      width: 1.25
++    })
++  })
++});
++const vectorLayer2 = new VectorImageLayer({
++  source: source2,
++  opacity: 0.6
++});
++
++function addCircle(r, source) {
++  source.addFeature(new Feature(new Circle(center, r)));
++}
++
++function addPolygon(r, source) {
++  source.addFeature(new Feature(new Polygon([
++    [
++      [center[0] - r, center[1] - r],
++      [center[0] + r, center[1] - r],
++      [center[0] + r, center[1] + r],
++      [center[0] - r, center[1] + r],
++      [center[0] - r, center[1] - r]
++    ]
++  ])));
++}
++
++const smallLine = new Feature(new LineString([
++  [center[0], center[1] - 1],
++  [center[0], center[1] + 1]
++]));
++smallLine.setStyle(new Style({
++  zIndex: -99,
++  stroke: new Stroke({width: 75, color: 'red'})
++}));
++smallLine.getGeometry().translate(-1000, 1000);
++source1.addFeature(smallLine);
++addPolygon(100, source1);
++addCircle(200, source1);
++addPolygon(250, source1);
++addCircle(500, source1);
++addPolygon(600, source1);
++addPolygon(720, source1);
++
++const smallLine2 = new Feature(new LineString([
++  [center[0], center[1] - 1000],
++  [center[0], center[1] + 1000]
++]));
++smallLine2.setStyle([
++  new Style({
++    stroke: new Stroke({width: 35, color: 'blue'})
++  }),
++  new Style({
++    stroke: new Stroke({width: 15, color: 'green'})
++  })
++]);
++smallLine2.getGeometry().translate(1000, 1000);
++source1.addFeature(smallLine2);
++
++const smallLine3 = new Feature(new LineString([
++  [center[0], center[1] - 1],
++  [center[0], center[1] + 1]
++]));
++smallLine3.setStyle([
++  new Style({
++    stroke: new Stroke({width: 75, color: 'red'})
++  }),
++  new Style({
++    stroke: new Stroke({width: 45, color: 'white'})
++  })
++]);
++smallLine3.getGeometry().translate(-1000, -1000);
++
++addPolygon(400, source2);
++addCircle(1000, source2);
++source2.addFeature(smallLine3);
++
++const map = new Map({
++  layers: [
++    vectorLayer1,
++    vectorLayer2
++  ],
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 13
++  })
++});
++
++map.getView().setRotation(Math.PI + Math.PI / 4);
++
++render({tolerance: 0.005});
+diff --git a/rendering/cases/layer-vectortile-rotate-hidpi/expected.png b/rendering/cases/layer-vectortile-rotate-hidpi/expected.png
+new file mode 100644
+index 00000000000..75ee66b54bd
+Binary files /dev/null and b/rendering/cases/layer-vectortile-rotate-hidpi/expected.png differ
+diff --git a/rendering/cases/layer-vectortile-rotate-hidpi/main.js b/rendering/cases/layer-vectortile-rotate-hidpi/main.js
+new file mode 100644
+index 00000000000..2a4061257df
+--- /dev/null
++++ b/rendering/cases/layer-vectortile-rotate-hidpi/main.js
+@@ -0,0 +1,31 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorTileSource from '../../../src/ol/source/VectorTile';
++import MVT from '../../../src/ol/format/MVT';
++import {createXYZ} from '../../../src/ol/tilegrid';
++import VectorTileLayer from '../../../src/ol/layer/VectorTile';
++
++const map = new Map({
++  pixelRatio: 2,
++  layers: [
++    new VectorTileLayer({
++      source: new VectorTileSource({
++        format: new MVT(),
++        tileGrid: createXYZ(),
++        url: '/data/tiles/mapbox-streets-v6/{z}/{x}/{y}.vector.pbf',
++        transition: 0
++      })
++    })
++  ],
++  target: 'map',
++  view: new View({
++    center: [1825927.7316762917, 6143091.089223046],
++    zoom: 14
++  })
++});
++
++map.getView().setRotation(Math.PI / 4);
++render({
++  message: 'Vector tile layer rotates (hidip)',
++  tolerance: 0.01
++});
+diff --git a/rendering/cases/map-pan/expected.png b/rendering/cases/map-pan/expected.png
+new file mode 100644
+index 00000000000..ede48fc1211
+Binary files /dev/null and b/rendering/cases/map-pan/expected.png differ
+diff --git a/rendering/cases/map-pan/main.js b/rendering/cases/map-pan/main.js
+new file mode 100644
+index 00000000000..e5569792cb7
+--- /dev/null
++++ b/rendering/cases/map-pan/main.js
+@@ -0,0 +1,28 @@
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++
++const map = new Map({
++  pixelRatio: 1,
++  target: 'map',
++  layers: [
++    new VectorLayer({
++      source: new VectorSource({
++        features: [new Feature({
++          geometry: new Point([0, 0])
++        })]
++      })
++    })
++  ],
++  view: new View({
++    projection: 'EPSG:4326',
++    center: [0, 0],
++    resolution: 1
++  })
++});
++map.getView().setCenter([10, 10]);
++
++render();
+diff --git a/rendering/cases/map/expected.png b/rendering/cases/map/expected.png
+new file mode 100644
+index 00000000000..d3e71854e87
+Binary files /dev/null and b/rendering/cases/map/expected.png differ
+diff --git a/rendering/cases/map/main.js b/rendering/cases/map/main.js
+new file mode 100644
+index 00000000000..21b9d0c36f8
+--- /dev/null
++++ b/rendering/cases/map/main.js
+@@ -0,0 +1,27 @@
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++
++new Map({
++  pixelRatio: 1,
++  target: 'map',
++  layers: [
++    new VectorLayer({
++      source: new VectorSource({
++        features: [new Feature({
++          geometry: new Point([0, 0])
++        })]
++      })
++    })
++  ],
++  view: new View({
++    projection: 'EPSG:4326',
++    center: [0, 0],
++    resolution: 1
++  })
++});
++
++render();
+diff --git a/rendering/cases/multipoint-style/expected.png b/rendering/cases/multipoint-style/expected.png
+new file mode 100644
+index 00000000000..14831a4c033
+Binary files /dev/null and b/rendering/cases/multipoint-style/expected.png differ
+diff --git a/rendering/cases/multipoint-style/main.js b/rendering/cases/multipoint-style/main.js
+new file mode 100644
+index 00000000000..a3e61c5b891
+--- /dev/null
++++ b/rendering/cases/multipoint-style/main.js
+@@ -0,0 +1,169 @@
++import Feature from '../../../src/ol/Feature.js';
++import MultiPoint from '../../../src/ol/geom/MultiPoint.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import CircleStyle from '../../../src/ol/style/Circle.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++
++const vectorSource = new VectorSource();
++
++let feature;
++feature = new Feature({
++  geometry: new MultiPoint([[-20, 18]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    fill: new Fill({
++      color: '#91E339'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[-10, 18]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: '#5447E6'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[4, 18]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: '#92A8A6'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[-20, 3]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    fill: new Fill({
++      color: '#91E339'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 1
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[-10, 3]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: '#5447E6'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 2
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[4, 3]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: '#92A8A6'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 3
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[-20, -15]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    stroke: new Stroke({
++      color: '#256308',
++      width: 1
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[-10, -15]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: 'rgba(0, 0, 255, 0.3)'
++    }),
++    stroke: new Stroke({
++      color: '#256308',
++      width: 2
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[4, -15]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: 'rgba(235, 45, 70, 0.6)'
++    }),
++    stroke: new Stroke({
++      color: '#256308',
++      width: 3
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++const vectorLayer = new VectorLayer({
++  source: vectorSource
++});
++
++new Map({
++  layers: [
++    vectorLayer
++  ],
++  target: 'map',
++  view: new View({
++    projection: 'EPSG:4326',
++    center: [0, 0],
++    zoom: 1
++  })
++});
++
++render();
+diff --git a/rendering/cases/point-style/expected.png b/rendering/cases/point-style/expected.png
+new file mode 100644
+index 00000000000..14831a4c033
+Binary files /dev/null and b/rendering/cases/point-style/expected.png differ
+diff --git a/rendering/cases/point-style/main.js b/rendering/cases/point-style/main.js
+new file mode 100644
+index 00000000000..7f1e425396f
+--- /dev/null
++++ b/rendering/cases/point-style/main.js
+@@ -0,0 +1,169 @@
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import CircleStyle from '../../../src/ol/style/Circle.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++
++const vectorSource = new VectorSource();
++
++let feature;
++feature = new Feature({
++  geometry: new Point([-20, 18])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    fill: new Fill({
++      color: '#91E339'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([-10, 18])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: '#5447E6'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([4, 18])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: '#92A8A6'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([-20, 3])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    fill: new Fill({
++      color: '#91E339'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 1
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([-10, 3])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: '#5447E6'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 2
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([4, 3])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: '#92A8A6'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 3
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([-20, -15])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    stroke: new Stroke({
++      color: '#256308',
++      width: 1
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([-10, -15])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: 'rgba(0, 0, 255, 0.3)'
++    }),
++    stroke: new Stroke({
++      color: '#256308',
++      width: 2
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([4, -15])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: 'rgba(235, 45, 70, 0.6)'
++    }),
++    stroke: new Stroke({
++      color: '#256308',
++      width: 3
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++const vectorLayer = new VectorLayer({
++  source: vectorSource
++});
++
++new Map({
++  layers: [
++    vectorLayer
++  ],
++  target: 'map',
++  view: new View({
++    projection: 'EPSG:4326',
++    center: [0, 0],
++    zoom: 1
++  })
++});
++
++render();
+diff --git a/rendering/cases/regularshape-style/expected.png b/rendering/cases/regularshape-style/expected.png
+new file mode 100644
+index 00000000000..b89511eef3b
+Binary files /dev/null and b/rendering/cases/regularshape-style/expected.png differ
+diff --git a/rendering/cases/regularshape-style/main.js b/rendering/cases/regularshape-style/main.js
+new file mode 100644
+index 00000000000..9d98bcd573f
+--- /dev/null
++++ b/rendering/cases/regularshape-style/main.js
+@@ -0,0 +1,114 @@
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import RegularShape from '../../../src/ol/style/RegularShape.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++
++const vectorSource = new VectorSource();
++function createFeatures(stroke, fill, offSet = [0, 0]) {
++  let feature;
++  feature = new Feature({
++    geometry: new Point([-15 + offSet[0], 15 + offSet[1]])
++  });
++  // square
++  feature.setStyle(new Style({
++    image: new RegularShape({
++      fill: fill,
++      stroke: stroke,
++      points: 4,
++      radius: 10,
++      angle: Math.PI / 4
++    })
++  }));
++  vectorSource.addFeature(feature);
++
++  feature = new Feature({
++    geometry: new Point([8 + offSet[0], 15 + offSet[1]])
++  });
++  // triangle
++  feature.setStyle(new Style({
++    image: new RegularShape({
++      fill: fill,
++      stroke: stroke,
++      points: 3,
++      radius: 10,
++      rotation: Math.PI / 4,
++      angle: 0
++    })
++  }));
++  vectorSource.addFeature(feature);
++
++  feature = new Feature({
++    geometry: new Point([-10 + offSet[0], -8 + offSet[1]])
++  });
++  // star
++  feature.setStyle(new Style({
++    image: new RegularShape({
++      fill: fill,
++      stroke: stroke,
++      points: 5,
++      radius: 10,
++      radius2: 4,
++      angle: 0
++    })
++  }));
++  vectorSource.addFeature(feature);
++
++  feature = new Feature({
++    geometry: new Point([12 + offSet[0], -8 + offSet[1]])
++  });
++  // cross
++  feature.setStyle(new Style({
++    image: new RegularShape({
++      fill: fill,
++      stroke: stroke,
++      points: 4,
++      radius: 10,
++      radius2: 0,
++      angle: 0
++    })
++  }));
++  vectorSource.addFeature(feature);
++}
++
++createFeatures(
++  new Stroke({width: 2}),
++  new Fill({color: 'red'})
++);
++createFeatures(
++  new Stroke({
++    lineDash: [10, 5]
++  }),
++  null,
++  [50, 50]
++);
++createFeatures(
++  new Stroke({
++    lineDash: [10, 5],
++    lineDashOffset: 5
++  }),
++  null,
++  [-50, -50]
++);
++
++createFeatures(new Stroke(), new Fill(), [50, -50]);
++
++const vectorLayer = new VectorLayer({
++  source: vectorSource
++});
++
++new Map({
++  target: 'map',
++  layers: [vectorLayer],
++  view: new View({
++    center: [0, 0],
++    resolution: 1
++  })
++});
++
++render();
+diff --git a/rendering/cases/source-raster/expected.png b/rendering/cases/source-raster/expected.png
+new file mode 100644
+index 00000000000..3f3eff36725
+Binary files /dev/null and b/rendering/cases/source-raster/expected.png differ
+diff --git a/rendering/cases/source-raster/main.js b/rendering/cases/source-raster/main.js
+new file mode 100644
+index 00000000000..215609e5ddc
+--- /dev/null
++++ b/rendering/cases/source-raster/main.js
+@@ -0,0 +1,32 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import ImageLayer from '../../../src/ol/layer/Image.js';
++import RasterSource from '../../../src/ol/source/Raster.js';
++import XYZ from '../../../src/ol/source/XYZ.js';
++
++const raster = new RasterSource({
++  sources: [new XYZ({
++    url: '/data/tiles/osm/{z}/{x}/{y}.png',
++    transition: 0
++  })],
++  threads: 0, // Avoid using workers to work with puppeteer
++  operation: function(pixels) {
++    const pixel = pixels[0];
++    const red = pixel[0];
++    pixel[0] = pixel[2];
++    pixel[2] = red;
++    return pixel;
++  }
++});
++
++new Map({
++  layers: [new ImageLayer({source: raster})],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    zoom: 0
++  })
++});
++
++render();
++
+diff --git a/rendering/cases/source-tilewms-gutter0/expected.png b/rendering/cases/source-tilewms-gutter0/expected.png
+new file mode 100644
+index 00000000000..8a2f9ed6352
+Binary files /dev/null and b/rendering/cases/source-tilewms-gutter0/expected.png differ
+diff --git a/rendering/cases/source-tilewms-gutter0/main.js b/rendering/cases/source-tilewms-gutter0/main.js
+new file mode 100644
+index 00000000000..101dee53221
+--- /dev/null
++++ b/rendering/cases/source-tilewms-gutter0/main.js
+@@ -0,0 +1,26 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import TileWMS from '../../../src/ol/source/TileWMS.js';
++
++const tileWms = new TileWMS({
++  params: {
++    'LAYERS': 'layer'
++  },
++  gutter: 0,
++  url: '/data/tiles/wms/wms0.png',
++  transition: 0
++});
++
++new Map({
++  pixelRatio: 1,
++  layers: [new TileLayer({source: tileWms})],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    zoom: 5
++  })
++});
++
++render();
++
+diff --git a/rendering/cases/source-tilewms-gutter20/expected.png b/rendering/cases/source-tilewms-gutter20/expected.png
+new file mode 100644
+index 00000000000..03b9bcc8d6e
+Binary files /dev/null and b/rendering/cases/source-tilewms-gutter20/expected.png differ
+diff --git a/rendering/cases/source-tilewms-gutter20/main.js b/rendering/cases/source-tilewms-gutter20/main.js
+new file mode 100644
+index 00000000000..060d2dcff5b
+--- /dev/null
++++ b/rendering/cases/source-tilewms-gutter20/main.js
+@@ -0,0 +1,26 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import TileWMS from '../../../src/ol/source/TileWMS.js';
++
++const tileWms = new TileWMS({
++  params: {
++    'LAYERS': 'layer'
++  },
++  gutter: 20,
++  url: '/data/tiles/wms/wms20.png',
++  transition: 0
++});
++
++new Map({
++  pixelRatio: 1,
++  layers: [new TileLayer({source: tileWms})],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    zoom: 5
++  })
++});
++
++render();
++
+diff --git a/rendering/cases/text-style-linestring-nice/expected.png b/rendering/cases/text-style-linestring-nice/expected.png
+new file mode 100644
+index 00000000000..7d0c9beaa20
+Binary files /dev/null and b/rendering/cases/text-style-linestring-nice/expected.png differ
+diff --git a/rendering/cases/text-style-linestring-nice/main.js b/rendering/cases/text-style-linestring-nice/main.js
+new file mode 100644
+index 00000000000..dbfa9fa703b
+--- /dev/null
++++ b/rendering/cases/text-style-linestring-nice/main.js
+@@ -0,0 +1,130 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import Feature from '../../../src/ol/Feature.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Text from '../../../src/ol/style/Text.js';
++import Style from '../../../src/ol/style/Style.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++
++
++const vectorSource = new VectorSource();
++
++const nicePath = [
++  20, 33, 40, 31, 60, 30, 80, 31, 100, 33, 120, 37, 140, 39, 160, 40,
++  180, 39, 200, 37, 220, 33, 240, 31, 260, 30, 280, 31, 300, 33
++];
++
++const lineString1 = new LineString(nicePath, 'XY');
++const feature1 = new Feature({geometry: lineString1});
++feature1.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Hello world',
++    placement: 'line'
++  })
++}));
++vectorSource.addFeature(feature1);
++
++const lineString2 = lineString1.clone();
++lineString2.translate(0, 30);
++const feature2 = new Feature({geometry: lineString2});
++feature2.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Scale 2',
++    scale: 2,
++    textBaseline: 'bottom',
++    textAlign: 'right',
++    placement: 'line',
++    font: 'bold italic 0.8em serif'
++  })
++}));
++vectorSource.addFeature(feature2);
++
++const lineString3 = lineString2.clone();
++lineString3.translate(0, 30);
++const feature3 = new Feature({geometry: lineString3});
++feature3.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Set properties'
++  })
++}));
++feature3.getStyle().getText().setFont('bold italic 1.2em monospace');
++feature3.getStyle().getText().setTextAlign('left');
++feature3.getStyle().getText().setOffsetX(10);
++feature3.getStyle().getText().setOffsetY(-10);
++feature3.getStyle().getText().setPlacement('line');
++feature3.getStyle().getText().setScale(1.1);
++feature3.getStyle().getText().setStroke(new Stroke({color: '#00F7F8'}));
++feature3.getStyle().getText().setFill(new Fill({color: '#006772'}));
++
++vectorSource.addFeature(feature3);
++
++const lineString4 = lineString3.clone();
++lineString4.translate(0, 30);
++const feature4 = new Feature({geometry: lineString4});
++feature4.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'negative offsetX',
++    offsetX: -10,
++    textAlign: 'start',
++    textBaseline: 'top',
++    placement: 'line'
++  })
++}));
++vectorSource.addFeature(feature4);
++
++const lineString5 = lineString4.clone();
++lineString5.translate(0, 30);
++const feature5 = new Feature({geometry: lineString5});
++feature5.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Small text',
++    offsetY: 5,
++    scale: 0.7,
++    textAlign: 'end',
++    placement: 'line'
++  })
++}));
++vectorSource.addFeature(feature5);
++
++const lineString6 = lineString5.clone();
++lineString6.translate(0, 30);
++const feature6 = new Feature({geometry: lineString6});
++feature6.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'FILL AND STROKE',
++    placement: 'line',
++    fill: new Fill({color: '#FFC0CB'}),
++    stroke: new Stroke({
++      color: '#00FF00',
++      width: 1
++    })
++  })
++}));
++vectorSource.addFeature(feature6);
++
++const map = new Map({
++  pixelRatio: 1,
++  layers: [
++    new VectorLayer({
++      source: vectorSource
++    })
++  ],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    resolution: 1,
++    rotation: Math.PI / 4
++  })
++});
++map.getView().fit(vectorSource.getExtent());
++
++render({tolerance: 0.02});
+diff --git a/rendering/cases/text-style-linestring-ugly/expected.png b/rendering/cases/text-style-linestring-ugly/expected.png
+new file mode 100644
+index 00000000000..e15763b567e
+Binary files /dev/null and b/rendering/cases/text-style-linestring-ugly/expected.png differ
+diff --git a/rendering/cases/text-style-linestring-ugly/main.js b/rendering/cases/text-style-linestring-ugly/main.js
+new file mode 100644
+index 00000000000..c5a8f0ac651
+--- /dev/null
++++ b/rendering/cases/text-style-linestring-ugly/main.js
+@@ -0,0 +1,135 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import Feature from '../../../src/ol/Feature.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Text from '../../../src/ol/style/Text.js';
++import Style from '../../../src/ol/style/Style.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++
++
++const vectorSource = new VectorSource();
++
++const uglyPath = [163, 22, 159, 30, 150, 30, 143, 24, 151, 17];
++
++const lineString1 = new LineString(uglyPath, 'XY');
++const feature1 = new Feature({geometry: lineString1});
++feature1.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Hello world',
++    placement: 'line',
++    overflow: true
++  })
++}));
++vectorSource.addFeature(feature1);
++
++const lineString2 = lineString1.clone();
++lineString2.translate(0, 30);
++const feature2 = new Feature({geometry: lineString2});
++feature2.setStyle(new Style({
++  stroke: new Stroke({color: 'red'}),
++  text: new Text({
++    text: 'Scale 2',
++    scale: 2,
++    textBaseline: 'bottom',
++    textAlign: 'right',
++    placement: 'line',
++    font: 'bold italic 0.8em serif',
++    overflow: true
++  })
++}));
++vectorSource.addFeature(feature2);
++
++const lineString3 = lineString2.clone();
++lineString3.translate(0, 30);
++const feature3 = new Feature({geometry: lineString3});
++feature3.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Set properties'
++  })
++}));
++feature3.getStyle().getText().setFont('bold italic 1.2em monospace');
++feature3.getStyle().getText().setTextAlign('left');
++feature3.getStyle().getText().setOffsetX(10);
++feature3.getStyle().getText().setOffsetY(-10);
++feature3.getStyle().getText().setOverflow(true);
++feature3.getStyle().getText().setPlacement('line');
++feature3.getStyle().getText().setScale(1.2);
++feature3.getStyle().getText().setStroke(new Stroke({color: '#00F7F8'}));
++feature3.getStyle().getText().setFill(new Fill({color: '#006772'}));
++feature3.getStyle().getText().setMaxAngle(Math.PI);
++
++vectorSource.addFeature(feature3);
++
++const lineString4 = lineString3.clone();
++lineString4.translate(0, 30);
++const feature4 = new Feature({geometry: lineString4});
++feature4.setStyle(new Style({
++  stroke: new Stroke({color: 'red'}),
++  text: new Text({
++    text: 'PLEASE OMIT ME IM UGLY',
++    offsetX: -10,
++    textAlign: 'start',
++    textBaseline: 'top',
++    placement: 'line',
++    overflow: true
++  })
++}));
++vectorSource.addFeature(feature4);
++
++const lineString5 = lineString4.clone();
++lineString5.translate(0, 30);
++const feature5 = new Feature({geometry: lineString5});
++feature5.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Small text',
++    offsetY: 5,
++    scale: 0.7,
++    rotation: 4,
++    textAlign: 'end',
++    placement: 'line',
++    maxAngle: Math.PI,
++    overflow: true
++  })
++}));
++vectorSource.addFeature(feature5);
++
++const lineString6 = lineString5.clone();
++lineString6.translate(0, 30);
++const feature6 = new Feature({geometry: lineString6});
++feature6.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'FILL AND STROKE',
++    placement: 'line',
++    overflow: true,
++    fill: new Fill({color: '#FFC0CB'}),
++    stroke: new Stroke({
++      color: '#00FF00'
++    })
++  })
++}));
++vectorSource.addFeature(feature6);
++
++const map = new Map({
++  pixelRatio: 1,
++  layers: [
++    new VectorLayer({
++      source: vectorSource
++    })
++  ],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    resolution: 1,
++    rotation: -(Math.PI / 4)
++  })
++});
++map.getView().fit(vectorSource.getExtent());
++
++render({tolerance: 0.02});
+diff --git a/rendering/cases/text-style-overlap/expected.png b/rendering/cases/text-style-overlap/expected.png
+new file mode 100644
+index 00000000000..f4f1c2daac7
+Binary files /dev/null and b/rendering/cases/text-style-overlap/expected.png differ
+diff --git a/rendering/cases/text-style-overlap/main.js b/rendering/cases/text-style-overlap/main.js
+new file mode 100644
+index 00000000000..a67c75936e3
+--- /dev/null
++++ b/rendering/cases/text-style-overlap/main.js
+@@ -0,0 +1,104 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Text from '../../../src/ol/style/Text.js';
++import Style from '../../../src/ol/style/Style.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++
++const nicePath = [
++  20, 33, 40, 31, 60, 30, 80, 31, 100, 33, 120, 37, 140, 39, 160, 40,
++  180, 39, 200, 37, 220, 33, 240, 31, 260, 30, 280, 31, 300, 33
++];
++
++const vectorSource = new VectorSource();
++const pointStyle = new Style({
++  text: new Text({
++    text: 'Point Label',
++    fill: new Fill({
++      color: 'red'
++    }),
++    stroke: new Stroke({
++      color: 'black'
++    })
++  })
++});
++const lineStyle = new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Line Label',
++    fill: new Fill({
++      color: 'red'
++    }),
++    stroke: new Stroke({
++      color: 'black'
++    }),
++    placement: 'line'
++  })
++});
++
++const pointFeature1 = new Feature({
++  geometry: new Point([160, 100])
++});
++pointFeature1.setStyle(pointStyle.clone());
++pointFeature1.getStyle().getText().setText('POINT ONE');
++vectorSource.addFeature(pointFeature1);
++
++const pointFeature2 = new Feature({
++  geometry: new Point([170, 105])
++});
++pointFeature2.setStyle(pointStyle.clone());
++pointFeature2.getStyle().getText().setText('POINT TWO');
++pointFeature2.getStyle().getText().setFill(new Fill({color: 'green'}));
++vectorSource.addFeature(pointFeature2);
++
++const pointFeature3 = new Feature({
++  geometry: new Point([150, 95])
++});
++pointFeature3.setStyle(pointStyle.clone());
++pointFeature3.getStyle().getText().setText('POINT THREE');
++pointFeature3.getStyle().getText().setFill(new Fill({color: 'yellow'}));
++vectorSource.addFeature(pointFeature3);
++
++const lineString1 = new LineString(nicePath, 'XY');
++const lineFeature1 = new Feature({geometry: lineString1});
++lineFeature1.setStyle(lineStyle);
++lineFeature1.getStyle().getText().setText('LINE ONE');
++vectorSource.addFeature(lineFeature1);
++
++const lineString2 = lineString1.clone();
++lineString2.translate(10, 10);
++const lineFeature2 = new Feature({geometry: lineString2});
++lineFeature2.setStyle(lineStyle.clone());
++lineFeature2.getStyle().getText().setText('LINE TWO');
++lineFeature2.getStyle().getText().setFill(new Fill({color: 'green'}));
++vectorSource.addFeature(lineFeature2);
++
++const lineString3 = lineString1.clone();
++lineString3.translate(-10, 10);
++const lineFeature3 = new Feature({geometry: lineString3});
++lineFeature3.setStyle(lineStyle.clone());
++lineFeature3.getStyle().getText().setText('LINE THREE');
++lineFeature3.getStyle().getText().setFill(new Fill({color: 'yellow'}));
++vectorSource.addFeature(lineFeature3);
++
++const map = new Map({
++  pixelRatio: 1,
++  layers: [
++    new VectorLayer({
++      source: vectorSource
++    })
++  ],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    resolution: 1
++  })
++});
++map.getView().fit(vectorSource.getExtent());
++
++render({tolerance: 0.02});
+diff --git a/rendering/data/tiles/512x256/5/3/12.png b/rendering/data/tiles/512x256/5/3/12.png
+new file mode 100644
+index 00000000000..00f5a328572
+Binary files /dev/null and b/rendering/data/tiles/512x256/5/3/12.png differ
+diff --git a/rendering/data/tiles/osm/0/0/0.png b/rendering/data/tiles/osm/0/0/0.png
+new file mode 100644
+index 00000000000..732e9096b14
+Binary files /dev/null and b/rendering/data/tiles/osm/0/0/0.png differ
+diff --git a/rendering/data/tiles/osm/5/4/12.png b/rendering/data/tiles/osm/5/4/12.png
+new file mode 100644
+index 00000000000..4468321919a
+Binary files /dev/null and b/rendering/data/tiles/osm/5/4/12.png differ
+diff --git a/rendering/data/tiles/osm/5/5/12.png b/rendering/data/tiles/osm/5/5/12.png
+new file mode 100644
+index 00000000000..ada08786c98
+Binary files /dev/null and b/rendering/data/tiles/osm/5/5/12.png differ
+diff --git a/rendering/data/tiles/osm/5/5/13.png b/rendering/data/tiles/osm/5/5/13.png
+new file mode 100644
+index 00000000000..84a6879b3e3
+Binary files /dev/null and b/rendering/data/tiles/osm/5/5/13.png differ
+diff --git a/rendering/data/tiles/osm/5/6/12.png b/rendering/data/tiles/osm/5/6/12.png
+new file mode 100644
+index 00000000000..54b877726e1
+Binary files /dev/null and b/rendering/data/tiles/osm/5/6/12.png differ
+diff --git a/rendering/data/tiles/osm/5/6/13.png b/rendering/data/tiles/osm/5/6/13.png
+new file mode 100644
+index 00000000000..9fe6d7bc550
+Binary files /dev/null and b/rendering/data/tiles/osm/5/6/13.png differ
+diff --git a/rendering/data/tiles/wms/wms0.png b/rendering/data/tiles/wms/wms0.png
+new file mode 100644
+index 00000000000..55c3ce686fa
+Binary files /dev/null and b/rendering/data/tiles/wms/wms0.png differ
+diff --git a/rendering/data/tiles/wms/wms20.png b/rendering/data/tiles/wms/wms20.png
+new file mode 100644
+index 00000000000..34a5a73d2f6
+Binary files /dev/null and b/rendering/data/tiles/wms/wms20.png differ
+diff --git a/test/rendering/ol/expected/pan-canvas.png b/test/rendering/ol/expected/pan-canvas.png
+deleted file mode 100644
+index f9c84f316d6..00000000000
+Binary files a/test/rendering/ol/expected/pan-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/expected/render-canvas.png b/test/rendering/ol/expected/render-canvas.png
+deleted file mode 100644
+index ed50f1d7d2b..00000000000
+Binary files a/test/rendering/ol/expected/render-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/layer/image.test.js b/test/rendering/ol/layer/image.test.js
+deleted file mode 100644
+index 2d478fc0b9c..00000000000
+--- a/test/rendering/ol/layer/image.test.js
++++ /dev/null
+@@ -1,106 +0,0 @@
+-import Map from '../../../../src/ol/Map.js';
+-import View from '../../../../src/ol/View.js';
+-import ImageLayer from '../../../../src/ol/layer/Image.js';
+-import {assign} from '../../../../src/ol/obj.js';
+-import {get as getProjection, transform, transformExtent} from '../../../../src/ol/proj.js';
+-import Static from '../../../../src/ol/source/ImageStatic.js';
+-import {createXYZ} from '../../../../src/ol/tilegrid.js';
+-
+-
+-describe('ol.rendering.layer.Image', function() {
+-
+-  let map;
+-
+-  function createMap(renderer) {
+-    const MapConstructor = Map;
+-    map = new MapConstructor({
+-      pixelRatio: 1,
+-      target: createMapDiv(50, 50),
+-      view: new View({
+-        center: transform(
+-          [-122.416667, 37.783333], 'EPSG:4326', 'EPSG:3857'),
+-        zoom: 5
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    if (map) {
+-      disposeMap(map);
+-    }
+-    map = null;
+-  });
+-
+-  function waitForImages(renderer, sources, layerOptions, onImagesLoaded) {
+-    const LayerConstructor = ImageLayer;
+-    let imagesLoading = 0;
+-    let imagesLoaded = 0;
+-
+-    const update = function() {
+-      if (imagesLoading === imagesLoaded) {
+-        onImagesLoaded();
+-      }
+-    };
+-
+-    sources.forEach(function(source) {
+-      source.on('imageloadstart', function(event) {
+-        imagesLoading++;
+-      });
+-      source.on('imageloadend', function(event) {
+-        imagesLoaded++;
+-        update();
+-      });
+-      source.on('imageloaderror', function(event) {
+-        expect().fail('Image failed to load');
+-      });
+-
+-      const options = {
+-        source: source
+-      };
+-      assign(options, layerOptions);
+-      map.addLayer(new LayerConstructor(options));
+-    });
+-  }
+-
+-  describe('single image layer', function() {
+-    let source;
+-
+-    beforeEach(function() {
+-      source = new Static({
+-        url: 'rendering/ol/data/tiles/osm/5/5/12.png',
+-        imageExtent: createXYZ().getTileCoordExtent(
+-          [5, 5, -12 - 1]),
+-        projection: getProjection('EPSG:3857')
+-      });
+-    });
+-
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas');
+-      waitForImages('canvas', [source], {}, function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/image-canvas.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-  });
+-
+-  describe('single image layer - scaled', function() {
+-    let source;
+-
+-    beforeEach(function() {
+-      source = new Static({
+-        url: 'rendering/ol/data/tiles/osm/5/5/12.png',
+-        imageExtent: transformExtent(
+-          [-123, 37, -122, 38], 'EPSG:4326', 'EPSG:3857')
+-      });
+-    });
+-
+-    it('renders correctly', function(done) {
+-      createMap('canvas');
+-      waitForImages('canvas', [source], {}, function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/image-scaled.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-  });
+-
+-});
+diff --git a/test/rendering/ol/layer/tile.test.js b/test/rendering/ol/layer/tile.test.js
+index 1653174f005..266d3a59dae 100644
+--- a/test/rendering/ol/layer/tile.test.js
++++ b/test/rendering/ol/layer/tile.test.js
+@@ -1,17 +1,13 @@
+ import Map from '../../../../src/ol/Map.js';
+ import View from '../../../../src/ol/View.js';
+-import {getSize} from '../../../../src/ol/extent.js';
+ import Point from '../../../../src/ol/geom/Point.js';
+ import TileLayer from '../../../../src/ol/layer/Tile.js';
+ import {assign} from '../../../../src/ol/obj.js';
+ import {transform} from '../../../../src/ol/proj.js';
+-import TileImage from '../../../../src/ol/source/TileImage.js';
+ import XYZ from '../../../../src/ol/source/XYZ.js';
+ import CircleStyle from '../../../../src/ol/style/Circle.js';
+ import Fill from '../../../../src/ol/style/Fill.js';
+ import Stroke from '../../../../src/ol/style/Stroke.js';
+-import {createXYZ} from '../../../../src/ol/tilegrid.js';
+-
+ 
+ describe('ol.rendering.layer.Tile', function() {
+ 
+@@ -71,140 +67,6 @@ describe('ol.rendering.layer.Tile', function() {
+     });
+   }
+ 
+-  describe('with tile transition', function() {
+-    it('renders correctly after the transition', function(done) {
+-      createMap('canvas');
+-      const source = new XYZ({
+-        url: 'rendering/ol/data/tiles/osm/{z}/{x}/{y}.png'
+-      });
+-      waitForTiles('canvas', [source], {}, function() {
+-        setTimeout(function() {
+-          expectResemble(map, 'rendering/ol/layer/expected/osm-canvas.png',
+-            IMAGE_TOLERANCE, done);
+-        }, 500);
+-      });
+-    });
+-  });
+-
+-  describe('single tile layer', function() {
+-    let source;
+-
+-    beforeEach(function() {
+-      source = new XYZ({
+-        url: 'rendering/ol/data/tiles/osm/{z}/{x}/{y}.png',
+-        transition: 0
+-      });
+-    });
+-
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas');
+-      waitForTiles('canvas', [source], {}, function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/osm-canvas.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-  });
+-
+-  describe('two tile layers', function() {
+-    let source1, source2;
+-
+-    beforeEach(function() {
+-      source1 = new XYZ({
+-        url: 'rendering/ol/data/tiles/osm/{z}/{x}/{y}.png',
+-        transition: 0
+-      });
+-      source2 = new XYZ({
+-        url: 'rendering/ol/data/tiles/stamen-labels/{z}/{x}/{y}.png',
+-        transition: 0
+-      });
+-    });
+-
+-    function centerExtent(map) {
+-      const c = map.getView().calculateExtent(map.getSize());
+-      const qw = getSize(c)[0] / 4;
+-      const qh = getSize(c)[1] / 4;
+-      return [c[0] + qw, c[1] + qh, c[2] - qw, c[3] - qh];
+-    }
+-
+-    it('tests canvas layer extent clipping with rotation', function(done) {
+-      createMap('canvas');
+-      map.getView().setRotation(Math.PI / 2);
+-      waitForTiles('canvas', [source1, source2], [{}, {extent: centerExtent(map)}], function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/2-layers-canvas-extent-rotate.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-
+-    it('tests canvas layer extent clipping (HiDPI)', function(done) {
+-      createMap('canvas', undefined, undefined, 2);
+-      waitForTiles('canvas', [source1, source2], [{}, {extent: centerExtent(map)}], function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/2-layers-canvas-extent-hidpi.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-
+-    it('tests canvas layer extent clipping with rotation (HiDPI)', function(done) {
+-      createMap('canvas', undefined, undefined, 2);
+-      map.getView().setRotation(Math.PI / 2);
+-      waitForTiles('canvas', [source1, source2], [{}, {extent: centerExtent(map)}], function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/2-layers-canvas-extent-rotate-hidpi.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-
+-  });
+-
+-  describe('tile layer with opacity', function() {
+-    let source;
+-
+-    beforeEach(function() {
+-      source = new XYZ({
+-        url: 'rendering/ol/data/tiles/osm/{z}/{x}/{y}.png',
+-        transition: 0
+-      });
+-    });
+-
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas');
+-      waitForTiles('canvas', [source], {opacity: 0.2}, function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/opacity-canvas.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-  });
+-
+-  describe('tile layer with non-square tiles', function() {
+-
+-    function createSource(tileSize) {
+-      return new TileImage({
+-        url: 'rendering/ol/data/tiles/' + tileSize + '/{z}/{x}/{y}.png',
+-        tileGrid: createXYZ({
+-          tileSize: tileSize.split('x')
+-        }),
+-        transition: 0
+-      });
+-    }
+-
+-    it('512x256 renders correcly using the canvas renderer', function(done) {
+-      const source = createSource('512x256');
+-      createMap('canvas', [-10997148, 4569099]);
+-      waitForTiles('canvas', [source], {}, function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/512x256-canvas.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-
+-    it('192x256 renders correcly using the canvas renderer', function(done) {
+-      const source = createSource('192x256');
+-      createMap('canvas', [-11271098, 3747248], [100, 100], undefined,
+-        source.getTileGrid().getResolutions());
+-      waitForTiles('canvas', [source], {}, function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/192x256-canvas.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-  });
+-
+   describe('tile layer with render listener', function() {
+     let source, onAddLayer;
+ 
+diff --git a/test/rendering/ol/layer/vector.test.js b/test/rendering/ol/layer/vector.test.js
+deleted file mode 100644
+index 4b38fd8e983..00000000000
+--- a/test/rendering/ol/layer/vector.test.js
++++ /dev/null
+@@ -1,762 +0,0 @@
+-import Feature from '../../../../src/ol/Feature.js';
+-import Map from '../../../../src/ol/Map.js';
+-import View from '../../../../src/ol/View.js';
+-import GeoJSON from '../../../../src/ol/format/GeoJSON.js';
+-import Circle from '../../../../src/ol/geom/Circle.js';
+-import LineString from '../../../../src/ol/geom/LineString.js';
+-import Point from '../../../../src/ol/geom/Point.js';
+-import Polygon from '../../../../src/ol/geom/Polygon.js';
+-import VectorLayer from '../../../../src/ol/layer/Vector.js';
+-import VectorSource from '../../../../src/ol/source/Vector.js';
+-import CircleStyle from '../../../../src/ol/style/Circle.js';
+-import Fill from '../../../../src/ol/style/Fill.js';
+-import Stroke from '../../../../src/ol/style/Stroke.js';
+-import Style from '../../../../src/ol/style/Style.js';
+-import Text from '../../../../src/ol/style/Text.js';
+-
+-
+-describe('ol.rendering.layer.Vector', function() {
+-
+-  const center = [1825927.7316762917, 6143091.089223046];
+-
+-  let map;
+-  function createMap() {
+-    map = new Map({
+-      pixelRatio: 1,
+-      target: createMapDiv(80, 80),
+-      view: new View({
+-        center: center,
+-        zoom: 13
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    if (map) {
+-      disposeMap(map);
+-    }
+-    map = null;
+-  });
+-
+-  let source;
+-
+-  function addCircle(r) {
+-    source.addFeature(new Feature(new Circle(center, r)));
+-  }
+-
+-  function addPolygon(r) {
+-    source.addFeature(new Feature(new Polygon([
+-      [
+-        [center[0] - r, center[1] - r],
+-        [center[0] + r, center[1] - r],
+-        [center[0] + r, center[1] + r],
+-        [center[0] - r, center[1] + r],
+-        [center[0] - r, center[1] - r]
+-      ]
+-    ])));
+-  }
+-
+-  function addLineString(r) {
+-    source.addFeature(new Feature(new LineString([
+-      [center[0] - r, center[1] - r],
+-      [center[0] + r, center[1] - r],
+-      [center[0] + r, center[1] + r],
+-      [center[0] - r, center[1] + r],
+-      [center[0] - r, center[1] - r]
+-    ])));
+-  }
+-
+-  describe('vector layer', function() {
+-
+-    beforeEach(function() {
+-      source = new VectorSource();
+-    });
+-
+-    it('renders opacity correctly with the canvas renderer', function(done) {
+-      createMap();
+-      const smallLine = new Feature(new LineString([
+-        [center[0], center[1] - 1],
+-        [center[0], center[1] + 1]
+-      ]));
+-      smallLine.setStyle(new Style({
+-        zIndex: -99,
+-        stroke: new Stroke({width: 75, color: 'red'})
+-      }));
+-      source.addFeature(smallLine);
+-      addPolygon(100);
+-      addCircle(200);
+-      addPolygon(250);
+-      addCircle(500);
+-      addPolygon(600);
+-      addPolygon(720);
+-      map.addLayer(new VectorLayer({
+-        source: source
+-      }));
+-      map.once('postrender', function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas.png',
+-          17, done);
+-      });
+-    });
+-
+-    it('renders transparent layers correctly with the canvas renderer', function(done) {
+-      createMap();
+-      const smallLine = new Feature(new LineString([
+-        [center[0], center[1] - 1],
+-        [center[0], center[1] + 1]
+-      ]));
+-      smallLine.setStyle([
+-        new Style({
+-          stroke: new Stroke({width: 75, color: 'red'})
+-        }),
+-        new Style({
+-          stroke: new Stroke({width: 45, color: 'white'})
+-        })
+-      ]);
+-      source.addFeature(smallLine);
+-      const smallLine2 = new Feature(new LineString([
+-        [center[0], center[1] - 1000],
+-        [center[0], center[1] + 1000]
+-      ]));
+-      smallLine2.setStyle([
+-        new Style({
+-          stroke: new Stroke({width: 35, color: 'blue'})
+-        }),
+-        new Style({
+-          stroke: new Stroke({width: 15, color: 'green'})
+-        })
+-      ]);
+-      source.addFeature(smallLine2);
+-
+-      map.addLayer(new VectorLayer({
+-        source: source,
+-        opacity: 0.5
+-      }));
+-      map.once('postrender', function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-transparent.png',
+-          7, done);
+-      });
+-    });
+-
+-    it('renders rotation correctly with the canvas renderer', function(done) {
+-      createMap();
+-      map.getView().setRotation(Math.PI + Math.PI / 4);
+-      addPolygon(300);
+-      addCircle(500);
+-      map.addLayer(new VectorLayer({
+-        source: source,
+-        style: new Style({
+-          stroke: new Stroke({
+-            width: 2,
+-            color: 'black'
+-          })
+-        })
+-      }));
+-      map.once('postrender', function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-rotated.png',
+-          1.7, done);
+-      });
+-    });
+-
+-    it('renders fill/stroke batches correctly with the canvas renderer', function(done) {
+-      createMap();
+-      source = new VectorSource({
+-        overlaps: false
+-      });
+-      addPolygon(100);
+-      addCircle(200);
+-      addPolygon(250);
+-      addCircle(500);
+-      addPolygon(600);
+-      addPolygon(720);
+-      map.addLayer(new VectorLayer({
+-        source: source,
+-        style: new Style({
+-          stroke: new Stroke({
+-            color: '#3399CC',
+-            width: 1.25
+-          })
+-        })
+-      }));
+-      map.once('postrender', function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-opaque.png',
+-          24.34, done);
+-      });
+-    });
+-
+-    it('renders stroke batches correctly with the canvas renderer', function(done) {
+-      createMap();
+-      source = new VectorSource({
+-        overlaps: false
+-      });
+-      addLineString(100);
+-      addLineString(250);
+-      addLineString(600);
+-      addLineString(720);
+-      map.addLayer(new VectorLayer({
+-        source: source,
+-        style: new Style({
+-          stroke: new Stroke({
+-            color: '#3399CC',
+-            width: 1.25
+-          })
+-        })
+-      }));
+-      map.once('postrender', function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-stroke.png',
+-          7, done);
+-      });
+-    });
+-
+-    it('interrupts fill/stroke batches correctly with the canvas renderer', function(done) {
+-      createMap();
+-      let color;
+-      function createSource(overlaps) {
+-        color = '#3399CC';
+-        source = new VectorSource({
+-          overlaps: overlaps
+-        });
+-        addPolygon(720);
+-        addPolygon(600);
+-        addCircle(500);
+-        addPolygon(250);
+-        addCircle(200);
+-        addPolygon(100);
+-        return source;
+-      }
+-      function alternateColor() {
+-        if (color == '#3399CC') {
+-          color = '#CC9933';
+-        } else {
+-          color = '#3399CC';
+-        }
+-        return color;
+-      }
+-      const layer = new VectorLayer({
+-        source: createSource(true),
+-        style: function(feature) {
+-          alternateColor();
+-          return new Style({
+-            stroke: new Stroke({
+-              color: alternateColor(),
+-              width: 1.25
+-            }),
+-            fill: new Fill({
+-              color: alternateColor()
+-            })
+-          });
+-        }
+-      });
+-      map.addLayer(layer);
+-      map.once('postrender', function() {
+-        const canvas = map.getRenderer().canvas_;
+-        // take a snapshot of this `overlaps: true` image
+-        const referenceImage = canvas.toDataURL('image/png');
+-        // now render the same with `overlaps: false`
+-        layer.setSource(createSource(false));
+-        // result should be the same as with `overlaps: true`
+-        map.once('postrender', function(e) {
+-          expectResemble(map, referenceImage, 1e-9, done);
+-        });
+-      });
+-    });
+-
+-    it('interrupts stroke batches correctly with the canvas renderer', function(done) {
+-      createMap();
+-      let color;
+-      function createSource(overlaps) {
+-        color = '#3399CC';
+-        source = new VectorSource({
+-          overlaps: overlaps
+-        });
+-        addLineString(720);
+-        addLineString(600);
+-        addLineString(250);
+-        addLineString(100);
+-        return source;
+-      }
+-      function alternateColor() {
+-        if (color == '#3399CC') {
+-          color = '#CC9933';
+-        } else {
+-          color = '#3399CC';
+-        }
+-        return color;
+-      }
+-      const layer = new VectorLayer({
+-        source: createSource(true),
+-        style: function(feature) {
+-          alternateColor();
+-          return new Style({
+-            stroke: new Stroke({
+-              color: alternateColor(),
+-              width: 1.25
+-            }),
+-            fill: new Fill({
+-              color: alternateColor()
+-            })
+-          });
+-        }
+-      });
+-      map.addLayer(layer);
+-      map.once('postrender', function() {
+-        const canvas = map.getRenderer().canvas_;
+-        // take a snapshot of this `overlaps: true` image
+-        const referenceImage = canvas.toDataURL('image/png');
+-        // now render the same with `overlaps: false`
+-        layer.setSource(createSource(false));
+-        // result should be exactly the same as with `overlaps: true`
+-        map.once('postrender', function() {
+-          expectResemble(map, referenceImage, 1e-9, done);
+-        });
+-      });
+-    });
+-  });
+-
+-  describe('polygon rendering', function() {
+-
+-    let map2;
+-    beforeEach(function() {
+-      map2 = new Map({
+-        pixelRatio: 1,
+-        target: createMapDiv(128, 128),
+-        view: new View({
+-          center: [0, 0],
+-          zoom: 0
+-        })
+-      });
+-    });
+-
+-    afterEach(function() {
+-      disposeMap(map2);
+-      map2 = null;
+-    });
+-
+-    it('renders a feature that spans the world', function(done) {
+-      const json = {
+-        type: 'Feature',
+-        geometry: {
+-          type: 'Polygon',
+-          coordinates: [
+-            [
+-              [-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]
+-            ],
+-            [
+-              [0, 60], [-17.6336, 24.2705], [-57.0634, 18.5410], [-28.5317, -9.2705], [-35.2671, -48.5410], [0, -30], [35.2671, -48.5410], [28.5317, -9.2705], [57.0634, 18.5410], [17.6336, 24.2705], [0, 60]
+-            ]
+-          ]
+-        },
+-        properties: {}
+-      };
+-
+-      const format = new GeoJSON({featureProjection: 'EPSG:3857'});
+-      const feature = format.readFeature(json);
+-
+-      const layer = new VectorLayer({
+-        source: new VectorSource({
+-          features: [feature]
+-        }),
+-        style: new Style({
+-          fill: new Fill({
+-            color: 'blue'
+-          })
+-        })
+-      });
+-
+-      map2.addLayer(layer);
+-
+-      map2.once('postrender', function() {
+-        expectResemble(map2, 'rendering/ol/layer/expected/inverted-star.png', 1, done);
+-      });
+-
+-    });
+-
+-  });
+-
+-  describe('Polygon simplification', function() {
+-
+-    let layer, map3;
+-
+-    beforeEach(function() {
+-      const src = new VectorSource({
+-        features: [
+-          new Feature(new Polygon([[
+-            [-22, 58],
+-            [-22, 78],
+-            [-9, 78],
+-            [-9, 58],
+-            [-22, 58]
+-          ]])),
+-          new Feature(new Polygon([[
+-            [-9, 58],
+-            [-9, 78],
+-            [4, 78],
+-            [4, 58],
+-            [-9, 58]
+-          ]]))
+-        ]
+-      });
+-      layer = new VectorLayer({
+-        renderBuffer: 0,
+-        source: src
+-      });
+-      const view = new View({
+-        center: [-9.5, 78],
+-        zoom: 2,
+-        projection: 'EPSG:4326'
+-      });
+-
+-      map3 = new Map({
+-        pixelRatio: 1,
+-        layers: [layer],
+-        target: createMapDiv(100, 100),
+-        view: view
+-      });
+-    });
+-
+-    afterEach(function() {
+-      disposeMap(map3);
+-      map3 = null;
+-    });
+-
+-    it('renders partially out-of-view polygons with a fill and stroke', function(done) {
+-      layer.setStyle(new Style({
+-        stroke: new Stroke({
+-          color: [0, 0, 0, 1],
+-          width: 2
+-        }),
+-        fill: new Fill({
+-          color: [255, 0, 0, 1]
+-        })
+-      }));
+-      map3.once('postrender', function() {
+-        expectResemble(map3, 'rendering/ol/layer/expected/vector-canvas-simplified.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-
+-    it('renders partially out-of-view polygons with a fill', function(done) {
+-      layer.setStyle(new Style({
+-        fill: new Fill({
+-          color: [0, 0, 0, 1]
+-        })
+-      }));
+-      map3.once('postrender', function() {
+-        expectResemble(map3, 'rendering/ol/layer/expected/vector-canvas-simplified-fill.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-
+-    it('renders partially out-of-view polygons with a stroke', function(done) {
+-      layer.setStyle(new Style({
+-        stroke: new Stroke({
+-          color: [0, 0, 0, 1],
+-          width: 2
+-        })
+-      }));
+-      map3.once('postrender', function() {
+-        expectResemble(map3, 'rendering/ol/layer/expected/vector-canvas-simplified-stroke.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-
+-  });
+-
+-  describe('decluttering', function() {
+-
+-    beforeEach(function() {
+-      source = new VectorSource();
+-    });
+-
+-    it('declutters text', function(done) {
+-      createMap();
+-      const layer = new VectorLayer({
+-        declutter: true,
+-        source: source
+-      });
+-      map.addLayer(layer);
+-
+-      const centerFeature = new Feature({
+-        geometry: new Point(center),
+-        text: 'center'
+-      });
+-      source.addFeature(centerFeature);
+-      source.addFeature(new Feature({
+-        geometry: new Point([center[0] - 540, center[1]]),
+-        text: 'west'
+-      }));
+-      source.addFeature(new Feature({
+-        geometry: new Point([center[0] + 540, center[1]]),
+-        text: 'east'
+-      }));
+-
+-      layer.setStyle(function(feature) {
+-        return new Style({
+-          text: new Text({
+-            text: feature.get('text'),
+-            font: '12px sans-serif'
+-          })
+-        });
+-      });
+-
+-      map.once('postrender', function() {
+-        const hitDetected = map.getFeaturesAtPixel([42, 42]);
+-        expect(hitDetected).to.have.length(1);
+-        expect(hitDetected[0]).to.equal(centerFeature);
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-declutter.png',
+-          2.2, done);
+-      });
+-    });
+-
+-    it('declutters text and respects z-index', function(done) {
+-      createMap();
+-      const layer = new VectorLayer({
+-        declutter: true,
+-        source: source
+-      });
+-      map.addLayer(layer);
+-
+-      source.addFeature(new Feature({
+-        geometry: new Point(center),
+-        text: 'center',
+-        zIndex: 2
+-      }));
+-      source.addFeature(new Feature({
+-        geometry: new Point([center[0] - 540, center[1]]),
+-        text: 'west',
+-        zIndex: 3
+-      }));
+-      source.addFeature(new Feature({
+-        geometry: new Point([center[0] + 540, center[1]]),
+-        text: 'east',
+-        zIndex: 1
+-      }));
+-
+-      layer.setStyle(function(feature) {
+-        return new Style({
+-          zIndex: feature.get('zIndex'),
+-          text: new Text({
+-            text: feature.get('text'),
+-            font: '12px sans-serif'
+-          })
+-        });
+-      });
+-
+-      map.once('postrender', function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-declutter-zindex.png',
+-          3.9, done);
+-      });
+-    });
+-
+-    it('declutters images', function(done) {
+-      createMap();
+-      const layer = new VectorLayer({
+-        declutter: true,
+-        source: source
+-      });
+-      map.addLayer(layer);
+-
+-      const centerFeature = new Feature({
+-        geometry: new Point(center)
+-      });
+-      source.addFeature(centerFeature);
+-      source.addFeature(new Feature({
+-        geometry: new Point([center[0] - 540, center[1]])
+-      }));
+-      source.addFeature(new Feature({
+-        geometry: new Point([center[0] + 540, center[1]])
+-      }));
+-
+-      layer.setStyle(function(feature) {
+-        return new Style({
+-          image: new CircleStyle({
+-            radius: 15,
+-            stroke: new Stroke({
+-              color: 'blue'
+-            })
+-          })
+-        });
+-      });
+-
+-      map.once('postrender', function() {
+-        const hitDetected = map.getFeaturesAtPixel([40, 40]);
+-        expect(hitDetected).to.have.length(1);
+-        expect(hitDetected[0]).to.equal(centerFeature);
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-declutter-image.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-
+-    it('declutters images and respects z-index', function(done) {
+-      createMap();
+-      const layer = new VectorLayer({
+-        declutter: true,
+-        source: source
+-      });
+-      map.addLayer(layer);
+-
+-      source.addFeature(new Feature({
+-        geometry: new Point(center),
+-        zIndex: 2
+-      }));
+-      source.addFeature(new Feature({
+-        geometry: new Point([center[0] - 540, center[1]]),
+-        zIndex: 3
+-      }));
+-      source.addFeature(new Feature({
+-        geometry: new Point([center[0] + 540, center[1]]),
+-        zIndex: 1
+-      }));
+-
+-      layer.setStyle(function(feature) {
+-        return new Style({
+-          zIndex: feature.get('zIndex'),
+-          image: new CircleStyle({
+-            radius: 15,
+-            stroke: new Stroke({
+-              color: 'blue'
+-            })
+-          })
+-        });
+-      });
+-
+-      map.once('postrender', function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-declutter-image-zindex.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-
+-    it('declutters image & text groups', function(done) {
+-      createMap();
+-      const layer = new VectorLayer({
+-        declutter: true,
+-        source: source
+-      });
+-      map.addLayer(layer);
+-
+-      source.addFeature(new Feature({
+-        geometry: new Point(center),
+-        text: 'center'
+-      }));
+-      source.addFeature(new Feature({
+-        geometry: new Point([center[0] - 540, center[1]]),
+-        text: 'west'
+-      }));
+-      source.addFeature(new Feature({
+-        geometry: new Point([center[0] + 540, center[1]]),
+-        text: 'east'
+-      }));
+-
+-      layer.setStyle(function(feature) {
+-        return new Style({
+-          image: new CircleStyle({
+-            radius: 5,
+-            stroke: new Stroke({
+-              color: 'blue'
+-            })
+-          }),
+-          text: new Text({
+-            text: feature.get('text'),
+-            font: '12px sans-serif',
+-            textBaseline: 'bottom',
+-            offsetY: -5
+-          })
+-        });
+-      });
+-
+-      map.once('postrender', function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-declutter-group.png',
+-          2.2, done);
+-      });
+-    });
+-
+-    it('declutters text along lines and images', function(done) {
+-      createMap();
+-      const layer = new VectorLayer({
+-        declutter: true,
+-        source: source
+-      });
+-      map.addLayer(layer);
+-
+-      const point = new Feature(new Point(center));
+-      point.setStyle(new Style({
+-        image: new CircleStyle({
+-          radius: 8,
+-          stroke: new Stroke({
+-            color: 'blue'
+-          })
+-        })
+-      }));
+-      const line = new Feature(new LineString([
+-        [center[0] - 650, center[1] - 200],
+-        [center[0] + 650, center[1] - 200]
+-      ]));
+-      line.setStyle(new Style({
+-        stroke: new Stroke({
+-          color: '#CCC',
+-          width: 12
+-        }),
+-        text: new Text({
+-          placement: 'line',
+-          text: 'east-west',
+-          font: '12px sans-serif'
+-        })
+-      }));
+-
+-      source.addFeature(point);
+-      source.addFeature(line);
+-
+-      map.once('postrender', function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-declutter-line.png',
+-          IMAGE_TOLERANCE, done);
+-      });
+-    });
+-
+-    it('declutters text along lines and images with z-index', function(done) {
+-      createMap();
+-      const layer = new VectorLayer({
+-        declutter: true,
+-        source: source
+-      });
+-      map.addLayer(layer);
+-
+-      const point = new Feature(new Point(center));
+-      point.setStyle(new Style({
+-        zIndex: 2,
+-        image: new CircleStyle({
+-          radius: 8,
+-          stroke: new Stroke({
+-            color: 'blue'
+-          })
+-        })
+-      }));
+-      const line = new Feature(new LineString([
+-        [center[0] - 650, center[1] - 200],
+-        [center[0] + 650, center[1] - 200]
+-      ]));
+-      line.setStyle(new Style({
+-        zIndex: 1,
+-        stroke: new Stroke({
+-          color: '#CCC',
+-          width: 12
+-        }),
+-        text: new Text({
+-          placement: 'line',
+-          text: 'east-west',
+-          font: '12px sans-serif'
+-        })
+-      }));
+-
+-      source.addFeature(point);
+-      source.addFeature(line);
+-
+-      map.once('postrender', function() {
+-        const hitDetected = map.getFeaturesAtPixel([35, 46]);
+-        expect(hitDetected).to.have.length(1);
+-        expect(hitDetected[0]).to.equal(line);
+-        expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-declutter-line-zindex.png',
+-          4.1, done);
+-      });
+-    });
+-  });
+-
+-});
+diff --git a/test/rendering/ol/layer/vectorimage.test.js b/test/rendering/ol/layer/vectorimage.test.js
+index ca4ba48d809..0097c218474 100644
+--- a/test/rendering/ol/layer/vectorimage.test.js
++++ b/test/rendering/ol/layer/vectorimage.test.js
+@@ -53,91 +53,6 @@ describe('ol.rendering.layer.VectorImage', function() {
+     ])));
+   }
+ 
+-  it('renders opacity correctly', function(done) {
+-    createMap();
+-    const smallLine = new Feature(new LineString([
+-      [center[0], center[1] - 1],
+-      [center[0], center[1] + 1]
+-    ]));
+-    smallLine.setStyle(new Style({
+-      zIndex: -99,
+-      stroke: new Stroke({width: 75, color: 'red'})
+-    }));
+-    source.addFeature(smallLine);
+-    addPolygon(100);
+-    addCircle(200);
+-    addPolygon(250);
+-    addCircle(500);
+-    addPolygon(600);
+-    addPolygon(720);
+-    map.addLayer(new VectorImageLayer({
+-      source: source
+-    }));
+-    map.once('postrender', function() {
+-      expectResemble(map, 'rendering/ol/layer/expected/vector-canvas.png',
+-        17, done);
+-    });
+-  });
+-
+-  it('renders transparent layers correctly', function(done) {
+-    createMap();
+-    const smallLine = new Feature(new LineString([
+-      [center[0], center[1] - 1],
+-      [center[0], center[1] + 1]
+-    ]));
+-    smallLine.setStyle([
+-      new Style({
+-        stroke: new Stroke({width: 75, color: 'red'})
+-      }),
+-      new Style({
+-        stroke: new Stroke({width: 45, color: 'white'})
+-      })
+-    ]);
+-    source.addFeature(smallLine);
+-    const smallLine2 = new Feature(new LineString([
+-      [center[0], center[1] - 1000],
+-      [center[0], center[1] + 1000]
+-    ]));
+-    smallLine2.setStyle([
+-      new Style({
+-        stroke: new Stroke({width: 35, color: 'blue'})
+-      }),
+-      new Style({
+-        stroke: new Stroke({width: 15, color: 'green'})
+-      })
+-    ]);
+-    source.addFeature(smallLine2);
+-
+-    map.addLayer(new VectorImageLayer({
+-      source: source,
+-      opacity: 0.5
+-    }));
+-    map.once('postrender', function() {
+-      expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-transparent.png',
+-        7, done);
+-    });
+-  });
+-
+-  it('renders rotation correctly', function(done) {
+-    createMap();
+-    map.getView().setRotation(Math.PI + Math.PI / 4);
+-    addPolygon(300);
+-    addCircle(500);
+-    map.addLayer(new VectorImageLayer({
+-      source: source,
+-      style: new Style({
+-        stroke: new Stroke({
+-          width: 2,
+-          color: 'black'
+-        })
+-      })
+-    }));
+-    map.once('postrender', function() {
+-      expectResemble(map, 'rendering/ol/layer/expected/vector-canvas-rotated.png',
+-        2.9, done);
+-    });
+-  });
+-
+   it('unskips features correctly', function(done) {
+     createMap();
+     addCircle(500);
+diff --git a/test/rendering/ol/layer/vectortile.test.js b/test/rendering/ol/layer/vectortile.test.js
+deleted file mode 100644
+index 40b90d374e4..00000000000
+--- a/test/rendering/ol/layer/vectortile.test.js
++++ /dev/null
+@@ -1,122 +0,0 @@
+-import Map from '../../../../src/ol/Map.js';
+-import View from '../../../../src/ol/View.js';
+-import MVT from '../../../../src/ol/format/MVT.js';
+-import VectorTileLayer from '../../../../src/ol/layer/VectorTile.js';
+-import {assign} from '../../../../src/ol/obj.js';
+-import VectorTileSource from '../../../../src/ol/source/VectorTile.js';
+-import CircleStyle from '../../../../src/ol/style/Circle.js';
+-import Fill from '../../../../src/ol/style/Fill.js';
+-import Style from '../../../../src/ol/style/Style.js';
+-import Text from '../../../../src/ol/style/Text.js';
+-import {createXYZ} from '../../../../src/ol/tilegrid.js';
+-
+-
+-describe('ol.rendering.layer.VectorTile', function() {
+-
+-  let map;
+-
+-  function createMap(opt_pixelRatio, opt_size) {
+-    const size = opt_size || 50;
+-    map = new Map({
+-      pixelRatio: opt_pixelRatio || 1,
+-      target: createMapDiv(size, size),
+-      view: new View({
+-        center: [1825927.7316762917, 6143091.089223046],
+-        zoom: 14
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    disposeMap(map);
+-    map = null;
+-  });
+-
+-  function waitForTiles(source, layerOptions, onTileLoaded) {
+-    let tilesLoading = 0;
+-    let tileLoaded = 0;
+-
+-    const update = function() {
+-      if (tilesLoading === tileLoaded) {
+-        onTileLoaded();
+-      }
+-    };
+-
+-    source.on('tileloadstart', function(event) {
+-      tilesLoading++;
+-    });
+-    source.on('tileloadend', function(event) {
+-      tileLoaded++;
+-      update();
+-    });
+-    source.on('tileloaderror', function(event) {
+-      expect().fail('Tile failed to load');
+-    });
+-
+-    const options = {
+-      source: source
+-    };
+-    assign(options, layerOptions);
+-    map.addLayer(new VectorTileLayer(options));
+-  }
+-
+-  describe('vector tile layer', function() {
+-    let source;
+-
+-    beforeEach(function() {
+-      source = new VectorTileSource({
+-        format: new MVT(),
+-        tileGrid: createXYZ(),
+-        url: 'rendering/ol/data/tiles/mvt/{z}-{x}-{y}.vector.pbf',
+-        transition: 0
+-      });
+-    });
+-
+-    it('renders correctly with the canvas renderer (HiDPI)', function(done) {
+-      createMap(2);
+-      waitForTiles(source, {}, function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vectortile-canvas-hidpi.png',
+-          11.3, done);
+-      });
+-    });
+-
+-    it('renders rotated view correctly with the canvas renderer (HiDPI)', function(done) {
+-      createMap(2);
+-      map.getView().setRotation(Math.PI / 4);
+-      waitForTiles(source, {}, function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vectortile-canvas-rotated-hidpi.png',
+-          14.8, done);
+-      });
+-    });
+-
+-    it('declutters text and images', function(done) {
+-      createMap(1, 100);
+-      map.getView().setZoom(13.8);
+-      const style = function(feature, resolution) {
+-        const geom = feature.getGeometry();
+-        if (geom.getType() == 'Point') {
+-          return new Style({
+-            image: new CircleStyle({
+-              radius: 7,
+-              fill: new Fill({
+-                color: 'red'
+-              })
+-            }),
+-            text: new Text({
+-              text: feature.get('name_en'),
+-              font: '12px sans-serif',
+-              textBaseline: 'bottom',
+-              offsetY: -7
+-            })
+-          });
+-        }
+-      };
+-      waitForTiles(source, {declutter: true, style: style}, function() {
+-        expectResemble(map, 'rendering/ol/layer/expected/vectortile-canvas-declutter.png',
+-          8.5, done);
+-      });
+-    });
+-
+-  });
+-
+-});
+diff --git a/test/rendering/ol/map.test.js b/test/rendering/ol/map.test.js
+deleted file mode 100644
+index 43d1f3f72c7..00000000000
+--- a/test/rendering/ol/map.test.js
++++ /dev/null
+@@ -1,74 +0,0 @@
+-import Feature from '../../../src/ol/Feature.js';
+-import Point from '../../../src/ol/geom/Point.js';
+-import Map from '../../../src/ol/Map.js';
+-import View from '../../../src/ol/View.js';
+-import VectorLayer from '../../../src/ol/layer/Vector.js';
+-import VectorSource from '../../../src/ol/source/Vector.js';
+-
+-
+-describe('ol.rendering.Map', function() {
+-
+-  let map;
+-  function createMap(renderer) {
+-    const MapConstructor = Map;
+-    const LayerConstructor = VectorLayer;
+-
+-    const vectorLayer = new LayerConstructor({
+-      source: new VectorSource({
+-        features: [new Feature({
+-          geometry: new Point([0, 0])
+-        })]
+-      })
+-    });
+-
+-    map = new MapConstructor({
+-      pixelRatio: 1,
+-      target: createMapDiv(50, 50),
+-      layers: [vectorLayer],
+-      view: new View({
+-        projection: 'EPSG:4326',
+-        center: [0, 0],
+-        resolution: 1
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    if (map) {
+-      disposeMap(map);
+-    }
+-    map = null;
+-  });
+-
+-  describe('#updateSize()', function() {
+-
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas');
+-      map.once('postrender', function() {
+-        const initialSize = map.getSize();
+-        map.updateSize();
+-        expect(map.getSize()).to.eql(initialSize);
+-        done();
+-      });
+-    });
+-  });
+-
+-  describe('#render()', function() {
+-
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas');
+-      expectResemble(
+-        map, 'rendering/ol/expected/render-canvas.png', IMAGE_TOLERANCE, done);
+-    });
+-  });
+-
+-  describe('#pan()', function() {
+-
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas');
+-      map.getView().setCenter([10, 10]);
+-      expectResemble(
+-        map, 'rendering/ol/expected/pan-canvas.png', IMAGE_TOLERANCE, done);
+-    });
+-  });
+-});
+diff --git a/test/rendering/ol/source/expected/0_1.canvas.png b/test/rendering/ol/source/expected/0_1.canvas.png
+deleted file mode 100644
+index 4625d7cffa9..00000000000
+Binary files a/test/rendering/ol/source/expected/0_1.canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/source/expected/0_1.webgl.png b/test/rendering/ol/source/expected/0_1.webgl.png
+deleted file mode 100644
+index 4625d7cffa9..00000000000
+Binary files a/test/rendering/ol/source/expected/0_1.webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/source/expected/0_2.canvas.png b/test/rendering/ol/source/expected/0_2.canvas.png
+deleted file mode 100644
+index 3cfbad22af3..00000000000
+Binary files a/test/rendering/ol/source/expected/0_2.canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/source/expected/0_2.webgl.png b/test/rendering/ol/source/expected/0_2.webgl.png
+deleted file mode 100644
+index 8d19c47348c..00000000000
+Binary files a/test/rendering/ol/source/expected/0_2.webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/source/expected/20_1.canvas.png b/test/rendering/ol/source/expected/20_1.canvas.png
+deleted file mode 100644
+index a75dd1e926a..00000000000
+Binary files a/test/rendering/ol/source/expected/20_1.canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/source/expected/20_1.webgl.png b/test/rendering/ol/source/expected/20_1.webgl.png
+deleted file mode 100644
+index caea581e840..00000000000
+Binary files a/test/rendering/ol/source/expected/20_1.webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/source/expected/20_2.canvas.png b/test/rendering/ol/source/expected/20_2.canvas.png
+deleted file mode 100644
+index 7db1f7d43f7..00000000000
+Binary files a/test/rendering/ol/source/expected/20_2.canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/source/expected/20_2.webgl.png b/test/rendering/ol/source/expected/20_2.webgl.png
+deleted file mode 100644
+index 62d46969a45..00000000000
+Binary files a/test/rendering/ol/source/expected/20_2.webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/source/expected/raster-1.png b/test/rendering/ol/source/expected/raster-1.png
+deleted file mode 100644
+index ef6dc6cb599..00000000000
+Binary files a/test/rendering/ol/source/expected/raster-1.png and /dev/null differ
+diff --git a/test/rendering/ol/source/raster.test.js b/test/rendering/ol/source/raster.test.js
+deleted file mode 100644
+index 4a156341f7e..00000000000
+--- a/test/rendering/ol/source/raster.test.js
++++ /dev/null
+@@ -1,83 +0,0 @@
+-import Map from '../../../../src/ol/Map.js';
+-import View from '../../../../src/ol/View.js';
+-import ImageLayer from '../../../../src/ol/layer/Image.js';
+-import RasterSource from '../../../../src/ol/source/Raster.js';
+-import XYZ from '../../../../src/ol/source/XYZ.js';
+-
+-where('Uint8ClampedArray').describe('ol.rendering.source.Raster', function() {
+-
+-  function afterRender(source, raster, callback) {
+-    let loading = 0;
+-
+-    source.on('tileloadstart', function(event) {
+-      loading++;
+-    });
+-    source.on('tileloadend', function(event) {
+-      loading--;
+-      if (loading == 0) {
+-        raster.once('afteroperations', function() {
+-          callback();
+-        });
+-      }
+-    });
+-    source.on('tileloaderror', function(event) {
+-      callback(new Error('Tile failed to load'));
+-    });
+-
+-  }
+-
+-  let map;
+-  function createMap(pixelRatio) {
+-    map = new Map({
+-      target: createMapDiv(200, 200),
+-      pixelRatio: pixelRatio,
+-      view: new View({
+-        center: [0, 0],
+-        zoom: 0
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    if (map) {
+-      disposeMap(map);
+-    }
+-    map = null;
+-  });
+-
+-  describe('raster source rendering', function() {
+-    it('renders the result of an operation', function(done) {
+-      createMap(1);
+-
+-      const source = new XYZ({
+-        url: 'rendering/ol/data/tiles/osm/{z}/{x}/{y}.png',
+-        transition: 0
+-      });
+-
+-      const raster = new RasterSource({
+-        sources: [source],
+-        operation: function(pixels) {
+-          const pixel = pixels[0];
+-          // swap blue and red
+-          const red = pixel[0];
+-          pixel[0] = pixel[2];
+-          pixel[2] = red;
+-          return pixel;
+-        }
+-      });
+-
+-      afterRender(source, raster, function(err) {
+-        if (err) {
+-          done(err);
+-          return;
+-        }
+-        expectResemble(map, 'rendering/ol/source/expected/raster-1.png', IMAGE_TOLERANCE, done);
+-      });
+-
+-      const layer = new ImageLayer({source: raster});
+-
+-      map.addLayer(layer);
+-    });
+-  });
+-
+-});
+diff --git a/test/rendering/ol/source/tilewms.test.js b/test/rendering/ol/source/tilewms.test.js
+deleted file mode 100644
+index 6b7fc14a812..00000000000
+--- a/test/rendering/ol/source/tilewms.test.js
++++ /dev/null
+@@ -1,112 +0,0 @@
+-import Map from '../../../../src/ol/Map.js';
+-import View from '../../../../src/ol/View.js';
+-import TileLayer from '../../../../src/ol/layer/Tile.js';
+-import TileWMS from '../../../../src/ol/source/TileWMS.js';
+-
+-describe('ol.rendering.source.TileWMS', function() {
+-
+-  function tilesLoaded(source, callback) {
+-    let loading = 0;
+-
+-    source.on('tileloadstart', function(event) {
+-      loading++;
+-    });
+-    source.on('tileloadend', function(event) {
+-      loading--;
+-      if (loading == 0) {
+-        callback();
+-      }
+-    });
+-    source.on('tileloaderror', function(event) {
+-      expect().fail('Tile failed to load');
+-    });
+-
+-  }
+-
+-  let map;
+-  function createMap(renderer, pixelRatio) {
+-    const MapConstructor = Map;
+-
+-    map = new MapConstructor({
+-      target: createMapDiv(200, 200),
+-      pixelRatio: pixelRatio,
+-      view: new View({
+-        center: [0, 0],
+-        zoom: 5
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    if (map) {
+-      disposeMap(map);
+-    }
+-    map = null;
+-  });
+-
+-  function createSource(gutter) {
+-    return new TileWMS({
+-      params: {
+-        'LAYERS': 'layer'
+-      },
+-      gutter: gutter,
+-      url: 'rendering/ol/data/tiles/wms/wms' + gutter + '.png',
+-      transition: 0
+-    });
+-  }
+-
+-
+-  describe('0px gutter, 1 pixel ratio', function() {
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas', 1);
+-      const source = createSource(0);
+-      tilesLoaded(source, function() {
+-        expectResemble(map, 'rendering/ol/source/expected/0_1.canvas.png', IMAGE_TOLERANCE, done);
+-      });
+-      map.addLayer(new TileLayer({
+-        source: source
+-      }));
+-    });
+-  });
+-
+-  describe('0px gutter, 2 pixel ratio', function() {
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas', 2);
+-      const source = createSource(0);
+-      tilesLoaded(source, function() {
+-        expectResemble(map, 'rendering/ol/source/expected/0_2.canvas.png', IMAGE_TOLERANCE, done);
+-      });
+-      map.addLayer(new TileLayer({
+-        source: source
+-      }));
+-    });
+-  });
+-
+-
+-  describe('20px gutter, 1 pixel ratio', function() {
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas', 1);
+-      const source = createSource(20);
+-      tilesLoaded(source, function() {
+-        expectResemble(map, 'rendering/ol/source/expected/20_1.canvas.png', IMAGE_TOLERANCE, done);
+-      });
+-      map.addLayer(new TileLayer({
+-        source: source
+-      }));
+-    });
+-  });
+-
+-  describe('20px gutter, 2 pixel ratio', function() {
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas', 2);
+-      const source = createSource(20);
+-      tilesLoaded(source, function() {
+-        expectResemble(map, 'rendering/ol/source/expected/20_2.canvas.png', IMAGE_TOLERANCE, done);
+-      });
+-      map.addLayer(new TileLayer({
+-        source: source
+-      }));
+-    });
+-  });
+-
+-});
+diff --git a/test/rendering/ol/style/circle.test.js b/test/rendering/ol/style/circle.test.js
+deleted file mode 100644
+index 096ac601beb..00000000000
+--- a/test/rendering/ol/style/circle.test.js
++++ /dev/null
+@@ -1,203 +0,0 @@
+-import Feature from '../../../../src/ol/Feature.js';
+-import Point from '../../../../src/ol/geom/Point.js';
+-import MultiPoint from '../../../../src/ol/geom/MultiPoint.js';
+-import Map from '../../../../src/ol/Map.js';
+-import View from '../../../../src/ol/View.js';
+-import VectorLayer from '../../../../src/ol/layer/Vector.js';
+-import VectorSource from '../../../../src/ol/source/Vector.js';
+-import CircleStyle from '../../../../src/ol/style/Circle.js';
+-import Fill from '../../../../src/ol/style/Fill.js';
+-import Style from '../../../../src/ol/style/Style.js';
+-import Stroke from '../../../../src/ol/style/Stroke.js';
+-
+-
+-describe('ol.rendering.style.Circle', function() {
+-
+-  let map, vectorSource;
+-
+-  function createMap(renderer) {
+-    const MapConstructor = Map;
+-    const LayerConstructor = VectorLayer;
+-
+-    vectorSource = new VectorSource();
+-    const vectorLayer = new LayerConstructor({
+-      source: vectorSource
+-    });
+-
+-    map = new MapConstructor({
+-      pixelRatio: 1,
+-      target: createMapDiv(50, 50),
+-      layers: [vectorLayer],
+-      view: new View({
+-        projection: 'EPSG:4326',
+-        center: [0, 0],
+-        resolution: 1
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    if (map) {
+-      disposeMap(map);
+-      map = null;
+-    }
+-  });
+-
+-  describe('#render', function() {
+-
+-    function createFeatures(multi) {
+-      let feature;
+-      feature = new Feature({
+-        geometry: multi ? new MultiPoint([[-20, 18]]) : new Point([-20, 18])
+-      });
+-      feature.setStyle(new Style({
+-        image: new CircleStyle({
+-          radius: 2,
+-          fill: new Fill({
+-            color: '#91E339'
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: multi ? new MultiPoint([[-10, 18]]) : new Point([-10, 18])
+-      });
+-      feature.setStyle(new Style({
+-        image: new CircleStyle({
+-          radius: 4,
+-          fill: new Fill({
+-            color: '#5447E6'
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: multi ? new MultiPoint([[4, 18]]) : new Point([4, 18])
+-      });
+-      feature.setStyle(new Style({
+-        image: new CircleStyle({
+-          radius: 6,
+-          fill: new Fill({
+-            color: '#92A8A6'
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: multi ? new MultiPoint([[-20, 3]]) : new Point([-20, 3])
+-      });
+-      feature.setStyle(new Style({
+-        image: new CircleStyle({
+-          radius: 2,
+-          fill: new Fill({
+-            color: '#91E339'
+-          }),
+-          stroke: new Stroke({
+-            color: '#000000',
+-            width: 1
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: multi ? new MultiPoint([[-10, 3]]) : new Point([-10, 3])
+-      });
+-      feature.setStyle(new Style({
+-        image: new CircleStyle({
+-          radius: 4,
+-          fill: new Fill({
+-            color: '#5447E6'
+-          }),
+-          stroke: new Stroke({
+-            color: '#000000',
+-            width: 2
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: multi ? new MultiPoint([[4, 3]]) : new Point([4, 3])
+-      });
+-      feature.setStyle(new Style({
+-        image: new CircleStyle({
+-          radius: 6,
+-          fill: new Fill({
+-            color: '#92A8A6'
+-          }),
+-          stroke: new Stroke({
+-            color: '#000000',
+-            width: 3
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: multi ? new MultiPoint([[-20, -15]]) : new Point([-20, -15])
+-      });
+-      feature.setStyle(new Style({
+-        image: new CircleStyle({
+-          radius: 2,
+-          stroke: new Stroke({
+-            color: '#256308',
+-            width: 1
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: multi ? new MultiPoint([[-10, -15]]) : new Point([-10, -15])
+-      });
+-      feature.setStyle(new Style({
+-        image: new CircleStyle({
+-          radius: 4,
+-          fill: new Fill({
+-            color: 'rgba(0, 0, 255, 0.3)'
+-          }),
+-          stroke: new Stroke({
+-            color: '#256308',
+-            width: 2
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: multi ? new MultiPoint([[4, -15]]) : new Point([4, -15])
+-      });
+-      feature.setStyle(new Style({
+-        image: new CircleStyle({
+-          radius: 6,
+-          fill: new Fill({
+-            color: 'rgba(235, 45, 70, 0.6)'
+-          }),
+-          stroke: new Stroke({
+-            color: '#256308',
+-            width: 3
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-    }
+-
+-    it('renders point geometries', function(done) {
+-      createMap('canvas');
+-      createFeatures();
+-      expectResemble(map, 'rendering/ol/style/expected/circle-canvas.png',
+-        8.0, done);
+-    });
+-
+-    it('renders multipoint geometries', function(done) {
+-      createMap('canvas');
+-      createFeatures(true);
+-      expectResemble(map, 'rendering/ol/style/expected/circle-canvas.png',
+-        8.0, done);
+-    });
+-  });
+-});
+diff --git a/test/rendering/ol/style/expected/circle-canvas.png b/test/rendering/ol/style/expected/circle-canvas.png
+deleted file mode 100644
+index 466b5281d19..00000000000
+Binary files a/test/rendering/ol/style/expected/circle-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/circle-webgl.png b/test/rendering/ol/style/expected/circle-webgl.png
+deleted file mode 100644
+index 89c37e992ec..00000000000
+Binary files a/test/rendering/ol/style/expected/circle-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/linestring-strokes-canvas-hidpi.png b/test/rendering/ol/style/expected/linestring-strokes-canvas-hidpi.png
+deleted file mode 100644
+index 2d2fcd2f3ff..00000000000
+Binary files a/test/rendering/ol/style/expected/linestring-strokes-canvas-hidpi.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/linestring-strokes-canvas.png b/test/rendering/ol/style/expected/linestring-strokes-canvas.png
+deleted file mode 100644
+index d2f488e3c98..00000000000
+Binary files a/test/rendering/ol/style/expected/linestring-strokes-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/linestring-strokes-webgl.png b/test/rendering/ol/style/expected/linestring-strokes-webgl.png
+deleted file mode 100644
+index 41d05f8ae67..00000000000
+Binary files a/test/rendering/ol/style/expected/linestring-strokes-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/regularshape-canvas-default-style.png b/test/rendering/ol/style/expected/regularshape-canvas-default-style.png
+deleted file mode 100644
+index 51e191f943e..00000000000
+Binary files a/test/rendering/ol/style/expected/regularshape-canvas-default-style.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/regularshape-canvas-linedash.png b/test/rendering/ol/style/expected/regularshape-canvas-linedash.png
+deleted file mode 100644
+index b0d7f519934..00000000000
+Binary files a/test/rendering/ol/style/expected/regularshape-canvas-linedash.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/regularshape-canvas-linedashoffset.png b/test/rendering/ol/style/expected/regularshape-canvas-linedashoffset.png
+deleted file mode 100644
+index 3723123e3d2..00000000000
+Binary files a/test/rendering/ol/style/expected/regularshape-canvas-linedashoffset.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/regularshape-canvas.png b/test/rendering/ol/style/expected/regularshape-canvas.png
+deleted file mode 100644
+index 75cb343754f..00000000000
+Binary files a/test/rendering/ol/style/expected/regularshape-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/regularshape-webgl-default-style.png b/test/rendering/ol/style/expected/regularshape-webgl-default-style.png
+deleted file mode 100644
+index fd18fd97081..00000000000
+Binary files a/test/rendering/ol/style/expected/regularshape-webgl-default-style.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/regularshape-webgl.png b/test/rendering/ol/style/expected/regularshape-webgl.png
+deleted file mode 100644
+index 9219cc30850..00000000000
+Binary files a/test/rendering/ol/style/expected/regularshape-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-align-offset-canvas.png b/test/rendering/ol/style/expected/text-align-offset-canvas.png
+deleted file mode 100644
+index 92b38dcbf9d..00000000000
+Binary files a/test/rendering/ol/style/expected/text-align-offset-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-background.png b/test/rendering/ol/style/expected/text-background.png
+deleted file mode 100644
+index cd78d7c1d6c..00000000000
+Binary files a/test/rendering/ol/style/expected/text-background.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-canvas-hidpi.png b/test/rendering/ol/style/expected/text-canvas-hidpi.png
+deleted file mode 100644
+index 24fc152cd5c..00000000000
+Binary files a/test/rendering/ol/style/expected/text-canvas-hidpi.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-canvas-scale.png b/test/rendering/ol/style/expected/text-canvas-scale.png
+deleted file mode 100644
+index a569c3e1159..00000000000
+Binary files a/test/rendering/ol/style/expected/text-canvas-scale.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-canvas.png b/test/rendering/ol/style/expected/text-canvas.png
+deleted file mode 100644
+index b2e9b26d452..00000000000
+Binary files a/test/rendering/ol/style/expected/text-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-auto.png b/test/rendering/ol/style/expected/text-linestring-auto.png
+deleted file mode 100644
+index 1344a0a6e75..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-auto.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-center.png b/test/rendering/ol/style/expected/text-linestring-center.png
+deleted file mode 100644
+index fa5c833f877..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-center.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-left-nice-rotated.png b/test/rendering/ol/style/expected/text-linestring-left-nice-rotated.png
+deleted file mode 100644
+index 6cb19bc94bd..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-left-nice-rotated.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-left-nice.png b/test/rendering/ol/style/expected/text-linestring-left-nice.png
+deleted file mode 100644
+index f47a44ea757..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-left-nice.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-left.png b/test/rendering/ol/style/expected/text-linestring-left.png
+deleted file mode 100644
+index f0ba066ec10..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-left.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-nice-baseline.png b/test/rendering/ol/style/expected/text-linestring-nice-baseline.png
+deleted file mode 100644
+index 28d4ee1b534..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-nice-baseline.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-nice-multi-font.png b/test/rendering/ol/style/expected/text-linestring-nice-multi-font.png
+deleted file mode 100644
+index 3d97ec922ad..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-nice-multi-font.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-nice-rotated.png b/test/rendering/ol/style/expected/text-linestring-nice-rotated.png
+deleted file mode 100644
+index 65bc3bea661..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-nice-rotated.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-nice-scale.png b/test/rendering/ol/style/expected/text-linestring-nice-scale.png
+deleted file mode 100644
+index 846d3a7051a..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-nice-scale.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-nice.png b/test/rendering/ol/style/expected/text-linestring-nice.png
+deleted file mode 100644
+index aa4a1c22863..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-nice.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-linestring-omit.png b/test/rendering/ol/style/expected/text-linestring-omit.png
+deleted file mode 100644
+index df31badddc0..00000000000
+Binary files a/test/rendering/ol/style/expected/text-linestring-omit.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-multilinestring.png b/test/rendering/ol/style/expected/text-multilinestring.png
+deleted file mode 100644
+index 42c442caa93..00000000000
+Binary files a/test/rendering/ol/style/expected/text-multilinestring.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-multipolygon.png b/test/rendering/ol/style/expected/text-multipolygon.png
+deleted file mode 100644
+index 6c65bcfc582..00000000000
+Binary files a/test/rendering/ol/style/expected/text-multipolygon.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-polygon.png b/test/rendering/ol/style/expected/text-polygon.png
+deleted file mode 100644
+index 2f3e4f8bf4c..00000000000
+Binary files a/test/rendering/ol/style/expected/text-polygon.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-rotated-canvas.png b/test/rendering/ol/style/expected/text-rotated-canvas.png
+deleted file mode 100644
+index d84071c2085..00000000000
+Binary files a/test/rendering/ol/style/expected/text-rotated-canvas.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-rotated-webgl.png b/test/rendering/ol/style/expected/text-rotated-webgl.png
+deleted file mode 100644
+index 33f5bfbc434..00000000000
+Binary files a/test/rendering/ol/style/expected/text-rotated-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/style/expected/text-webgl.png b/test/rendering/ol/style/expected/text-webgl.png
+deleted file mode 100644
+index 7adae3ea313..00000000000
+Binary files a/test/rendering/ol/style/expected/text-webgl.png and /dev/null differ
+diff --git a/test/rendering/ol/style/linestring.test.js b/test/rendering/ol/style/linestring.test.js
+deleted file mode 100644
+index 43031bde133..00000000000
+--- a/test/rendering/ol/style/linestring.test.js
++++ /dev/null
+@@ -1,130 +0,0 @@
+-import Feature from '../../../../src/ol/Feature.js';
+-import LineString from '../../../../src/ol/geom/LineString.js';
+-import Map from '../../../../src/ol/Map.js';
+-import View from '../../../../src/ol/View.js';
+-import VectorLayer from '../../../../src/ol/layer/Vector.js';
+-import VectorSource from '../../../../src/ol/source/Vector.js';
+-import Style from '../../../../src/ol/style/Style.js';
+-import Stroke from '../../../../src/ol/style/Stroke.js';
+-
+-
+-describe('ol.rendering.style.LineString', function() {
+-
+-  let map, vectorSource;
+-
+-  function createMap(renderer, opt_pixelRatio) {
+-    const MapConstructor = Map;
+-    const LayerConstructor = VectorLayer;
+-
+-    vectorSource = new VectorSource();
+-    const vectorLayer = new LayerConstructor({
+-      source: vectorSource
+-    });
+-
+-    map = new MapConstructor({
+-      pixelRatio: opt_pixelRatio || 1,
+-      target: createMapDiv(50, 50),
+-      layers: [vectorLayer],
+-      view: new View({
+-        projection: 'EPSG:4326',
+-        center: [0, 0],
+-        resolution: 1
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    if (map) {
+-      disposeMap(map);
+-      map = null;
+-    }
+-  });
+-
+-  describe('different strokes', function() {
+-
+-    function createFeatures() {
+-      let feature;
+-
+-      feature = new Feature({
+-        geometry: new LineString(
+-          [[-20, 20], [15, 20]]
+-        )
+-      });
+-      feature.setStyle(new Style({
+-        stroke: new Stroke({color: '#DE213A', width: 3})
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: new LineString(
+-          [[-20, 15], [15, 15]]
+-        )
+-      });
+-      feature.setStyle(new Style({
+-        stroke: new Stroke({color: '#9696EB', width: 1})
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: new LineString(
+-          [[-20, 10], [15, 10]]
+-        )
+-      });
+-      feature.setStyle([new Style({
+-        stroke: new Stroke({color: '#F2F211', width: 5})
+-      }), new Style({
+-        stroke: new Stroke({color: '#292921', width: 1})
+-      })]);
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: new LineString(
+-          [[-20, -20], [-2, 0], [15, -20]]
+-        )
+-      });
+-      feature.setStyle(new Style({
+-        stroke: new Stroke({
+-          color: '#000000',
+-          width: 2,
+-          lineCap: 'square',
+-          lineDash: [4, 8],
+-          lineJoin: 'round'
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: new LineString(
+-          [[-20, -15], [-2, 5], [15, -15]]
+-        )
+-      });
+-      feature.setStyle(new Style({
+-        stroke: new Stroke({
+-          color: '#000000',
+-          width: 2,
+-          lineCap: 'square',
+-          lineDash: [4, 8],
+-          lineDashOffset: 6,
+-          lineJoin: 'round'
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-    }
+-
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas');
+-      createFeatures();
+-      expectResemble(
+-        map, 'rendering/ol/style/expected/linestring-strokes-canvas.png',
+-        3.0, done);
+-    });
+-
+-    it('tests the canvas renderer (HiDPI)', function(done) {
+-      createMap('canvas', 2);
+-      createFeatures();
+-      expectResemble(
+-        map, 'rendering/ol/style/expected/linestring-strokes-canvas-hidpi.png',
+-        3.0, done);
+-    });
+-  });
+-});
+diff --git a/test/rendering/ol/style/regularshape.test.js b/test/rendering/ol/style/regularshape.test.js
+deleted file mode 100644
+index b582438693b..00000000000
+--- a/test/rendering/ol/style/regularshape.test.js
++++ /dev/null
+@@ -1,150 +0,0 @@
+-import Feature from '../../../../src/ol/Feature.js';
+-import Point from '../../../../src/ol/geom/Point.js';
+-import Map from '../../../../src/ol/Map.js';
+-import View from '../../../../src/ol/View.js';
+-import VectorLayer from '../../../../src/ol/layer/Vector.js';
+-import VectorSource from '../../../../src/ol/source/Vector.js';
+-import Fill from '../../../../src/ol/style/Fill.js';
+-import RegularShape from '../../../../src/ol/style/RegularShape.js';
+-import Style from '../../../../src/ol/style/Style.js';
+-import Stroke from '../../../../src/ol/style/Stroke.js';
+-
+-
+-describe('ol.rendering.style.RegularShape', function() {
+-
+-  let map, vectorSource;
+-
+-  function createMap(renderer) {
+-    const MapConstructor = Map;
+-    const LayerConstructor = VectorLayer;
+-
+-    vectorSource = new VectorSource();
+-    const vectorLayer = new LayerConstructor({
+-      source: vectorSource
+-    });
+-
+-    map = new MapConstructor({
+-      pixelRatio: 1,
+-      target: createMapDiv(50, 50),
+-      layers: [vectorLayer],
+-      view: new View({
+-        projection: 'EPSG:4326',
+-        center: [0, 0],
+-        resolution: 1
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    if (map) {
+-      disposeMap(map);
+-      map = null;
+-    }
+-  });
+-
+-  function createFeatures(stroke, fill) {
+-    let feature;
+-    feature = new Feature({
+-      geometry: new Point([-15, 15])
+-    });
+-    // square
+-    feature.setStyle(new Style({
+-      image: new RegularShape({
+-        fill: fill,
+-        stroke: stroke,
+-        points: 4,
+-        radius: 10,
+-        angle: Math.PI / 4
+-      })
+-    }));
+-    vectorSource.addFeature(feature);
+-
+-    feature = new Feature({
+-      geometry: new Point([8, 15])
+-    });
+-    // triangle
+-    feature.setStyle(new Style({
+-      image: new RegularShape({
+-        fill: fill,
+-        stroke: stroke,
+-        points: 3,
+-        radius: 10,
+-        rotation: Math.PI / 4,
+-        angle: 0
+-      })
+-    }));
+-    vectorSource.addFeature(feature);
+-
+-    feature = new Feature({
+-      geometry: new Point([-10, -8])
+-    });
+-    // star
+-    feature.setStyle(new Style({
+-      image: new RegularShape({
+-        fill: fill,
+-        stroke: stroke,
+-        points: 5,
+-        radius: 10,
+-        radius2: 4,
+-        angle: 0
+-      })
+-    }));
+-    vectorSource.addFeature(feature);
+-
+-    feature = new Feature({
+-      geometry: new Point([12, -8])
+-    });
+-    // cross
+-    feature.setStyle(new Style({
+-      image: new RegularShape({
+-        fill: fill,
+-        stroke: stroke,
+-        points: 4,
+-        radius: 10,
+-        radius2: 0,
+-        angle: 0
+-      })
+-    }));
+-    vectorSource.addFeature(feature);
+-  }
+-
+-
+-  describe('#render', function() {
+-    const stroke = new Stroke({width: 2});
+-    const fill = new Fill({color: 'red'});
+-
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas');
+-      createFeatures(stroke, fill);
+-      expectResemble(map, 'rendering/ol/style/expected/regularshape-canvas.png', 9.4, done);
+-    });
+-
+-    it('supports lineDash', function(done) {
+-      createMap('canvas');
+-      createFeatures(new Stroke({
+-        lineDash: [10, 5]
+-      }));
+-      expectResemble(map, 'rendering/ol/style/expected/regularshape-canvas-linedash.png', 5, done);
+-    });
+-
+-    it('supports lineDashOffset', function(done) {
+-      createMap('canvas');
+-      createFeatures(new Stroke({
+-        lineDash: [10, 5],
+-        lineDashOffset: 5
+-      }));
+-      expectResemble(map, 'rendering/ol/style/expected/regularshape-canvas-linedashoffset.png', 5, done);
+-    });
+-  });
+-
+-  describe('uses the default fill and stroke color', function() {
+-    const stroke = new Stroke();
+-    const fill = new Fill();
+-
+-    it('tests the canvas renderer', function(done) {
+-      createMap('canvas');
+-      createFeatures(stroke, fill);
+-      expectResemble(map, 'rendering/ol/style/expected/regularshape-canvas-default-style.png', 3.0, done);
+-    });
+-  });
+-});
+diff --git a/test/rendering/ol/style/text.test.js b/test/rendering/ol/style/text.test.js
+deleted file mode 100644
+index ad281cb00f5..00000000000
+--- a/test/rendering/ol/style/text.test.js
++++ /dev/null
+@@ -1,448 +0,0 @@
+-import Feature from '../../../../src/ol/Feature.js';
+-import LineString from '../../../../src/ol/geom/LineString.js';
+-import MultiLineString from '../../../../src/ol/geom/MultiLineString.js';
+-import MultiPolygon from '../../../../src/ol/geom/MultiPolygon.js';
+-import Point from '../../../../src/ol/geom/Point.js';
+-import Polygon from '../../../../src/ol/geom/Polygon.js';
+-import Map from '../../../../src/ol/Map.js';
+-import View from '../../../../src/ol/View.js';
+-import VectorLayer from '../../../../src/ol/layer/Vector.js';
+-import VectorSource from '../../../../src/ol/source/Vector.js';
+-import Text from '../../../../src/ol/style/Text.js';
+-import Fill from '../../../../src/ol/style/Fill.js';
+-import Style from '../../../../src/ol/style/Style.js';
+-import Stroke from '../../../../src/ol/style/Stroke.js';
+-
+-describe('ol.rendering.style.Text', function() {
+-
+-  let map, vectorSource;
+-
+-  function createMap(renderer, opt_pixelRatio) {
+-    const MapConstructor = Map;
+-    const LayerConstructor = VectorLayer;
+-
+-    const pixelRatio = opt_pixelRatio || 1;
+-    vectorSource = new VectorSource();
+-    const vectorLayer = new LayerConstructor({
+-      source: vectorSource
+-    });
+-
+-    map = new MapConstructor({
+-      pixelRatio: pixelRatio,
+-      target: createMapDiv(200 / pixelRatio, 200 / pixelRatio),
+-      layers: [vectorLayer],
+-      view: new View({
+-        projection: 'EPSG:4326',
+-        center: [0, 0],
+-        resolution: 1
+-      })
+-    });
+-  }
+-
+-  afterEach(function() {
+-    if (map) {
+-      disposeMap(map);
+-      map = null;
+-    }
+-  });
+-
+-  describe('#render', function() {
+-
+-    function createFeatures(opt_scale) {
+-      const scale = opt_scale || 1;
+-      let feature;
+-      feature = new Feature({
+-        geometry: new Point([-20, 18])
+-      });
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          scale: scale,
+-          text: 'hello',
+-          font: '10px sans-serif'
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: new Point([-10, 0])
+-      });
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          scale: scale,
+-          text: 'hello',
+-          fill: new Fill({
+-            color: 'red',
+-            font: '12px sans-serif'
+-          }),
+-          stroke: new Stroke({
+-            color: '#000',
+-            width: 3
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-
+-      feature = new Feature({
+-        geometry: new Point([20, 10])
+-      });
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          scale: scale,
+-          rotateWithView: true,
+-          text: 'hello',
+-          font: '10px sans-serif',
+-          stroke: new Stroke({
+-            color: [10, 10, 10, 0.5]
+-          })
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-    }
+-
+-    const nicePath = [
+-      20, 33, 40, 31, 60, 30, 80, 31, 100, 33, 120, 37, 140, 39, 160, 40,
+-      180, 39, 200, 37, 220, 33, 240, 31, 260, 30, 280, 31, 300, 33
+-    ];
+-    const uglyPath = [163, 22, 159, 30, 150, 30, 143, 24, 151, 17];
+-    const polygon = [151, 17, 163, 22, 159, 30, 150, 30, 143, 24, 151, 17];
+-
+-    function createLineString(coords, textAlign, maxAngle, strokeColor, strokeWidth, scale) {
+-      let geom = new LineString(coords, 'XY');
+-      let style = new Style({
+-        stroke: new Stroke({
+-          color: 'red'
+-        }),
+-        text: new Text({
+-          text: 'Hello world',
+-          font: 'bold 14px sans-serif',
+-          scale: scale || 1,
+-          textAlign: textAlign,
+-          maxAngle: maxAngle,
+-          placement: 'line',
+-          stroke: new Stroke({
+-            color: strokeColor || 'white',
+-            width: strokeWidth
+-          })
+-        })
+-      });
+-      let feature = new Feature(geom);
+-      feature.setStyle(style);
+-      vectorSource.addFeature(feature);
+-
+-      geom = geom.clone();
+-      geom.translate(0, 5);
+-      feature = new Feature(geom);
+-      style = style.clone();
+-      style.getText().setTextBaseline('top');
+-      feature.setStyle(style);
+-      vectorSource.addFeature(feature);
+-
+-      geom = geom.clone();
+-      geom.translate(0, -10);
+-      feature = new Feature(geom);
+-      style = style.clone();
+-      style.getText().setTextBaseline('bottom');
+-      feature.setStyle(style);
+-      vectorSource.addFeature(feature);
+-
+-      map.getView().fit(vectorSource.getExtent());
+-    }
+-
+-    it('tests the canvas renderer without rotation', function(done) {
+-      createMap('canvas');
+-      createFeatures();
+-      expectResemble(map, 'rendering/ol/style/expected/text-canvas.png', IMAGE_TOLERANCE, done);
+-    });
+-
+-    it('tests the canvas renderer with rotation', function(done) {
+-      createMap('canvas');
+-      createFeatures();
+-      map.getView().setRotation(Math.PI / 7);
+-      expectResemble(map, 'rendering/ol/style/expected/text-rotated-canvas.png', IMAGE_TOLERANCE, done);
+-    });
+-
+-    it('renders correct stroke with pixelRatio != 1', function(done) {
+-      createMap('canvas', 2);
+-      createFeatures();
+-      expectResemble(map, 'rendering/ol/style/expected/text-canvas-hidpi.png', 2.9, done);
+-    });
+-
+-    it('renders text correctly with scale != 1', function(done) {
+-      createMap('canvas');
+-      createFeatures(3);
+-      expectResemble(map, 'rendering/ol/style/expected/text-canvas-scale.png', 6, done);
+-    });
+-
+-    it('renders multiline text with alignment options', function(done) {
+-      createMap('canvas');
+-      let feature;
+-      feature = new Feature(new Point([25, 0]));
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'Hello world\nleft',
+-          font: 'bold 14px sans-serif',
+-          textAlign: 'left'
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      feature = new Feature(new Point([-25, 0]));
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'Hello world\nright',
+-          font: 'bold 14px sans-serif',
+-          textAlign: 'right'
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      feature = new Feature(new Point([0, 25]));
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'Hello world\nbottom',
+-          font: 'bold 14px sans-serif',
+-          textBaseline: 'bottom'
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      feature = new Feature(new Point([0, -25]));
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'top\nHello world',
+-          font: 'bold 14px sans-serif',
+-          textBaseline: 'top'
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      expectResemble(map, 'rendering/ol/style/expected/text-align-offset-canvas.png', 6, done);
+-    });
+-
+-    it('renders multiline text with positioning options', function(done) {
+-      createMap('canvas');
+-      let feature;
+-      feature = new Feature(new Point([0, 0]));
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'Hello world\nleft',
+-          font: 'bold 14px sans-serif',
+-          textAlign: 'left',
+-          offsetX: 25
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      feature = new Feature(new Point([0, 0]));
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'Hello world\nright',
+-          font: 'bold 14px sans-serif',
+-          textAlign: 'right',
+-          offsetX: -25
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      feature = new Feature(new Point([0, 0]));
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'Hello world\nbottom',
+-          font: 'bold 14px sans-serif',
+-          textBaseline: 'bottom',
+-          offsetY: -25
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      feature = new Feature(new Point([0, 0]));
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'top\nHello world',
+-          font: 'bold 14px sans-serif',
+-          textBaseline: 'top',
+-          offsetY: 25
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      expectResemble(map, 'rendering/ol/style/expected/text-align-offset-canvas.png', 6, done);
+-    });
+-
+-    it('renders text along a MultiLineString', function(done) {
+-      createMap('canvas');
+-      let line = new LineString(nicePath, 'XY');
+-      const geom = new MultiLineString([line]);
+-      line = line.clone();
+-      line.translate(0, 50);
+-      geom.appendLineString(line);
+-      line = line.clone();
+-      line.translate(0, -100);
+-      geom.appendLineString(line);
+-      const feature = new Feature(geom);
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'Hello world',
+-          placement: 'line',
+-          font: 'bold 30px sans-serif'
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      map.getView().fit(vectorSource.getExtent());
+-      expectResemble(map, 'rendering/ol/style/expected/text-multilinestring.png', 7, done);
+-    });
+-
+-    it('renders text along a Polygon', function(done) {
+-      createMap('canvas');
+-      const geom = new Polygon(polygon, 'XY', [polygon.length]);
+-      const feature = new Feature(geom);
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'Hello world',
+-          font: 'bold 24px sans-serif',
+-          placement: 'line',
+-          overflow: true
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      map.getView().fit(vectorSource.getExtent());
+-      expectResemble(map, 'rendering/ol/style/expected/text-polygon.png', IMAGE_TOLERANCE, done);
+-    });
+-
+-    it('renders text along a MultiPolygon', function(done) {
+-      createMap('canvas');
+-      let geom = new Polygon(polygon, 'XY', [polygon.length]);
+-      const multiPolygon = new MultiPolygon([geom]);
+-      geom = geom.clone();
+-      geom.translate(0, 30);
+-      multiPolygon.appendPolygon(geom);
+-      geom = geom.clone();
+-      geom.translate(0, -60);
+-      multiPolygon.appendPolygon(geom);
+-      const feature = new Feature(multiPolygon);
+-      feature.setStyle(new Style({
+-        text: new Text({
+-          text: 'Hello world',
+-          font: 'bold 24px sans-serif',
+-          placement: 'line',
+-          overflow: true
+-        })
+-      }));
+-      vectorSource.addFeature(feature);
+-      map.getView().fit(vectorSource.getExtent());
+-      expectResemble(map, 'rendering/ol/style/expected/text-multipolygon.png', 4.4, done);
+-    });
+-
+-    it('renders text background', function(done) {
+-      createMap('canvas');
+-      createFeatures();
+-      const features = vectorSource.getFeatures();
+-      features[0].getStyle().getText().setBackgroundFill(new Fill({
+-        color: 'red'
+-      }));
+-      features[1].getStyle().getText().setBackgroundFill(new Fill({
+-        color: 'red'
+-      }));
+-      features[1].getStyle().getText().setBackgroundStroke(new Stroke({
+-        color: 'blue',
+-        width: 3
+-      }));
+-      features[2].getStyle().getText().setBackgroundFill(new Fill({
+-        color: 'red'
+-      }));
+-      features[2].getStyle().getText().setBackgroundStroke(new Stroke({
+-        color: 'blue',
+-        width: 3
+-      }));
+-      features[2].getStyle().getText().setPadding([5, 10, 15, 0]);
+-      map.getView().fit(vectorSource.getExtent());
+-      map.once('postrender', function() {
+-        expect(map.getFeaturesAtPixel([178, 120])).to.have.length(1);
+-      });
+-      expectResemble(map, 'rendering/ol/style/expected/text-background.png', IMAGE_TOLERANCE, done);
+-    });
+-
+-    describe('Text along an ugly upside down path, keep text upright', function() {
+-
+-      it('renders text along a linestring with auto-align', function(done) {
+-        createMap('canvas');
+-        createLineString(uglyPath);
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-auto.png', 3.6, done);
+-      });
+-
+-      it('renders text along a linestring with `textAlign: \'center\'`', function(done) {
+-        createMap('canvas');
+-        createLineString(uglyPath, 'center');
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-center.png', 3.63, done);
+-      });
+-
+-      it('omits text along a linestring with `textAlign: \'left\'` when > maxAngle', function(done) {
+-        createMap('canvas');
+-        createLineString(uglyPath, 'left');
+-        vectorSource.getFeatures()[0].getStyle().getText().setTextAlign('left');
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-omit.png', IMAGE_TOLERANCE, done);
+-      });
+-
+-      it('omits text along a linestring with `textAlign: \'right\'` when > maxAngle', function(done) {
+-        createMap('canvas');
+-        createLineString(uglyPath, 'right');
+-        vectorSource.getFeatures()[0].getStyle().getText().setTextAlign('left');
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-omit.png', IMAGE_TOLERANCE, done);
+-      });
+-
+-      it('renders text along a linestring with `textAlign: \'left\'` and no angle limit', function(done) {
+-        createMap('canvas');
+-        createLineString(uglyPath, 'left', Infinity);
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-left.png', 3.5, done);
+-      });
+-
+-    });
+-
+-    describe('Text along a nice path', function() {
+-
+-      it('renders text along a linestring', function(done) {
+-        createMap('canvas');
+-        createLineString(nicePath);
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-nice.png', 2.8, done);
+-      });
+-
+-      it('uses correct font with different styles', function(done) {
+-        createMap('canvas');
+-        createLineString(nicePath);
+-        map.getView().setResolution(0.25);
+-        vectorSource.getFeatures()[0].getStyle().getText().setFont('18px monospace');
+-        vectorSource.getFeatures()[1].getStyle().getText().setFont('italic 38px serif');
+-        vectorSource.getFeatures()[1].getStyle().getText().setTextBaseline('middle');
+-        vectorSource.getFeatures()[2].getStyle().getText().setTextBaseline('middle');
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-nice-multi-font.png', 7.54, done);
+-      });
+-
+-      it('renders text along a linestring with scale != 1', function(done) {
+-        createMap('canvas');
+-        createLineString(nicePath, undefined, undefined, undefined, undefined, 2);
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-nice-scale.png', 8, done);
+-      });
+-
+-      it('aligns text along a linestring correctly with `textBaseline` option', function(done) {
+-        createMap('canvas');
+-        createLineString(nicePath, undefined, undefined, 'cyan', 3);
+-        map.getView().setResolution(0.25);
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-nice-baseline.png', 6.2, done);
+-      });
+-
+-      it('renders text along a linestring with `textAlign: \'left\'`', function(done) {
+-        createMap('canvas');
+-        createLineString(nicePath, 'left');
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-left-nice.png', 2.8, done);
+-      });
+-
+-      it('renders text along a rotated linestring', function(done) {
+-        createMap('canvas');
+-        map.getView().setRotation(Math.PI);
+-        createLineString(nicePath);
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-nice-rotated.png', 4.5, done);
+-      });
+-
+-      it('renders text along a rotated linestring with `textAlign: \'left\'`', function(done) {
+-        createMap('canvas');
+-        map.getView().setRotation(Math.PI);
+-        createLineString(nicePath, 'left');
+-        expectResemble(map, 'rendering/ol/style/expected/text-linestring-left-nice-rotated.png', 4.5, done);
+-      });
+-
+-    });
+-
+-  });
+-});

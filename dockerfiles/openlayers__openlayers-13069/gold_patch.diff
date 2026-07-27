@@ -1,0 +1,264 @@
+diff --git a/src/ol/source/GeoTIFF.js b/src/ol/source/GeoTIFF.js
+index 88b81a66575..aca900f7790 100644
+--- a/src/ol/source/GeoTIFF.js
++++ b/src/ol/source/GeoTIFF.js
+@@ -22,9 +22,13 @@ import {fromCode as unitsFromCode} from '../proj/Units.js';
+  * @property {string} url URL for the source GeoTIFF.
+  * @property {Array<string>} [overviews] List of any overview URLs.
+  * @property {number} [min=0] The minimum source data value.  Rendered values are scaled from 0 to 1 based on
+- * the configured min and max.
++ * the configured min and max.  If not provided and raster statistics are available, those will be used instead.
++ * If neither are available, the minimum for the data type will be used.  To disable this behavior, set
++ * the `normalize` option to `false` in the constructor.
+  * @property {number} [max] The maximum source data value.  Rendered values are scaled from 0 to 1 based on
+- * the configured min and max.
++ * the configured min and max.  If not provided and raster statistics are available, those will be used instead.
++ * If neither are available, the maximum for the data type will be used.  To disable this behavior, set
++ * the `normalize` option to `false` in the constructor.
+  * @property {number} [nodata] Values to discard (overriding any nodata values in the metadata).
+  * When provided, an additional alpha band will be added to the data.  Often the GeoTIFF metadata
+  * will include information about nodata values, so you should only need to set this property if
+@@ -58,6 +62,15 @@ import {fromCode as unitsFromCode} from '../proj/Units.js';
+  * @property {function(number):Promise<GeoTIFFImage>} getImage Get the image at the specified index.
+  */
+ 
++/**
++ * @typedef {Object} GDALMetadata
++ * @property {string} STATISTICS_MINIMUM The minimum value (as a string).
++ * @property {string} STATISTICS_MAXIMUM The maximum value (as a string).
++ */
++
++const STATISTICS_MAXIMUM = 'STATISTICS_MAXIMUM';
++const STATISTICS_MINIMUM = 'STATISTICS_MINIMUM';
++
+ /**
+  * @typedef {Object} GeoTIFFImage
+  * @property {Object} fileDirectory The file directory.
+@@ -73,6 +86,7 @@ import {fromCode as unitsFromCode} from '../proj/Units.js';
+  * @property {function():number} getTileWidth Get the pixel width of image tiles.
+  * @property {function():number} getTileHeight Get the pixel height of image tiles.
+  * @property {function():number|null} getGDALNoData Get the nodata value (or null if none).
++ * @property {function():GDALMetadata|null} getGDALMetadata Get the raster stats (or null if none).
+  * @property {function():number} getSamplesPerPixel Get the number of samples per pixel.
+  */
+ 
+@@ -294,8 +308,8 @@ function getMaxForDataType(array) {
+  * reading GeoTIFFs with the purpose of displaying them as RGB images, setting this to `true` will
+  * convert other color spaces (YCbCr, CMYK) to RGB.
+  * @property {boolean} [normalize=true] By default, the source data is normalized to values between
+- * 0 and 1 with scaling factors based on the `min` and `max` properties of each source.  If instead
+- * you want to work with the raw values in a style expression, set this to `false`.  Setting this option
++ * 0 and 1 with scaling factors based on the raster statistics or `min` and `max` properties of each source.
++ * If instead you want to work with the raw values in a style expression, set this to `false`.  Setting this option
+  * to `false` will make it so any `min` and `max` properties on sources are ignored.
+  * @property {boolean} [opaque=false] Whether the layer is opaque.
+  * @property {number} [transition=250] Duration of the opacity transition for rendering.
+@@ -354,6 +368,12 @@ class GeoTIFFSource extends DataTile {
+      */
+     this.nodataValues_;
+ 
++    /**
++     * @type {Array<Array<GDALMetadata>>}
++     * @private
++     */
++    this.metadata_;
++
+     /**
+      * @type {boolean}
+      * @private
+@@ -425,6 +445,7 @@ class GeoTIFFSource extends DataTile {
+     let resolutions;
+     const samplesPerPixel = new Array(sources.length);
+     const nodataValues = new Array(sources.length);
++    const metadata = new Array(sources.length);
+     let minZoom = 0;
+ 
+     const sourceCount = sources.length;
+@@ -438,10 +459,12 @@ class GeoTIFFSource extends DataTile {
+       const sourceResolutions = new Array(imageCount);
+ 
+       nodataValues[sourceIndex] = new Array(imageCount);
++      metadata[sourceIndex] = new Array(imageCount);
+ 
+       for (let imageIndex = 0; imageIndex < imageCount; ++imageIndex) {
+         const image = images[imageIndex];
+         const nodataValue = image.getGDALNoData();
++        metadata[sourceIndex][imageIndex] = image.getGDALMetadata();
+         nodataValues[sourceIndex][imageIndex] =
+           nodataValue === null ? NaN : nodataValue;
+ 
+@@ -536,6 +559,7 @@ class GeoTIFFSource extends DataTile {
+ 
+     this.samplesPerPixel_ = samplesPerPixel;
+     this.nodataValues_ = nodataValues;
++    this.metadata_ = metadata;
+ 
+     // decide if we need to add an alpha band to handle nodata
+     outer: for (let sourceIndex = 0; sourceIndex < sourceCount; ++sourceIndex) {
+@@ -651,6 +675,7 @@ class GeoTIFFSource extends DataTile {
+     const pixelCount = size[0] * size[1];
+     const dataLength = pixelCount * bandCount;
+     const normalize = this.normalize_;
++    const metadata = this.metadata_;
+ 
+     return Promise.all(requests).then(function (sourceSamples) {
+       /** @type {Uint8Array|Float32Array} */
+@@ -671,11 +696,20 @@ class GeoTIFFSource extends DataTile {
+           let max = source.max;
+           let gain, bias;
+           if (normalize) {
++            const stats = metadata[sourceIndex][0];
+             if (min === undefined) {
+-              min = getMinForDataType(sourceSamples[sourceIndex][0]);
++              if (stats && STATISTICS_MINIMUM in stats) {
++                min = parseFloat(stats[STATISTICS_MINIMUM]);
++              } else {
++                min = getMinForDataType(sourceSamples[sourceIndex][0]);
++              }
+             }
+             if (max === undefined) {
+-              max = getMaxForDataType(sourceSamples[sourceIndex][0]);
++              if (stats && STATISTICS_MAXIMUM in stats) {
++                max = parseFloat(stats[STATISTICS_MAXIMUM]);
++              } else {
++                max = getMaxForDataType(sourceSamples[sourceIndex][0]);
++              }
+             }
+ 
+             gain = 255 / (max - min);
+diff --git a/test/rendering/cases/cog-math/expected.png b/test/rendering/cases/cog-math/expected.png
+new file mode 100644
+index 00000000000..73f6d22fca0
+Binary files /dev/null and b/test/rendering/cases/cog-math/expected.png differ
+diff --git a/test/rendering/cases/cog-math/main.js b/test/rendering/cases/cog-math/main.js
+new file mode 100644
+index 00000000000..e955ecc4676
+--- /dev/null
++++ b/test/rendering/cases/cog-math/main.js
+@@ -0,0 +1,86 @@
++import GeoTIFF from '../../../../src/ol/source/GeoTIFF.js';
++import Map from '../../../../src/ol/Map.js';
++import TileLayer from '../../../../src/ol/layer/WebGLTile.js';
++
++const source = new GeoTIFF({
++  sources: [
++    {
++      url: '/data/raster/sentinel-b04.tif',
++      min: 0,
++      max: 10000,
++    },
++    {
++      url: '/data/raster/sentinel-b08.tif',
++      min: 0,
++      max: 10000,
++    },
++  ],
++  transition: 0,
++});
++
++new Map({
++  layers: [
++    new TileLayer({
++      source: source,
++      style: {
++        color: [
++          'interpolate',
++          ['linear'],
++          // calculate NDVI, bands come from the sources below
++          [
++            '/',
++            ['-', ['band', 2], ['band', 1]],
++            ['+', ['band', 2], ['band', 1]],
++          ],
++          // color ramp for NDVI values, ranging from -1 to 1
++          -0.2,
++          [191, 191, 191],
++          -0.1,
++          [219, 219, 219],
++          0,
++          [255, 255, 224],
++          0.025,
++          [255, 250, 204],
++          0.05,
++          [237, 232, 181],
++          0.075,
++          [222, 217, 156],
++          0.1,
++          [204, 199, 130],
++          0.125,
++          [189, 184, 107],
++          0.15,
++          [176, 194, 97],
++          0.175,
++          [163, 204, 89],
++          0.2,
++          [145, 191, 82],
++          0.25,
++          [128, 179, 71],
++          0.3,
++          [112, 163, 64],
++          0.35,
++          [97, 150, 54],
++          0.4,
++          [79, 138, 46],
++          0.45,
++          [64, 125, 36],
++          0.5,
++          [48, 110, 28],
++          0.55,
++          [33, 97, 18],
++          0.6,
++          [15, 84, 10],
++          0.65,
++          [0, 69, 0],
++        ],
++      },
++    }),
++  ],
++  target: 'map',
++  view: source.getView(),
++});
++
++render({
++  message: 'normalized difference vegetation index',
++});
+diff --git a/test/rendering/cases/cog-stats/expected.png b/test/rendering/cases/cog-stats/expected.png
+new file mode 100644
+index 00000000000..2232e686a5d
+Binary files /dev/null and b/test/rendering/cases/cog-stats/expected.png differ
+diff --git a/test/rendering/cases/cog-stats/main.js b/test/rendering/cases/cog-stats/main.js
+new file mode 100644
+index 00000000000..769b255212f
+--- /dev/null
++++ b/test/rendering/cases/cog-stats/main.js
+@@ -0,0 +1,22 @@
++import GeoTIFF from '../../../../src/ol/source/GeoTIFF.js';
++import Map from '../../../../src/ol/Map.js';
++import TileLayer from '../../../../src/ol/layer/WebGLTile.js';
++
++const source = new GeoTIFF({
++  sources: [{url: '/data/raster/sentinel-b08.tif'}],
++  transition: 0,
++});
++
++new Map({
++  layers: [
++    new TileLayer({
++      source: source,
++    }),
++  ],
++  target: 'map',
++  view: source.getView(),
++});
++
++render({
++  message: 'normalize data based on GDAL stats',
++});
+diff --git a/test/rendering/data/raster/sentinel-b04.tif b/test/rendering/data/raster/sentinel-b04.tif
+new file mode 100644
+index 00000000000..f470a054d98
+Binary files /dev/null and b/test/rendering/data/raster/sentinel-b04.tif differ
+diff --git a/test/rendering/data/raster/sentinel-b08.tif b/test/rendering/data/raster/sentinel-b08.tif
+new file mode 100644
+index 00000000000..55f7e7aa42c
+Binary files /dev/null and b/test/rendering/data/raster/sentinel-b08.tif differ

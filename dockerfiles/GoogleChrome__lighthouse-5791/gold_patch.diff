@@ -1,0 +1,115 @@
+diff --git a/lighthouse-core/audits/redirects.js b/lighthouse-core/audits/redirects.js
+index a7af0cdf1419..4ad4bd7f99ad 100644
+--- a/lighthouse-core/audits/redirects.js
++++ b/lighthouse-core/audits/redirects.js
+@@ -94,12 +94,12 @@ class Redirects extends Audit {
+       });
+     }
+ 
++    /** @type {LH.Result.Audit.OpportunityDetails['headings']} */
+     const headings = [
+-      {key: 'url', itemType: 'text', text: str_(i18n.UIStrings.columnURL)},
+-      {key: 'wastedMs', itemType: 'ms', text: str_(i18n.UIStrings.columnTimeSpent)},
++      {key: 'url', valueType: 'url', label: str_(i18n.UIStrings.columnURL)},
++      {key: 'wastedMs', valueType: 'timespanMs', label: str_(i18n.UIStrings.columnTimeSpent)},
+     ];
+-    const summary = {wastedMs: totalWastedMs};
+-    const details = Audit.makeTableDetails(headings, pageRedirects, summary);
++    const details = Audit.makeOpportunityDetails(headings, pageRedirects, totalWastedMs);
+ 
+     return {
+       // We award a passing grade if you only have 1 redirect
+diff --git a/lighthouse-core/index.js b/lighthouse-core/index.js
+index 7b91a8b0dce7..4a639c8153cf 100644
+--- a/lighthouse-core/index.js
++++ b/lighthouse-core/index.js
+@@ -26,9 +26,9 @@ const Config = require('./config/config');
+  */
+ 
+ /**
+- * @param {string} url
++ * @param {string=} url
+  * @param {LH.Flags=} flags
+- * @param {LH.Config.Json|undefined} configJSON
++ * @param {LH.Config.Json=} configJSON
+  * @return {Promise<LH.RunnerResult|undefined>}
+  */
+ async function lighthouse(url, flags, configJSON) {
+diff --git a/lighthouse-core/runner.js b/lighthouse-core/runner.js
+index d810e142dc1a..c62a176d974b 100644
+--- a/lighthouse-core/runner.js
++++ b/lighthouse-core/runner.js
+@@ -106,8 +106,7 @@ class Runner {
+       }
+ 
+       // Entering: conclusion of the lighthouse result object
+-      // @ts-ignore - Needs json require() support
+-      const lighthouseVersion = /** @type {string} */ (require('../package.json').version);
++      const lighthouseVersion = require('../package.json').version;
+ 
+       /** @type {Object<string, LH.Audit.Result>} */
+       const resultsById = {};
+diff --git a/lighthouse-core/test/config/default-config-test.js b/lighthouse-core/test/config/default-config-test.js
+new file mode 100644
+index 000000000000..6d33a51e520b
+--- /dev/null
++++ b/lighthouse-core/test/config/default-config-test.js
+@@ -0,0 +1,39 @@
++/**
++ * @license Copyright 2018 Google Inc. All Rights Reserved.
++ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
++ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
++ */
++'use strict';
++
++const assert = require('assert');
++const lighthouse = require('../../index.js');
++const defaultConfig = require('../../config/default-config.js');
++
++/* eslint-env jest */
++
++describe('Default Config', () => {
++  it('only has opportunity audits that return opportunities details', async () => {
++    const flags = {
++      auditMode: __dirname + '/../results/artifacts/',
++    };
++    const {lhr} = await lighthouse('', flags);
++
++    const opportunityResults = lhr.categories.performance.auditRefs
++      .filter(ref => ref.group === 'load-opportunities')
++      .map(ref => lhr.audits[ref.id]);
++
++    // Check all expected opportunities were found.
++    assert.strictEqual(opportunityResults.indexOf(undefined), -1);
++    const defaultCount = defaultConfig.categories.performance.auditRefs
++      .filter(ref => ref.group === 'load-opportunities').length;
++    assert.strictEqual(opportunityResults.length, defaultCount);
++
++    // And that they have the correct shape.
++    opportunityResults.forEach(auditResult => {
++      assert.strictEqual(auditResult.details.type, 'opportunity');
++      assert.ok(!auditResult.errorMessage, `${auditResult.id}: ${auditResult.errorMessage}`);
++      assert.ok(auditResult.details.overallSavingsMs !== undefined,
++          `${auditResult.id} has an undefined overallSavingsMs`);
++    });
++  });
++});
+diff --git a/lighthouse-core/test/results/sample_v2.json b/lighthouse-core/test/results/sample_v2.json
+index f43191715e37..e8c0852557a0 100644
+--- a/lighthouse-core/test/results/sample_v2.json
++++ b/lighthouse-core/test/results/sample_v2.json
+@@ -458,12 +458,10 @@
+       "rawValue": 0,
+       "displayValue": "",
+       "details": {
+-        "type": "table",
++        "type": "opportunity",
+         "headings": [],
+         "items": [],
+-        "summary": {
+-          "wastedMs": 0
+-        }
++        "overallSavingsMs": 0
+       }
+     },
+     "webapp-install-banner": {

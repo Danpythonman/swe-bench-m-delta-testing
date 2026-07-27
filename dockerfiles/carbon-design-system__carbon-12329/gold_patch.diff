@@ -1,0 +1,110 @@
+diff --git a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+index 196bf944a3eb..3603e53a2800 100644
+--- a/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
++++ b/packages/react/__tests__/__snapshots__/PublicAPI-test.js.snap
+@@ -2226,6 +2226,7 @@ Map {
+     },
+   },
+   "DatePicker" => Object {
++    "$$typeof": Symbol(react.forward_ref),
+     "propTypes": Object {
+       "allowInput": Object {
+         "type": "bool",
+@@ -2399,6 +2400,7 @@ Map {
+         "type": "oneOfType",
+       },
+     },
++    "render": [Function],
+   },
+   "DatePickerInput" => Object {
+     "$$typeof": Symbol(react.forward_ref),
+diff --git a/packages/react/src/components/DatePicker/DatePicker-test.js b/packages/react/src/components/DatePicker/DatePicker-test.js
+index 2d6556c809d0..257ee7bccf02 100644
+--- a/packages/react/src/components/DatePicker/DatePicker-test.js
++++ b/packages/react/src/components/DatePicker/DatePicker-test.js
+@@ -151,6 +151,13 @@ describe('DatePicker', () => {
+       '01/03/2018'
+     );
+   });
++
++  it('should accept a `ref` for the outermost element', () => {
++    const ref = jest.fn();
++    const { container } = render(<DatePicker ref={ref} />);
++
++    expect(ref).toHaveBeenCalledWith(container.firstChild);
++  });
+ });
+ 
+ describe('Simple date picker', () => {
+diff --git a/packages/react/src/components/DatePicker/DatePicker.js b/packages/react/src/components/DatePicker/DatePicker.js
+index 14ebee229eea..88b03ea95eb9 100644
+--- a/packages/react/src/components/DatePicker/DatePicker.js
++++ b/packages/react/src/components/DatePicker/DatePicker.js
+@@ -175,28 +175,31 @@ function updateClassNames(calendar, prefix) {
+   }
+ }
+ 
+-function DatePicker({
+-  allowInput,
+-  appendTo,
+-  children,
+-  className,
+-  closeOnSelect = true,
+-  dateFormat = 'm/d/Y',
+-  datePickerType,
+-  disable,
+-  enable,
+-  inline,
+-  light,
+-  locale = 'en',
+-  maxDate,
+-  minDate,
+-  onChange,
+-  onClose,
+-  onOpen,
+-  short = false,
+-  value,
+-  ...rest
+-}) {
++const DatePicker = React.forwardRef(function DatePicker(
++  {
++    allowInput,
++    appendTo,
++    children,
++    className,
++    closeOnSelect = true,
++    dateFormat = 'm/d/Y',
++    datePickerType,
++    disable,
++    enable,
++    inline,
++    light = false,
++    locale = 'en',
++    maxDate,
++    minDate,
++    onChange,
++    onClose,
++    onOpen,
++    short = false,
++    value,
++    ...rest
++  },
++  ref
++) {
+   const prefix = usePrefix();
+   const startInputField = useRef(null);
+   const endInputField = useRef(null);
+@@ -465,11 +468,11 @@ function DatePicker({
+   }, [value, prefix]);
+ 
+   return (
+-    <div className={wrapperClasses} {...rest}>
++    <div className={wrapperClasses} ref={ref} {...rest}>
+       <div className={datePickerClasses}>{childrenWithProps}</div>
+     </div>
+   );
+-}
++});
+ 
+ DatePicker.propTypes = {
+   /**

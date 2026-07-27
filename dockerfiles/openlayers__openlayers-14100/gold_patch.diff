@@ -1,0 +1,31 @@
+diff --git a/src/ol/source/WMTS.js b/src/ol/source/WMTS.js
+index abf4c0b7b55..da4d609d532 100644
+--- a/src/ol/source/WMTS.js
++++ b/src/ol/source/WMTS.js
+@@ -245,10 +245,9 @@ class WMTS extends TileImage {
+    * @return {string} The key for the current dimensions.
+    */
+   getKeyForDimensions_() {
+-    let i = 0;
+-    const res = [];
++    const res = this.urls ? this.urls.slice(0) : [];
+     for (const key in this.dimensions_) {
+-      res[i++] = key + '-' + this.dimensions_[key];
++      res.push(key + '-' + this.dimensions_[key]);
+     }
+     return res.join('/');
+   }
+diff --git a/test/browser/spec/ol/source/WMTS.test.js b/test/browser/spec/ol/source/WMTS.test.js
+index e3ea911167e..c2f10b7dede 100644
+--- a/test/browser/spec/ol/source/WMTS.test.js
++++ b/test/browser/spec/ol/source/WMTS.test.js
+@@ -315,6 +315,9 @@ describe('ol/source/WMTS', function () {
+         projection
+       );
+       expect(url).to.be.eql('http://host/layer/default/42/EPSG:3857/1/1/1.jpg');
++      expect(source.getKey()).to.be.eql(
++        'http://host/{Layer}/{Style}/{Time}/{tilematrixset}/{TileMatrix}/{TileCol}/{TileRow}.jpg/Time-42'
++      );
+     });
+   });
+ 

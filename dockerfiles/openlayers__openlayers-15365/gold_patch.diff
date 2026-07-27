@@ -1,0 +1,178 @@
+diff --git a/src/ol/layer/BaseVector.js b/src/ol/layer/BaseVector.js
+index 0ca3a741c98..55752c077d9 100644
+--- a/src/ol/layer/BaseVector.js
++++ b/src/ol/layer/BaseVector.js
+@@ -231,12 +231,16 @@ class BaseVectorLayer extends Layer {
+   /**
+    * Render declutter items for this layer
+    * @param {import("../Map.js").FrameState} frameState Frame state.
++   * @param {import("../layer/Layer.js").State} layerState Layer state.
+    */
+-  renderDeclutter(frameState) {
++  renderDeclutter(frameState, layerState) {
+     if (!frameState.declutterTree) {
+       frameState.declutterTree = new RBush(9);
+     }
+-    /** @type {*} */ (this.getRenderer()).renderDeclutter(frameState);
++    /** @type {*} */ (this.getRenderer()).renderDeclutter(
++      frameState,
++      layerState
++    );
+   }
+ 
+   /**
+diff --git a/src/ol/renderer/Composite.js b/src/ol/renderer/Composite.js
+index 5096ae7867d..eb137e58b4a 100644
+--- a/src/ol/renderer/Composite.js
++++ b/src/ol/renderer/Composite.js
+@@ -159,7 +159,7 @@ class CompositeMapRenderer extends MapRenderer {
+   flushDeclutterItems(frameState) {
+     const layers = this.declutterLayers_;
+     for (let i = layers.length - 1; i >= 0; --i) {
+-      layers[i].renderDeclutter(frameState);
++      layers[i].renderDeclutter(frameState, frameState.layerStatesArray[i]);
+     }
+     layers.length = 0;
+   }
+diff --git a/src/ol/renderer/canvas/VectorTileLayer.js b/src/ol/renderer/canvas/VectorTileLayer.js
+index b6071332a36..7c1be1d8f3b 100644
+--- a/src/ol/renderer/canvas/VectorTileLayer.js
++++ b/src/ol/renderer/canvas/VectorTileLayer.js
+@@ -549,11 +549,12 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
+   /**
+    * Render declutter items for this layer
+    * @param {import("../../Map.js").FrameState} frameState Frame state.
++   * @param {import("../../layer/Layer.js").State} layerState Layer state.
+    */
+-  renderDeclutter(frameState) {
++  renderDeclutter(frameState, layerState) {
+     const context = this.context;
+     const alpha = context.globalAlpha;
+-    context.globalAlpha = this.getLayer().getOpacity();
++    context.globalAlpha = layerState.opacity;
+     const viewHints = frameState.viewHints;
+     const hifi = !(
+       viewHints[ViewHint.ANIMATING] || viewHints[ViewHint.INTERACTING]
+@@ -636,7 +637,8 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
+     );
+     const renderMode = layer.getRenderMode();
+     const alpha = context.globalAlpha;
+-    context.globalAlpha = layer.getOpacity();
++    context.globalAlpha =
++      frameState.layerStatesArray[frameState.layerIndex].opacity;
+     const replayTypes = VECTOR_REPLAYS[renderMode];
+     const viewState = frameState.viewState;
+     const rotation = viewState.rotation;
+diff --git a/test/rendering/cases/layer-vectortile-opacity-layergroup-rendermode-vector/expected.png b/test/rendering/cases/layer-vectortile-opacity-layergroup-rendermode-vector/expected.png
+new file mode 100644
+index 00000000000..c789f9ff83f
+Binary files /dev/null and b/test/rendering/cases/layer-vectortile-opacity-layergroup-rendermode-vector/expected.png differ
+diff --git a/test/rendering/cases/layer-vectortile-opacity-layergroup-rendermode-vector/main.js b/test/rendering/cases/layer-vectortile-opacity-layergroup-rendermode-vector/main.js
+new file mode 100644
+index 00000000000..f3d88b8ac6d
+--- /dev/null
++++ b/test/rendering/cases/layer-vectortile-opacity-layergroup-rendermode-vector/main.js
+@@ -0,0 +1,47 @@
++import MVT from '../../../../src/ol/format/MVT.js';
++import Map from '../../../../src/ol/Map.js';
++import VectorTileLayer from '../../../../src/ol/layer/VectorTile.js';
++import VectorTileSource from '../../../../src/ol/source/VectorTile.js';
++import View from '../../../../src/ol/View.js';
++import {Group} from '../../../../src/ol/layer.js';
++import {createXYZ} from '../../../../src/ol/tilegrid.js';
++
++new Map({
++  layers: [
++    new Group({
++      opacity: 0.3,
++      layers: [
++        new VectorTileLayer({
++          renderMode: 'vector',
++          declutter: true,
++          source: new VectorTileSource({
++            format: new MVT(),
++            tileGrid: createXYZ(),
++            url: '/data/tiles/mapbox-streets-v6/{z}/{x}/{y}.vector.pbf',
++            transition: 0,
++          }),
++          style: {
++            'stroke-color': 'rgba(0, 0, 255, 0.3)',
++            'text-value': [
++              'match',
++              ['!', ['get', 'name_en']],
++              true,
++              '',
++              ['get', 'name_en'],
++            ],
++          },
++        }),
++      ],
++    }),
++  ],
++  target: 'map',
++  view: new View({
++    center: [1825927.7316762917, 6143091.089223046],
++    zoom: 14,
++  }),
++});
++
++render({
++  message: 'Vector tile layer renders',
++  tolerance: 0.02,
++});
+diff --git a/test/rendering/cases/layer-vectortile-opacity-layergroup/expected.png b/test/rendering/cases/layer-vectortile-opacity-layergroup/expected.png
+new file mode 100644
+index 00000000000..982d749712b
+Binary files /dev/null and b/test/rendering/cases/layer-vectortile-opacity-layergroup/expected.png differ
+diff --git a/test/rendering/cases/layer-vectortile-opacity-layergroup/main.js b/test/rendering/cases/layer-vectortile-opacity-layergroup/main.js
+new file mode 100644
+index 00000000000..04c4a8c4c87
+--- /dev/null
++++ b/test/rendering/cases/layer-vectortile-opacity-layergroup/main.js
+@@ -0,0 +1,46 @@
++import MVT from '../../../../src/ol/format/MVT.js';
++import Map from '../../../../src/ol/Map.js';
++import VectorTileLayer from '../../../../src/ol/layer/VectorTile.js';
++import VectorTileSource from '../../../../src/ol/source/VectorTile.js';
++import View from '../../../../src/ol/View.js';
++import {Group} from '../../../../src/ol/layer.js';
++import {createXYZ} from '../../../../src/ol/tilegrid.js';
++
++new Map({
++  layers: [
++    new Group({
++      opacity: 0.3,
++      layers: [
++        new VectorTileLayer({
++          declutter: true,
++          source: new VectorTileSource({
++            format: new MVT(),
++            tileGrid: createXYZ(),
++            url: '/data/tiles/mapbox-streets-v6/{z}/{x}/{y}.vector.pbf',
++            transition: 0,
++          }),
++          style: {
++            'stroke-color': 'rgba(0, 0, 255, 0.3)',
++            'text-value': [
++              'match',
++              ['!', ['get', 'name_en']],
++              true,
++              '',
++              ['get', 'name_en'],
++            ],
++          },
++        }),
++      ],
++    }),
++  ],
++  target: 'map',
++  view: new View({
++    center: [1825927.7316762917, 6143091.089223046],
++    zoom: 14,
++  }),
++});
++
++render({
++  message: 'Vector tile layer renders',
++  tolerance: 0.02,
++});

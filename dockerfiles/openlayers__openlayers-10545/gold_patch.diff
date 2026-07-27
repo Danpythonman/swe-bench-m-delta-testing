@@ -1,0 +1,166 @@
+diff --git a/src/ol/format/KML.js b/src/ol/format/KML.js
+index 11c1ec076c9..77dc5a7aff4 100644
+--- a/src/ol/format/KML.js
++++ b/src/ol/format/KML.js
+@@ -378,6 +378,11 @@ function createStyleDefaults() {
+ 
+ }
+ 
++/**
++ * @type {HTMLTextAreaElement}
++ */
++let TEXTAREA;
++
+ 
+ /**
+  * @typedef {Object} Options
+@@ -911,9 +916,8 @@ function createNameStyleFunction(foundStyle, name) {
+   textStyle.setOffsetY(textOffset[1]);
+   textStyle.setTextAlign(textAlign);
+ 
+-  const nameStyle = new Style({
+-    text: textStyle
+-  });
++  const nameStyle = foundStyle.clone();
++  nameStyle.setText(textStyle);
+   return nameStyle;
+ }
+ 
+@@ -932,12 +936,10 @@ function createFeatureStyleFunction(style, styleUrl, defaultStyle, sharedStyles,
+     /**
+      * @param {Feature} feature feature.
+      * @param {number} resolution Resolution.
+-     * @return {Array<Style>} Style.
++     * @return {Array<Style>|Style} Style.
+      */
+     function(feature, resolution) {
+       let drawName = showPointNames;
+-      /** @type {Style|undefined} */
+-      let nameStyle;
+       let name = '';
+       if (drawName) {
+         const geometry = feature.getGeometry();
+@@ -949,26 +951,31 @@ function createFeatureStyleFunction(style, styleUrl, defaultStyle, sharedStyles,
+       if (drawName) {
+         name = /** @type {string} */ (feature.get('name'));
+         drawName = drawName && !!name;
++        // convert any html character codes
++        if (drawName && name.search(/&[^&]+;/) > -1) {
++          if (!TEXTAREA) {
++            TEXTAREA = document.createElement('textarea');
++          }
++          TEXTAREA.innerHTML = name;
++          name = TEXTAREA.value;
++        }
+       }
+ 
+       if (style) {
+         if (drawName) {
+-          nameStyle = createNameStyleFunction(style[0], name);
+-          return style.concat(nameStyle);
++          return createNameStyleFunction(style[0], name);
+         }
+         return style;
+       }
+       if (styleUrl) {
+         const foundStyle = findStyle(styleUrl, defaultStyle, sharedStyles);
+         if (drawName) {
+-          nameStyle = createNameStyleFunction(foundStyle[0], name);
+-          return foundStyle.concat(nameStyle);
++          return createNameStyleFunction(foundStyle[0], name);
+         }
+         return foundStyle;
+       }
+       if (drawName) {
+-        nameStyle = createNameStyleFunction(defaultStyle[0], name);
+-        return defaultStyle.concat(nameStyle);
++        return createNameStyleFunction(defaultStyle[0], name);
+       }
+       return defaultStyle;
+     }
+diff --git a/test/spec/ol/format/kml.test.js b/test/spec/ol/format/kml.test.js
+index 3109c682805..6f4e2fe2d6c 100644
+--- a/test/spec/ol/format/kml.test.js
++++ b/test/spec/ol/format/kml.test.js
+@@ -2238,7 +2238,7 @@ describe('ol.format.KML', function() {
+             expect(style.getZIndex()).to.be(undefined);
+           });
+ 
+-        it('can create text style for named point placemarks', function() {
++        it('can create text style for named point placemarks (including html character codes)', function() {
+           const text =
+               '<kml xmlns="http://www.opengis.net/kml/2.2"' +
+               ' xmlns:gx="http://www.google.com/kml/ext/2.2"' +
+@@ -2266,7 +2266,7 @@ describe('ol.format.KML', function() {
+               '    </Pair>' +
+               '  </StyleMap>' +
+               '  <Placemark>' +
+-              '    <name>Test</name>' +
++              '    <name>Joe&apos;s Test</name>' +
+               '    <styleUrl>#msn_ylw-pushpin0</styleUrl>' +
+               '    <Point>' +
+               '      <coordinates>1,2</coordinates>' +
+@@ -2279,61 +2279,9 @@ describe('ol.format.KML', function() {
+           expect(f).to.be.an(Feature);
+           const styleFunction = f.getStyleFunction();
+           expect(styleFunction).not.to.be(undefined);
+-          const styleArray = styleFunction(f, 0);
+-          expect(styleArray).to.be.an(Array);
+-          expect(styleArray).to.have.length(2);
+-          const style = styleArray[1];
+-          expect(style).to.be.an(Style);
+-          expect(style.getText().getText()).to.eql(f.getProperties()['name']);
+-        });
+-
+-        it('can create text style for named point placemarks', function() {
+-          const text =
+-              '<kml xmlns="http://www.opengis.net/kml/2.2"' +
+-              ' xmlns:gx="http://www.google.com/kml/ext/2.2"' +
+-              ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"' +
+-              ' xsi:schemaLocation="http://www.opengis.net/kml/2.2' +
+-              ' https://developers.google.com/kml/schema/kml22gx.xsd">' +
+-              '  <Style id="sh_ylw-pushpin">' +
+-              '    <IconStyle>' +
+-              '      <scale>0.3</scale>' +
+-              '      <Icon>' +
+-              '        <href>http://maps.google.com/mapfiles/kml/pushpin/' +
+-              'ylw-pushpin.png</href>' +
+-              '      </Icon>' +
+-              '      <hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>' +
+-              '    </IconStyle>' +
+-              '  </Style>' +
+-              '  <StyleMap id="msn_ylw-pushpin0">' +
+-              '    <Pair>' +
+-              '      <key>normal</key>' +
+-              '      <styleUrl>#sn_ylw-pushpin</styleUrl>' +
+-              '    </Pair>' +
+-              '    <Pair>' +
+-              '      <key>highlight</key>' +
+-              '      <styleUrl>#sh_ylw-pushpin</styleUrl>' +
+-              '    </Pair>' +
+-              '  </StyleMap>' +
+-              '  <Placemark>' +
+-              '    <name>Test</name>' +
+-              '    <styleUrl>#msn_ylw-pushpin0</styleUrl>' +
+-              '    <Point>' +
+-              '      <coordinates>1,2</coordinates>' +
+-              '    </Point>' +
+-              '  </Placemark>' +
+-              '</kml>';
+-          const fs = format.readFeatures(text);
+-          expect(fs).to.have.length(1);
+-          const f = fs[0];
+-          expect(f).to.be.an(Feature);
+-          const styleFunction = f.getStyleFunction();
+-          expect(styleFunction).not.to.be(undefined);
+-          const styleArray = styleFunction(f, 0);
+-          expect(styleArray).to.be.an(Array);
+-          expect(styleArray).to.have.length(2);
+-          const style = styleArray[1];
++          const style = styleFunction(f, 0);
+           expect(style).to.be.an(Style);
+-          expect(style.getText().getText()).to.eql(f.getProperties()['name']);
++          expect(style.getText().getText()).to.eql('Joe\'s Test');
+         });
+ 
+         it('can write an feature\'s icon style', function() {

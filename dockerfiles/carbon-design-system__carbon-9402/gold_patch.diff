@@ -1,0 +1,84 @@
+diff --git a/packages/react/src/components/ComboBox/ComboBox-test.js b/packages/react/src/components/ComboBox/ComboBox-test.js
+index 2252549a8cb8..7bfe47f8f4b2 100644
+--- a/packages/react/src/components/ComboBox/ComboBox-test.js
++++ b/packages/react/src/components/ComboBox/ComboBox-test.js
+@@ -7,6 +7,8 @@
+ 
+ import React from 'react';
+ import { mount } from 'enzyme';
++import { render, screen, within } from '@testing-library/react';
++import userEvent from '@testing-library/user-event';
+ import {
+   findListBoxNode,
+   findMenuNode,
+@@ -201,5 +203,49 @@ describe('ComboBox', () => {
+       const wrapper = mount(<ComboBox {...mockProps} />);
+       expect(wrapper.find('input').instance().value).toBe('');
+     });
++
++    it('should only render one listbox at a time when multiple comboboxes are present', () => {
++      render(
++        <>
++          <div data-testid="combobox-1">
++            <ComboBox {...mockProps} id="combobox-1" />
++          </div>
++          <div data-testid="combobox-2">
++            <ComboBox {...mockProps} id="combobox-2" />
++          </div>
++        </>
++      );
++      const firstCombobox = screen.getByTestId('combobox-1');
++      const secondCombobox = screen.getByTestId('combobox-2');
++
++      const firstComboboxChevron = within(firstCombobox).getByRole('button');
++      const secondComboboxChevron = within(secondCombobox).getByRole('button');
++
++      function firstListBox() {
++        return within(firstCombobox).getByRole('listbox');
++      }
++
++      function secondListBox() {
++        return within(secondCombobox).getByRole('listbox');
++      }
++
++      expect(firstListBox()).toBeEmptyDOMElement();
++      expect(secondListBox()).toBeEmptyDOMElement();
++
++      userEvent.click(firstComboboxChevron);
++
++      expect(firstListBox()).not.toBeEmptyDOMElement();
++      expect(secondListBox()).toBeEmptyDOMElement();
++
++      userEvent.click(secondComboboxChevron);
++
++      expect(firstListBox()).toBeEmptyDOMElement();
++      expect(secondListBox()).not.toBeEmptyDOMElement();
++
++      userEvent.click(secondComboboxChevron);
++
++      expect(firstListBox()).toBeEmptyDOMElement();
++      expect(secondListBox()).toBeEmptyDOMElement();
++    });
+   });
+ });
+diff --git a/packages/react/src/components/ComboBox/ComboBox.js b/packages/react/src/components/ComboBox/ComboBox.js
+index af8d885bcc9b..4db995c2ca3d 100644
+--- a/packages/react/src/components/ComboBox/ComboBox.js
++++ b/packages/react/src/components/ComboBox/ComboBox.js
+@@ -252,11 +252,13 @@ const ComboBox = React.forwardRef((props, ref) => {
+           // https://github.com/downshift-js/downshift/blob/v5.2.1/src/downshift.js#L1051-L1065
+           //
+           // As a result, it will reset the state of the component and so we
+-          // stop the event from propagating to prevent this. This allows the
+-          // toggleMenu behavior for the toggleButton to correctly open and
++          // stop the event from propagating to prevent this if the menu is already open.
++          // This allows the toggleMenu behavior for the toggleButton to correctly open and
+           // close the menu.
+           onMouseUp(event) {
+-            event.stopPropagation();
++            if (isOpen) {
++              event.stopPropagation();
++            }
+           },
+         });
+         const inputProps = getInputProps({

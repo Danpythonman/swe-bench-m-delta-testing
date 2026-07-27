@@ -1,0 +1,74 @@
+diff --git a/packages/react/src/components/ComboBox/ComboBox-test.js b/packages/react/src/components/ComboBox/ComboBox-test.js
+index 55b96c35400d..84d263ca114d 100644
+--- a/packages/react/src/components/ComboBox/ComboBox-test.js
++++ b/packages/react/src/components/ComboBox/ComboBox-test.js
+@@ -203,14 +203,10 @@ describe('ComboBox', () => {
+     it('should set `inputValue` to an empty string if a falsey-y value is given', () => {
+       const wrapper = mount(<ComboBox {...mockProps} />);
+ 
+-      wrapper
+-        .instance()
+-        .handleOnStateChange({ inputValue: 'foo' }, downshiftActions);
++      wrapper.instance().handleOnInputValueChange('foo', downshiftActions);
+       expect(wrapper.state('inputValue')).toBe('foo');
+ 
+-      wrapper
+-        .instance()
+-        .handleOnStateChange({ inputValue: null }, downshiftActions);
++      wrapper.instance().handleOnInputValueChange(null, downshiftActions);
+       expect(wrapper.state('inputValue')).toBe('');
+     });
+   });
+diff --git a/packages/react/src/components/ComboBox/ComboBox.js b/packages/react/src/components/ComboBox/ComboBox.js
+index 5bd432308b78..b9a273de236e 100644
+--- a/packages/react/src/components/ComboBox/ComboBox.js
++++ b/packages/react/src/components/ComboBox/ComboBox.js
+@@ -220,24 +220,26 @@ export default class ComboBox extends React.Component {
+     }
+   };
+ 
++  handleOnInputValueChange = inputValue => {
++    const { onInputChange } = this.props;
++
++    this.setState(
++      () => ({
++        // Default to empty string if we have a false-y `inputValue`
++        inputValue: inputValue || '',
++      }),
++      () => {
++        if (onInputChange) {
++          onInputChange(inputValue);
++        }
++      }
++    );
++  };
++
+   handleOnStateChange = (newState, { setHighlightedIndex }) => {
+     if (Object.prototype.hasOwnProperty.call(newState, 'inputValue')) {
+       const { inputValue } = newState;
+-      const { onInputChange } = this.props;
+-
+       setHighlightedIndex(findHighlightedIndex(this.props, inputValue));
+-
+-      this.setState(
+-        () => ({
+-          // Default to empty string if we have a false-y `inputValue`
+-          inputValue: inputValue || '',
+-        }),
+-        () => {
+-          if (onInputChange) {
+-            onInputChange(inputValue);
+-          }
+-        }
+-      );
+     }
+   };
+ 
+@@ -301,6 +303,7 @@ export default class ComboBox extends React.Component {
+       <Downshift
+         {...downshiftProps}
+         onChange={this.handleOnChange}
++        onInputValueChange={this.handleOnInputValueChange}
+         onStateChange={this.handleOnStateChange}
+         inputValue={this.state.inputValue || ''}
+         itemToString={itemToString}

@@ -1,0 +1,44 @@
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
+index cdc71e9bbf50..1ed15d061855 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
+@@ -568,7 +568,6 @@ exports[`DataTable selection -- radio buttons should render 1`] = `
+                               value=""
+                             />
+                             <label
+-                              aria-label="Select row"
+                               className="bx--radio-button__label"
+                               htmlFor="data-table-14__select-row-b"
+                             >
+@@ -655,7 +654,6 @@ exports[`DataTable selection -- radio buttons should render 1`] = `
+                               value=""
+                             />
+                             <label
+-                              aria-label="Select row"
+                               className="bx--radio-button__label"
+                               htmlFor="data-table-14__select-row-a"
+                             >
+@@ -742,7 +740,6 @@ exports[`DataTable selection -- radio buttons should render 1`] = `
+                               value=""
+                             />
+                             <label
+-                              aria-label="Select row"
+                               className="bx--radio-button__label"
+                               htmlFor="data-table-14__select-row-c"
+                             >
+diff --git a/packages/react/src/components/RadioButton/RadioButton.js b/packages/react/src/components/RadioButton/RadioButton.js
+index 793dd8203368..a1f92de9ba3e 100644
+--- a/packages/react/src/components/RadioButton/RadioButton.js
++++ b/packages/react/src/components/RadioButton/RadioButton.js
+@@ -130,10 +130,7 @@ class RadioButton extends React.Component {
+           id={this.uid}
+           ref={ref}
+         />
+-        <label
+-          htmlFor={this.uid}
+-          className={`${prefix}--radio-button__label`}
+-          aria-label={labelText}>
++        <label htmlFor={this.uid} className={`${prefix}--radio-button__label`}>
+           <span className={`${prefix}--radio-button__appearance`} />
+           <span className={innerLabelClasses}>{labelText}</span>
+         </label>

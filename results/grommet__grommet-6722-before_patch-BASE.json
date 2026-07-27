@@ -1,0 +1,653 @@
+[
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput should reset date if passed empty string",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput should reset date if passed an []",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput should have no accessibility violations",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput should handle typing date and clicking date simultaneously",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput basic",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput format",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput format with date bounds",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput reverse calendar icon",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput input props reverse as false",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput input props reverse as true",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput input props reverse as false with icon",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput input props reverse as true with icon",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput inline",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput format inline",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput format disabled",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput range",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput range inline",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput range format",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput range format no value",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput range format inline",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput range format with date bounds",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput dates initialized with empty array",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput focus",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput click",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput select inline",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput select inline without timezone",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput select format inline",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput select format inline",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput select format",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput select format no timezone",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput type format inline",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput type format inline without timezone",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput type format inline short",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput type format inline short without timezone",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput type format inline partial",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput type format inline partial without timezone",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput select format inline range",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput select format inline range without timezone",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput type format inline range",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput type format inline range without timezone",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput type format inline range partial",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput type format inline range partial without timezone",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput controlled format inline",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput controlled format inline without timezone",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput should be displayed when value is controlled",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput should be displayed when value is controlled without timezone",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput dropProps should pass props to Drop   when not inline",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput buttonProps should pass props to Button   when not inline and no format",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput disabled",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput renders size",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput clicking calendar icon should open drop",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput handle focus in FormField",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput icon",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput custom theme",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "DateInput matches icon size to size prop when theme.icon.matchSize is true",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar Calendar should have no accessibility violations",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar date",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar date without time specified",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar disabled",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar dates",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar daysOfWeek",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar size",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar fill",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar firstDayOfWeek",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar reference",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar showAdjacentDays",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar header",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar children",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar select date",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar select dates",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar first day sunday week monday",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar change months",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar select date with range",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar disabled previous month button when date is before bounds",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar disabled next month button when date is after bounds",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar change to next month when date is before bounds",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar change to next month when date is after bounds",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar select date with range no date set",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar select date greater and less than",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar select date with same start date",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar select date with same date twice",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar select date with same end date",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar range as array",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar range as array with date",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar activeDate start",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar activeDate end",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar daylight savings",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar Keyboard events onEnter",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar Keyboard events onKeyUp",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar Keyboard events onKeyDown",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar Keyboard events onKeyLeft",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar Keyboard events onKeyRight",
+        "passed": true
+    },
+    {
+        "instance_id": "grommet__grommet-6722",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "Calendar Keyboard events heading text font size",
+        "passed": true
+    }
+]

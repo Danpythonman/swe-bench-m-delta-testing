@@ -1,0 +1,26 @@
+diff --git a/lib/features/label-editing/cmd/UpdateLabelHandler.js b/lib/features/label-editing/cmd/UpdateLabelHandler.js
+index 35159c2a18..692da3d163 100644
+--- a/lib/features/label-editing/cmd/UpdateLabelHandler.js
++++ b/lib/features/label-editing/cmd/UpdateLabelHandler.js
+@@ -44,7 +44,7 @@ export default function UpdateLabelHandler(modeling, textRenderer, bpmnFactory)
+     }
+ 
+     if (!text && di.label) {
+-      di.label = null;
++      delete di.label;
+     }
+   }
+ 
+diff --git a/test/spec/features/modeling/UpdateLabelSpec.js b/test/spec/features/modeling/UpdateLabelSpec.js
+index 7bbac540f2..a6cecb36a1 100644
+--- a/test/spec/features/modeling/UpdateLabelSpec.js
++++ b/test/spec/features/modeling/UpdateLabelSpec.js
+@@ -247,7 +247,7 @@ describe('features/modeling - update label', function() {
+ 
+       // then
+       expect(task_2.businessObject.name).to.equal('');
+-      expect(task_2.di.label).not.to.exist;
++      expect(task_2.di).not.to.have.property('label');
+     }));
+ 
+   });

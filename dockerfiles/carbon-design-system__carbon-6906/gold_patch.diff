@@ -1,0 +1,37 @@
+diff --git a/packages/react/src/components/MultiSelect/FilterableMultiSelect.js b/packages/react/src/components/MultiSelect/FilterableMultiSelect.js
+index 18d79762c464..283767fa4a32 100644
+--- a/packages/react/src/components/MultiSelect/FilterableMultiSelect.js
++++ b/packages/react/src/components/MultiSelect/FilterableMultiSelect.js
+@@ -398,9 +398,9 @@ export default class FilterableMultiSelect extends React.Component {
+                       aria-controls={`${id}__menu`}
+                       aria-autocomplete="list"
+                       ref={(el) => (this.inputNode = el)}
++                      id={`${id}-input`}
+                       {...getInputProps({
+                         disabled,
+-                        id,
+                         placeholder,
+                         onKeyDown: this.handleOnInputKeyDown,
+                       })}
+@@ -423,7 +423,7 @@ export default class FilterableMultiSelect extends React.Component {
+                   </ListBox.Field>
+                   {isOpen && (
+                     <ListBox.Menu
+-                      role="group"
++                      role="listbox"
+                       aria-label={ariaLabel}
+                       id={`${id}-menu`}>
+                       {sortItems(
+diff --git a/packages/react/src/components/MultiSelect/__tests__/__snapshots__/FilterableMultiSelect-test.js.snap b/packages/react/src/components/MultiSelect/__tests__/__snapshots__/FilterableMultiSelect-test.js.snap
+index f9ab080b0a89..15dd9af58bc1 100644
+--- a/packages/react/src/components/MultiSelect/__tests__/__snapshots__/FilterableMultiSelect-test.js.snap
++++ b/packages/react/src/components/MultiSelect/__tests__/__snapshots__/FilterableMultiSelect-test.js.snap
+@@ -133,7 +133,7 @@ exports[`MultiSelect.Filterable should render 1`] = `
+                   autoComplete="off"
+                   className="bx--text-input bx--text-input--empty"
+                   disabled={false}
+-                  id="test-filterable-multiselect"
++                  id="test-filterable-multiselect-input"
+                   onBlur={[Function]}
+                   onChange={[Function]}
+                   onKeyDown={[Function]}

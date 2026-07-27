@@ -1,0 +1,829 @@
+diff --git a/src/ol/PluggableMap.js b/src/ol/PluggableMap.js
+index bc75777755f..52002070c04 100644
+--- a/src/ol/PluggableMap.js
++++ b/src/ol/PluggableMap.js
+@@ -34,6 +34,7 @@ import {
+   isEmpty,
+ } from './extent.js';
+ import {fromUserCoordinate, toUserCoordinate} from './proj.js';
++import {getUid} from './util.js';
+ import {hasArea} from './size.js';
+ import {listen, unlistenByKey} from './events.js';
+ import {removeNode} from './dom.js';
+@@ -60,6 +61,7 @@ import {removeNode} from './dom.js';
+  * @property {!Object<string, Object<string, boolean>>} usedTiles UsedTiles.
+  * @property {Array<number>} viewHints ViewHints.
+  * @property {!Object<string, Object<string, boolean>>} wantedTiles WantedTiles.
++ * @property {string} mapId The id of the map.
+  */
+ 
+ /**
+@@ -1469,6 +1471,7 @@ class PluggableMap extends BaseObject {
+         viewState: viewState,
+         viewHints: viewHints,
+         wantedTiles: {},
++        mapId: getUid(this),
+       };
+       if (viewState.nextCenter && viewState.nextResolution) {
+         const rotation = isNaN(viewState.nextRotation)
+diff --git a/src/ol/layer/WebGLTile.js b/src/ol/layer/WebGLTile.js
+index a0eb3b170a0..035881b6b8f 100644
+--- a/src/ol/layer/WebGLTile.js
++++ b/src/ol/layer/WebGLTile.js
+@@ -255,9 +255,6 @@ function parseStyle(style, bandCount) {
+  * property on the layer object; for example, setting `title: 'My Title'` in the
+  * options means that `title` is observable, and has get/set accessors.
+  *
+- * **Important**: after removing a `WebGLTile` layer from your map, call `layer.dispose()`
+- * to clean up underlying resources.
+- *
+  * @extends BaseTileLayer<import("../source/DataTile.js").default|import("../source/TileImage.js").default>
+  * @api
+  */
+diff --git a/src/ol/renderer/webgl/Layer.js b/src/ol/renderer/webgl/Layer.js
+index d3de5d205ff..5d13aad1f3f 100644
+--- a/src/ol/renderer/webgl/Layer.js
++++ b/src/ol/renderer/webgl/Layer.js
+@@ -1,6 +1,7 @@
+ /**
+  * @module ol/renderer/webgl/Layer
+  */
++import LayerProperty from '../../layer/Property.js';
+ import LayerRenderer from '../Layer.js';
+ import RenderEvent from '../../render/Event.js';
+ import RenderEventType from '../../render/EventType.js';
+@@ -84,6 +85,8 @@ class WebGLLayerRenderer extends LayerRenderer {
+      * @protected
+      */
+     this.helper;
++
++    layer.addChangeListener(LayerProperty.MAP, this.removeHelper_.bind(this));
+   }
+ 
+   removeHelper_() {
+@@ -99,18 +102,48 @@ class WebGLLayerRenderer extends LayerRenderer {
+    * @return {boolean} Layer is ready to be rendered.
+    */
+   prepareFrame(frameState) {
+-    if (!this.helper && !!this.getLayer().getSource()) {
+-      this.helper = new WebGLHelper({
+-        postProcesses: this.postProcesses_,
+-        uniforms: this.uniforms_,
+-      });
+-
+-      const className = this.getLayer().getClassName();
+-      if (className) {
+-        this.helper.getCanvas().className = className;
++    if (this.getLayer().getSource()) {
++      let incrementGroup = true;
++      let groupNumber = -1;
++      let className;
++      for (let i = 0, ii = frameState.layerStatesArray.length; i < ii; i++) {
++        const layer = frameState.layerStatesArray[i].layer;
++        const renderer = layer.getRenderer();
++        if (!(renderer instanceof WebGLLayerRenderer)) {
++          incrementGroup = true;
++          continue;
++        }
++        const layerClassName = layer.getClassName();
++        if (incrementGroup || layerClassName !== className) {
++          groupNumber += 1;
++          incrementGroup = false;
++        }
++        className = layerClassName;
++        if (renderer === this) {
++          break;
++        }
+       }
+ 
+-      this.afterHelperCreated();
++      const canvasCacheKey =
++        'map/' + frameState.mapId + '/group/' + groupNumber;
++
++      if (!this.helper || !this.helper.canvasCacheKeyMatches(canvasCacheKey)) {
++        if (this.helper) {
++          this.helper.dispose();
++        }
++
++        this.helper = new WebGLHelper({
++          postProcesses: this.postProcesses_,
++          uniforms: this.uniforms_,
++          canvasCacheKey: canvasCacheKey,
++        });
++
++        if (className) {
++          this.helper.getCanvas().className = className;
++        }
++
++        this.afterHelperCreated();
++      }
+     }
+ 
+     return this.prepareFrameInternal(frameState);
+diff --git a/src/ol/renderer/webgl/PointsLayer.js b/src/ol/renderer/webgl/PointsLayer.js
+index 5c40dc0eb38..8752cd134f8 100644
+--- a/src/ol/renderer/webgl/PointsLayer.js
++++ b/src/ol/renderer/webgl/PointsLayer.js
+@@ -453,12 +453,6 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
+     this.helper.finalizeDraw(frameState);
+     const canvas = this.helper.getCanvas();
+ 
+-    const layerState = frameState.layerStatesArray[frameState.layerIndex];
+-    const opacity = layerState.opacity;
+-    if (opacity !== parseFloat(canvas.style.opacity)) {
+-      canvas.style.opacity = String(opacity);
+-    }
+-
+     if (this.hitDetectionEnabled_) {
+       this.renderHitDetection(frameState);
+       this.hitRenderTarget_.clearCachedData();
+diff --git a/src/ol/renderer/webgl/TileLayer.js b/src/ol/renderer/webgl/TileLayer.js
+index 00a2a03c565..add59cb1b61 100644
+--- a/src/ol/renderer/webgl/TileLayer.js
++++ b/src/ol/renderer/webgl/TileLayer.js
+@@ -195,12 +195,6 @@ class WebGLTileLayerRenderer extends WebGLLayerRenderer {
+      * @private
+      */
+     this.tileTextureCache_ = new LRUCache(cacheSize);
+-
+-    /**
+-     * @type {number}
+-     * @private
+-     */
+-    this.renderedOpacity_ = NaN;
+   }
+ 
+   afterHelperCreated() {
+@@ -318,7 +312,6 @@ class WebGLTileLayerRenderer extends WebGLLayerRenderer {
+     this.preRender(gl, frameState);
+ 
+     const viewState = frameState.viewState;
+-    const layerState = frameState.layerStatesArray[frameState.layerIndex];
+     const extent = getRenderExtent(frameState, frameState.extent);
+     const tileLayer = this.getLayer();
+     const tileSource = tileLayer.getSource();
+@@ -505,12 +498,6 @@ class WebGLTileLayerRenderer extends WebGLLayerRenderer {
+ 
+     const canvas = this.helper.getCanvas();
+ 
+-    const opacity = layerState.opacity;
+-    if (this.renderedOpacity_ !== opacity) {
+-      canvas.style.opacity = String(opacity);
+-      this.renderedOpacity_ = opacity;
+-    }
+-
+     const tileTextureCache = this.tileTextureCache_;
+     while (tileTextureCache.canExpireCache()) {
+       const tileTexture = tileTextureCache.pop();
+diff --git a/src/ol/source/Raster.js b/src/ol/source/Raster.js
+index f6bd72442bf..168eeaa9d6b 100644
+--- a/src/ol/source/Raster.js
++++ b/src/ol/source/Raster.js
+@@ -16,6 +16,7 @@ import {assign} from '../obj.js';
+ import {createCanvasContext2D} from '../dom.js';
+ import {create as createTransform} from '../transform.js';
+ import {equals, getCenter, getHeight, getWidth} from '../extent.js';
++import {getUid} from '../util.js';
+ 
+ let hasImageData = true;
+ try {
+@@ -646,6 +647,7 @@ class RasterSource extends ImageSource {
+       }),
+       viewHints: [],
+       wantedTiles: {},
++      mapId: getUid(this),
+     };
+ 
+     this.setAttributions(function (frameState) {
+diff --git a/src/ol/webgl/Helper.js b/src/ol/webgl/Helper.js
+index 0036feeaa8b..ef70a3f4d2d 100644
+--- a/src/ol/webgl/Helper.js
++++ b/src/ol/webgl/Helper.js
+@@ -97,6 +97,7 @@ export const AttributeType = {
+  * @property {Object<string,UniformValue>} [uniforms] Uniform definitions; property names must match the uniform
+  * names in the provided or default shaders.
+  * @property {Array<PostProcessesOptions>} [postProcesses] Post-processes definitions
++ * @property {string} [canvasCacheKey] The cache key for the canvas.
+  */
+ 
+ /**
+@@ -107,6 +108,78 @@ export const AttributeType = {
+  * @private
+  */
+ 
++/**
++ * @typedef {Object} CanvasCacheItem
++ * @property {HTMLCanvasElement} canvas Canvas element.
++ * @property {number} users The count of users of this canvas.
++ */
++
++/**
++ * @type {Object<string,CanvasCacheItem>}
++ */
++const canvasCache = {};
++
++/**
++ * @param {string} key The cache key for the canvas.
++ * @return {string} The shared cache key.
++ */
++function getSharedCanvasCacheKey(key) {
++  return 'shared/' + key;
++}
++
++let uniqueCanvasCacheKeyCount = 0;
++
++/**
++ * @return {string} The unique cache key.
++ */
++function getUniqueCanvasCacheKey() {
++  const key = 'unique/' + uniqueCanvasCacheKeyCount;
++  uniqueCanvasCacheKeyCount += 1;
++  return key;
++}
++
++/**
++ * @param {string} key The cache key for the canvas.
++ * @return {HTMLCanvasElement} The canvas.
++ */
++function getCanvas(key) {
++  let cacheItem = canvasCache[key];
++  if (!cacheItem) {
++    const canvas = document.createElement('canvas');
++    canvas.style.position = 'absolute';
++    canvas.style.left = '0';
++    cacheItem = {users: 0, canvas};
++    canvasCache[key] = cacheItem;
++  }
++
++  cacheItem.users += 1;
++  return cacheItem.canvas;
++}
++
++/**
++ * @param {string} key The cache key for the canvas.
++ */
++function releaseCanvas(key) {
++  const cacheItem = canvasCache[key];
++  if (!cacheItem) {
++    return;
++  }
++
++  cacheItem.users -= 1;
++  if (cacheItem.users > 0) {
++    return;
++  }
++
++  const canvas = cacheItem.canvas;
++  const gl = getContext(canvas);
++  const extension = gl.getExtension('WEBGL_lose_context');
++  if (extension) {
++    extension.loseContext();
++  }
++
++  delete canvasCache[key];
++}
++
+ /**
+  * @classdesc
+  * This class is intended to provide low-level functions related to WebGL rendering, so that accessing
+@@ -248,13 +321,19 @@ class WebGLHelper extends Disposable {
+     this.boundHandleWebGLContextRestored_ =
+       this.handleWebGLContextRestored.bind(this);
+ 
++    /**
++     * @private
++     * @type {string}
++     */
++    this.canvasCacheKey_ = options.canvasCacheKey
++      ? getSharedCanvasCacheKey(options.canvasCacheKey)
++      : getUniqueCanvasCacheKey();
++
+     /**
+      * @private
+      * @type {HTMLCanvasElement}
+      */
+-    this.canvas_ = document.createElement('canvas');
+-    this.canvas_.style.position = 'absolute';
+-    this.canvas_.style.left = '0';
++    this.canvas_ = getCanvas(this.canvasCacheKey_);
+ 
+     /**
+      * @private
+@@ -368,6 +447,14 @@ class WebGLHelper extends Disposable {
+     this.startTime_ = Date.now();
+   }
+ 
++  /**
++   * @param {string} canvasCacheKey The canvas cache key.
++   * @return {boolean} The provided key matches the one this helper was constructed with.
++   */
++  canvasCacheKeyMatches(canvasCacheKey) {
++    return this.canvasCacheKey_ === getSharedCanvasCacheKey(canvasCacheKey);
++  }
++
+   /**
+    * Get a WebGL extension.  If the extension is not supported, null is returned.
+    * Extensions are cached after they are enabled for the first time.
+@@ -443,10 +530,8 @@ class WebGLHelper extends Disposable {
+       this.boundHandleWebGLContextRestored_
+     );
+ 
+-    const extension = this.gl_.getExtension('WEBGL_lose_context');
+-    if (extension) {
+-      extension.loseContext();
+-    }
++    releaseCanvas(this.canvasCacheKey_);
++
+     delete this.gl_;
+     delete this.canvas_;
+   }
+@@ -481,6 +566,7 @@ class WebGLHelper extends Disposable {
+ 
+     gl.clearColor(0.0, 0.0, 0.0, 0.0);
+     gl.clear(gl.COLOR_BUFFER_BIT);
++
+     gl.enable(gl.BLEND);
+     gl.blendFunc(
+       gl.ONE,
+diff --git a/src/ol/webgl/PostProcessingPass.js b/src/ol/webgl/PostProcessingPass.js
+index ca15518c7f9..0df00516506 100644
+--- a/src/ol/webgl/PostProcessingPass.js
++++ b/src/ol/webgl/PostProcessingPass.js
+@@ -22,11 +22,12 @@ const DEFAULT_FRAGMENT_SHADER = `
+   precision mediump float;
+    
+   uniform sampler2D u_image;
++  uniform float u_opacity;
+    
+   varying vec2 v_texCoord;
+    
+   void main() {
+-    gl_FragColor = texture2D(u_image, v_texCoord);
++    gl_FragColor = texture2D(u_image, v_texCoord) * u_opacity;
+   }
+ `;
+ 
+@@ -86,11 +87,12 @@ const DEFAULT_FRAGMENT_SHADER = `
+  *   precision mediump float;
+  *
+  *   uniform sampler2D u_image;
++ *   uniform float u_opacity;
+  *
+  *   varying vec2 v_texCoord;
+  *
+  *   void main() {
+- *     gl_FragColor = texture2D(u_image, v_texCoord);
++ *     gl_FragColor = texture2D(u_image, v_texCoord) * u_opacity;
+  *   }
+  *   ```
+  *
+@@ -148,6 +150,10 @@ class WebGLPostProcessingPass {
+       this.renderTargetProgram_,
+       'u_screenSize'
+     );
++    this.renderTargetOpacityLocation_ = gl.getUniformLocation(
++      this.renderTargetProgram_,
++      'u_opacity'
++    );
+     this.renderTargetTextureLocation_ = gl.getUniformLocation(
+       this.renderTargetProgram_,
+       'u_image'
+@@ -258,8 +264,6 @@ class WebGLPostProcessingPass {
+     gl.bindTexture(gl.TEXTURE_2D, this.renderTargetTexture_);
+ 
+     // render the frame buffer to the canvas
+-    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+-    gl.clear(gl.COLOR_BUFFER_BIT);
+     gl.enable(gl.BLEND);
+     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+@@ -279,6 +283,9 @@ class WebGLPostProcessingPass {
+     gl.uniform2f(this.renderTargetUniformLocation_, size[0], size[1]);
+     gl.uniform1i(this.renderTargetTextureLocation_, 0);
+ 
++    const opacity = frameState.layerStatesArray[frameState.layerIndex].opacity;
++    gl.uniform1f(this.renderTargetOpacityLocation_, opacity);
++
+     this.applyUniforms(frameState);
+ 
+     gl.drawArrays(gl.TRIANGLES, 0, 6);
+diff --git a/test/browser/spec/ol/renderer/webgl/layer.test.js b/test/browser/spec/ol/renderer/webgl/Layer.test.js
+similarity index 54%
+rename from test/browser/spec/ol/renderer/webgl/layer.test.js
+rename to test/browser/spec/ol/renderer/webgl/Layer.test.js
+index 1828b96d52f..4189c08182b 100644
+--- a/test/browser/spec/ol/renderer/webgl/layer.test.js
++++ b/test/browser/spec/ol/renderer/webgl/Layer.test.js
+@@ -1,12 +1,19 @@
++import DataTileSource from '../../../../../../src/ol/source/DataTile.js';
+ import Layer from '../../../../../../src/ol/layer/Layer.js';
++import Map from '../../../../../../src/ol/Map.js';
++import TileLayer from '../../../../../../src/ol/layer/WebGLTile.js';
++import VectorLayer from '../../../../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../../../../src/ol/source/Vector.js';
++import View from '../../../../../../src/ol/View.js';
+ import WebGLLayerRenderer, {
+   colorDecodeId,
+   colorEncodeId,
+   getBlankImageData,
+   writePointFeatureToBuffers,
+ } from '../../../../../../src/ol/renderer/webgl/Layer.js';
++import {getUid} from '../../../../../../src/ol/util.js';
+ 
+-describe('ol.renderer.webgl.Layer', function () {
++describe('ol/renderer/webgl/Layer', function () {
+   describe('constructor', function () {
+     let target;
+ 
+@@ -226,4 +233,205 @@ describe('ol.renderer.webgl.Layer', function () {
+       expect(decoded).to.eql(91612);
+     });
+   });
++
++  describe('context sharing', () => {
++    let target;
++    beforeEach(() => {
++      target = document.createElement('div');
++      target.style.width = '256px';
++      target.style.height = '256px';
++      document.body.appendChild(target);
++    });
++
++    afterEach(() => {
++      document.body.removeChild(target);
++    });
++
++    function getWebGLLayer(className) {
++      return new TileLayer({
++        className: className,
++        source: new DataTileSource({
++          loader(z, x, y) {
++            return Promise.resolve(new ImageData(256, 256));
++          },
++        }),
++      });
++    }
++
++    function getCanvasLayer(className) {
++      return new VectorLayer({
++        className: className,
++        source: new VectorSource(),
++      });
++    }
++
++    function expectCacheKeyMatches(layer, key) {
++      expect(layer.getRenderer().helper.canvasCacheKeyMatches(key)).to.be(true);
++    }
++
++    function dispose(map) {
++      map.setLayers([]);
++      map.setTarget(null);
++    }
++
++    it('allows sequences of WebGL layers to share a canvas', () => {
++      const layer1 = getWebGLLayer();
++      const layer2 = getWebGLLayer();
++      const layer3 = getWebGLLayer();
++      const layer4 = getCanvasLayer();
++      const layer5 = getCanvasLayer();
++      const layer6 = getWebGLLayer();
++
++      const map = new Map({
++        target: target,
++        layers: [layer1, layer2, layer3, layer4, layer5, layer6],
++        view: new View({
++          center: [0, 0],
++          zoom: 0,
++        }),
++      });
++
++      map.renderSync();
++
++      const mapId = getUid(map);
++
++      expectCacheKeyMatches(layer1, `map/${mapId}/group/0`);
++      expectCacheKeyMatches(layer1, `map/${mapId}/group/0`);
++      expectCacheKeyMatches(layer2, `map/${mapId}/group/0`);
++      expectCacheKeyMatches(layer3, `map/${mapId}/group/0`);
++      // layer4 and layer5 cannot be grouped
++      expectCacheKeyMatches(layer6, `map/${mapId}/group/1`);
++
++      dispose(map);
++    });
++
++    it('does not group layers with different className', () => {
++      const layer1 = getWebGLLayer();
++      const layer2 = getWebGLLayer();
++      const layer3 = getWebGLLayer('foo');
++      const layer4 = getWebGLLayer('foo');
++      const layer5 = getWebGLLayer();
++
++      const map = new Map({
++        target: target,
++        layers: [layer1, layer2, layer3, layer4, layer5],
++        view: new View({
++          center: [0, 0],
++          zoom: 0,
++        }),
++      });
++
++      map.renderSync();
++
++      const mapId = getUid(map);
++
++      expectCacheKeyMatches(layer1, `map/${mapId}/group/0`);
++      expectCacheKeyMatches(layer2, `map/${mapId}/group/0`);
++      expectCacheKeyMatches(layer3, `map/${mapId}/group/1`);
++      expectCacheKeyMatches(layer4, `map/${mapId}/group/1`);
++      expectCacheKeyMatches(layer5, `map/${mapId}/group/2`);
++
++      dispose(map);
++    });
++
++    it('collapses groups when a layer is removed', () => {
++      const layer1 = getWebGLLayer();
++      const layer2 = getWebGLLayer('foo');
++      const layer3 = getWebGLLayer();
++
++      const map = new Map({
++        target: target,
++        layers: [layer1, layer2, layer3],
++        view: new View({
++          center: [0, 0],
++          zoom: 0,
++        }),
++      });
++
++      map.renderSync();
++
++      const mapId = getUid(map);
++
++      expectCacheKeyMatches(layer1, `map/${mapId}/group/0`);
++      expectCacheKeyMatches(layer2, `map/${mapId}/group/1`);
++      expectCacheKeyMatches(layer3, `map/${mapId}/group/2`);
++
++      map.removeLayer(layer2);
++      map.renderSync();
++
++      expectCacheKeyMatches(layer1, `map/${mapId}/group/0`);
++      expect(layer2.getRenderer().helper).to.be(undefined);
++      expectCacheKeyMatches(layer3, `map/${mapId}/group/0`);
++
++      dispose(map);
++    });
++
++    it('regroups when layer order changes', () => {
++      const layer1 = getWebGLLayer();
++      const layer2 = getWebGLLayer();
++      const layer3 = getCanvasLayer();
++      const layer4 = getWebGLLayer();
++
++      const map = new Map({
++        target: target,
++        layers: [layer1, layer2, layer3, layer4],
++        view: new View({
++          center: [0, 0],
++          zoom: 0,
++        }),
++      });
++
++      map.renderSync();
++
++      const mapId = getUid(map);
++
++      expectCacheKeyMatches(layer1, `map/${mapId}/group/0`);
++      expectCacheKeyMatches(layer2, `map/${mapId}/group/0`);
++      // layer3 cannot be grouped
++      expectCacheKeyMatches(layer4, `map/${mapId}/group/1`);
++
++      map.removeLayer(layer2);
++      map.addLayer(layer2);
++      map.renderSync();
++
++      expectCacheKeyMatches(layer1, `map/${mapId}/group/0`);
++      // layer3 cannot be grouped
++      expectCacheKeyMatches(layer4, `map/${mapId}/group/1`);
++      expectCacheKeyMatches(layer2, `map/${mapId}/group/1`);
++
++      dispose(map);
++    });
++
++    it('changes groups based on z-index', () => {
++      const layer1 = getWebGLLayer();
++      const layer2 = getWebGLLayer('foo');
++      const layer3 = getWebGLLayer();
++
++      const map = new Map({
++        target: target,
++        layers: [layer1, layer2, layer3],
++        view: new View({
++          center: [0, 0],
++          zoom: 0,
++        }),
++      });
++
++      map.renderSync();
++
++      const mapId = getUid(map);
++
++      expectCacheKeyMatches(layer1, `map/${mapId}/group/0`);
++      expectCacheKeyMatches(layer2, `map/${mapId}/group/1`);
++      expectCacheKeyMatches(layer3, `map/${mapId}/group/2`);
++
++      layer1.setZIndex(1);
++      map.renderSync();
++
++      expectCacheKeyMatches(layer2, `map/${mapId}/group/0`);
++      expectCacheKeyMatches(layer3, `map/${mapId}/group/1`);
++      expectCacheKeyMatches(layer1, `map/${mapId}/group/1`);
++
++      dispose(map);
++    });
++  });
+ });
+diff --git a/test/rendering/cases/webgl-mixed-layers/expected.png b/test/rendering/cases/webgl-mixed-layers/expected.png
+new file mode 100644
+index 00000000000..f058d910622
+Binary files /dev/null and b/test/rendering/cases/webgl-mixed-layers/expected.png differ
+diff --git a/test/rendering/cases/webgl-mixed-layers/main.js b/test/rendering/cases/webgl-mixed-layers/main.js
+new file mode 100644
+index 00000000000..1c4ba1f44d5
+--- /dev/null
++++ b/test/rendering/cases/webgl-mixed-layers/main.js
+@@ -0,0 +1,84 @@
++import DataTile from '../../../../src/ol/source/DataTile.js';
++import KML from '../../../../src/ol/format/KML.js';
++import Map from '../../../../src/ol/Map.js';
++import TileLayer from '../../../../src/ol/layer/WebGLTile.js';
++import VectorLayer from '../../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../../src/ol/source/Vector.js';
++import View from '../../../../src/ol/View.js';
++import XYZ from '../../../../src/ol/source/XYZ.js';
++import {Circle as CircleStyle, Fill, Style} from '../../../../src/ol/style.js';
++
++const labelCanvasSize = 256;
++
++const labelCanvas = document.createElement('canvas');
++labelCanvas.width = labelCanvasSize;
++labelCanvas.height = labelCanvasSize;
++
++const labelContext = labelCanvas.getContext('2d');
++labelContext.textAlign = 'center';
++labelContext.font = '16px sans-serif';
++const labelLineHeight = 16;
++
++new Map({
++  layers: [
++    new TileLayer({
++      source: new XYZ({
++        url: '/data/tiles/satellite/{z}/{x}/{y}.jpg',
++        transition: 0,
++      }),
++    }),
++    new VectorLayer({
++      opacity: 0.5,
++      source: new VectorSource({
++        url: '/data/2012_Earthquakes_Mag5.kml',
++        format: new KML({
++          extractStyles: false,
++        }),
++      }),
++      style: new Style({
++        image: new CircleStyle({
++          radius: 3,
++          fill: new Fill({
++            color: 'orange',
++          }),
++        }),
++      }),
++    }),
++    new TileLayer({
++      source: new DataTile({
++        loader: function (z, x, y) {
++          const half = labelCanvasSize / 2;
++
++          labelContext.clearRect(0, 0, labelCanvasSize, labelCanvasSize);
++
++          labelContext.fillStyle = 'white';
++          labelContext.fillText(`z: ${z}`, half, half - labelLineHeight);
++          labelContext.fillText(`x: ${x}`, half, half);
++          labelContext.fillText(`y: ${y}`, half, half + labelLineHeight);
++
++          labelContext.strokeStyle = 'white';
++          labelContext.lineWidth = 2;
++          labelContext.strokeRect(0, 0, labelCanvasSize, labelCanvasSize);
++
++          const data = labelContext.getImageData(
++            0,
++            0,
++            labelCanvasSize,
++            labelCanvasSize
++          ).data;
++          return Promise.resolve(new Uint8Array(data.buffer));
++        },
++        transition: 0,
++      }),
++    }),
++  ],
++  target: 'map',
++  view: new View({
++    center: [15180597.9736, 2700366.3807],
++    zoom: 2,
++  }),
++});
++
++render({
++  message: 'a mix of WebGL and Canvas layers are rendered',
++});
+diff --git a/test/rendering/cases/webgl-multiple-layers/expected.png b/test/rendering/cases/webgl-multiple-layers/expected.png
+new file mode 100644
+index 00000000000..675e3d666d8
+Binary files /dev/null and b/test/rendering/cases/webgl-multiple-layers/expected.png differ
+diff --git a/test/rendering/cases/webgl-multiple-layers/main.js b/test/rendering/cases/webgl-multiple-layers/main.js
+new file mode 100644
+index 00000000000..304b5805d98
+--- /dev/null
++++ b/test/rendering/cases/webgl-multiple-layers/main.js
+@@ -0,0 +1,82 @@
++import DataTile from '../../../../src/ol/source/DataTile.js';
++import KML from '../../../../src/ol/format/KML.js';
++import Map from '../../../../src/ol/Map.js';
++import PointsLayer from '../../../../src/ol/layer/WebGLPoints.js';
++import TileLayer from '../../../../src/ol/layer/WebGLTile.js';
++import VectorSource from '../../../../src/ol/source/Vector.js';
++import View from '../../../../src/ol/View.js';
++import XYZ from '../../../../src/ol/source/XYZ.js';
++
++const labelCanvasSize = 256;
++
++const labelCanvas = document.createElement('canvas');
++labelCanvas.width = labelCanvasSize;
++labelCanvas.height = labelCanvasSize;
++
++const labelContext = labelCanvas.getContext('2d');
++labelContext.textAlign = 'center';
++labelContext.font = '16px sans-serif';
++const labelLineHeight = 16;
++
++new Map({
++  layers: [
++    new TileLayer({
++      source: new XYZ({
++        url: '/data/tiles/satellite/{z}/{x}/{y}.jpg',
++        transition: 0,
++      }),
++    }),
++    new PointsLayer({
++      opacity: 0.5,
++      source: new VectorSource({
++        url: '/data/2012_Earthquakes_Mag5.kml',
++        format: new KML({
++          extractStyles: false,
++        }),
++      }),
++      style: {
++        symbol: {
++          symbolType: 'circle',
++          size: 6,
++          color: 'orange',
++        },
++      },
++    }),
++    new TileLayer({
++      source: new DataTile({
++        loader: function (z, x, y) {
++          const half = labelCanvasSize / 2;
++
++          labelContext.clearRect(0, 0, labelCanvasSize, labelCanvasSize);
++
++          labelContext.fillStyle = 'white';
++          labelContext.fillText(`z: ${z}`, half, half - labelLineHeight);
++          labelContext.fillText(`x: ${x}`, half, half);
++          labelContext.fillText(`y: ${y}`, half, half + labelLineHeight);
++
++          labelContext.strokeStyle = 'white';
++          labelContext.lineWidth = 2;
++          labelContext.strokeRect(0, 0, labelCanvasSize, labelCanvasSize);
++
++          const data = labelContext.getImageData(
++            0,
++            0,
++            labelCanvasSize,
++            labelCanvasSize
++          ).data;
++          return Promise.resolve(new Uint8Array(data.buffer));
++        },
++        transition: 0,
++      }),
++    }),
++  ],
++  target: 'map',
++  view: new View({
++    center: [15180597.9736, 2700366.3807],
++    zoom: 2,
++  }),
++});
++
++render({
++  message: 'multiple WebGL layers are rendered',
++});

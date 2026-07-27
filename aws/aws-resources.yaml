@@ -1,0 +1,244 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  VPC with a single public subnet. Instances get a public IPv4 and IPv6
+  address (needed for outbound package installs) but are not reachable
+  inbound from the internet - the security group has zero ingress rules,
+  so the only way in is AWS Systems Manager Session Manager, which the SSM
+  Agent initiates outbound. Instances get an IAM instance profile with SSM
+  and CloudWatch Agent permissions.
+
+Parameters:
+  NamePrefix:
+    Type: String
+    Default: sbmdt
+    Description: Prefix used for naming resources.
+
+  CostCenter:
+    Type: String
+    Default: unspecified-cost-center
+    Description: CostCenter tag value for billing.
+
+  AvailabilityZone:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-east-1a
+
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+
+  SubnetCidr:
+    Type: String
+    Default: 10.0.1.0/24
+    Description: Where instances run. Gets public IPv4/IPv6 addresses via the IGW.
+
+Resources:
+
+  # ---------- VPC ----------
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${NamePrefix}-vpc"
+        - Key: Project
+          Value: !Ref NamePrefix
+
+  VpcIpv6CidrBlock:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      VpcId: !Ref VPC
+      AmazonProvidedIpv6CidrBlock: true
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${NamePrefix}-igw"
+        - Key: Project
+          Value: !Ref NamePrefix
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # ---------- Subnet: instances run here, get public IPv4 + IPv6 ----------
+  # Reachable at the network layer, but the security group has no ingress
+  # rules, so nothing can actually connect in. SSM works because the agent
+  # on the instance initiates the connection outbound.
+  Subnet:
+    Type: AWS::EC2::Subnet
+    DependsOn: VpcIpv6CidrBlock
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZone
+      CidrBlock: !Ref SubnetCidr
+      Ipv6CidrBlock: !Select
+        - 0
+        - !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 1, 64]
+      MapPublicIpOnLaunch: true
+      AssignIpv6AddressOnCreation: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${NamePrefix}-subnet"
+        - Key: Project
+          Value: !Ref NamePrefix
+
+  # ---------- Route table ----------
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${NamePrefix}-rt"
+        - Key: Project
+          Value: !Ref NamePrefix
+
+  RouteIpv4:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  RouteIpv6:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationIpv6CidrBlock: "::/0"
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet
+      RouteTableId: !Ref RouteTable
+
+  # ---------- Security group: no inbound, outbound HTTP/HTTPS only ----------
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: >-
+        No inbound rules so that nothing can initiate a connection to instances
+        in this group. SSM Session Manager works because the SSM Agent on the
+        instance initiates the connection outbound.
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS (IPv4) - SSM, HTTPS package mirrors
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIpv6: "::/0"
+          Description: HTTPS (IPv6) - SSM, HTTPS package mirrors
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP (IPv4) - package installs
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIpv6: "::/0"
+          Description: HTTP (IPv6) - package installs
+      Tags:
+        - Key: Name
+          Value: !Sub "${NamePrefix}-sg"
+        - Key: Project
+          Value: !Ref NamePrefix
+
+  # ---------- IAM role / instance profile for SSM, CloudWatch Agent, and S3 access ----------
+  SsmInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${NamePrefix}-instance-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: !Sub "${NamePrefix}-preds-bucket-access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - arn:aws:s3:::sbmdt-preds
+                  - arn:aws:s3:::sbmdt-preds/*
+        - PolicyName: !Sub "${NamePrefix}-test-results-bucket-access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - arn:aws:s3:::sbmdt-test-results
+                  - arn:aws:s3:::sbmdt-test-results/*
+        - PolicyName: !Sub "${NamePrefix}-stdout-bucket-access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - arn:aws:s3:::sbmdt-stdout
+                  - arn:aws:s3:::sbmdt-stdout/*
+      Tags:
+        - Key: Project
+          Value: !Ref NamePrefix
+
+  SsmInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub "${NamePrefix}-instance-profile"
+      Roles:
+        - !Ref SsmInstanceRole
+
+Outputs:
+  VpcId:
+    Value: !Ref VPC
+
+  VpcIpv6CidrBlock:
+    Value: !Select [0, !GetAtt VPC.Ipv6CidrBlocks]
+
+  SubnetId:
+    Value: !Ref Subnet
+
+  SecurityGroupId:
+    Value: !Ref InstanceSecurityGroup
+
+  InstanceProfileArn:
+    Value: !GetAtt SsmInstanceProfile.Arn
+
+  InstanceRoleArn:
+    Value: !GetAtt SsmInstanceRole.Arn

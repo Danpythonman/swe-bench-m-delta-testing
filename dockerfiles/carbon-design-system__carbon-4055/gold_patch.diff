@@ -1,0 +1,212 @@
+diff --git a/packages/react/src/components/Tile/Tile-story.js b/packages/react/src/components/Tile/Tile-story.js
+index 3ad938089b68..90481325a46b 100644
+--- a/packages/react/src/components/Tile/Tile-story.js
++++ b/packages/react/src/components/Tile/Tile-story.js
+@@ -59,11 +59,11 @@ const props = {
+     tileMaxHeight: number('Max height (tileMaxHeight)', 0),
+     tileCollapsedIconText: text(
+       'Collapsed icon text (tileCollapsedIconText)',
+-      'Expand'
++      'Interact to Expand tile'
+     ),
+     tileExpandedIconText: text(
+       'Collapsed icon text (tileExpandedIconText)',
+-      'Collapse'
++      'Interact to Collapse tile'
+     ),
+     handleClick: action('handleClick'),
+   }),
+diff --git a/packages/react/src/components/Tile/Tile-test.js b/packages/react/src/components/Tile/Tile-test.js
+index 60d2ba279a32..4c5fcae8d346 100644
+--- a/packages/react/src/components/Tile/Tile-test.js
++++ b/packages/react/src/components/Tile/Tile-test.js
+@@ -6,7 +6,6 @@
+  */
+ 
+ import React from 'react';
+-import { ChevronDown16 } from '@carbon/icons-react';
+ import {
+   Tile,
+   ClickableTile,
+@@ -230,13 +229,13 @@ describe('Tile', () => {
+       expect(wrapper.state().expanded).toEqual(false);
+     });
+ 
+-    it('displays the default tooltip for the chevron depending on state', () => {
+-      const defaultExpandedIconText = 'Collapse';
+-      const defaultCollapsedIconText = 'Expand';
++    it('displays the default tooltip for the button depending on state', () => {
++      const defaultExpandedIconText = 'Interact to collapse Tile';
++      const defaultCollapsedIconText = 'Interact to expand Tile';
+ 
+       // Force the expanded tile to be collapsed.
+       wrapper.setState({ expanded: false });
+-      const collapsedDescription = wrapper.find(ChevronDown16).getElements()[0]
++      const collapsedDescription = wrapper.find('button').getElements()[0]
+         .props['aria-label'];
+       expect(collapsedDescription).toEqual(defaultCollapsedIconText);
+ 
+@@ -244,12 +243,13 @@ describe('Tile', () => {
+       wrapper.simulate('click');
+ 
+       // Validate the description change
+-      const expandedDescription = wrapper.find(ChevronDown16).getElements()[0]
+-        .props['aria-label'];
++      const expandedDescription = wrapper.find('button').getElements()[0].props[
++        'aria-label'
++      ];
+       expect(expandedDescription).toEqual(defaultExpandedIconText);
+     });
+ 
+-    it('displays the custom tooltips for the chevron depending on state', () => {
++    it('displays the custom tooltips for the button depending on state', () => {
+       const tileExpandedIconText = 'Click To Collapse';
+       const tileCollapsedIconText = 'Click To Expand';
+ 
+@@ -258,7 +258,7 @@ describe('Tile', () => {
+ 
+       // Force the expanded tile to be collapsed.
+       wrapper.setState({ expanded: false });
+-      const collapsedDescription = wrapper.find(ChevronDown16).getElements()[0]
++      const collapsedDescription = wrapper.find('button').getElements()[0]
+         .props['aria-label'];
+       expect(collapsedDescription).toEqual(tileCollapsedIconText);
+ 
+@@ -266,8 +266,9 @@ describe('Tile', () => {
+       wrapper.simulate('click');
+ 
+       // Validate the description change
+-      const expandedDescription = wrapper.find(ChevronDown16).getElements()[0]
+-        .props['aria-label'];
++      const expandedDescription = wrapper.find('button').getElements()[0].props[
++        'aria-label'
++      ];
+       expect(expandedDescription).toEqual(tileExpandedIconText);
+     });
+ 
+diff --git a/packages/react/src/components/Tile/Tile.js b/packages/react/src/components/Tile/Tile.js
+index ddd22ba1675d..4d6060159059 100644
+--- a/packages/react/src/components/Tile/Tile.js
++++ b/packages/react/src/components/Tile/Tile.js
+@@ -6,7 +6,6 @@
+  */
+ 
+ import React, { Component } from 'react';
+-import ReactDOM from 'react-dom';
+ import PropTypes from 'prop-types';
+ import classNames from 'classnames';
+ import { settings } from 'carbon-components';
+@@ -15,7 +14,6 @@ import {
+   ChevronDown16,
+ } from '@carbon/icons-react';
+ import { keys, matches } from '../../internal/keyboard';
+-import uid from '../../tools/uniqueId';
+ 
+ const { prefix } = settings;
+ 
+@@ -370,8 +368,8 @@ export class ExpandableTile extends Component {
+     tileMaxHeight: '0',
+     onBeforeClick: () => true,
+     handleClick: () => {},
+-    tileCollapsedIconText: 'Expand',
+-    tileExpandedIconText: 'Collapse',
++    tileCollapsedIconText: 'Interact to expand Tile',
++    tileExpandedIconText: 'Interact to collapse Tile',
+   };
+ 
+   static getDerivedStateFromProps(
+@@ -404,16 +402,16 @@ export class ExpandableTile extends Component {
+   }
+ 
+   componentDidMount = () => {
+-    if (this.refs[0]) {
+-      this.aboveTheFold = ReactDOM.findDOMNode(this.refs[0]); // eslint-disable-line
+-    }
+     const getStyle = window.getComputedStyle(this.tile, null);
+-    this.setState({
+-      tileMaxHeight: this.aboveTheFold.getBoundingClientRect().height,
+-      tilePadding:
+-        parseInt(getStyle.getPropertyValue('padding-top'), 10) +
+-        parseInt(getStyle.getPropertyValue('padding-bottom'), 10),
+-    });
++
++    if (this.aboveTheFold) {
++      this.setState({
++        tileMaxHeight: this.aboveTheFold.getBoundingClientRect().height,
++        tilePadding:
++          parseInt(getStyle.getPropertyValue('padding-top'), 10) +
++          parseInt(getStyle.getPropertyValue('padding-bottom'), 10),
++      });
++    }
+   };
+ 
+   componentDidUpdate = prevProps => {
+@@ -457,12 +455,9 @@ export class ExpandableTile extends Component {
+   };
+ 
+   getChildren = () => {
+-    return React.Children.map(this.props.children, child => child);
++    return React.Children.toArray(this.props.children);
+   };
+ 
+-  // a unique ID generated for use in aria-labelledby if one isn't providedj
+-  uid = uid();
+-
+   render() {
+     const {
+       tabIndex,
+@@ -491,10 +486,9 @@ export class ExpandableTile extends Component {
+         ? null
+         : this.state.tileMaxHeight + this.state.tilePadding,
+     };
+-    const content = this.getChildren().map((child, index) => {
+-      return React.cloneElement(child, { ref: index });
+-    });
+-    const buttonId = this.props.id ? `${this.props.id}__button` : this.uid;
++
++    const childrenAsArray = this.getChildren();
++
+     return (
+       // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
+       <div
+@@ -507,25 +501,24 @@ export class ExpandableTile extends Component {
+         onClick={this.handleClick}
+         onKeyPress={this.handleKeyDown}
+         tabIndex={tabIndex}>
+-        <button
+-          className={`${prefix}--tile__chevron`}
+-          aria-labelledby={buttonId}
+-          aria-expanded={expanded}>
+-          <ChevronDown16
+-            id={buttonId}
+-            aria-label={expanded ? tileExpandedIconText : tileCollapsedIconText}
+-            alt={expanded ? tileExpandedIconText : tileCollapsedIconText}
+-            description={
+-              expanded ? tileExpandedIconText : tileCollapsedIconText
+-            }
+-          />
+-        </button>
+         <div
+           ref={tileContent => {
+             this.tileContent = tileContent;
+-          }}
+-          className={`${prefix}--tile-content`}>
+-          {content}
++          }}>
++          <div
++            ref={aboveTheFold => {
++              this.aboveTheFold = aboveTheFold;
++            }}
++            className={`${prefix}--tile-content`}>
++            {childrenAsArray[0]}
++          </div>
++          <button
++            aria-expanded={expanded}
++            aria-label={expanded ? tileExpandedIconText : tileCollapsedIconText}
++            className={`${prefix}--tile__chevron`}>
++            <ChevronDown16 />
++          </button>
++          <div className={`${prefix}--tile-content`}>{childrenAsArray[1]}</div>
+         </div>
+       </div>
+     );

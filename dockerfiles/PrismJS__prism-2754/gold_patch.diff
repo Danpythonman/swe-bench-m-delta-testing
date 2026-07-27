@@ -1,0 +1,481 @@
+diff --git a/components/prism-jsx.js b/components/prism-jsx.js
+index bb87e1ff66..bc39f1bbd7 100644
+--- a/components/prism-jsx.js
++++ b/components/prism-jsx.js
+@@ -2,11 +2,28 @@
+ 
+ var javascript = Prism.util.clone(Prism.languages.javascript);
+ 
++var space = /(?:\s|\/\/.*(?!.)|\/\*(?:[^*]|\*(?!\/))\*\/)/.source;
++var braces = /(?:\{(?:\{(?:\{[^{}]*\}|[^{}])*\}|[^{}])*\})/.source;
++var spread = /(?:\{<S>*\.{3}(?:[^{}]|<BRACES>)*\})/.source;
++
++/**
++ * @param {string} source
++ * @param {string} [flags]
++ */
++function re(source, flags) {
++	source = source
++		.replace(/<S>/g, function () { return space; })
++		.replace(/<BRACES>/g, function () { return braces; })
++		.replace(/<SPREAD>/g, function () { return spread; });
++	return RegExp(source, flags);
++}
++
++spread = re(spread).source;
++
++
+ Prism.languages.jsx = Prism.languages.extend('markup', javascript);
+-Prism.languages.jsx.tag.pattern = RegExp(
+-	/<\/?(?:[\w.:-]+(?:<SP>+(?:[\w.:$-]+(?:=(?:"(?:\\[^]|[^\\"])*"|'(?:\\[^]|[^\\'])*'|[^\s{'"/>=]+|\{(?:\{(?:\{[^{}]*\}|[^{}])*\}|[^{}])+\}))?|\{<SP>*\.{3}<SP>*[a-z_$][\w$]*(?:\.[a-z_$][\w$]*)*<SP>*\}))*<SP>*\/?)?>/.source
+-		.replace(/<SP>/g, function () { return /(?:\s|\/\/.*(?!.)|\/\*(?:[^*]|\*(?!\/))\*\/)/.source }),
+-	'i'
++Prism.languages.jsx.tag.pattern = re(
++	/<\/?(?:[\w.:-]+(?:<S>+(?:[\w.:$-]+(?:=(?:"(?:\\[^]|[^\\"])*"|'(?:\\[^]|[^\\'])*'|[^\s{'"/>=]+|<BRACES>))?|<SPREAD>))*<S>*\/?)?>/.source
+ );
+ 
+ Prism.languages.jsx.tag.inside['tag'].pattern = /^<\/?[^\s>\/]*/i;
+@@ -16,18 +33,15 @@ Prism.languages.jsx.tag.inside['comment'] = javascript['comment'];
+ 
+ Prism.languages.insertBefore('inside', 'attr-name', {
+ 	'spread': {
+-		pattern: /\{\s*\.{3}\s*[a-z_$][\w$]*(?:\.[a-z_$][\w$]*)*\s*\}/,
+-		inside: {
+-			'punctuation': /\.{3}|[{}.]/,
+-			'attr-value': /\w+/
+-		}
++		pattern: re(/<SPREAD>/.source),
++		inside: Prism.languages.jsx
+ 	}
+ }, Prism.languages.jsx.tag);
+ 
+ Prism.languages.insertBefore('inside', 'attr-value',{
+ 	'script': {
+ 		// Allow for two levels of nesting
+-		pattern: /=(?:\{(?:\{(?:\{[^{}]*\}|[^{}])*\}|[^{}])+\})/i,
++		pattern: re(/=<BRACES>/.source),
+ 		inside: {
+ 			'script-punctuation': {
+ 				pattern: /^=(?={)/,
+diff --git a/components/prism-jsx.min.js b/components/prism-jsx.min.js
+index acb789ee38..3844e6c32d 100644
+--- a/components/prism-jsx.min.js
++++ b/components/prism-jsx.min.js
+@@ -1 +1 @@
+-!function(i){var t=i.util.clone(i.languages.javascript);i.languages.jsx=i.languages.extend("markup",t),i.languages.jsx.tag.pattern=RegExp("</?(?:[\\w.:-]+(?:<SP>+(?:[\\w.:$-]+(?:=(?:\"(?:\\\\[^]|[^\\\\\"])*\"|'(?:\\\\[^]|[^\\\\'])*'|[^\\s{'\"/>=]+|\\{(?:\\{(?:\\{[^{}]*\\}|[^{}])*\\}|[^{}])+\\}))?|\\{<SP>*\\.{3}<SP>*[a-z_$][\\w$]*(?:\\.[a-z_$][\\w$]*)*<SP>*\\}))*<SP>*/?)?>".replace(/<SP>/g,function(){return"(?:\\s|//.*(?!.)|/\\*(?:[^*]|\\*(?!/))\\*/)"}),"i"),i.languages.jsx.tag.inside.tag.pattern=/^<\/?[^\s>\/]*/i,i.languages.jsx.tag.inside["attr-value"].pattern=/=(?!\{)(?:"(?:\\[^]|[^\\"])*"|'(?:\\[^]|[^\\'])*'|[^\s'">]+)/i,i.languages.jsx.tag.inside.tag.inside["class-name"]=/^[A-Z]\w*(?:\.[A-Z]\w*)*$/,i.languages.jsx.tag.inside.comment=t.comment,i.languages.insertBefore("inside","attr-name",{spread:{pattern:/\{\s*\.{3}\s*[a-z_$][\w$]*(?:\.[a-z_$][\w$]*)*\s*\}/,inside:{punctuation:/\.{3}|[{}.]/,"attr-value":/\w+/}}},i.languages.jsx.tag),i.languages.insertBefore("inside","attr-value",{script:{pattern:/=(?:\{(?:\{(?:\{[^{}]*\}|[^{}])*\}|[^{}])+\})/i,inside:{"script-punctuation":{pattern:/^=(?={)/,alias:"punctuation"},rest:i.languages.jsx},alias:"language-javascript"}},i.languages.jsx.tag);var o=function(t){return t?"string"==typeof t?t:"string"==typeof t.content?t.content:t.content.map(o).join(""):""},c=function(t){for(var n=[],e=0;e<t.length;e++){var a=t[e],s=!1;if("string"!=typeof a&&("tag"===a.type&&a.content[0]&&"tag"===a.content[0].type?"</"===a.content[0].content[0].content?0<n.length&&n[n.length-1].tagName===o(a.content[0].content[1])&&n.pop():"/>"===a.content[a.content.length-1].content||n.push({tagName:o(a.content[0].content[1]),openedBraces:0}):0<n.length&&"punctuation"===a.type&&"{"===a.content?n[n.length-1].openedBraces++:0<n.length&&0<n[n.length-1].openedBraces&&"punctuation"===a.type&&"}"===a.content?n[n.length-1].openedBraces--:s=!0),(s||"string"==typeof a)&&0<n.length&&0===n[n.length-1].openedBraces){var g=o(a);e<t.length-1&&("string"==typeof t[e+1]||"plain-text"===t[e+1].type)&&(g+=o(t[e+1]),t.splice(e+1,1)),0<e&&("string"==typeof t[e-1]||"plain-text"===t[e-1].type)&&(g=o(t[e-1])+g,t.splice(e-1,1),e--),t[e]=new i.Token("plain-text",g,null,g)}a.content&&"string"!=typeof a.content&&c(a.content)}};i.hooks.add("after-tokenize",function(t){"jsx"!==t.language&&"tsx"!==t.language||c(t.tokens)})}(Prism);
+\ No newline at end of file
++!function(o){var t=o.util.clone(o.languages.javascript),e="(?:\\{<S>*\\.{3}(?:[^{}]|<BRACES>)*\\})";function n(t,n){return t=t.replace(/<S>/g,function(){return"(?:\\s|//.*(?!.)|/\\*(?:[^*]|\\*(?!/))\\*/)"}).replace(/<BRACES>/g,function(){return"(?:\\{(?:\\{(?:\\{[^{}]*\\}|[^{}])*\\}|[^{}])*\\})"}).replace(/<SPREAD>/g,function(){return e}),RegExp(t,n)}e=n(e).source,o.languages.jsx=o.languages.extend("markup",t),o.languages.jsx.tag.pattern=n("</?(?:[\\w.:-]+(?:<S>+(?:[\\w.:$-]+(?:=(?:\"(?:\\\\[^]|[^\\\\\"])*\"|'(?:\\\\[^]|[^\\\\'])*'|[^\\s{'\"/>=]+|<BRACES>))?|<SPREAD>))*<S>*/?)?>"),o.languages.jsx.tag.inside.tag.pattern=/^<\/?[^\s>\/]*/i,o.languages.jsx.tag.inside["attr-value"].pattern=/=(?!\{)(?:"(?:\\[^]|[^\\"])*"|'(?:\\[^]|[^\\'])*'|[^\s'">]+)/i,o.languages.jsx.tag.inside.tag.inside["class-name"]=/^[A-Z]\w*(?:\.[A-Z]\w*)*$/,o.languages.jsx.tag.inside.comment=t.comment,o.languages.insertBefore("inside","attr-name",{spread:{pattern:n("<SPREAD>"),inside:o.languages.jsx}},o.languages.jsx.tag),o.languages.insertBefore("inside","attr-value",{script:{pattern:n("=<BRACES>"),inside:{"script-punctuation":{pattern:/^=(?={)/,alias:"punctuation"},rest:o.languages.jsx},alias:"language-javascript"}},o.languages.jsx.tag);var i=function(t){return t?"string"==typeof t?t:"string"==typeof t.content?t.content:t.content.map(i).join(""):""},r=function(t){for(var n=[],e=0;e<t.length;e++){var a=t[e],g=!1;if("string"!=typeof a&&("tag"===a.type&&a.content[0]&&"tag"===a.content[0].type?"</"===a.content[0].content[0].content?0<n.length&&n[n.length-1].tagName===i(a.content[0].content[1])&&n.pop():"/>"===a.content[a.content.length-1].content||n.push({tagName:i(a.content[0].content[1]),openedBraces:0}):0<n.length&&"punctuation"===a.type&&"{"===a.content?n[n.length-1].openedBraces++:0<n.length&&0<n[n.length-1].openedBraces&&"punctuation"===a.type&&"}"===a.content?n[n.length-1].openedBraces--:g=!0),(g||"string"==typeof a)&&0<n.length&&0===n[n.length-1].openedBraces){var s=i(a);e<t.length-1&&("string"==typeof t[e+1]||"plain-text"===t[e+1].type)&&(s+=i(t[e+1]),t.splice(e+1,1)),0<e&&("string"==typeof t[e-1]||"plain-text"===t[e-1].type)&&(s=i(t[e-1])+s,t.splice(e-1,1),e--),t[e]=new o.Token("plain-text",s,null,s)}a.content&&"string"!=typeof a.content&&r(a.content)}};o.hooks.add("after-tokenize",function(t){"jsx"!==t.language&&"tsx"!==t.language||r(t.tokens)})}(Prism);
+\ No newline at end of file
+diff --git a/tests/languages/jsx/issue1236.test b/tests/languages/jsx/issue1236.test
+index 3cc3ae2b8a..bf93cf2940 100644
+--- a/tests/languages/jsx/issue1236.test
++++ b/tests/languages/jsx/issue1236.test
+@@ -10,10 +10,10 @@
+ 		]],
+ 		["spread", [
+ 			["punctuation", "{"],
+-			["punctuation", "..."],
+-			["attr-value", "this"],
++			["operator", "..."],
++			["keyword", "this"],
+ 			["punctuation", "."],
+-			["attr-value", "props"],
++			"props",
+ 			["punctuation", "}"]
+ 		]],
+ 		["punctuation", ">"]
+diff --git a/tests/languages/jsx/issue2753.test b/tests/languages/jsx/issue2753.test
+new file mode 100644
+index 0000000000..5a9342426d
+--- /dev/null
++++ b/tests/languages/jsx/issue2753.test
+@@ -0,0 +1,103 @@
++const Test = () => {
++    return (
++       <div>
++           <Button {...{onClick, disabled}}>
++               Click (Wrong Highlighting)
++           </Button>
++           <Button onClick={onClick} disabled={disabled}>
++               Click (Correct highlighting)
++           </Button>
++       </div>
++    )
++}
++
++----------------------------------------------------
++
++[
++	["keyword", "const"],
++	["function-variable", "Test"],
++	["operator", "="],
++	["punctuation", "("],
++	["punctuation", ")"],
++	["operator", "=>"],
++	["punctuation", "{"],
++
++	["keyword", "return"],
++	["punctuation", "("],
++
++	["tag", [
++		["tag", [
++			["punctuation", "<"],
++			"div"
++		]],
++		["punctuation", ">"]
++	]],
++	["plain-text", "\r\n           "],
++	["tag", [
++		["tag", [
++			["punctuation", "<"],
++			["class-name", "Button"]
++		]],
++		["spread", [
++			["punctuation", "{"],
++			["operator", "..."],
++			["punctuation", "{"],
++			"onClick",
++			["punctuation", ","],
++			" disabled",
++			["punctuation", "}"],
++			["punctuation", "}"]
++		]],
++		["punctuation", ">"]
++	]],
++	["plain-text", "\r\n               Click (Wrong Highlighting)\r\n           "],
++	["tag", [
++		["tag", [
++			["punctuation", "</"],
++			["class-name", "Button"]
++		]],
++		["punctuation", ">"]
++	]],
++	["plain-text", "\r\n           "],
++	["tag", [
++		["tag", [
++			["punctuation", "<"],
++			["class-name", "Button"]
++		]],
++		["attr-name", ["onClick"]],
++		["script", [
++			["script-punctuation", "="],
++			["punctuation", "{"],
++			"onClick",
++			["punctuation", "}"]
++		]],
++		["attr-name", ["disabled"]],
++		["script", [
++			["script-punctuation", "="],
++			["punctuation", "{"],
++			"disabled",
++			["punctuation", "}"]
++		]],
++		["punctuation", ">"]
++	]],
++	["plain-text", "\r\n               Click (Correct highlighting)\r\n           "],
++	["tag", [
++		["tag", [
++			["punctuation", "</"],
++			["class-name", "Button"]
++		]],
++		["punctuation", ">"]
++	]],
++	["plain-text", "\r\n       "],
++	["tag", [
++		["tag", [
++			["punctuation", "</"],
++			"div"
++		]],
++		["punctuation", ">"]
++	]],
++
++	["punctuation", ")"],
++
++	["punctuation", "}"]
++]
+\ No newline at end of file
+diff --git a/tests/languages/jsx/spread_in_tags.test b/tests/languages/jsx/spread_in_tags.test
+index 3ec4eebbe3..49faaf4270 100644
+--- a/tests/languages/jsx/spread_in_tags.test
++++ b/tests/languages/jsx/spread_in_tags.test
+@@ -1,6 +1,9 @@
+ <div {...foo}></div>
+ <div { ...foo }></div>
+ <div { ... foo }></div>
++<div {...{onClick, disabled}}></div>
++<div {...foo()}></div>
++<div {...(foo ?? bar)}></div>
+ 
+ ----------------------------------------------------
+ 
+@@ -12,8 +15,8 @@
+ 		]],
+ 		["spread", [
+ 			["punctuation", "{"],
+-			["punctuation", "..."],
+-			["attr-value", "foo"],
++			["operator", "..."],
++			"foo",
+ 			["punctuation", "}"]
+ 		]],
+ 		["punctuation", ">"]
+@@ -25,6 +28,74 @@
+ 		]],
+ 		["punctuation", ">"]
+ 	]],
++
++	["tag", [
++		["tag", [
++			["punctuation", "<"],
++			"div"
++		]],
++		["spread", [
++			["punctuation", "{"],
++			["operator", "..."],
++			"foo ",
++			["punctuation", "}"]
++		]],
++		["punctuation", ">"]
++	]],
++	["tag", [
++		["tag", [
++			["punctuation", "</"],
++			"div"
++		]],
++		["punctuation", ">"]
++	]],
++
++	["tag", [
++		["tag", [
++			["punctuation", "<"],
++			"div"
++		]],
++		["spread", [
++			["punctuation", "{"],
++			["operator", "..."],
++			" foo ",
++			["punctuation", "}"]
++		]],
++		["punctuation", ">"]
++	]],
++	["tag", [
++		["tag", [
++			["punctuation", "</"],
++			"div"
++		]],
++		["punctuation", ">"]
++	]],
++
++	["tag", [
++		["tag", [
++			["punctuation", "<"],
++			"div"
++		]],
++		["spread", [
++			["punctuation", "{"],
++			["operator", "..."],
++			["punctuation", "{"],
++			"onClick",
++			["punctuation", ","],
++			" disabled",
++			["punctuation", "}"],
++			["punctuation", "}"]
++		]],
++		["punctuation", ">"]
++	]],
++	["tag", [
++		["tag", [
++			["punctuation", "</"],
++			"div"
++		]],
++		["punctuation", ">"]
++	]],
++
+ 	["tag", [
+ 		["tag", [
+ 			["punctuation", "<"],
+@@ -32,8 +103,10 @@
+ 		]],
+ 		["spread", [
+ 			["punctuation", "{"],
+-			["punctuation", "..."],
+-			["attr-value", "foo"],
++			["operator", "..."],
++			["function", "foo"],
++			["punctuation", "("],
++			["punctuation", ")"],
+ 			["punctuation", "}"]
+ 		]],
+ 		["punctuation", ">"]
+@@ -45,6 +118,7 @@
+ 		]],
+ 		["punctuation", ">"]
+ 	]],
++
+ 	["tag", [
+ 		["tag", [
+ 			["punctuation", "<"],
+@@ -52,8 +126,12 @@
+ 		]],
+ 		["spread", [
+ 			["punctuation", "{"],
+-			["punctuation", "..."],
+-			["attr-value", "foo"],
++			["operator", "..."],
++			["punctuation", "("],
++			"foo ",
++			["operator", "??"],
++			" bar",
++			["punctuation", ")"],
+ 			["punctuation", "}"]
+ 		]],
+ 		["punctuation", ">"]
+diff --git a/tests/languages/jsx/tag_feature.test b/tests/languages/jsx/tag_feature.test
+index 9255ea1e44..c76952c872 100644
+--- a/tests/languages/jsx/tag_feature.test
++++ b/tests/languages/jsx/tag_feature.test
+@@ -36,14 +36,15 @@ var myElement = <MyComponent someProperty={true} />;
+ 		]],
+ 		["attr-name", ["someProperty"]],
+ 		["script", [
+-			 ["script-punctuation", "="],
+-			 ["punctuation", "{"],
+-			 ["boolean", "true"],
+-			 ["punctuation", "}"]
++			["script-punctuation", "="],
++			["punctuation", "{"],
++			["boolean", "true"],
++			["punctuation", "}"]
+ 		]],
+ 		["punctuation", "/>"]
+ 	]],
+ 	["punctuation", ";"],
++
+ 	["tag", [
+ 		["tag", [
+ 			["punctuation", "<"],
+@@ -51,8 +52,8 @@ var myElement = <MyComponent someProperty={true} />;
+ 		]],
+ 		["spread", [
+ 			["punctuation", "{"],
+-			["punctuation", "..."],
+-			["attr-value", "foo"],
++			["operator", "..."],
++			"foo",
+ 			["punctuation", "}"]
+ 		]],
+ 		["punctuation", ">"]
+@@ -64,6 +65,7 @@ var myElement = <MyComponent someProperty={true} />;
+ 		]],
+ 		["punctuation", ">"]
+ 	]],
++
+ 	["tag", [
+ 		["tag", [
+ 			["punctuation", "<"]
+@@ -77,6 +79,7 @@ var myElement = <MyComponent someProperty={true} />;
+ 		]],
+ 		["punctuation", ">"]
+ 	]],
++
+ 	["tag", [
+ 		["tag", [
+ 			["punctuation", "<"],
+@@ -84,10 +87,10 @@ var myElement = <MyComponent someProperty={true} />;
+ 		]],
+ 		["attr-name", ["leaf"]],
+ 		["script", [
+-			 ["script-punctuation", "="],
+-			 ["punctuation", "{"],
+-			 ["boolean", "true"],
+-			 ["punctuation", "}"]
++			["script-punctuation", "="],
++			["punctuation", "{"],
++			["boolean", "true"],
++			["punctuation", "}"]
+ 		]],
+ 		["punctuation", ">"]
+ 	]],
+diff --git a/tests/languages/tsx/tag_feature.test b/tests/languages/tsx/tag_feature.test
+index 97e8e7127a..3008a30eea 100644
+--- a/tests/languages/tsx/tag_feature.test
++++ b/tests/languages/tsx/tag_feature.test
+@@ -40,14 +40,15 @@ class Test extends Component {
+ 		]],
+ 		["attr-name", ["someProperty"]],
+ 		["script", [
+-			 ["script-punctuation", "="],
+-			 ["punctuation", "{"],
+-			 ["boolean", "true"],
+-			 ["punctuation", "}"]
++			["script-punctuation", "="],
++			["punctuation", "{"],
++			["boolean", "true"],
++			["punctuation", "}"]
+ 		]],
+ 		["punctuation", "/>"]
+ 	]],
+ 	["punctuation", ";"],
++
+ 	["tag", [
+ 		["tag", [
+ 			["punctuation", "<"],
+@@ -55,8 +56,8 @@ class Test extends Component {
+ 		]],
+ 		["spread", [
+ 			["punctuation", "{"],
+-			["punctuation", "..."],
+-			["attr-value", "foo"],
++			["operator", "..."],
++			"foo",
+ 			["punctuation", "}"]
+ 		]],
+ 		["punctuation", "/>"]
+@@ -69,10 +70,10 @@ class Test extends Component {
+ 		]],
+ 		["attr-name", ["leaf"]],
+ 		["script", [
+-			 ["script-punctuation", "="],
+-			 ["punctuation", "{"],
+-			 ["boolean", "true"],
+-			 ["punctuation", "}"]
++			["script-punctuation", "="],
++			["punctuation", "{"],
++			["boolean", "true"],
++			["punctuation", "}"]
+ 		]],
+ 		["punctuation", ">"]
+ 	]],
+@@ -84,16 +85,18 @@ class Test extends Component {
+ 		["punctuation", ">"]
+ 	]],
+ 
+-	["keyword",  "class"],
++	["keyword", "class"],
+ 	["class-name", ["Test"]],
+ 	["keyword", "extends"],
+ 	["class-name", ["Component"]],
+ 	["punctuation", "{"],
++
+ 	["function", "render"],
+ 	["punctuation", "("],
+ 	["punctuation", ")"],
+ 	["punctuation", "{"],
+-	["keyword","return"],
++
++	["keyword", "return"],
+ 	["tag", [
+ 		["tag", [
+ 			["punctuation", "<"],
+@@ -119,8 +122,10 @@ class Test extends Component {
+ 		["punctuation", ">"]
+ 	]],
+ 	["punctuation", ";"],
++
+ 	["punctuation", "}"],
+-	["punctuation","}"]
++
++	["punctuation", "}"]
+ ]
+ 
+ ----------------------------------------------------

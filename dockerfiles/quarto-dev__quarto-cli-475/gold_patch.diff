@@ -1,0 +1,88 @@
+diff --git a/src/resources/filters/quarto-pre/callout.lua b/src/resources/filters/quarto-pre/callout.lua
+index b021363d192..9d45f14fdbf 100644
+--- a/src/resources/filters/quarto-pre/callout.lua
++++ b/src/resources/filters/quarto-pre/callout.lua
+@@ -254,7 +254,7 @@ function calloutLatex(div)
+     if caption == nil then
+       caption = displayName(type)
+     else
+-      caption = pandoc.utils.stringify(caption)
++      caption = pandoc.write(pandoc.Pandoc(pandoc.Plain(caption)), 'latex')
+     end
+     callout = latexCalloutBoxDefault(caption, type, icon)
+   else
+@@ -307,7 +307,7 @@ function latexCalloutBoxDefault(caption, type, icon)
+     bottomrule = borderWidth,
+     rightrule = borderWidth,
+     arc = borderRadius,
+-    title = caption,
++    title = '{' .. caption .. '}',
+     titlerule = '0mm',
+     toptitle = '1mm',
+     bottomtitle = '1mm',
+diff --git a/tests/docs/callouts.qmd b/tests/docs/callouts.qmd
+index 9141f321ebb..bdb1eabedb9 100644
+--- a/tests/docs/callouts.qmd
++++ b/tests/docs/callouts.qmd
+@@ -24,6 +24,12 @@ Note that there are five types of callouts, including: `note`, `tip`, `warning`,
+ This is an example of a callout with a caption.
+ :::
+ 
++::: {.callout-tip}
++## Caption with **formatted** text, like `function_name()`
++
++This is an example of a callout with a caption containing special formatting and characters.
++:::
++
+ ::: {.callout-caution collapse="true"}
+ ## Expand To Learn About Collapse
+ 
+diff --git a/tests/smoke/render/render-callout.test.ts b/tests/smoke/render/render-callout.test.ts
+index a74f1b5c29f..77ad2978adb 100644
+--- a/tests/smoke/render/render-callout.test.ts
++++ b/tests/smoke/render/render-callout.test.ts
+@@ -19,12 +19,16 @@ const htmlOutput = outputForInput(input, "html");
+ 
+ testRender(input, "html", false, [
+   ensureHtmlElements(htmlOutput.outputPath, [
++    // callout environments are created
+     "div.callout-warning",
+     "div.callout-important",
+     "div.callout-note",
+     "div.callout-tip",
+     "div.callout-caution",
+     "div.callout.no-icon",
++    // formatting is kept in caption
++    "div.callout-tip > div.callout-header > div.callout-caption-container > strong",
++    "div.callout-tip > div.callout-header > div.callout-caption-container > code"
+   ]),
+ ]);
+ 
+@@ -33,21 +37,27 @@ testRender(input, "latex", true, [
+   ensureFileRegexMatches(teXOutput.outputPath, [
+     requireLatexPackage("fontawesome5"),
+     requireLatexPackage("tcolorbox", "many"),
++    // callout environments are created
+     /quarto-callout-warning/,
+     /quarto-callout-important/,
+     /quarto-callout-note/,
+     /quarto-callout-tip/,
+     /quarto-callout-caution/,
++    // formatting is kept in caption,
++    /{Caption with \\textbf{formatted} text, like \\texttt{function\\_name\(\)}/,
+   ]),
+ ]);
+ 
+ const docXoutput = outputForInput(input, "docx");
+ testRender(input, "docx", true, [
+   ensureDocxRegexMatches(docXoutput.outputPath, [
++    // callout environments are created
+     /<pic:cNvPr.*warning\.png".*?\/>/,
+     /<pic:cNvPr.*important\.png".*?\/>/,
+     /<pic:cNvPr.*note\.png".*?\/>/,
+     /<pic:cNvPr.*tip\.png".*?\/>/,
+     /<pic:cNvPr.*caution\.png".*?\/>/,
++    // formatting is kept in caption,
++    /Caption with.*<w:bCs.*formatted.*text, like.*<w:rStyle w:val="VerbatimChar".*function_name\(\)/
+   ]),
+ ]);

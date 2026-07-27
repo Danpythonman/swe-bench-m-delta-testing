@@ -1,0 +1,157 @@
+diff --git a/packages/components/src/components/overflow-menu/_overflow-menu.scss b/packages/components/src/components/overflow-menu/_overflow-menu.scss
+index 15e1f979b2a8..1b3e6a9672b0 100644
+--- a/packages/components/src/components/overflow-menu/_overflow-menu.scss
++++ b/packages/components/src/components/overflow-menu/_overflow-menu.scss
+@@ -65,6 +65,12 @@
+     box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.3);
+   }
+ 
++  .#{$prefix}--overflow-menu--light.#{$prefix}--overflow-menu--open,
++  .#{$prefix}--overflow-menu--light.#{$prefix}--overflow-menu--open
++    .#{$prefix}--overflow-menu__trigger {
++    background-color: $ui-02;
++  }
++
+   .#{$prefix}--overflow-menu__icon {
+     height: rem(16px);
+     width: rem(16px);
+@@ -95,6 +101,13 @@
+     }
+   }
+ 
++  .#{$prefix}--overflow-menu-options--light {
++    background-color: $ui-02;
++    &::after {
++      background-color: $ui-02;
++    }
++  }
++
+   .#{$prefix}--overflow-menu-options[data-floating-menu-direction='bottom']::after {
+     top: rem(-3px);
+     left: 0;
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
+index b193b5f63376..e9567e480837 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/DataTable-test.js.snap
+@@ -2357,6 +2357,7 @@ exports[`DataTable should render 1`] = `
+                     flipped={true}
+                     iconDescription="open and close list of options"
+                     innerRef={null}
++                    light={false}
+                     menuOffset={[Function]}
+                     menuOffsetFlip={[Function]}
+                     onClick={[Function]}
+@@ -3327,6 +3328,7 @@ exports[`DataTable sticky header should render 1`] = `
+                     flipped={true}
+                     iconDescription="open and close list of options"
+                     innerRef={null}
++                    light={false}
+                     menuOffset={[Function]}
+                     menuOffsetFlip={[Function]}
+                     onClick={[Function]}
+diff --git a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableToolbarMenu-test.js.snap b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableToolbarMenu-test.js.snap
+index a54c9c6ef3c9..0a8933dfd16e 100644
+--- a/packages/react/src/components/DataTable/__tests__/__snapshots__/TableToolbarMenu-test.js.snap
++++ b/packages/react/src/components/DataTable/__tests__/__snapshots__/TableToolbarMenu-test.js.snap
+@@ -29,6 +29,7 @@ exports[`DataTable.TableToolbarMenu should render 1`] = `
+       flipped={true}
+       iconDescription="open and close list of options"
+       innerRef={null}
++      light={false}
+       menuOffset={[Function]}
+       menuOffsetFlip={[Function]}
+       onClick={[Function]}
+diff --git a/packages/react/src/components/OverflowMenu/OverflowMenu-story.js b/packages/react/src/components/OverflowMenu/OverflowMenu-story.js
+index 327d124dffea..fa052018e053 100644
+--- a/packages/react/src/components/OverflowMenu/OverflowMenu-story.js
++++ b/packages/react/src/components/OverflowMenu/OverflowMenu-story.js
+@@ -25,6 +25,7 @@ const props = {
+     ariaLabel: text('ARIA label (ariaLabel)', 'Menu'),
+     iconDescription: text('Icon description (iconDescription)', ''),
+     flipped: boolean('Flipped (flipped)', false),
++    light: boolean('Light (light)', false),
+     onClick: action('onClick'),
+     onFocus: action('onFocus'),
+     onKeyDown: action('onKeyDown'),
+diff --git a/packages/react/src/components/OverflowMenu/OverflowMenu-test.js b/packages/react/src/components/OverflowMenu/OverflowMenu-test.js
+index 7f3f8a399f70..330b8aab76ec 100644
+--- a/packages/react/src/components/OverflowMenu/OverflowMenu-test.js
++++ b/packages/react/src/components/OverflowMenu/OverflowMenu-test.js
+@@ -80,6 +80,28 @@ describe('OverflowMenu', () => {
+         0
+       );
+     });
++    it('should specify light version as expected', () => {
++      rootWrapper.setProps({ light: true });
++      expect(rootWrapper.props().light).toEqual(true);
++    });
++    it('should add light modifier to overflow menu', () => {
++      // Enzyme doesn't seem to allow setState() in a forwardRef-wrapped class component
++      rootWrapper
++        .setProps({ light: true })
++        .find('OverflowMenu')
++        .instance()
++        .setState({ open: true });
++      rootWrapper.update();
++
++      const oMenu = rootWrapper.find(`.${prefix}--overflow-menu`);
++      const oMenuOptions = rootWrapper.find(
++        `.${prefix}--overflow-menu-options`
++      );
++      expect(oMenu.hasClass(`${prefix}--overflow-menu--light`)).toEqual(true);
++      expect(
++        oMenuOptions.hasClass(`${prefix}--overflow-menu-options--light`)
++      ).toEqual(true);
++    });
+   });
+ 
+   describe('open and closed states', () => {
+diff --git a/packages/react/src/components/OverflowMenu/OverflowMenu.js b/packages/react/src/components/OverflowMenu/OverflowMenu.js
+index 4e4fdd069eee..f5a72baf6f87 100644
+--- a/packages/react/src/components/OverflowMenu/OverflowMenu.js
++++ b/packages/react/src/components/OverflowMenu/OverflowMenu.js
+@@ -203,6 +203,12 @@ class OverflowMenu extends Component {
+      * Function called when menu is closed
+      */
+     onOpen: PropTypes.func,
++
++    /**
++     * `true` to use the light version. For use on $ui-01 backgrounds only.
++     * Don't use this to make OverflowMenu background color same as container background color.
++     */
++    light: PropTypes.bool,
+   };
+ 
+   static defaultProps = {
+@@ -219,6 +225,7 @@ class OverflowMenu extends Component {
+     tabIndex: 0,
+     menuOffset: getMenuOffset,
+     menuOffsetFlip: getMenuOffset,
++    light: false,
+   };
+ 
+   /**
+@@ -456,6 +463,7 @@ class OverflowMenu extends Component {
+       renderIcon: IconElement,
+       innerRef: ref,
+       menuOptionsClass,
++      light,
+       ...other
+     } = this.props;
+ 
+@@ -466,6 +474,7 @@ class OverflowMenu extends Component {
+       `${prefix}--overflow-menu`,
+       {
+         [`${prefix}--overflow-menu--open`]: open,
++        [`${prefix}--overflow-menu--light`]: light,
+       }
+     );
+ 
+@@ -475,6 +484,7 @@ class OverflowMenu extends Component {
+       {
+         [`${prefix}--overflow-menu--flip`]: this.props.flipped,
+         [`${prefix}--overflow-menu-options--open`]: open,
++        [`${prefix}--overflow-menu-options--light`]: light,
+       }
+     );
+ 

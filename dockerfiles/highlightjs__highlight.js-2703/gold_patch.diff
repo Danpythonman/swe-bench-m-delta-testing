@@ -1,0 +1,83 @@
+diff --git a/CHANGES.md b/CHANGES.md
+index c926805162..5eea761111 100644
+--- a/CHANGES.md
++++ b/CHANGES.md
+@@ -9,6 +9,8 @@ Language Improvements:
+ - fix(csharp) prevent modifier keywords wrongly flagged as `title` (#2683) [Josh Goebel][]
+ - enh(axapta) Update keyword list for Axapta (X++) (#2686) [Ryan Jonasson][]
+ - fix(fortran) FORTRAN 77-style comments (#2677) [Philipp Engel][]
++- fix(javascript) Comments inside params should be highlighted (#2702) [Josh Goebel][]
++- fix(scala) Comments inside class header should be highlighted (#1559) [Josh Goebel][]
+ - fix(c-like) Correctly highlight modifiers (`final`) in class declaration (#2696) [Josh Goebel][]
+ 
+ [David Pine]: https://github.com/IEvangelist
+diff --git a/src/languages/javascript.js b/src/languages/javascript.js
+index 66eeaba135..76743f813f 100644
+--- a/src/languages/javascript.js
++++ b/src/languages/javascript.js
+@@ -78,14 +78,21 @@ export default function(hljs) {
+     NUMBER,
+     hljs.REGEXP_MODE
+   ];
+-  var PARAMS_CONTAINS = SUBST.contains.concat([
+-    // eat recursive parens in sub expressions
+-    { begin: /\(/, end: /\)/,
+-      contains: ["self"].concat(SUBST.contains, [hljs.C_BLOCK_COMMENT_MODE, hljs.C_LINE_COMMENT_MODE])
+-    },
++  var PARAMS_CONTAINS = [].concat([
+     hljs.C_BLOCK_COMMENT_MODE,
+-    hljs.C_LINE_COMMENT_MODE
+-  ]);
++    hljs.C_LINE_COMMENT_MODE,
++    // eat recursive parens in sub expressions
++    {
++      begin: /\(/,
++      end: /\)/,
++      contains: ["self"].concat([
++          hljs.C_BLOCK_COMMENT_MODE,
++          hljs.C_LINE_COMMENT_MODE
++        ],
++        SUBST.contains
++      )
++    }
++  ], SUBST.contains);
+   var PARAMS = {
+     className: 'params',
+     begin: /\(/, end: /\)/,
+diff --git a/src/languages/scala.js b/src/languages/scala.js
+index ee3beab3c8..b8e1350a0d 100644
+--- a/src/languages/scala.js
++++ b/src/languages/scala.js
+@@ -69,6 +69,8 @@ export default function(hljs) {
+     end: /[:={\[\n;]/,
+     excludeEnd: true,
+     contains: [
++      hljs.C_LINE_COMMENT_MODE,
++      hljs.C_BLOCK_COMMENT_MODE,
+       {
+         beginKeywords: 'extends with',
+         relevance: 10
+diff --git a/test/markup/javascript/comments.expect.txt b/test/markup/javascript/comments.expect.txt
+new file mode 100644
+index 0000000000..0a0ba7b512
+--- /dev/null
++++ b/test/markup/javascript/comments.expect.txt
+@@ -0,0 +1,6 @@
++f = <span class="hljs-function">(<span class="hljs-params">                <span class="hljs-comment">// f is a recursive function taking:</span>
++  [c,                <span class="hljs-comment">//   c   = next digit character</span>
++      ...a],         <span class="hljs-comment">//   a[] = array of remaining digits</span>
++  o = b,            <span class="hljs-comment">//   o   = output string</span>
++  S = s        <span class="hljs-comment">//   S   = set of solutions</span>
++</span>) =&gt;</span>  {}
+diff --git a/test/markup/javascript/comments.txt b/test/markup/javascript/comments.txt
+new file mode 100644
+index 0000000000..f533306251
+--- /dev/null
++++ b/test/markup/javascript/comments.txt
+@@ -0,0 +1,6 @@
++f = (                // f is a recursive function taking:
++  [c,                //   c   = next digit character
++      ...a],         //   a[] = array of remaining digits
++  o = b,            //   o   = output string
++  S = s        //   S   = set of solutions
++) =>  {}

@@ -1,0 +1,88 @@
+diff --git a/src/ol/renderer/webgl/PointsLayer.js b/src/ol/renderer/webgl/PointsLayer.js
+index be6a2041d86..05772bf4824 100644
+--- a/src/ol/renderer/webgl/PointsLayer.js
++++ b/src/ol/renderer/webgl/PointsLayer.js
+@@ -21,6 +21,7 @@ import {assert} from '../../asserts.js';
+ import {buffer, createEmpty, equals} from '../../extent.js';
+ import {colorDecodeId, colorEncodeId} from '../../render/webgl/utils.js';
+ import {create as createWebGLWorker} from '../../worker/webgl.js';
++import {fromUserCoordinate, getUserProjection} from '../../proj.js';
+ import {getUid} from '../../util.js';
+ import {getWorldParameters} from './worldUtil.js';
+ import {listen, unlistenByKey} from '../../events.js';
+@@ -480,6 +481,8 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
+     const projectionTransform = createTransform();
+     this.helper.makeProjectionTransform(frameState, projectionTransform);
+ 
++    const userProjection = getUserProjection();
++
+     const baseInstructionLength = this.hitDetectionEnabled_ ? 7 : 2; // see below
+     const singleInstructionLength =
+       baseInstructionLength + this.customAttributes.length;
+@@ -504,8 +507,17 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
+       if (!geometry || geometry.getType() !== 'Point') {
+         continue;
+       }
+-      tmpCoords[0] = geometry.getFlatCoordinates()[0];
+-      tmpCoords[1] = geometry.getFlatCoordinates()[1];
++      if (userProjection) {
++        const userCoords = fromUserCoordinate(
++          geometry.getFlatCoordinates(),
++          frameState.viewState.projection
++        );
++        tmpCoords[0] = userCoords[0];
++        tmpCoords[1] = userCoords[1];
++      } else {
++        tmpCoords[0] = geometry.getFlatCoordinates()[0];
++        tmpCoords[1] = geometry.getFlatCoordinates()[1];
++      }
+       applyTransform(projectionTransform, tmpCoords);
+ 
+       this.renderInstructions_[++idx] = tmpCoords[0];
+diff --git a/test/rendering/cases/webgl-points-geographic/expected.png b/test/rendering/cases/webgl-points-geographic/expected.png
+new file mode 100644
+index 00000000000..e1cd6532242
+Binary files /dev/null and b/test/rendering/cases/webgl-points-geographic/expected.png differ
+diff --git a/test/rendering/cases/webgl-points-geographic/main.js b/test/rendering/cases/webgl-points-geographic/main.js
+new file mode 100644
+index 00000000000..e2f43ddecab
+--- /dev/null
++++ b/test/rendering/cases/webgl-points-geographic/main.js
+@@ -0,0 +1,37 @@
++import {Feature, Map, View} from '../../../../src/ol/index.js';
++import {Point} from '../../../../src/ol/geom.js';
++import {Tile as TileLayer, WebGLPoints} from '../../../../src/ol/layer.js';
++import {Vector as VectorSource, XYZ} from '../../../../src/ol/source.js';
++import {useGeographic} from '../../../../src/ol/proj.js';
++
++useGeographic();
++
++const center = [8.6, 50.1];
++
++const point = new Point(center);
++
++new Map({
++  layers: [
++    new TileLayer({
++      source: new XYZ({
++        url: '/data/tiles/satellite/{z}/{x}/{y}.jpg',
++        transition: 0,
++      }),
++    }),
++    new WebGLPoints({
++      source: new VectorSource({
++        features: [new Feature(point)],
++      }),
++      style: {
++        'icon-src': '/data/icon.png',
++      },
++    }),
++  ],
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 3,
++  }),
++});
++
++render();

@@ -1,0 +1,338 @@
+diff --git a/core/test/fixtures/fraggle-rock/reports/sample-flow-result.json b/core/test/fixtures/fraggle-rock/reports/sample-flow-result.json
+index b938ffea439c..94b1da249e1b 100644
+--- a/core/test/fixtures/fraggle-rock/reports/sample-flow-result.json
++++ b/core/test/fixtures/fraggle-rock/reports/sample-flow-result.json
+@@ -6079,6 +6079,7 @@
+             "runtimeSettingsCPUThrottling": "CPU throttling",
+             "runtimeSettingsDevice": "Device",
+             "runtimeSettingsNetworkThrottling": "Network throttling",
++            "runtimeSettingsScreenEmulation": "Screen emulation",
+             "runtimeSettingsUANetwork": "User agent (network)",
+             "runtimeSingleLoad": "Single page load",
+             "runtimeSingleLoadTooltip": "This data is taken from a single page load, as opposed to field data summarizing many sessions.",
+@@ -10011,6 +10012,7 @@
+             "runtimeSettingsCPUThrottling": "CPU throttling",
+             "runtimeSettingsDevice": "Device",
+             "runtimeSettingsNetworkThrottling": "Network throttling",
++            "runtimeSettingsScreenEmulation": "Screen emulation",
+             "runtimeSettingsUANetwork": "User agent (network)",
+             "runtimeSingleLoad": "Single page load",
+             "runtimeSingleLoadTooltip": "This data is taken from a single page load, as opposed to field data summarizing many sessions.",
+@@ -13487,6 +13489,7 @@
+             "runtimeSettingsCPUThrottling": "CPU throttling",
+             "runtimeSettingsDevice": "Device",
+             "runtimeSettingsNetworkThrottling": "Network throttling",
++            "runtimeSettingsScreenEmulation": "Screen emulation",
+             "runtimeSettingsUANetwork": "User agent (network)",
+             "runtimeSingleLoad": "Single page load",
+             "runtimeSingleLoadTooltip": "This data is taken from a single page load, as opposed to field data summarizing many sessions.",
+@@ -20217,6 +20220,7 @@
+             "runtimeSettingsCPUThrottling": "CPU throttling",
+             "runtimeSettingsDevice": "Device",
+             "runtimeSettingsNetworkThrottling": "Network throttling",
++            "runtimeSettingsScreenEmulation": "Screen emulation",
+             "runtimeSettingsUANetwork": "User agent (network)",
+             "runtimeSingleLoad": "Single page load",
+             "runtimeSingleLoadTooltip": "This data is taken from a single page load, as opposed to field data summarizing many sessions.",
+diff --git a/core/test/results/sample_v2.json b/core/test/results/sample_v2.json
+index 3aa394c02143..042fbef86c8e 100644
+--- a/core/test/results/sample_v2.json
++++ b/core/test/results/sample_v2.json
+@@ -8337,6 +8337,7 @@
+       "runtimeSettingsCPUThrottling": "CPU throttling",
+       "runtimeSettingsDevice": "Device",
+       "runtimeSettingsNetworkThrottling": "Network throttling",
++      "runtimeSettingsScreenEmulation": "Screen emulation",
+       "runtimeSettingsUANetwork": "User agent (network)",
+       "runtimeSingleLoad": "Single page load",
+       "runtimeSingleLoadTooltip": "This data is taken from a single page load, as opposed to field data summarizing many sessions.",
+diff --git a/core/util.cjs b/core/util.cjs
+index 5e70e730141a..92af1bdc9427 100644
+--- a/core/util.cjs
++++ b/core/util.cjs
+@@ -470,7 +470,7 @@ class Util {
+ 
+   /**
+    * @param {LH.Result['configSettings']} settings
+-   * @return {!{deviceEmulation: string, networkThrottling: string, cpuThrottling: string, summary: string}}
++   * @return {!{deviceEmulation: string, screenEmulation?: string, networkThrottling: string, cpuThrottling: string, summary: string}}
+    */
+   static getEmulationDescriptions(settings) {
+     let cpuThrottling;
+@@ -516,14 +516,19 @@ class Util {
+         summary = cpuThrottling = networkThrottling = Util.i18n.strings.runtimeUnknown;
+     }
+ 
+-    // TODO(paulirish): revise Runtime Settings strings: https://github.com/GoogleChrome/lighthouse/pull/11796
+     const deviceEmulation = {
+       mobile: Util.i18n.strings.runtimeMobileEmulation,
+       desktop: Util.i18n.strings.runtimeDesktopEmulation,
+     }[settings.formFactor] || Util.i18n.strings.runtimeNoEmulation;
+ 
++    const screenEmulation = settings.screenEmulation.disabled ?
++      undefined :
++      // eslint-disable-next-line max-len
++      `${settings.screenEmulation.width}x${settings.screenEmulation.height}, DPR ${settings.screenEmulation.deviceScaleFactor}`;
++
+     return {
+       deviceEmulation,
++      screenEmulation,
+       cpuThrottling,
+       networkThrottling,
+       summary,
+@@ -721,6 +726,8 @@ const UIStrings = {
+   runtimeSettingsBenchmark: 'CPU/Memory Power',
+   /** Label for a row in a table that shows the version of the Axe library used. Example row values: 2.1.0, 3.2.3 */
+   runtimeSettingsAxeVersion: 'Axe version',
++  /** Label for a row in a table that shows the screen resolution and DPR that was emulated for the Lighthouse run. Example values: '800x600, DPR: 3' */
++  runtimeSettingsScreenEmulation: 'Screen emulation',
+ 
+   /** Label for button to create an issue against the Lighthouse GitHub project. */
+   footerIssue: 'File an issue',
+diff --git a/flow-report/src/sidebar/sidebar.tsx b/flow-report/src/sidebar/sidebar.tsx
+index a92ec1229d1a..9edd387ff3ac 100644
+--- a/flow-report/src/sidebar/sidebar.tsx
++++ b/flow-report/src/sidebar/sidebar.tsx
+@@ -35,6 +35,9 @@ const SidebarRuntimeSettings: FunctionComponent<{settings: LH.ConfigSettings}> =
+ ({settings}) => {
+   const strings = useLocalizedStrings();
+   const env = Util.getEmulationDescriptions(settings);
++  const deviceEmulationString = env.screenEmulation ?
++    `${env.deviceEmulation} - ${env.screenEmulation}` :
++    env.deviceEmulation;
+ 
+   return (
+     <div className="SidebarRuntimeSettings">
+@@ -43,7 +46,7 @@ const SidebarRuntimeSettings: FunctionComponent<{settings: LH.ConfigSettings}> =
+           <EnvIcon/>
+         </div>
+         {
+-          env.deviceEmulation
++          deviceEmulationString
+         }
+       </div>
+       <div
+diff --git a/flow-report/test/sidebar/sidebar-test.tsx b/flow-report/test/sidebar/sidebar-test.tsx
+index b0a85e52eb51..66bdbca7c00d 100644
+--- a/flow-report/test/sidebar/sidebar-test.tsx
++++ b/flow-report/test/sidebar/sidebar-test.tsx
+@@ -58,10 +58,12 @@ describe('SidebarRuntimeSettings', () => {
+         throughputKbps: 1.6 * 1024,
+         rttMs: 150,
+       },
++      screenEmulation: {disabled: true},
+     } as any;
+     const root = render(<SidebarRuntimeSettings settings={settings}/>, {wrapper});
+ 
+     expect(root.getByText('Emulated Moto G4')).toBeTruthy();
++    expect(root.queryByText('Emulated Moto G4 -')).toBeFalsy();
+     expect(root.getByText('Slow 4G throttling')).toBeTruthy();
+     expect(root.getByText('4x slowdown'));
+   });
+@@ -78,10 +80,15 @@ describe('SidebarRuntimeSettings', () => {
+         throughputKbps: 1,
+         rttMs: 1,
+       },
++      screenEmulation: {
++        width: 100,
++        height: 100,
++        deviceScaleFactor: 2,
++      },
+     } as any;
+     const root = render(<SidebarRuntimeSettings settings={settings}/>, {wrapper});
+ 
+-    expect(root.getByText('Emulated Desktop')).toBeTruthy();
++    expect(root.getByText('Emulated Desktop - 100x100, DPR 2')).toBeTruthy();
+     expect(root.getByText('Custom throttling')).toBeTruthy();
+     expect(root.getByText('1x slowdown'));
+   });
+diff --git a/proto/lighthouse-result.proto b/proto/lighthouse-result.proto
+index fa9c25fd31d0..677940326d77 100644
+--- a/proto/lighthouse-result.proto
++++ b/proto/lighthouse-result.proto
+@@ -579,6 +579,9 @@ message I18n {
+ 
+     // This label is for a button that will show the user a trace of the page.
+     string view_original_trace_label = 59;
++
++    // Label for a row in a table that shows the screen emulation used
++    string runtime_settings_screen_emulation = 60;
+   }
+ 
+   // The message holding all formatted strings used in the renderer.
+diff --git a/report/renderer/report-renderer.js b/report/renderer/report-renderer.js
+index b50d0ed0433a..6acce581ee0a 100644
+--- a/report/renderer/report-renderer.js
++++ b/report/renderer/report-renderer.js
+@@ -119,8 +119,6 @@ export class ReportRenderer {
+    */
+   _renderMetaBlock(report, footer) {
+     const envValues = Util.getEmulationDescriptions(report.configSettings || {});
+-
+-
+     const match = report.userAgent.match(/(\w*Chrome\/[\d.]+)/); // \w* to include 'HeadlessChrome'
+     const chromeVer = Array.isArray(match)
+       ? match[1].replace('/', ' ').replace('Chrome', 'Chromium')
+@@ -129,15 +127,25 @@ export class ReportRenderer {
+     const benchmarkIndex = report.environment.benchmarkIndex.toFixed(0);
+     const axeVersion = report.environment.credits?.['axe-core'];
+ 
++    const devicesTooltipTextLines = [
++      `${Util.i18n.strings.runtimeSettingsBenchmark}: ${benchmarkIndex}`,
++      `${Util.i18n.strings.runtimeSettingsCPUThrottling}: ${envValues.cpuThrottling}`,
++    ];
++    if (envValues.screenEmulation) {
++      devicesTooltipTextLines.push(
++        `${Util.i18n.strings.runtimeSettingsScreenEmulation}: ${envValues.screenEmulation}`);
++    }
++    if (axeVersion) {
++      devicesTooltipTextLines.push(`${Util.i18n.strings.runtimeSettingsAxeVersion}: ${axeVersion}`);
++    }
++
+     // [CSS icon class, textContent, tooltipText]
+     const metaItems = [
+       ['date',
+         `Captured at ${Util.i18n.formatDateTime(report.fetchTime)}`],
+       ['devices',
+         `${envValues.deviceEmulation} with Lighthouse ${report.lighthouseVersion}`,
+-        `${Util.i18n.strings.runtimeSettingsBenchmark}: ${benchmarkIndex}` +
+-            `\n${Util.i18n.strings.runtimeSettingsCPUThrottling}: ${envValues.cpuThrottling}` +
+-            (axeVersion ? `\n${Util.i18n.strings.runtimeSettingsAxeVersion}: ${axeVersion}` : '')],
++        devicesTooltipTextLines.join('\n')],
+       ['samples-one',
+         Util.i18n.strings.runtimeSingleLoad,
+         Util.i18n.strings.runtimeSingleLoadTooltip],
+diff --git a/report/renderer/util.js b/report/renderer/util.js
+index 2a9db9218bc7..0028b21dd868 100644
+--- a/report/renderer/util.js
++++ b/report/renderer/util.js
+@@ -466,7 +466,7 @@ class Util {
+ 
+   /**
+    * @param {LH.Result['configSettings']} settings
+-   * @return {!{deviceEmulation: string, networkThrottling: string, cpuThrottling: string, summary: string}}
++   * @return {!{deviceEmulation: string, screenEmulation?: string, networkThrottling: string, cpuThrottling: string, summary: string}}
+    */
+   static getEmulationDescriptions(settings) {
+     let cpuThrottling;
+@@ -512,14 +512,19 @@ class Util {
+         summary = cpuThrottling = networkThrottling = Util.i18n.strings.runtimeUnknown;
+     }
+ 
+-    // TODO(paulirish): revise Runtime Settings strings: https://github.com/GoogleChrome/lighthouse/pull/11796
+     const deviceEmulation = {
+       mobile: Util.i18n.strings.runtimeMobileEmulation,
+       desktop: Util.i18n.strings.runtimeDesktopEmulation,
+     }[settings.formFactor] || Util.i18n.strings.runtimeNoEmulation;
+ 
++    const screenEmulation = settings.screenEmulation.disabled ?
++      undefined :
++      // eslint-disable-next-line max-len
++      `${settings.screenEmulation.width}x${settings.screenEmulation.height}, DPR ${settings.screenEmulation.deviceScaleFactor}`;
++
+     return {
+       deviceEmulation,
++      screenEmulation,
+       cpuThrottling,
+       networkThrottling,
+       summary,
+@@ -717,6 +722,8 @@ const UIStrings = {
+   runtimeSettingsBenchmark: 'CPU/Memory Power',
+   /** Label for a row in a table that shows the version of the Axe library used. Example row values: 2.1.0, 3.2.3 */
+   runtimeSettingsAxeVersion: 'Axe version',
++  /** Label for a row in a table that shows the screen resolution and DPR that was emulated for the Lighthouse run. Example values: '800x600, DPR: 3' */
++  runtimeSettingsScreenEmulation: 'Screen emulation',
+ 
+   /** Label for button to create an issue against the Lighthouse GitHub project. */
+   footerIssue: 'File an issue',
+diff --git a/report/test/renderer/report-renderer-test.js b/report/test/renderer/report-renderer-test.js
+index 9183d803556c..4ed7e876ff2b 100644
+--- a/report/test/renderer/report-renderer-test.js
++++ b/report/test/renderer/report-renderer-test.js
+@@ -221,6 +221,7 @@ describe('ReportRenderer', () => {
+       expect(itemsTxt).toContain('RTT');
+       expect(itemsTxt).toMatch(/\dx/);
+       expect(itemsTxt).toContain(sampleResults.environment.networkUserAgent);
++      expect(itemsTxt).toMatch('360x640, DPR 2.625');
+     });
+   });
+ 
+diff --git a/report/test/renderer/util-test.js b/report/test/renderer/util-test.js
+index 39d19f98405f..88b6dfb495d0 100644
+--- a/report/test/renderer/util-test.js
++++ b/report/test/renderer/util-test.js
+@@ -33,15 +33,22 @@ describe('util helpers', () => {
+   });
+ 
+   it('builds device emulation string', () => {
+-    const get = opts => Util.getEmulationDescriptions(opts).deviceEmulation;
++    const get = opts => Util.getEmulationDescriptions({
++      ...opts,
++      screenEmulation: {disabled: true},
++    }).deviceEmulation;
+     assert.equal(get({formFactor: 'mobile'}), 'Emulated Moto G4');
+     assert.equal(get({formFactor: 'desktop'}), 'Emulated Desktop');
+   });
+ 
+   it('builds throttling strings when provided', () => {
+-    const descriptions = Util.getEmulationDescriptions({throttlingMethod: 'provided'});
++    const descriptions = Util.getEmulationDescriptions({
++      throttlingMethod: 'provided',
++      screenEmulation: {disabled: true},
++    });
+     assert.equal(descriptions.cpuThrottling, 'Provided by environment');
+     assert.equal(descriptions.networkThrottling, 'Provided by environment');
++    assert.equal(descriptions.screenEmulation, undefined);
+   });
+ 
+   it('builds throttling strings when devtools', () => {
+@@ -53,6 +60,7 @@ describe('util helpers', () => {
+         downloadThroughputKbps: 1400.00000000001,
+         uploadThroughputKbps: 600,
+       },
++      screenEmulation: {disabled: true},
+     });
+ 
+     // eslint-disable-next-line max-len
+@@ -68,11 +76,13 @@ describe('util helpers', () => {
+         rttMs: 150,
+         throughputKbps: 1600,
+       },
++      screenEmulation: {width: 100, height: 100, deviceScaleFactor: 2},
+     });
+ 
+     // eslint-disable-next-line max-len
+     assert.equal(descriptions.networkThrottling, '150\xa0ms TCP RTT, 1,600\xa0kb/s throughput (Simulated)');
+     assert.equal(descriptions.cpuThrottling, '2x slowdown (Simulated)');
++    assert.equal(descriptions.screenEmulation, '100x100, DPR 2');
+   });
+ 
+   describe('#prepareReportResult', () => {
+diff --git a/shared/localization/locales/en-US.json b/shared/localization/locales/en-US.json
+index 0da2a90260ac..877da3344c16 100644
+--- a/shared/localization/locales/en-US.json
++++ b/shared/localization/locales/en-US.json
+@@ -3026,6 +3026,9 @@
+   "report/renderer/util.js | runtimeSettingsNetworkThrottling": {
+     "message": "Network throttling"
+   },
++  "report/renderer/util.js | runtimeSettingsScreenEmulation": {
++    "message": "Screen emulation"
++  },
+   "report/renderer/util.js | runtimeSettingsUANetwork": {
+     "message": "User agent (network)"
+   },
+diff --git a/shared/localization/locales/en-XL.json b/shared/localization/locales/en-XL.json
+index 1e152340facb..1406aab3fdad 100644
+--- a/shared/localization/locales/en-XL.json
++++ b/shared/localization/locales/en-XL.json
+@@ -3026,6 +3026,9 @@
+   "report/renderer/util.js | runtimeSettingsNetworkThrottling": {
+     "message": "N̂ét̂ẃôŕk̂ t́ĥŕôt́t̂ĺîńĝ"
+   },
++  "report/renderer/util.js | runtimeSettingsScreenEmulation": {
++    "message": "Ŝćr̂éêń êḿûĺât́îón̂"
++  },
+   "report/renderer/util.js | runtimeSettingsUANetwork": {
+     "message": "Ûśêŕ âǵêńt̂ (ńêt́ŵór̂ḱ)"
+   },

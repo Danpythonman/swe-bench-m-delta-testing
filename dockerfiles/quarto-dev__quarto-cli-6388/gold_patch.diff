@@ -1,0 +1,39 @@
+diff --git a/src/resources/rmd/hooks.R b/src/resources/rmd/hooks.R
+index 084102b3047..2e9b9fcad05 100644
+--- a/src/resources/rmd/hooks.R
++++ b/src/resources/rmd/hooks.R
+@@ -898,7 +898,7 @@ output_div <- function(x, label, classes, attr = NULL) {
+     paste(paste0(".", classes), collapse = " ") ,
+     ifelse(!is.null(attr), paste0(" ", attr), ""),
+     "}\n",
+-    trimws(x),
++    x,
+     "\n:::\n\n"
+   )
+ }
+diff --git a/tests/docs/smoke-all/2023/07/31/4057.qmd b/tests/docs/smoke-all/2023/07/31/4057.qmd
+new file mode 100644
+index 00000000000..504c1564ee0
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/07/31/4057.qmd
+@@ -0,0 +1,19 @@
++---
++title: Do not trim spaces in code output
++format: html
++_quarto:
++  tests:
++    html:
++      ensureHtmlElements:
++        - ['div.cell-output-display > ul > li:nth-child(4)']
++        - ['div.cell-output-display > ul > li > ul']
++---
++
++Should output as a list of one level not two. First spaces should not be trimmed. 
++
++```{r}
++knitr::asis_output(
++  paste0(c("", "  * 1", "  * 2", "  * _3_", "  * _1_ and _2_", "", 
++"<!-- end of list -->", ""), collapse = "\n")
++)
++```
+\ No newline at end of file

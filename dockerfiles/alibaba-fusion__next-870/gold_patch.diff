@@ -1,0 +1,3042 @@
+diff --git a/docs/badge/demo/change.md b/docs/badge/demo/change.md
+index ddc4f0d87a..7fb2259596 100644
+--- a/docs/badge/demo/change.md
++++ b/docs/badge/demo/change.md
+@@ -61,6 +61,9 @@ class Demo extends React.Component {
+                     <Badge count={this.state.count}>
+                         <a href="#" className="head-example"><span className="next-sr-only">unread messages</span></a>
+                     </Badge>
++                    <Badge count={this.state.count} showZero>
++                        <a href="#" className="head-example"><span className="next-sr-only">unread messages</span></a>
++                    </Badge>
+                     <ButtonGroup>
+                         <Button aria-label="add" onClick={this.increase}>
+                             <Icon type="add"/>
+diff --git a/docs/badge/index.en-us.md b/docs/badge/index.en-us.md
+index fc3744a2d3..521a77f616 100644
+--- a/docs/badge/index.en-us.md
++++ b/docs/badge/index.en-us.md
+@@ -25,6 +25,7 @@ You can add class as below, so that messages will not appear on pages, but can b
+ | ------------- | ----------------------------------------------------- | ------------- | ----- |
+ | children      | content of Badge based on                                               | ReactNode     | -     |
+ | count         | number to display, display ${overflowCount}+ when count is greater than overflowCount, display none when count equal to 0 | Number/String | 0     |
++| showZero      | whether to show count when count is 0                                     | Boolean       | false |
+ | content       | customized node content                                               | ReactNode     | -     |
+ | overflowCount | max number to display                                              | Number/String | 99    |
+ | dot           | display a red dot, not a number                                        | Boolean       | false |
+diff --git a/docs/badge/index.md b/docs/badge/index.md
+index b0ccee00ef..3590ad4c38 100644
+--- a/docs/badge/index.md
++++ b/docs/badge/index.md
+@@ -22,10 +22,11 @@
+ 
+ ### Badge
+ 
+-| 参数            | 说明                                                    | 类型            | 默认值   |
+-| ------------- | ----------------------------------------------------- | ------------- | ----- |
+-| children      | 徽章依托的内容                                               | ReactNode     | -     |
+-| count         | 展示的数字，大于 overflowCount 时显示为 ${overflowCount}+，为 0 时隐藏 | Number/String | 0     |
+-| content       | 自定义节点内容                                               | ReactNode     | -     |
+-| overflowCount | 展示的封顶的数字                                              | Number/String | 99    |
+-| dot           | 不展示数字，只展示一个小红点                                        | Boolean       | false |
++| 参数            | 说明                                                      | 类型            | 默认值   |
++| ------------- | ------------------------------------------------------- | ------------- | ----- |
++| children      | 徽章依托的内容                                                 | ReactNode     | -     |
++| count         | 展示的数字，大于 overflowCount 时显示为 ${overflowCount}+，为 0 时默认隐藏 | Number/String | 0     |
++| showZero      | 当count为0时，是否显示count                                     | Boolean       | false |
++| content       | 自定义节点内容                                                 | ReactNode     | -     |
++| overflowCount | 展示的封顶的数字                                                | Number/String | 99    |
++| dot           | 不展示数字，只展示一个小红点                                          | Boolean       | false |
+diff --git a/docs/calendar/index.en-us.md b/docs/calendar/index.en-us.md
+index 5589d0224c..fe36158e4c 100644
+--- a/docs/calendar/index.en-us.md
++++ b/docs/calendar/index.en-us.md
+@@ -38,7 +38,9 @@ moment.locale('zh-cn');
+ | showOtherMonth      | Show dates of other month in current date | Boolean  | true                    |
+ | defaultVisibleMonth | Default visible month of panel<br><br>**signature**:<br>Function() => void                                                                                                                              | Function | -                       |
+ | onSelect            | Callback when select a date <br><br>**signature**:<br>Function(value: Object) => void<br>**parameter**:<br>_value_: {Object} date object                                                          | Function | func.noop               |
++| onModeChange         | Callback when change mode <br><br>**签名**:<br>Function(mode: string) => void<br>**参数**:<br>_mode_: {string} mode type: date month year                                                                                                                       | Function | func.noop             |
+ | dateCellRender      | Render function for date cell<br><br>**signature**:<br>Function(value: Object) => ReactNode<br>**parameter**:<br>_value_: {Object} date object<br>**return**:<br>{ReactNode} null<br>                        | Function | (value) => value.date() |
+ | monthCellRender     | Render function for month cell<br><br>**signature**:<br>Function(calendarDate: Object) => ReactNode<br>**parameter**:<br>_calendarDate_: {Object} current date object<br>**return**:<br>{ReactNode} null<br> | Function | -                       |
++| yearRange            | Year Range，[START_YEAR, END_YEAR] \(only shape in ‘card’, 'fullscreen')                                                                                                                                                                       | Array&lt;Number> | -                     |
+ | disabledDate        | Function to disable dates <br><br>**signature**:<br>Function(calendarDate: Object) => Boolean<br>**parameter**:<br>_calendarDate_: {Object} current date object<br>_view_: {Enum} current view type: 'year', 'month', 'date' <br>**return**:<br>{Boolean} null<br>       | Function | -                       |
+ 
+diff --git a/docs/calendar/index.md b/docs/calendar/index.md
+index c78639778e..b09b2a88fa 100644
+--- a/docs/calendar/index.md
++++ b/docs/calendar/index.md
+@@ -29,15 +29,18 @@ moment.locale('zh-cn');
+ 
+ ### Calendar
+ 
+-| 参数                   | 说明                                                                                                                                                                                                                                      | 类型       | 默认值                   |
+-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | --------------------- |
+-| defaultValue         | 默认选中的日期（moment 对象）                                                                                                                                                                                                                      | custom   | -                     |
+-| shape                | 展现形态<br><br>**可选值**:<br>'card', 'fullscreen', 'panel'                                                                                                                                                                                   | Enum     | 'fullscreen'          |
+-| value                | 选中的日期值 (moment 对象)                                                                                                                                                                                                                      | custom   | -                     |
+-| showOtherMonth       | 是否展示非本月的日期                                                                                                                                                                                                                              | Boolean  | true                  |
+-| defaultVisibleMonth  | 默认展示的月份<br><br>**签名**:<br>Function() => void                                                                                                                                                                                            | Function | -                     |
+-| onSelect             | 选择日期单元格时的回调<br><br>**签名**:<br>Function(value: Object) => void<br>**参数**:<br>_value_: {Object} 对应的日期值 (moment 对象)                                                                                                                        | Function | func.noop             |
+-| onVisibleMonthChange | 展现的月份变化时的回调<br><br>**签名**:<br>Function(value: Object, reason: String) => void<br>**参数**:<br>_value_: {Object} 显示的月份 (moment 对象)<br>_reason_: {String} 触发月份改变原因                                                                          | Function | func.noop             |
+-| dateCellRender       | 自定义日期渲染函数<br><br>**签名**:<br>Function(value: Object) => ReactNode<br>**参数**:<br>_value_: {Object} 日期值（moment对象）<br>**返回值**:<br>{ReactNode} null<br>                                                                                      | Function | value => value.date() |
+-| monthCellRender      | 自定义月份渲染函数<br><br>**签名**:<br>Function(calendarDate: Object) => ReactNode<br>**参数**:<br>_calendarDate_: {Object} 对应 Calendar 返回的自定义日期对象<br>**返回值**:<br>{ReactNode} null<br>                                                               | Function | -                     |
+-| disabledDate         | 不可选择的日期<br><br>**签名**:<br>Function(calendarDate: Object, view: String) => Boolean<br>**参数**:<br>_calendarDate_: {Object} 对应 Calendar 返回的自定义日期对象<br>_view_: {String} 当前视图类型，year: 年， month: 月, date: 日<br>**返回值**:<br>{Boolean} null<br> | Function | -                     |
++| 参数                   | 说明                                                                                                                                                                                                                                      | 类型               | 默认值                   |
++| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------- |
++| defaultValue         | 默认选中的日期（moment 对象）                                                                                                                                                                                                                      | custom           | -                     |
++| shape                | 展现形态<br><br>**可选值**:<br>'card', 'fullscreen', 'panel'                                                                                                                                                                                   | Enum             | 'fullscreen'          |
++| value                | 选中的日期值 (moment 对象)                                                                                                                                                                                                                      | custom           | -                     |
++| mode                 | 面板模式<br><br>**可选值**:<br>'date', 'month', 'year'                                                                                                                                                                                         | Enum             | -                     |
++| showOtherMonth       | 是否展示非本月的日期                                                                                                                                                                                                                              | Boolean          | true                  |
++| defaultVisibleMonth  | 默认展示的月份<br><br>**签名**:<br>Function() => void                                                                                                                                                                                            | Function         | -                     |
++| onSelect             | 选择日期单元格时的回调<br><br>**签名**:<br>Function(value: Object) => void<br>**参数**:<br>_value_: {Object} 对应的日期值 (moment 对象)                                                                                                                        | Function         | func.noop             |
++| onModeChange         | 面板模式变化时的回调<br><br>**签名**:<br>Function(mode: String) => void<br>**参数**:<br>_mode_: {String} 对应面板模式 date month year                                                                                                                       | Function         | func.noop             |
++| onVisibleMonthChange | 展现的月份变化时的回调<br><br>**签名**:<br>Function(value: Object, reason: String) => void<br>**参数**:<br>_value_: {Object} 显示的月份 (moment 对象)<br>_reason_: {String} 触发月份改变原因                                                                          | Function         | func.noop             |
++| dateCellRender       | 自定义日期渲染函数<br><br>**签名**:<br>Function(value: Object) => ReactNode<br>**参数**:<br>_value_: {Object} 日期值（moment对象）<br>**返回值**:<br>{ReactNode} null<br>                                                                                      | Function         | value => value.date() |
++| monthCellRender      | 自定义月份渲染函数<br><br>**签名**:<br>Function(calendarDate: Object) => ReactNode<br>**参数**:<br>_calendarDate_: {Object} 对应 Calendar 返回的自定义日期对象<br>**返回值**:<br>{ReactNode} null<br>                                                               | Function         | -                     |
++| yearRange            | 年份范围，[START_YEAR, END_YEAR] \(只在shape 为 ‘card’, 'fullscreen' 下生效)                                                                                                                                                                       | Array&lt;Number> | -                     |
++| disabledDate         | 不可选择的日期<br><br>**签名**:<br>Function(calendarDate: Object, view: String) => Boolean<br>**参数**:<br>_calendarDate_: {Object} 对应 Calendar 返回的自定义日期对象<br>_view_: {String} 当前视图类型，year: 年， month: 月, date: 日<br>**返回值**:<br>{Boolean} null<br> | Function         | -                     |
+diff --git a/docs/field/demo/topath-defaults.md b/docs/field/demo/topath-defaults.md
+deleted file mode 100644
+index 49405ba251..0000000000
+--- a/docs/field/demo/topath-defaults.md
++++ /dev/null
+@@ -1,74 +0,0 @@
+-# 结构化解析
+-
+-- order: 12
+-
+-使用 parseName 时设置默认值。
+-输入名称是 “值” 道具内的路径
+-
+-:::lang=en-us
+-# Parse Array or Object
+-
+-- order: 12
+-
+-Set default values when using parseName. 
+-Input name is path inside `values` prop
+-
+-:::
+----
+-
+-````jsx
+-import {Input, Button, Field, Form } from '@alifd/next';
+-
+-
+-
+-class Demo extends React.Component {
+-  field = new Field(this, {
+-    parseName: true,
+-    values: {
+-      aaa: ['xxx', 'yyy'],
+-      bbb: {
+-        ccc: 'value c'
+-      }
+-    }
+-  });
+-
+-	_handleValidate = () => {
+-    const {
+-      field: {
+-        validate
+-      }
+-    } = this;
+-    
+-    validate(['bbb.ccc']);
+-  };
+-  
+-  render() {
+-    const {
+-      field,
+-      field: {
+-        init,
+-      }
+-    } = this;
+-
+-    console.log(this);
+-    
+-    return (<Form field={field}>
+-      <Button onClick={this._handleValidate}>validate</Button>
+-      <Form.Item label="aaa" key="aaa">
+-        <Input name="aaa.0"/>
+-      </Form.Item>
+-      <Form.Item label="ccc" key="ccc">
+-        <Input name="bbb.ccc"/>
+-      </Form.Item>
+-    </Form>);
+-  }
+-}
+-
+-ReactDOM.render(<Demo/>, mountNode);
+-````
+-
+-````css
+-.demo .next-btn {
+-    margin-right: 5px;
+-}
+-````
+diff --git a/docs/field/demo/topath.md b/docs/field/demo/topath.md
+index fd3a5e8fda..7d8cdde19e 100644
+--- a/docs/field/demo/topath.md
++++ b/docs/field/demo/topath.md
+@@ -25,7 +25,13 @@ import { Input, Button, Field } from '@alifd/next';
+ 
+ class App extends React.Component {
+     field = new Field(this, {
+-        parseName: true
++        parseName: true,
++        values: {
++            objWithDefaults: {
++                a: 1,
++                b: 2
++            }
++        }
+     });
+ 
+     onGetValue() {
+@@ -43,7 +49,7 @@ class App extends React.Component {
+     }
+ 
+     render() {
+-        const { init, reset } = this.field;
++        const { init, reset, resetToDefault } = this.field;
+ 
+         return (<div className="demo">
+             <h3>Object transfer</h3>
+@@ -57,6 +63,11 @@ class App extends React.Component {
+             arr.1: <Input {...init('arr.1', {initValue: '1'})} />
+             <br/><br/>
+ 
++            <h3>Object with Defaults</h3>
++            objWithDefaults.a: <Input {...init('objWithDefaults.a')} /> &nbsp;
++            objWithDefaults.b: <Input {...init('objWithDefaults.b')} />
++            <br/><br/>
++
+             result:
+             <pre>{JSON.stringify(this.field.getValues(), null, 2)}</pre>
+ 
+@@ -65,6 +76,7 @@ class App extends React.Component {
+             <Button type="primary" onClick={this.onGetValue.bind(this)}>getValues</Button>
+             <Button onClick={this.onSetValue.bind(this)}>setValues</Button>
+             <Button onClick={() => reset()}>reset</Button>
++            <Button onClick={() => resetToDefault()}>resetToDefault</Button>
+         </div>);
+     }
+ }
+diff --git a/docs/menu/demo/hoz.md b/docs/menu/demo/hoz.md
+index 2225399750..fa5c5a2a7b 100644
+--- a/docs/menu/demo/hoz.md
++++ b/docs/menu/demo/hoz.md
+@@ -20,9 +20,17 @@ import { Menu } from '@alifd/next';
+ const { SubMenu, Item } = Menu;
+ 
+ ReactDOM.render(
+-    <Menu header="aaa" direction="hoz" mode="popup" className="my-hoz-menu" popupClassName="my-hoz-menu" popupAutoWidth>
++    <Menu hozInLine direction="hoz" mode="inline" className="my-hoz-menu" popupClassName="my-hoz-menu" popupAutoWidth>
+         <Item key="1">First</Item>
+         <Item key="2">Second</Item>
++        <SubMenu label="Sub Nav">
++            <Item key="sub-12">Sub option 1</Item>
++            <Item key="sub-22">Sub option 2</Item>
++            <SubMenu label="Sub Sub Nav">
++                <Item key="sub-sub-122">Sub sub option 1</Item>
++                <Item key="sub-sub-222">Sub sub option 2</Item>
++            </SubMenu>
++        </SubMenu>
+         <SubMenu label="Sub Nav">
+             <Item key="sub-1">Sub option 1</Item>
+             <Item key="sub-2">Sub option 2</Item>
+@@ -40,4 +48,7 @@ ReactDOM.render(
+ .my-hoz-menu .next-menu-item {
+     width: 160px;
+ }
++.my-hoz-menu .next-menu-item.next-menu-more {
++    width: 40px;
++}
+ ````
+diff --git a/docs/number-picker/demo/format.md b/docs/number-picker/demo/format.md
+index 61a6710b43..bd7504bdf0 100644
+--- a/docs/number-picker/demo/format.md
++++ b/docs/number-picker/demo/format.md
+@@ -17,7 +17,11 @@ const intlize = val => Intl.NumberFormat('en-US').format(val);
+ 
+ ReactDOM.render(
+     <div>
+-        <NumberPicker format={intlize} />
++        <NumberPicker format={intlize} defaultValue={5000} />
++        <br/><br/>
++        <NumberPicker label="p:" format={val => `${val}%`} defaultValue={85} />
++        <br/><br/>
++        <NumberPicker innerAfter="%" />
+     </div>,
+     mountNode
+ );
+diff --git a/docs/number-picker/index.md b/docs/number-picker/index.md
+index 4ec43942ae..b847facc4c 100644
+--- a/docs/number-picker/index.md
++++ b/docs/number-picker/index.md
+@@ -49,6 +49,7 @@
+ | format       | 格式化当前值<br><br>**签名**:<br>Function(value: Number) => String/Number<br>**参数**:<br>_value_: {Number} null<br>**返回值**:<br>{String/Number} null<br> | Function      | -         |
+ | upBtnProps   | 增加按钮的props                                                                                                                                     | Object        | -         |
+ | downBtnProps | 减少按钮的props                                                                                                                                     | Object        | -         |
++| label        | label                                                                                                                                          | ReactNode     | -         |
+ 
+ ## ARIA and KeyBoard
+ 
+diff --git a/docs/radio/theme/index.jsx b/docs/radio/theme/index.jsx
+index cacf7e0bf2..9f28890dce 100644
+--- a/docs/radio/theme/index.jsx
++++ b/docs/radio/theme/index.jsx
+@@ -103,13 +103,13 @@ class RadioDefaultDemo extends React.Component {
+                         </RadioGroup>
+                     </DemoGroup>
+                     <DemoGroup label="Selected">
+-                        <RadioGroup>
+-                            <Radio checked >{label}</Radio>
++                        <RadioGroup defaultValue={1}>
++                            <Radio value={1} >{label}</Radio>
+                         </RadioGroup>
+                     </DemoGroup>
+                     <DemoGroup label="Selected & Hover">
+-                        <RadioGroup>
+-                            <Radio checked className="hovered" >{label}</Radio>
++                        <RadioGroup defaultValue={1}>
++                            <Radio value={1} className="hovered" >{label}</Radio>
+                         </RadioGroup>
+                     </DemoGroup>
+                     <DemoGroup label="Disabled & Normal">
+diff --git a/docs/select/demo/max-count.md b/docs/select/demo/max-count.md
+new file mode 100644
+index 0000000000..952e160a11
+--- /dev/null
++++ b/docs/select/demo/max-count.md
+@@ -0,0 +1,58 @@
++# 最大数量
++
++- order: 3
++
++多选模式
++
++:::lang=en-us
++# max count
++
++- order: 3
++
++multiple select
++
++:::
++---
++
++````jsx
++import { Select, Balloon } from '@alifd/next';
++
++const { Tooltip } = Balloon;
++
++const dataSource = [
++    {value: '10001', label: 'Lucy King'},
++    {value: 10002, label: 'Lily King'},
++    {value: 10003, label: 'Tom Cat', disabled: true},
++    {label: 'Special Group', children: [
++        {value: -1, label: 'FALSE'},
++        {value: 0, label: 'ZERO'}
++    ]}
++];
++
++function handleChange(value) {
++    console.log(value);
++}
++
++const maxTagPlaceholder = (selectedValues, totalValues) => {
++    const trigger = <span>{`${selectedValues.length}/${totalValues.length}`}</span>;
++    const labels = selectedValues.map(obj => obj.label);
++
++    return <Tooltip trigger={trigger}>{ labels.join(', ') }</Tooltip>;
++};
++
++ReactDOM.render(
++    <div>
++        hasSelectAll:<br/>
++        <Select hasSelectAll mode="multiple" onChange={handleChange} dataSource={dataSource} style={{width: 200}} />
++        <br /><br />
++        maxTagCount=2<br />
++        <Select maxTagCount={2} defaultValue={['10001', '10002', '-1']} mode="multiple" onChange={handleChange} dataSource={dataSource} style={{width: 200}} /> <br /><br />
++        maxTagPlaceholder<br />
++        <Select maxTagCount={2} maxTagPlaceholder={maxTagPlaceholder} defaultValue={['10001', '10002', '-1']} mode="multiple" onChange={handleChange} dataSource={dataSource} style={{width: 200}} /><br /><br />
++        tagInline <br />
++        <Select maxTagCount={2} tagInline mode="multiple" defaultValue={['10001', '10002', '-1']}  onChange={handleChange} dataSource={dataSource} style={{width: 200}} /><br /><br />
++        maxTagPlaceholder<br />
++        <Select maxTagCount={2} tagInline maxTagPlaceholder={maxTagPlaceholder} defaultValue={['10001', '10002', '-1']}  mode="multiple" onChange={handleChange} dataSource={dataSource} style={{width: 200}} /><br /><br />
++    </div>
++, mountNode);
++````
+diff --git a/docs/select/demo/multiple.md b/docs/select/demo/multiple.md
+index 468079b2e7..99814f6f44 100644
+--- a/docs/select/demo/multiple.md
++++ b/docs/select/demo/multiple.md
+@@ -2,30 +2,27 @@
+ 
+ - order: 2
+ 
+-多选模式
++多选模式, 通过 `showSearch` 可以开启搜索, 但搜索值不可用作选项
++
+ 
+ :::lang=en-us
+ # Multiple
+ 
+ - order: 2
+ 
+-multiple select
+-
++multiple select, use `showSearch` to search, search value can not to be a option (different with mode=tag);
+ :::
+ ---
+ 
+ ````jsx
+-import { Select, Balloon } from '@alifd/next';
+-
+-const { Tooltip } = Balloon;
++import { Select } from '@alifd/next';
+ 
+ const dataSource = [
+     {value: '10001', label: 'Lucy King'},
+     {value: 10002, label: 'Lily King'},
+     {value: 10003, label: 'Tom Cat', disabled: true},
+     {label: 'Special Group', children: [
+-        {value: new Date(), label: 'new Date()'},
+-        {value: 'false', label: 'FALSE'},
++        {value: -1, label: 'FALSE'},
+         {value: 0, label: 'ZERO'}
+     ]}
+ ];
+@@ -34,45 +31,9 @@ function handleChange(value) {
+     console.log(value);
+ }
+ 
+-
+-class Demo extends React.Component{
+-  constructor(props) {
+-    super(props);
+-    this.state = {
+-      value: []
+-    };
+-  }
+-
+-  handleChange = (value) => {
+-    this.setState({value});
+-  }
+-
+-  render() {
+-    return (
+-    <Select hasSelectAll value={this.state.value}  mode="multiple" onChange={this.handleChange} dataSource={dataSource} style={{width: 200}} />);
+-  }
+-}
+-
+-const maxTagPlaceholder = (selectedValues, totalValues) => {
+-    const trigger = <span>{`已选择 ${selectedValues.length}/${totalValues.length} 项`}</span>;
+-    const labels = selectedValues.map(obj => obj.label);
+-
+-    return <Tooltip trigger={trigger}>{ labels.join(', ') }</Tooltip>;
+-};
+-
+ ReactDOM.render(
+     <div>
+-        <Select mode="multiple" onChange={handleChange} dataSource={dataSource} style={{width: 200}} />
+-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+-        受控写法 <Demo /><br /><br />
+-        设置最大显示Tag数 (maxTagCount) <br />
+-        <Select maxTagCount={2} mode="multiple" onChange={handleChange} dataSource={dataSource} style={{width: 200}} /> <br /><br />
+-        设置最大显示Tag数，并自定义超出显示内容 (maxTagCount + maxTagPlaceholder) <br />
+-        <Select maxTagCount={2} maxTagPlaceholder={maxTagPlaceholder} mode="multiple" onChange={handleChange} dataSource={dataSource} style={{width: 200}} /><br /><br />
+-        设置一行展示 (tagInline) <br />
+-        <Select maxTagCount={2} tagInline mode="multiple" onChange={handleChange} dataSource={dataSource} style={{width: 200}} /><br /><br />
+-        设置一行展示，并自定义超出显示内容 (tagInline + maxTagPlaceholder) <br />
+-        <Select maxTagCount={2} tagInline maxTagPlaceholder={maxTagPlaceholder} mode="multiple" onChange={handleChange} dataSource={dataSource} style={{width: 200}} /><br /><br />
++        <Select mode="multiple" showSearch defaultValue={['10001']} onChange={handleChange} dataSource={dataSource} style={{width: 300}} />
+     </div>
+ , mountNode);
+ ````
+diff --git a/docs/select/demo/select-basic.md b/docs/select/demo/select-basic.md
+index c0cf65b645..a9e81f5563 100644
+--- a/docs/select/demo/select-basic.md
++++ b/docs/select/demo/select-basic.md
+@@ -1,13 +1,13 @@
+ # 选择器
+ 
+-- order: 3
++- order: 4
+ 
+ 演示了 Select 的多种形态.
+ 
+ :::lang=en-us
+ # Select
+ 
+-- order: 3
++- order: 4
+ 
+ api usage of select
+ :::
+@@ -21,8 +21,7 @@ const dataSource = [
+     {value: 10002, label: 'Lily King'},
+     {value: 10003, label: 'Tom Cat', disabled: true},
+     {label: 'Special Group', children: [
+-        {value: new Date(), label: 'new Date()'},
+-        {value: false, label: 'FALSE'},
++        {value: -1, label: 'FALSE'},
+         {value: 0, label: 'ZERO'}
+     ]}
+ ];
+diff --git a/docs/select/demo/select-custom-value.md b/docs/select/demo/select-custom-value.md
+index daee15a347..b7ec0edea3 100644
+--- a/docs/select/demo/select-custom-value.md
++++ b/docs/select/demo/select-custom-value.md
+@@ -31,22 +31,6 @@ const valueRender = v => {
+     return `${v.value} / ${v.gender} / ${v.age}`;
+ };
+ 
+-ReactDOM.render(
+-    <div className="demo-container">
+-        <Select
+-            mode="multiple"
+-            placeholder="custom value"
+-            valueRender={valueRender}
+-            dataSource={dataSource}
+-            onChange={handleChange} />
+-    </div>,
+-    mountNode
+-);
++ReactDOM.render(<Select mode="multiple" placeholder="custom value" valueRender={valueRender} dataSource={dataSource} onChange={handleChange} />, mountNode);
+ ````
+ 
+-````css
+-.demo-container {
+-    padding: 16px;
+-    background-color: #F8F8F8;
+-}
+-````
+diff --git a/docs/select/demo/select-label.md b/docs/select/demo/select-label.md
+new file mode 100644
+index 0000000000..352862e076
+--- /dev/null
++++ b/docs/select/demo/select-label.md
+@@ -0,0 +1,32 @@
++# 前后缀
++
++- order: 7
++
++Select 增加前后缀
++
++:::lang=en-us
++# prefix and suffix
++
++- order: 7
++
++add prefix or suffix to select
++:::
++---
++
++````jsx
++import { Select } from '@alifd/next';
++
++const dataSource = [
++    {label: '1', value: 1},
++    {label: '10', value: 10},
++    {label: '50', value: 50},
++    {label: '100', value: 100}
++];
++
++const handleChange = value => {
++    console.log('handleChange: ', value);
++};
++
++ReactDOM.render(<Select label="size:" innerAfter={<span style={{color: '#999', marginRight: 4}}>GB</span>} dataSource={dataSource} onChange={handleChange} />, mountNode);
++````
++
+diff --git a/package.json b/package.json
+index d0b27eb851..e4ac26a788 100644
+--- a/package.json
++++ b/package.json
+@@ -89,7 +89,7 @@
+     "@octokit/rest": "^15.15.1",
+     "@types/react": "^16.8.13",
+     "autoprefixer": "^7.1.4",
+-    "axe-core": "^3.2.0",
++    "axe-core": "~3.2.0",
+     "babel-core": "^6.26.0",
+     "babel-eslint": "^8.2.3",
+     "babel-loader": "^7.0.0",
+diff --git a/src/badge/index.jsx b/src/badge/index.jsx
+index 67ba3e72cf..5c14a88ff7 100644
+--- a/src/badge/index.jsx
++++ b/src/badge/index.jsx
+@@ -22,9 +22,13 @@ class Badge extends Component {
+          */
+         children: PropTypes.node,
+         /**
+-         * 展示的数字，大于 overflowCount 时显示为 ${overflowCount}+，为 0 时隐藏
++         * 展示的数字，大于 overflowCount 时显示为 ${overflowCount}+，为 0 时默认隐藏
+          */
+         count: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
++        /**
++         * 当count为0时，是否显示count
++         */
++        showZero: PropTypes.bool,
+         /**
+          * 自定义节点内容
+          */
+@@ -45,6 +49,7 @@ class Badge extends Component {
+     static defaultProps = {
+         prefix: 'next-',
+         count: 0,
++        showZero: false,
+         overflowCount: 99,
+         dot: false,
+     };
+@@ -59,6 +64,7 @@ class Badge extends Component {
+             style,
+             rtl,
+             count: originCount,
++            showZero,
+             overflowCount: originOverflowCount,
+         } = this.props;
+         const count = parseInt(originCount, 10);
+@@ -66,7 +72,7 @@ class Badge extends Component {
+         const others = obj.pickOthers(Badge.propTypes, this.props);
+ 
+         // 如果是数字，则添加默认的 title
+-        if (count) {
++        if (count || (count === 0 && showZero)) {
+             others.title = others.title || `${count}`;
+         }
+ 
+@@ -82,7 +88,15 @@ class Badge extends Component {
+             <span dir={rtl ? 'rtl' : undefined} className={classes} {...others}>
+                 {children}
+                 <Sup
+-                    {...{ prefix, content, count, overflowCount, dot, style }}
++                    {...{
++                        prefix,
++                        content,
++                        count,
++                        showZero,
++                        overflowCount,
++                        dot,
++                        style,
++                    }}
+                 />
+             </span>
+         );
+diff --git a/src/badge/sup.jsx b/src/badge/sup.jsx
+index fa0e3e29ea..d09eaf6a66 100644
+--- a/src/badge/sup.jsx
++++ b/src/badge/sup.jsx
+@@ -20,6 +20,7 @@ export default class Sup extends Component {
+     static propTypes = {
+         prefix: PropTypes.string,
+         count: PropTypes.number,
++        showZero: PropTypes.bool,
+         overflowCount: PropTypes.number,
+         content: PropTypes.node,
+         dot: PropTypes.bool,
+@@ -29,6 +30,7 @@ export default class Sup extends Component {
+     static defaultProps = {
+         prefix: 'next-',
+         count: 0,
++        showZero: false,
+         overflowCount: 99,
+         dot: false,
+     };
+@@ -86,6 +88,9 @@ export default class Sup extends Component {
+ 
+     computeStyle(removeTransition, revert) {
+         const { prefix, count, overflowCount } = this.props;
++        if (count < 0) {
++            return;
++        }
+         const supNode = this.refs.sup;
+ 
+         if (supNode && dom.hasClass(supNode, `${prefix}badge-count`)) {
+@@ -154,6 +159,7 @@ export default class Sup extends Component {
+         const {
+             prefix,
+             count,
++            showZero,
+             overflowCount,
+             dot,
+             style,
+@@ -161,15 +167,15 @@ export default class Sup extends Component {
+         } = this.props;
+ 
+         const supClasses = classNames(`${prefix}badge-scroll-number`, {
+-            [`${prefix}badge-count`]: !!count,
++            [`${prefix}badge-count`]: !!count || (count === 0 && showZero),
+             [`${prefix}badge-dot`]: dot,
+             [`${prefix}badge-custom`]: !!content,
+         });
+ 
+         let children = null;
+-        const show = dot || count > 0 || content;
++        const show = dot || count > 0 || (count === 0 && showZero) || content;
+ 
+-        if (count > 0) {
++        if (count > 0 || (count === 0 && showZero)) {
+             const realCount =
+                 overflowCount > 0 && count > overflowCount
+                     ? `${overflowCount}+`
+diff --git a/src/calendar/calendar.jsx b/src/calendar/calendar.jsx
+index 582f9037cf..9ebb40071f 100644
+--- a/src/calendar/calendar.jsx
++++ b/src/calendar/calendar.jsx
+@@ -36,8 +36,10 @@ class Calendar extends Component {
+          * 选中的日期值 (moment 对象)
+          */
+         value: checkMomentObj,
+-        // 面板模式
+-        mode: PropTypes.oneOf(CALENDAR_MODES),
++        /**
++         * 面板模式
++         */
++        mode: PropTypes.oneOf(CALENDAR_MODES), // 生成 API 文档需要手动改回 ['date', 'month', 'year']
+         // 面板可变化的模式列表，仅初始化时接收一次
+         modes: PropTypes.array,
+         // 日期值的格式（用于日期title显示的格式）
+@@ -59,6 +61,11 @@ class Calendar extends Component {
+          * @param {Object} value 对应的日期值 (moment 对象)
+          */
+         onSelect: PropTypes.func,
++        /**
++         * 面板模式变化时的回调
++         * @param {String} mode 对应面板模式 date month year
++         */
++        onModeChange: PropTypes.func,
+         /**
+          * 展现的月份变化时的回调
+          * @param {Object} value 显示的月份 (moment 对象)
+@@ -82,6 +89,10 @@ class Calendar extends Component {
+          */
+         monthCellRender: PropTypes.func,
+         yearCellRender: PropTypes.func, // 兼容 0.x yearCellRender
++        /**
++         * 年份范围，[START_YEAR, END_YEAR] (只在shape 为 ‘card’, 'fullscreen' 下生效)
++         */
++        yearRange: PropTypes.arrayOf(PropTypes.number),
+         /**
+          * 不可选择的日期
+          * @param {Object} calendarDate 对应 Calendar 返回的自定义日期对象
+@@ -103,6 +114,7 @@ class Calendar extends Component {
+         format: 'YYYY-MM-DD',
+         onSelect: func.noop,
+         onVisibleMonthChange: func.noop,
++        onModeChange: func.noop,
+         dateCellRender: value => value.date(),
+         locale: nextLocale.Calendar,
+         showOtherMonth: true,
+@@ -165,6 +177,7 @@ class Calendar extends Component {
+             nextMode !== this.state.mode
+         ) {
+             this.setState({ mode: nextMode });
++            this.props.onModeChange(nextMode);
+         }
+     };
+ 
+@@ -223,6 +236,7 @@ class Calendar extends Component {
+             monthCellRender,
+             yearCellRender,
+             disabledDate,
++            yearRange,
+             ...others
+         } = this.props;
+         const state = this.state;
+@@ -321,7 +335,7 @@ class Calendar extends Component {
+                 {shape === 'panel' ? (
+                     panelHeaders[state.mode]
+                 ) : (
+-                    <CardHeader {...headerProps} />
++                    <CardHeader {...headerProps} yearRange={yearRange} />
+                 )}
+                 {tables[state.mode]}
+             </div>
+diff --git a/src/calendar/head/card-header.jsx b/src/calendar/head/card-header.jsx
+index 97fa9289a2..2562b5895a 100644
+--- a/src/calendar/head/card-header.jsx
++++ b/src/calendar/head/card-header.jsx
+@@ -5,6 +5,7 @@ import Radio from '../../radio';
+ 
+ class CardHeader extends React.PureComponent {
+     static propTypes = {
++        yearRange: PropTypes.arrayOf(PropTypes.number),
+         yearRangeOffset: PropTypes.number,
+         locale: PropTypes.object,
+     };
+@@ -18,12 +19,16 @@ class CardHeader extends React.PureComponent {
+     };
+ 
+     getYearSelect(year) {
+-        const { prefix, yearRangeOffset, locale } = this.props;
+-        const startYear = year - yearRangeOffset;
+-        const endYear = year + yearRangeOffset;
++        const { prefix, yearRangeOffset, yearRange = [], locale } = this.props;
++
++        let [startYear, endYear] = yearRange;
++        if (!startYear || !endYear) {
++            startYear = year - yearRangeOffset;
++            endYear = year + yearRangeOffset;
++        }
+ 
+         const options = [];
+-        for (let i = startYear; i < endYear; i++) {
++        for (let i = startYear; i <= endYear; i++) {
+             options.push(
+                 <Select.Option key={i} value={i}>
+                     {i}
+diff --git a/src/checkbox/main.scss b/src/checkbox/main.scss
+index 1f2d4452d9..5f802ddce4 100644
+--- a/src/checkbox/main.scss
++++ b/src/checkbox/main.scss
+@@ -114,6 +114,9 @@
+                 }
+             }
+         }
++        #{$checkbox-prefix}-label {
++            color: $checkbox-disabled-label-color;
++        }
+     }
+ 
+     &:not(.disabled):hover,
+@@ -166,6 +169,7 @@
+ 
+ #{$checkbox-prefix}-label {
+     font-size: $checkbox-font-size;
++    color: $checkbox-label-color;
+     vertical-align: middle;
+     margin: 0;
+     margin-left: $checkbox-margin-left;
+diff --git a/src/checkbox/scss/variable.scss b/src/checkbox/scss/variable.scss
+index 28c4b66e2b..ef899fd9f4 100644
+--- a/src/checkbox/scss/variable.scss
++++ b/src/checkbox/scss/variable.scss
+@@ -50,6 +50,12 @@ $checkbox-checked-hovered-border-color: $color-transparent !default;
+ /// @namespace statement/checked/icon
+ $checkbox-checked-circle-color: $color-white !default;
+ /// text
++/// @namespace statement/normal/label
++$checkbox-label-color: $color-text1-4 !default;
++/// text
++/// @namespace statement/disabled/label
++$checkbox-disabled-label-color: $color-text1-4 !default;
++/// text
+ /// @namespace statement/disabled/icon
+ $checkbox-disabled-circle-color: $color-text1-1 !default;
+ /// text
+diff --git a/src/core/style/_font.scss b/src/core/style/_font.scss
+index 326da42ccf..d90e84df73 100644
+--- a/src/core/style/_font.scss
++++ b/src/core/style/_font.scss
+@@ -49,24 +49,52 @@ $font-family-zh: "Microsoft YaHei", SimSun, Arial !default !default;
+ 
+ // ------------------- font-weight ------------------- //
+ 
+-/// light
+-/// @semantic 细体
++/// thin
++/// @semantic Ultra light(Thin)
+ /// @group weight
+ /// @export weight
+ $font-weight-1: lighter !default;
+-/// regular
+-/// @semantic 常规
++/// extra light
++/// @semantic Extra Light
++/// @group weight
++/// @export weight
++$font-weight-thin: 200 !default;
++/// light
++/// @semantic Light
++/// @group weight
++/// @export weight
++$font-weight-light: 300 !default;
++/// normal
++/// @semantic Regular(Normal)
+ /// @group weight
+ /// @export weight
+ $font-weight-2: normal !default;
++/// medium
++/// @semantic Medium
++/// @group weight
++/// @export weight
++$font-weight-medium: 500 !default;
++/// semi bold
++/// @semantic Semi Bold
++/// @group weight
++/// @export weight
++$font-weight-semi-bold: 600 !default;
+ /// bold
+-/// @semantic 粗体
++/// @semantic Bold
+ /// @group weight
+ /// @export weight
+ $font-weight-3: bold !default;
++/// extra bold
++/// @semantic Extra Bold
++/// @group weight
++/// @export weight
++$font-weight-extra-bold: 800 !default;
++/// heavy
++/// @semantic Ultra Bold(Heavy)
++/// @group weight
++/// @export weight
++$font-weight-ultra-bold: 900 !default;
+ 
+-$font-weight-thin: 200 !default;
+-$font-weight-medium: 500 !default;
+ $font-weight-bolder: bolder !default;
+ 
+ // ------------------- font-size ------------------- //
+diff --git a/src/field/index.js b/src/field/index.js
+index ec6284c5aa..96b0c5927d 100644
+--- a/src/field/index.js
++++ b/src/field/index.js
+@@ -8,6 +8,7 @@ import {
+     getParams,
+     setIn,
+     getIn,
++    deleteIn,
+     mapValidateRules,
+ } from './utils';
+ 
+@@ -29,7 +30,9 @@ class Field {
+         this.fieldsMeta = {};
+         this.cachedBind = {};
+         this.instance = {};
+-        this.initValue = options.values || {};
++        // holds constructor values. Used for setting field defaults on init if no other value or initValue is passed.
++        // Also used caching values when using `parseName: true` before a field is initialized
++        this.values = options.values || {};
+ 
+         this.options = Object.assign(
+             {
+@@ -89,6 +92,8 @@ class Field {
+             getValueFromEvent = null,
+             autoValidate = true,
+         } = fieldOption;
++        const { parseName } = this.options;
++
+         const originalProps = Object.assign({}, props, rprops);
+         const defaultValueName = `default${valueName[0].toUpperCase()}${valueName.slice(
+             1
+@@ -100,11 +105,10 @@ class Field {
+             defaultValue = initValue;
+         } else if (originalProps[defaultValueName]) {
+             defaultValue = originalProps[defaultValueName];
+-        } else if (this.options.parseName) {
+-            defaultValue = getIn(this.initValue, name);
++        } else if (parseName) {
++            defaultValue = getIn(this.values, name);
+         } else {
+-            defaultValue =
+-                (this.initValue && this.initValue[name]) || undefined;
++            defaultValue = (this.values && this.values[name]) || undefined;
+         }
+ 
+         Object.assign(field, {
+@@ -125,6 +129,11 @@ class Field {
+         if (!('value' in field)) {
+             field.value = defaultValue;
+         }
++        if (parseName && !getIn(this.values, name)) {
++            this.values = setIn(this.values, name, field.value);
++        } else if (!parseName && !this.values[name]) {
++            this.values[name] = field.value;
++        }
+ 
+         // Component props
+         const inputProps = {
+@@ -201,6 +210,12 @@ class Field {
+             ? field.getValueFromEvent.apply(this, others)
+             : getValueFromEvent(e);
+ 
++        if (this.options.parseName) {
++            this.values = setIn(this.values, name, field.value);
++        } else {
++            this.values[name] = field.value;
++        }
++
+         this._resetError(name);
+ 
+         // validate while onChange
+@@ -248,14 +263,19 @@ class Field {
+             const cache = this.fieldsMeta[name];
+             this._setCache(name, key, cache);
+             // after destroy, delete data
+-            delete this.fieldsMeta[name];
+             delete this.instance[name];
++            this.remove(name);
+             return;
+         }
+ 
+         // 2. _saveRef(B, ref) (eg: same name but different compoent may be here)
+         if (autoUnmount && !this.fieldsMeta[name]) {
+             this.fieldsMeta[name] = this._getCache(name, key);
++            this.setValue(
++                name,
++                this.fieldsMeta[name] && this.fieldsMeta[name].value,
++                false
++            );
+         }
+ 
+         // only one time here
+@@ -312,45 +332,39 @@ class Field {
+     }
+ 
+     getValue(name) {
+-        const field = this._get(name);
+-
+-        if (field && 'value' in field) {
+-            return field.value;
++        if (this.options.parseName) {
++            return getIn(this.values, name);
+         }
+-
+-        return undefined;
++        return this.values[name];
+     }
+ 
+     /**
+      * 1. get values by names.
+-     * 2. ignore disabled value.
++     * 2. If no names passed, return shallow copy of `field.values`
+      * @param {Array} names
+      */
+     getValues(names) {
+-        const fields = names || this.getNames();
+-        let allValues = {};
++        const allValues = {};
++
++        if (names && names.length) {
++            names.forEach(name => {
++                allValues[name] = this.getValue(name);
++            });
++        } else {
++            Object.assign(allValues, this.values);
++        }
+ 
+-        fields.forEach(f => {
+-            if (f.disabled) {
+-                return;
+-            }
+-            if (!this.options.parseName) {
+-                allValues[f] = this.getValue(f);
+-            } else {
+-                allValues = setIn(allValues, f, this.getValue(f));
+-            }
+-        });
+         return allValues;
+     }
+ 
+     setValue(name, value, reRender = true) {
+         if (name in this.fieldsMeta) {
+             this.fieldsMeta[name].value = value;
++        }
++        if (this.options.parseName) {
++            this.values = setIn(this.values, name, value);
+         } else {
+-            // if not exist, then new one
+-            this.fieldsMeta[name] = {
+-                value,
+-            };
++            this.values[name] = value;
+         }
+         reRender && this._reRender();
+     }
+@@ -361,11 +375,22 @@ class Field {
+                 this.setValue(name, fieldsValue[name], false);
+             });
+         } else {
++            // NOTE: this is a shallow merge
++            // Ex. we have two values a.b.c=1 ; a.b.d=2, and use setValues({a:{b:{c:3}}}) , then because of shallow merge a.b.d will be lost, we will get only {a:{b:{c:3}}}
++            this.values = Object.assign({}, this.values, fieldsValue);
+             const fields = this.getNames();
+             fields.forEach(name => {
+-                const value = getIn(fieldsValue, name);
++                const value = getIn(this.values, name);
+                 if (value !== undefined) {
+-                    this.setValue(name, value, false);
++                    // copy over values that are in this.values
++                    this.fieldsMeta[name].value = value;
++                } else {
++                    // if no value then copy values from fieldsMeta to keep initialized component data
++                    this.values = setIn(
++                        this.values,
++                        name,
++                        this.fieldsMeta[name].value
++                    );
+                 }
+             });
+         }
+@@ -586,9 +611,12 @@ class Field {
+         let changed = false;
+ 
+         const names = ns || Object.keys(this.fieldsMeta);
++
++        if (!ns) {
++            this.values = {};
++        }
+         names.forEach(name => {
+             const field = this._get(name);
+-            this.getValue(name);
+             if (field) {
+                 changed = true;
+ 
+@@ -598,6 +626,12 @@ class Field {
+                 delete field.errors;
+                 delete field.rules;
+                 delete field.rulesMap;
++
++                if (this.options.parseName) {
++                    this.values = setIn(this.values, name, field.value);
++                } else {
++                    this.values[name] = field.value;
++                }
+             }
+         });
+ 
+@@ -641,11 +675,20 @@ class Field {
+         if (typeof ns === 'string') {
+             ns = [ns];
+         }
++        if (!ns) {
++            this.values = {};
++        }
++
+         const names = ns || Object.keys(this.fieldsMeta);
+         names.forEach(name => {
+             if (name in this.fieldsMeta) {
+                 delete this.fieldsMeta[name];
+             }
++            if (this.options.parseName) {
++                this.values = deleteIn(this.values, name);
++            } else {
++                delete this.values[name];
++            }
+         });
+     }
+ 
+@@ -660,12 +703,14 @@ class Field {
+             return;
+         }
+ 
++        // regex to match field names in the same target array
+         const reg = keyMatch.replace('{index}', '(\\d+)');
+         const keyReg = new RegExp(`^${reg}$`);
+ 
+         let list = [];
+         const names = this.getNames();
+         names.forEach(n => {
++            // is name in the target array?
+             const ret = keyReg.exec(n);
+             if (ret) {
+                 const index = parseInt(ret[1]);
+@@ -684,12 +729,20 @@ class Field {
+         if (list.length > 0 && list[0].index === startIndex + 1) {
+             list.forEach(l => {
+                 const n = keyMatch.replace('{index}', l.index - 1);
+-                this.fieldsMeta[n] = this.fieldsMeta[l.name];
++                const v = this.getValue(l.name);
++                this.setValue(n, v, false);
+             });
++            this.remove(list[list.length - 1].name);
+ 
+-            delete this.fieldsMeta[list[list.length - 1].name];
++            let parentName = keyMatch.replace('.{index}', '');
++            parentName = parentName.replace('[{index}]', '');
++            const parent = this.getValue(parentName);
+ 
+-            this._reRender();
++            if (parent) {
++                // if parseName=true then parent is an Array object but does not know an element was removed
++                // this manually decrements the array length
++                parent.length--;
++            }
+         }
+     }
+ 
+diff --git a/src/field/utils.js b/src/field/utils.js
+index 1ceda8ae89..ce4ac31ff2 100644
+--- a/src/field/utils.js
++++ b/src/field/utils.js
+@@ -119,6 +119,32 @@ export function getIn(state, name) {
+     return result;
+ }
+ 
++export function deleteIn(state, name) {
++    if (!state) {
++        return;
++    }
++
++    const path = name
++        .replace(/\[/, '.')
++        .replace(/\]/, '')
++        .split('.');
++    const length = path.length;
++    if (!length) {
++        return state;
++    }
++
++    let result = state;
++    for (let i = 0; i < length && !!result; ++i) {
++        if (i === length - 1) {
++            delete result[path[i]];
++        } else {
++            result = result[path[i]];
++        }
++    }
++
++    return state;
++}
++
+ function validateMap(rulesMap, rule, defaultTrigger) {
+     const nrule = Object.assign({}, rule);
+ 
+diff --git a/src/input/input.jsx b/src/input/input.jsx
+index dbbf62ab73..c1351298ad 100644
+--- a/src/input/input.jsx
++++ b/src/input/input.jsx
+@@ -323,11 +323,11 @@ export default class Input extends Base {
+                 className={cls}
+                 style={hasAddon ? undefined : style}
+             >
+-                {this.renderInner(innerBefore, innerBeforeCls)}
+                 {this.renderLabel()}
++                {this.renderInner(innerBefore, innerBeforeCls)}
+                 {inputRender(inputEl)}
+-                {this.renderControl()}
+                 {this.renderInner(innerAfter, innerAfterCls)}
++                {this.renderControl()}
+             </span>
+         );
+ 
+diff --git a/src/menu/main.scss b/src/menu/main.scss
+index 6d74409b51..b2e053da3a 100644
+--- a/src/menu/main.scss
++++ b/src/menu/main.scss
+@@ -23,7 +23,6 @@
+     line-height: $menu-line-height;
+     font-size: $menu-font-size;
+ 
+-
+     &-embeddable,
+     &-embeddable &-item.#{$css-prefix}disabled,
+     &-embeddable &-item.#{$css-prefix}disabled #{$menu-prefix}-item-text > a {
+@@ -152,7 +151,18 @@
+     &.#{$css-prefix}hoz {
+         padding: 0;
+ 
++        &#{$menu-prefix}-nowrap {
++            overflow: hidden;
++            white-space: nowrap;
++
++            #{$menu-prefix}-more {
++                padding: 0;
++                text-align: center;
++            }
++        }
++
+         > #{$menu-prefix}-item,
++        > #{$menu-prefix}-sub-menu-wrapper,
+         #{$menu-prefix}-content > #{$menu-prefix}-item {
+             display: inline-block;
+             vertical-align: top;
+diff --git a/src/menu/view/menu.jsx b/src/menu/view/menu.jsx
+index 13f77a0c00..0e76968392 100644
+--- a/src/menu/view/menu.jsx
++++ b/src/menu/view/menu.jsx
+@@ -2,11 +2,14 @@ import React, { Component, Children, cloneElement } from 'react';
+ import { findDOMNode } from 'react-dom';
+ import PropTypes from 'prop-types';
+ import cx from 'classnames';
+-import { func, obj, KEYCODE } from '../../util';
++import SubMenu from './sub-menu';
++import { func, obj, dom, events, KEYCODE } from '../../util';
++import { getWidth } from './util';
+ 
+ const { bindCtx } = func;
+ const { pickOthers, isNil } = obj;
+ const noop = () => {};
++const MENUITEM_OVERFLOWED_CLASSNAME = 'menuitem-overflowed';
+ 
+ /**
+  * Menu
+@@ -138,6 +141,10 @@ export default class Menu extends Component {
+          * 横向菜单条 item 和 footer 的对齐方向，在 direction 设置为 'hoz' 并且 header 存在时生效
+          */
+         hozAlign: PropTypes.oneOf(['left', 'right']),
++        /**
++         * 横向菜单模式下，是否维持在一行，即超出一行折叠成 SubMenu 显示， 仅在 direction='hoz' mode='popup' 时生效
++         */
++        hozInLine: PropTypes.bool,
+         /**
+          * 自定义菜单头部
+          */
+@@ -188,6 +195,7 @@ export default class Menu extends Component {
+         labelToggleChecked: true,
+         direction: 'ver',
+         hozAlign: 'left',
++        hozInLine: false,
+         autoFocus: false,
+         focusable: true,
+         embeddable: false,
+@@ -207,15 +215,21 @@ export default class Menu extends Component {
+             focusedKey,
+             focusable,
+             autoFocus,
++            hozInLine,
+         } = this.props;
+ 
+-        this.newChildren = this.getNewChildren(children);
++        this.state = {
++            lastVisibleIndex: undefined,
++        };
++
++        this.newChildren = this.getNewChildren({ children, hozInLine });
+ 
+         if (focusable) {
+             this.tabbableKey = this.getFirstAvaliablelChildKey('0');
+         }
+ 
+         this.state = {
++            lastVisibleIndex: undefined,
+             openKeys: this.getInitOpenKeys(props),
+             selectedKeys: this.normalizeToArray(
+                 selectedKeys || defaultSelectedKeys
+@@ -233,6 +247,7 @@ export default class Menu extends Component {
+             'handleItemClick',
+             'handleItemKeyDown',
+             'onBlur',
++            'adjustChildrenWidth',
+         ]);
+ 
+         this.popupNodes = [];
+@@ -240,6 +255,12 @@ export default class Menu extends Component {
+ 
+     componentDidMount() {
+         this.menuNode = findDOMNode(this);
++
++        this.adjustChildrenWidth();
++
++        if (this.props.hozInLine) {
++            events.on(window, 'resize', this.adjustChildrenWidth);
++        }
+     }
+ 
+     componentWillReceiveProps(nextProps) {
+@@ -260,8 +281,13 @@ export default class Menu extends Component {
+         }
+     }
+ 
+-    componentWillUpdate(nextProps) {
+-        this.newChildren = this.getNewChildren(nextProps.children);
++    componentWillUpdate(nextProps, nextState) {
++        if (this.state.lastVisibleIndex !== nextState.lastVisibleIndex) {
++            this.adjustChildrenWidth();
++        }
++
++        this.newChildren = this.getNewChildren(nextProps);
++
+         if (this.props.focusable) {
+             if (this.tabbableKey in this.k2n) {
+                 if (this.state.focusedKey) {
+@@ -273,6 +299,70 @@ export default class Menu extends Component {
+         }
+     }
+ 
++    componentWillUnmount() {
++        events.off(window, 'resize', this.adjustChildrenWidth);
++    }
++
++    adjustChildrenWidth() {
++        const { direction, prefix, hozInLine } = this.props;
++        if (direction !== 'hoz' || !hozInLine) {
++            return;
++        }
++
++        if (!this.menuNode) {
++            return;
++        }
++
++        const children = this.menuNode.children;
++
++        if (children.length < 2) {
++            return;
++        }
++
++        const spaceWidth = getWidth(this.menuNode);
++
++        let currentSumWidth = 0,
++            lastVisibleIndex = -1;
++
++        const menuItemNodes = [].slice
++            .call(children)
++            .filter(
++                node =>
++                    node.className.split(' ').indexOf(`${prefix}menu-more`) < 0
++            );
++
++        const overflowedItems = menuItemNodes.filter(
++            c =>
++                c.className.split(' ').indexOf(MENUITEM_OVERFLOWED_CLASSNAME) >=
++                0
++        );
++
++        overflowedItems.forEach(c => {
++            dom.setStyle(c, 'display', 'inline-block');
++        });
++
++        const lastIndicator = children[children.length - 1];
++        dom.setStyle(lastIndicator, 'display', 'inline-block');
++        const moreWidth = getWidth(lastIndicator);
++        dom.setStyle(lastIndicator, 'display', 'none');
++
++        this.menuItemSizes = menuItemNodes.map(c => getWidth(c));
++
++        overflowedItems.forEach(c => {
++            dom.setStyle(c, 'display', 'none');
++        });
++
++        this.menuItemSizes.forEach(liWidth => {
++            currentSumWidth += liWidth;
++            if (currentSumWidth + moreWidth <= spaceWidth) {
++                lastVisibleIndex++;
++            }
++        });
++
++        this.setState({
++            lastVisibleIndex,
++        });
++    }
+     onBlur(e) {
+         this.setState({
+             focusedKey: undefined,
+@@ -308,9 +398,75 @@ export default class Menu extends Component {
+         return this.normalizeToArray(initOpenKeys);
+     }
+ 
+-    getNewChildren(children) {
++    getIndicatorsItem(items, isPlaceholder) {
++        const { prefix } = this.props;
++        const moreCls = cx({
++            [`${prefix}menu-more`]: true,
++        });
++
++        const style = {};
++        // keep placehold to get width
++        if (isPlaceholder) {
++            style.visibility = 'hidden';
++            // indicators which not in use, just display: none
++        } else if (items && items.length === 0) {
++            style.display = 'none';
++        }
++
++        return (
++            <SubMenu label="···" noIcon className={moreCls} style={style}>
++                {items}
++            </SubMenu>
++        );
++    }
++
++    addIndicators = children => {
++        const arr = [];
++        const { lastVisibleIndex } = this.state;
++
++        children.forEach((child, index) => {
++            let overflowedItems = [];
++
++            if (index > lastVisibleIndex) {
++                child = React.cloneElement(child, {
++                    key: `more-${index}`,
++                    style: { display: 'none' },
++                    className: `${child.className ||
++                        ''} ${MENUITEM_OVERFLOWED_CLASSNAME}`,
++                });
++            }
++
++            if (index === lastVisibleIndex + 1) {
++                overflowedItems = children
++                    .slice(lastVisibleIndex + 1)
++                    .map((c, i) => {
++                        return React.cloneElement(c, {
++                            key: `more-${index}-${i}`,
++                        });
++                    });
++                arr.push(this.getIndicatorsItem(overflowedItems));
++            }
++
++            arr.push(child);
++        });
++
++        arr.push(this.getIndicatorsItem([], true));
++
++        return arr;
++    };
++
++    getNewChildren({ children, hozInLine }) {
+         this.k2n = {};
+         this.p2n = {};
++
++        let arr = [];
++
++        if (hozInLine) {
++            arr = this.addIndicators(children);
++        } else {
++            arr = children;
++        }
++
+         const loop = (children, posPrefix, indexWrapper = { index: 0 }) => {
+             const keyArray = [];
+             return Children.map(children, child => {
+@@ -395,7 +551,7 @@ export default class Menu extends Component {
+             });
+         };
+ 
+-        return loop(children, '0');
++        return loop(arr, '0');
+     }
+ 
+     normalizeToArray(items) {
+@@ -744,6 +900,7 @@ export default class Menu extends Component {
+             footer,
+             embeddable,
+             selectMode,
++            hozInLine,
+             rtl,
+         } = this.props;
+         const others = pickOthers(Object.keys(Menu.propTypes), this.props);
+@@ -753,6 +910,7 @@ export default class Menu extends Component {
+             [`${prefix}ver`]: direction === 'ver',
+             [`${prefix}hoz`]: direction === 'hoz',
+             [`${prefix}menu-embeddable`]: embeddable,
++            [`${prefix}menu-nowrap`]: hozInLine,
+             [className]: !!className,
+         });
+ 
+diff --git a/src/menu/view/popup-item.jsx b/src/menu/view/popup-item.jsx
+index cb52d8220d..53fa59bfe2 100644
+--- a/src/menu/view/popup-item.jsx
++++ b/src/menu/view/popup-item.jsx
+@@ -24,6 +24,7 @@ export default class PopupItem extends Component {
+         root: PropTypes.object,
+         level: PropTypes.number,
+         hasSubMenu: PropTypes.bool,
++        noIcon: PropTypes.bool,
+         rtl: PropTypes.bool,
+         selectable: PropTypes.bool,
+         /**
+@@ -42,6 +43,7 @@ export default class PopupItem extends Component {
+ 
+     static defaultProps = {
+         selectable: false,
++        noIcon: false,
+     };
+ 
+     constructor(props) {
+@@ -201,6 +203,7 @@ export default class PopupItem extends Component {
+             children,
+             triggerType,
+             align,
++            noIcon,
+             rtl,
+         } = this.props;
+         const others = obj.pickOthers(
+@@ -276,7 +279,7 @@ export default class PopupItem extends Component {
+         const arrow = <Icon {...arrowProps} />;
+         const trigger = triggerIsIcon
+             ? arrow
+-            : this.renderItem(selectable, arrow, others);
++            : this.renderItem(selectable, noIcon ? null : arrow, others);
+         const popup = this.renderPopup(
+             trigger,
+             newTriggerType,
+diff --git a/src/menu/view/sub-menu.jsx b/src/menu/view/sub-menu.jsx
+index 0885a7afed..dd6f3204b3 100644
+--- a/src/menu/view/sub-menu.jsx
++++ b/src/menu/view/sub-menu.jsx
+@@ -24,6 +24,7 @@ export default class SubMenu extends Component {
+         root: PropTypes.object,
+         level: PropTypes.number,
+         groupIndent: PropTypes.number,
++        noIcon: PropTypes.bool,
+         /**
+          * 标签内容
+          */
+@@ -51,6 +52,7 @@ export default class SubMenu extends Component {
+ 
+     static defaultProps = {
+         groupIndent: 0,
++        noIcon: false,
+         selectable: false,
+     };
+ 
+@@ -133,6 +135,7 @@ export default class SubMenu extends Component {
+             selectable: selectableFromProps,
+             label,
+             children,
++            noIcon,
+             subMenuContentClassName,
+             triggerType: propsTriggerType,
+             parentMode,
+@@ -222,7 +225,7 @@ export default class SubMenu extends Component {
+             <li role={roleItem} {...others} {...liProps}>
+                 <NewItem {...itemProps}>
+                     <span className={`${prefix}menu-item-text`}>{label}</span>
+-                    <Icon {...arrorProps} />
++                    {noIcon ? null : <Icon {...arrorProps} />}
+                 </NewItem>
+                 {expandAnimation ? (
+                     <Expand
+@@ -239,7 +242,12 @@ export default class SubMenu extends Component {
+     }
+ 
+     renderPopup() {
+-        const { children, subMenuContentClassName, ...others } = this.props;
++        const {
++            children,
++            subMenuContentClassName,
++            noIcon,
++            ...others
++        } = this.props;
+         const root = this.props.root;
+         const { prefix, popupClassName, popupStyle, rtl } = root.props;
+ 
+@@ -253,7 +261,7 @@ export default class SubMenu extends Component {
+         others.rtl = rtl;
+ 
+         return (
+-            <PopupItem {...others} hasSubMenu>
++            <PopupItem {...others} noIcon={noIcon} hasSubMenu>
+                 <ul
+                     role="menu"
+                     dir={rtl ? 'rtl' : undefined}
+diff --git a/src/menu/view/util.js b/src/menu/view/util.js
+new file mode 100644
+index 0000000000..e9f082d7d6
+--- /dev/null
++++ b/src/menu/view/util.js
+@@ -0,0 +1,10 @@
++export const getWidth = elem => {
++    let width =
++        elem &&
++        typeof elem.getBoundingClientRect === 'function' &&
++        elem.getBoundingClientRect().width;
++    if (width) {
++        width = +width.toFixed(6);
++    }
++    return width || 0;
++};
+diff --git a/src/number-picker/main.scss b/src/number-picker/main.scss
+index 0a82634a0b..8006aaad61 100644
+--- a/src/number-picker/main.scss
++++ b/src/number-picker/main.scss
+@@ -24,6 +24,10 @@
+             input {
+                 padding-right: 2px;
+             }
++
++            .#{$css-prefix}input-control {
++                padding-right: 0;
++            }
+         }
+ 
+         .#{$css-prefix}btn {
+@@ -57,6 +61,7 @@
+             opacity: 0;
+             transition: opacity .24s linear .1s;
+             height: 100%;
++            display: block;
+         }
+ 
+         &:hover #{$number-picker-prefix}-handler {
+@@ -167,6 +172,7 @@
+     }
+ }
+ #{$number-picker-prefix}-inline[dir="rtl"] {
++
+     .#{$css-prefix}btn {
+         border-radius: 0;
+     }
+@@ -180,3 +186,9 @@
+         border-bottom-left-radius: $form-element-medium-corner !important;
+     }
+ }
++#{$number-picker-prefix}-normal[dir="rtl"] {
++    .#{$css-prefix}input .#{$css-prefix}input-control {
++        padding-left: 0;
++    }
++}
++
+diff --git a/src/number-picker/number-picker.jsx b/src/number-picker/number-picker.jsx
+index c68865fadf..5f82abe391 100644
+--- a/src/number-picker/number-picker.jsx
++++ b/src/number-picker/number-picker.jsx
+@@ -106,6 +106,14 @@ class NumberPicker extends React.Component {
+          * 减少按钮的props
+          */
+         downBtnProps: PropTypes.object,
++        /**
++         * 内联 label
++         */
++        label: PropTypes.node,
++        /**
++         * inner after
++         */
++        innerAfter: PropTypes.node,
+         rtl: PropTypes.bool,
+     };
+ 
+@@ -422,8 +430,10 @@ class NumberPicker extends React.Component {
+             autoFocus,
+             editable,
+             state,
++            label,
+             upBtnProps = {},
+             downBtnProps = {},
++            innerAfter,
+         } = this.props;
+ 
+         const prefixCls = `${prefix}number-picker`;
+@@ -448,38 +458,37 @@ class NumberPicker extends React.Component {
+             }
+         }
+ 
+-        let innerAfter = null,
++        let extra = null,
+             innerAfterClassName = null,
+             addonBefore = null,
+             addonAfter = null;
+         if (type === 'normal') {
+-            innerAfter = [
+-                <Button
+-                    {...upBtnProps}
+-                    onMouseDown={this.handleMouseDown}
+-                    disabled={disabled}
+-                    className={`${upBtnProps.className || ''} ${
+-                        upDisabled ? 'disabled' : ''
+-                    }`}
+-                    onClick={this.up.bind(this, upDisabled)}
+-                    key="0"
+-                >
+-                    <Icon size="xxs" type="arrow-up" />
+-                </Button>,
+-                <Button
+-                    {...downBtnProps}
+-                    onMouseDown={this.handleMouseDown}
+-                    disabled={disabled}
+-                    className={`${downBtnProps.className || ''} ${
+-                        downDisabled ? 'disabled' : ''
+-                    }`}
+-                    onClick={this.down.bind(this, downDisabled)}
+-                    key="1"
+-                >
+-                    <Icon size="xxs" type="arrow-down" />
+-                </Button>,
+-            ];
+-            innerAfterClassName = `${prefixCls}-handler`;
++            extra = (
++                <span className={`${prefixCls}-handler`}>
++                    <Button
++                        {...upBtnProps}
++                        onMouseDown={this.handleMouseDown}
++                        disabled={disabled}
++                        className={`${upBtnProps.className || ''} ${
++                            upDisabled ? 'disabled' : ''
++                        }`}
++                        onClick={this.up.bind(this, upDisabled)}
++                    >
++                        <Icon size="xxs" type="arrow-up" />
++                    </Button>
++                    <Button
++                        {...downBtnProps}
++                        onMouseDown={this.handleMouseDown}
++                        disabled={disabled}
++                        className={`${downBtnProps.className || ''} ${
++                            downDisabled ? 'disabled' : ''
++                        }`}
++                        onClick={this.down.bind(this, downDisabled)}
++                    >
++                        <Icon size="xxs" type="arrow-down" />
++                    </Button>
++                </span>
++            );
+         } else {
+             addonBefore = (
+                 <Button
+@@ -534,8 +543,9 @@ class NumberPicker extends React.Component {
+                     size={size}
+                     onChange={this.onChange.bind(this)}
+                     ref={this.saveInputRef.bind(this)}
++                    label={label}
+                     innerAfter={innerAfter}
+-                    innerAfterClassName={innerAfterClassName}
++                    extra={extra}
+                     addonBefore={addonBefore}
+                     addonAfter={addonAfter}
+                 />
+@@ -544,4 +554,4 @@ class NumberPicker extends React.Component {
+     }
+ }
+ 
+-export default ConfigProvider.config(NumberPicker);
++export default NumberPicker;
+diff --git a/src/overlay/main.scss b/src/overlay/main.scss
+index 03d243f226..17c1309419 100644
+--- a/src/overlay/main.scss
++++ b/src/overlay/main.scss
+@@ -1,6 +1,10 @@
+ @import "../core/index-noreset.scss";
+ 
+ .#{$css-prefix}overlay-wrapper {
++    position: absolute;
++    top: 0;
++    left: 0;
++
+     .#{$css-prefix}overlay-inner {
+         z-index: 1001;
+     }
+diff --git a/src/overlay/utils/position.js b/src/overlay/utils/position.js
+index db8c3df7c3..bae39eb2fa 100644
+--- a/src/overlay/utils/position.js
++++ b/src/overlay/utils/position.js
+@@ -121,6 +121,10 @@ export default class Position {
+                 isPinFixed
+             );
+             const pinElementParentOffset = this._getParentOffset(pinElement);
++            const pinElementParentScrollOffset = this._getParentScrollOffset(
++                pinElement
++            );
++
+             const baseElementOffset =
+                 isPinFixed && isBaseFixed
+                     ? this._getLeftTop(baseElement)
+@@ -129,12 +133,14 @@ export default class Position {
+                 baseElementOffset.top +
+                 baseElementPoints.y -
+                 pinElementParentOffset.top -
+-                pinElementPoints.y;
++                pinElementPoints.y +
++                pinElementParentScrollOffset.top;
+             const left =
+                 baseElementOffset.left +
+                 baseElementPoints.x -
+                 pinElementParentOffset.left -
+-                pinElementPoints.x;
++                pinElementPoints.x +
++                pinElementParentScrollOffset.left;
+             this._setPinElementPostion(pinElement, { left, top }, this.offset);
+ 
+             if (!firstPositionResult) {
+@@ -158,6 +164,7 @@ export default class Position {
+             'Top',
+             isPinFixed
+         );
++
+         this._setPinElementPostion(
+             pinElement,
+             { left: inViewportLeft, top: inViewportTop },
+@@ -190,28 +197,53 @@ export default class Position {
+         return offset;
+     }
+ 
+-    _makeElementInViewport(pinElement, number, type, isPinFixed) {
+-        let result = number;
+-        const docElement = document.documentElement;
+-        const offsetParent =
+-            pinElement.offsetParent || document.documentElement;
++    _getParentScrollOffset = function(elem) {
++        let top = 0;
++        let left = 0;
+ 
+-        if (result < 0) {
+-            if (isPinFixed) {
+-                result = 0;
+-            } else if (
+-                offsetParent === document.body &&
+-                dom.getStyle(offsetParent, 'position') === 'static'
+-            ) {
+-                // Only when div's offsetParent is document.body, we set new position result.
+-                result = Math.max(
+-                    docElement[`scroll${type}`],
+-                    document.body[`scroll${type}`]
+-                );
++        if (elem && elem.offsetParent) {
++            if (!isNaN(elem.offsetParent.scrollTop)) {
++                top += elem.offsetParent.scrollTop;
++            }
++            if (!isNaN(elem.offsetParent.scrollLeft)) {
++                left += elem.offsetParent.scrollLeft;
+             }
+         }
+ 
+-        return result;
++        return {
++            top,
++            left,
++        };
++    };
++
++    _makeElementInViewport(pinElement, number, type, isPinFixed) {
++        // pinElement.offsetParent is never body because wrapper has position: absolute
++        // refactored to make code clearer. Revert if wrapper style changes.
++
++        // let result = number;
++        // const docElement = document.documentElement;
++        // const offsetParent =
++        //     pinElement.offsetParent || document.documentElement;
++
++        // if (result < 0) {
++        //     if (isPinFixed) {
++        //         result = 0;
++        //     }
++
++        //     else if (
++        //         offsetParent === document.body &&
++        //         dom.getStyle(offsetParent, 'position') === 'static'
++        //     ) {
++        //         // Only when div's offsetParent is document.body, we set new position result.
++        //         result = Math.max(
++        //             docElement[`scroll${type}`],
++        //             document.body[`scroll${type}`]
++        //         );
++        //     }
++        // }
++        // return result;
++
++        return number < 0 && isPinFixed ? 0 : number;
+     }
+ 
+     _normalizePosition(element, align, isPinFixed) {
+@@ -352,13 +384,17 @@ export default class Position {
+     // Detecting element is in the window， we want to adjust position later.
+     _isInViewport(element) {
+         const viewportSize = _getViewportSize();
++        // const elementRect = _getElementRect(element);
++        const elementRect = element.getBoundingClientRect();
++
+         // Avoid animate problem that use offsetWidth instead of getBoundingClientRect.
+-        const elementRect = _getElementRect(element);
+         return (
+             elementRect.left >= 0 &&
+-            elementRect.left + element.offsetWidth <= viewportSize.width &&
++            // using strict < instead of <=, to handle the bug of container expaned on element placement
++            // closing https://github.com/alibaba-fusion/next/issues/853
++            elementRect.left + element.offsetWidth < viewportSize.width &&
+             elementRect.top >= 0 &&
+-            elementRect.top + element.offsetHeight <= viewportSize.height
++            elementRect.top + element.offsetHeight < viewportSize.height
+         );
+     }
+     // 在这里做RTL判断 top-left 定位转化为等效的 top-right定位
+diff --git a/src/radio/main.scss b/src/radio/main.scss
+index 0bd8e77a1a..11d639a8a4 100644
+--- a/src/radio/main.scss
++++ b/src/radio/main.scss
+@@ -99,6 +99,9 @@
+                 }
+             }
+         }
++        #{$radio-prefix}-label {
++            color: $radio-normal-font-color-disabled;
++        }
+     }
+ 
+     &:not(.disabled):hover,
+@@ -305,6 +308,7 @@
+     font-size: $radio-font-size;
+     vertical-align: middle;
+     line-height: 1;
++    color: $radio-normal-font-color;
+ }
+ 
+ @-moz-document url-prefix() {
+diff --git a/src/select/main.scss b/src/select/main.scss
+index 9e53ec62bf..5f8f74dba4 100644
+--- a/src/select/main.scss
++++ b/src/select/main.scss
+@@ -89,6 +89,10 @@
+             padding-left: $select-tag-padding-lr;
+             padding-right: $select-tag-padding-lr;
+         }
++
++        .#{$css-prefix}input-inner {
++            width: auto;
++        }
+     }
+ 
+     &-trigger-search {
+@@ -171,10 +175,6 @@
+     }
+ 
+     &-multiple {
+-        .#{$css-prefix}input {
+-            height: auto;
+-            align-items: start;
+-        }
+         #{$select-prefix}-compact {
+             position: relative;
+             white-space: nowrap;
+diff --git a/src/tab/main.scss b/src/tab/main.scss
+index 4105cf74ca..15a7f9fe0a 100644
+--- a/src/tab/main.scss
++++ b/src/tab/main.scss
+@@ -367,6 +367,13 @@
+                 border-color: $tab-capsule-tab-border-line-color-disabled;
+             }
+ 
++            &:hover {
++                z-index: 1;
++                border-right: $tab-capsule-tab-border;
++                margin-right: -$tab-capsule-tab-border-line-width;
++                border-color: $tab-capsule-tab-border-line-color-hover;
++            }
++
+             @include tabs-tab-statement(
+                 $tab-capsule-text-color,
+                 $tab-capsule-text-color-hover,
+diff --git a/src/tab/tabs/nav.jsx b/src/tab/tabs/nav.jsx
+index 65e4453d3c..e002c2b686 100644
+--- a/src/tab/tabs/nav.jsx
++++ b/src/tab/tabs/nav.jsx
+@@ -121,7 +121,6 @@ class Nav extends React.Component {
+         if (this.offset !== target) {
+             // needs move
+             this.offset = target;
+-
+             let navOffset = {};
+             const navStyle = this.nav.style;
+ 
+@@ -394,12 +393,16 @@ class Nav extends React.Component {
+         const wrapperWH = getOffsetWH(this.wrapper);
+         const activeTabOffset = getOffsetLT(this.activeTab);
+         const wrapperOffset = getOffsetLT(this.wrapper);
+-
+         let target = this.offset;
+         if (
+             activeTabOffset >= wrapperOffset + wrapperWH ||
+             activeTabOffset + activeTabWH <= wrapperOffset
+         ) {
++            this.setOffset(
++                this.offset + wrapperOffset - activeTabOffset,
++                true,
++                true
++            );
+             return;
+         }
+         this.setOffset(target, true, true);
+diff --git a/src/tag/scss/placeholder.scss b/src/tag/scss/placeholder.scss
+index 5606571cc7..e816f6a8e2 100644
+--- a/src/tag/scss/placeholder.scss
++++ b/src/tag/scss/placeholder.scss
+@@ -39,18 +39,18 @@
+ 
+ %tag-statement-closable-primary {
+     @include tag-statement(
+-        $tag-fill-text-color,
+-        $tag-fill-border-color,
+-        $tag-fill-bg-color,
+-        $tag-fill-text-color-hover,
+-        $tag-fill-border-color-hover,
+-        $tag-fill-bg-color-hover,
++        $tag-closable-primary-fill-text-color,
++        $tag-closable-primary-fill-border-color,
++        $tag-closable-primary-fill-bg-color,
++        $tag-closable-primary-fill-text-color-hover,
++        $tag-closable-primary-fill-border-color-hover,
++        $tag-closable-primary-fill-bg-color-hover,
+         $tag-fill-tail-color,
+         $tag-fill-tail-color-hover,
+         $tag-fill-tail-color-disabled,
+-        $tag-fill-text-color-disabled,
+-        $tag-fill-border-color-disabled,
+-        $tag-fill-bg-color-disabled
++        $tag-closable-primary-fill-text-color-disabled,
++        $tag-closable-primary-fill-border-color-disabled,
++        $tag-closable-primary-fill-bg-color-disabled
+     );
+ }
+ 
+diff --git a/src/tag/scss/variable.scss b/src/tag/scss/variable.scss
+index 456255e57b..9073cb03bd 100644
+--- a/src/tag/scss/variable.scss
++++ b/src/tag/scss/variable.scss
+@@ -521,3 +521,30 @@ $tag-checkable-secondary-icon-color-selected-hover: $color-white !default;
+ $tag-checkable-secondary-icon-color-selected-disabled: $color-white !default;
+ 
+ 
++/// text
++/// @namespace statement/normal/bounding
++$tag-closable-primary-fill-text-color: $color-text1-3 !default;
++/// border
++/// @namespace statement/normal/bounding
++$tag-closable-primary-fill-border-color: $color-fill1-3;
++/// background
++/// @namespace statement/normal/bounding
++$tag-closable-primary-fill-bg-color: $color-fill1-3 !default;
++/// text
++/// @namespace statement/hover/bounding
++$tag-closable-primary-fill-text-color-hover: $color-text1-4 !default;
++/// border
++/// @namespace statement/hover/bounding
++$tag-closable-primary-fill-border-color-hover: $color-fill1-4 !default;
++/// background
++/// @namespace statement/hover/bounding
++$tag-closable-primary-fill-bg-color-hover: $color-fill1-4 !default;
++/// text
++/// @namespace statement/disabled/bounding
++$tag-closable-primary-fill-text-color-disabled: $color-text1-1 !default;
++/// border
++/// @namespace statement/disabled/bounding
++$tag-closable-primary-fill-border-color-disabled: $color-fill1-1 !default;
++/// background
++/// @namespace statement/disabled/bounding
++$tag-closable-primary-fill-bg-color-disabled: $color-fill1-1 !default;
+diff --git a/test/badge/index-spec.js b/test/badge/index-spec.js
+index 20d74c2ee0..99ae1e6e7f 100644
+--- a/test/badge/index-spec.js
++++ b/test/badge/index-spec.js
+@@ -1,7 +1,7 @@
+ import React from 'react';
+ import ReactDOM from 'react-dom';
+ import ReactTestUtils from 'react-dom/test-utils';
+-import Enzyme, { mount } from 'enzyme';
++import Enzyme, { mount, render } from 'enzyme';
+ import Adapter from 'enzyme-adapter-react-16';
+ import assert from 'power-assert';
+ import co from 'co';
+@@ -269,4 +269,10 @@ describe('Badge', () => {
+         ReactDOM.unmountComponentAtNode(div);
+         document.body.removeChild(div);
+     });
++
++    it('should show zero when count is even zero by setting showZero', () => {
++        const wrapper = render(<Badge count={0} showZero />);
++        assert.notStrictEqual(wrapper.find('.next-badge-count'), null);
++        assert(wrapper.find('.next-badge-count').hasClass('next-badge-scroll-number'));
++    })
+ });
+diff --git a/test/calendar/index-spec.js b/test/calendar/index-spec.js
+index a54d2a6ccc..6997ffcb78 100644
+--- a/test/calendar/index-spec.js
++++ b/test/calendar/index-spec.js
+@@ -1,4 +1,5 @@
+ import React from 'react';
++import sinon from 'sinon';
+ import Enzyme, { mount } from 'enzyme';
+ import Adapter from 'enzyme-adapter-react-16';
+ import assert from 'power-assert';
+@@ -154,13 +155,16 @@ describe('Calendar', () => {
+ 
+     describe('action', () => {
+         it('should change mode', () => {
+-            wrapper = mount(<Calendar />);
++            const onModeChange = sinon.spy();
++
++            wrapper = mount(<Calendar onModeChange={onModeChange} />);
+             wrapper
+                 .find('.next-radio-wrapper input')
+                 .at(1)
+                 .simulate('change', { target: { checked: true } });
+             assert(wrapper.find('td').length === 12);
+             assert(wrapper.find('td[title="1月"]').length === 1);
++            assert(onModeChange.calledOnce);
+         });
+ 
+         it('should change panel mode to month', () => {
+diff --git a/test/field/index-spec.js b/test/field/index-spec.js
+index 994c4980ea..b2350c9108 100644
+--- a/test/field/index-spec.js
++++ b/test/field/index-spec.js
+@@ -334,6 +334,56 @@ describe('field', () => {
+             done();
+         });
+ 
++        it('should return `undefined` for `getValue` on uninitialized field', function() {
++            const field = new Field(this);
++            assert.equal(field.getValue('input'), undefined);
++        });
++
++        it('should return empty object for `getValues` on uninitialized field', function() {
++            const field = new Field(this);
++            assert.equal(Object.keys(field.getValues()).length, 0);
++        });
++
++        it('should set value with `setValue` on uninitialized field', function() {
++            const field = new Field(this);
++            field.setValue('input', 1)
++            field.init('input');
++            assert.equal(field.getValue('input'), 1);
++        });
++
++        it('should set value with `setValues` on uninitialized field', function() {
++            const field = new Field(this);
++            field.setValues({input: 1})
++            field.init('input');
++            assert.equal(field.getValue('input'), 1);
++        });
++
++        it('should return value from `setValue` when calling `getValue` on uninitialized field', function() {
++            const field = new Field(this);
++            field.setValue('input', 1)
++            assert.equal(field.getValue('input'), 1);
++        });
++
++        it('should return value from `setValue` when calling `getValues` on uninitialized field', function() {
++            const field = new Field(this);
++            field.setValue('input', 1)
++            assert.equal(field.getValues().input, 1);
++        });
++
++        it('should return values from `setValue` and init when calling `getValues`', function() {
++            const field = new Field(this);
++            field.setValue('input', 1)
++            field.init('input2', {initValue: 2})
++            assert.deepEqual(field.getValues(), { input: 1, input2: 2});
++        });
++
++        it('should return `setValue` value instead of initValue', function() {
++            const field = new Field(this);
++            field.setValue('input', 1)
++            field.init('input', {initValue: 2})
++            assert.deepEqual(field.getValues(), { input: 1 });
++        });
++
+         it('setError & setErrors & getError & getErrors', function(done) {
+             const field = new Field(this);
+             field.setError('input', 'error1');
+@@ -466,22 +516,46 @@ describe('field', () => {
+                 done();
+             });
+         });
++        
++        describe('reset', function() {
++            it('should set value to `undefined` on `reset()` if init with `initValue`', function() {
++                const field = new Field(this);
++                field.init('input', { initValue: '1' });
++    
++                field.reset();
++                assert(field.getValue('input') === undefined);
++            });
+ 
+-        it('reset', function(done) {
+-            const field = new Field(this);
+-            field.init('input', { initValue: '1' });
+-
+-            field.reset();
+-            assert(field.getValue('input') === undefined);
+-
+-            field.init('input2', { initValue: '4' });
+-            field.setValue('input2', '33');
+-
+-            field.resetToDefault();
+-            assert(field.getValue('input2') === '4');
++            it('should set only named value to `undefined` on `reset()` if init with `initValue`', function() {
++                const field = new Field(this);
++                field.init('input', { initValue: '1' });
++                field.init('input2', { initValue: '2' });
++    
++                field.reset('input');
++                assert.deepEqual(field.getValues(), { input: undefined, input2: '2'});
++            });
++    
++            it('should set value to `initValue` on `resetToDefaults()` if init with `initValue`', function() {
++                const field = new Field(this);
++                field.init('input', { initValue: '4' });
++                field.setValue('input', '33');
++    
++                field.resetToDefault();
++                assert(field.getValue('input') === '4');
++            });
+ 
+-            done();
++            it('should set only named value to `initValue` on `resetToDefaults()` if init with `initValue`', function() {
++                const field = new Field(this);
++                field.init('input', { initValue: '4' });
++                field.setValue('input', '33');
++                field.init('input2', { initValue: '4' });
++                field.setValue('input2', '33');
++    
++                field.resetToDefault('input');
++                assert.deepEqual(field.getValues(), { input: '4', input2: '33'});
++            });
+         });
++
+         it('remove', function(done) {
+             const field = new Field(this);
+             field.init('input', { initValue: 1 });
+@@ -498,24 +572,58 @@ describe('field', () => {
+ 
+             done();
+         });
+-        it('spliceArray', function(done) {
+-            const field = new Field(this);
+-            field.init('input.0', { initValue: 0 });
+-            field.init('input.1', { initValue: 1 });
+-            field.init('input.2', { initValue: 2 });
++        describe('spliceArray', function() {
++            it('should remove the middle field item', () => {
++                const field = new Field(this);
++                field.init('input.0', { initValue: 0 });
++                field.init('input.1', { initValue: 1 });
++                field.init('input.2', { initValue: 2 });
++
++                field.spliceArray('input.{index}', 1);
++
++                assert(field.getValue('input.0') === 0);
++                assert(field.getValue('input.1') === 2);
++                assert(field.getValue('input.2') === undefined);
++            });
+ 
+-            field.spliceArray('input.{index}', 1);
++            it('should remove the first 2 field items', () => {
++                const field = new Field(this);
++                field.init('input.0', { initValue: 0 });
++                field.init('input.1', { initValue: 1 });
++                field.init('input.2', { initValue: 2 });
++
++                field.spliceArray('input.{index}', 1);
++                field.spliceArray('input.{index}', 0);
++                assert(field.getValue('input.0') === 2);
++                assert(field.getValue('input.1') === undefined);
++                assert(field.getValue('input.2') === undefined);
++            });
+ 
+-            assert(field.getValue('input.0') === 0);
+-            assert(field.getValue('input.1') === 2);
+-            assert(field.getValue('input.2') === undefined);
++            it('should make no change `keymatch` does not contain `{index}', () => {
++                const field = new Field(this);
++                field.init('input.0', { initValue: 0 });
++                field.init('input.1', { initValue: 1 });
++                field.init('input.2', { initValue: 2 });
+ 
+-            field.spliceArray('input.{index}', 0);
+-            assert(field.getValue('input.0') === 2);
+-            assert(field.getValue('input.1') === undefined);
+-            assert(field.getValue('input.2') === undefined);
++                field.spliceArray('input', 0);
++                assert(field.getValue('input.0') === 0);
++                assert(field.getValue('input.1') === 1);
++                assert(field.getValue('input.2') === 2);
++            });
+ 
+-            done();
++            it('should remove the middle field item when parseName=true', () => {
++                const field = new Field(this, { parseName: true });
++                field.init('input.0', { initValue: 0 });
++                field.init('input.1', { initValue: 1 });
++                field.init('input.2', { initValue: 2 });
++
++                field.spliceArray('input.{index}', 1);
++
++                assert(field.getValue('input.0') === 0);
++                assert(field.getValue('input.1') === 2);
++                assert(field.getValue('input.2') === undefined);
++                assert(field.getValue('input').length === 2);
++            });
+         });
+     });
+ });
+diff --git a/test/field/options-spec.js b/test/field/options-spec.js
+index 38bb40fc42..47d7ea271e 100644
+--- a/test/field/options-spec.js
++++ b/test/field/options-spec.js
+@@ -171,7 +171,6 @@ describe('options', () => {
+                     input: inputValue
+                 },
+             });
+-            field.init('input');
+             assert.equal(field.getValue('input'), inputValue);
+         });
+ 
+@@ -189,7 +188,7 @@ describe('options', () => {
+             assert.equal(field.getValue('input.child'), inputValue);
+         });
+ 
+-        it('should allow access to field values before init when given `values` in constructor', function() {
++        it('should allow access with `getValue` before init when given `values` in constructor', function() {
+             const inputValue = 'my value';
+             const field = new Field(this, {
+                 values: {
+@@ -199,6 +198,27 @@ describe('options', () => {
+             assert.equal(field.getValue('input'), inputValue);
+         });
+ 
++        it('should allow access to with `getValues` before init when given `values` in constructor', function() {
++            const inputValue = 'my value';
++            const field = new Field(this, {
++                values: {
++                    input: inputValue,
++                },
++            });
++            assert.equal(field.getValues().input, inputValue);
++        });
++
++        it('should use setValues instead of constructor values on field that has not been initialized', function() {
++            const inputValue = 'my value';            
++            const field = new Field(this, {
++                values: {
++                    input: inputValue,
++                },
++            });
++            field.setValue('input', 1)
++            assert.equal(field.getValue('input'), 1);
++        });
++
+         it('should reset `input` to undefined when given `values` in constructor and call `reset`', function() {
+             const fieldDefault = 'field default value';
+             const field = new Field(this, {
+@@ -223,35 +243,38 @@ describe('options', () => {
+             assert.equal(field.getValue('input'), fieldDefault);
+         });
+ 
+-        it('should reset `input` to undefined when given `values` and `parseName` = true in constructor and call `reset`', function() {
++        it('should reset `input` to undefined when given `values` in constructor and call `reset`', function() {
+             const fieldDefault = 'field default value';
+             const field = new Field(this, {
+-                parseName: true,
+                 values: {
+-                    input: {
+-                        child: fieldDefault
+-                    },
++                    input: fieldDefault
+                 },
+             });
+-            field.init('input.child');
++            field.init('input');
+             field.reset();
+-            assert.equal(field.getValue('input.child'), undefined);
++            assert.equal(field.getValue('input'), undefined);
+         });
+ 
+-        it('should reset `input` to undefined when given `values` and `parseName` = true in constructor and call `resetToDefault`', function() {
++        it('should return `{}` for `getValues after all fields are removed', function() {
+             const fieldDefault = 'field default value';
+             const field = new Field(this, {
+-                parseName: true,
+                 values: {
+-                    input: {
+-                        child: fieldDefault
+-                    },
++                    input: fieldDefault
+                 },
+             });
+-            field.init('input.child');
+-            field.resetToDefault('input.child');
+-            assert.equal(field.getValue('input.child'), fieldDefault);
++            field.init('input');
++            field.remove('input');
++            assert.equal(Object.keys(field.getValues()).length, 0);
+         });
++
++        it('should return `undefined` after `remove` then re-`init`', function() {
++            const field = new Field(this, {values: {input: 4}});
++            field.init('input');
++            field.remove('input');
++            field.init('input');
++
++            assert(field.getValue('input') === undefined);
++        })
+     });
+ 
+     describe('should support parseName', () => {
+@@ -261,7 +284,6 @@ describe('options', () => {
+             field.init('user.pwd', { initValue: 12345 });
+             field.init('option[0]', { initValue: 'option1' });
+             field.init('option[1]', { initValue: 'option2' });
+-
+             const values = field.getValues();
+ 
+             assert(Object.keys(values).length === 2);
+@@ -273,6 +295,27 @@ describe('options', () => {
+ 
+             done();
+         });
++        it('should get constructor value of `name` if `getValue` called before init', function() {
++            const field = new Field(this, {
++                parseName: true,
++                values: { a: { b: 1 } },
++            });
++            assert(field.getValue('a.b') === 1);
++        });
++
++        it('should return constructor value for `names` if `getValues` called before init', function() {
++            const field = new Field(this, {parseName: true, values: {a: 1, b: 2, c: 3}});
++            const {a, b} = field.getValues(['a', 'b']);
++            assert(a === 1);
++            assert(b === 2);
++        });
++        it('should return all of constructor value if `getValues` called with no names before init', function() {
++            const field = new Field(this, {parseName: true, values: {a: 1, b: 2, c: 3}});
++            const {a, b, c} = field.getValues();
++            assert(a === 1);
++            assert(b === 2);
++            assert(c === 3);
++        });
+         it('setValues', function(done) {
+             const field = new Field(this, { parseName: true });
+             field.init('user.name', { initValue: 'frankqian' });
+@@ -297,6 +340,235 @@ describe('options', () => {
+ 
+             done();
+         });
++
++        it('should allow access with `getValue` before init when given `values` in constructor', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    },
++                },
++            });
++            assert.equal(field.getValue('input.myValue'), fieldDefault);
++        });
++
++        it('should allow access to with `getValues` before init when given `values` in constructor', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    },
++                },
++            });
++            assert.equal(field.getValues().input.myValue, fieldDefault);
++        });
++
++        it('should use setValue instead of constructor values on field that has not been initialized', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    },
++                },
++            });
++            field.setValue('input.myValue', 1)
++            assert.equal(field.getValue('input.myValue'), 1);
++        });
++
++        
++
++        it('should remove top level field after removed', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    }
++                },
++            });
++            field.init('input.myValue');
++            field.remove('input.myValue');
++            assert.equal(Object.keys(field.getValues()).input, undefined);
++        });
++
++        it('should return `{}` for `getValues after `remove()`', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    }
++                },
++            });
++            field.init('input.myValue');
++            field.setValue('input.value2', fieldDefault);
++            field.remove();
++            assert.equal(Object.keys(field.getValues()).length, 0);
++        });
++
++        it('should return `undefined` after `remove` then re-`init`', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    }
++                },
++            });
++            field.init('input.myValue');
++            field.remove('input.myValue');
++            field.init('input.myValue');
++
++            assert(field.getValue('input.myValue') === undefined);
++        });
++
++        it('should return all setValues', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++            });
++            field.setValues({
++                input: {
++                    myValue: fieldDefault,
++                },
++            });
++
++            assert.deepEqual(field.getValues(), {
++                input: { myValue: fieldDefault },
++            });
++        });
++
++        it('should return all setValues and initValues', function() {
++            const fieldDefault = 'field default value';
++            const otherDefault = 'other default value';
++            const field = new Field(this, {
++                parseName: true,
++            });
++            field.setValues({
++                input: {
++                    myValue: fieldDefault,
++                },
++            });
++
++            field.init('input.otherValue', { initValue: otherDefault });
++
++            assert.deepEqual(field.getValues(), {
++                input: {
++                    myValue: fieldDefault,
++                    otherValue: otherDefault,
++                },
++            });
++        });
++        describe('reset', function() {
++            it('should reset all to undefined when call `reset`', function() {
++                const fieldDefault = 'field default value';
++                const field = new Field(this, {
++                    parseName: true,
++                });
++                field.setValue('input.myValue', fieldDefault);
++                field.setValue('input.otherValue', fieldDefault);
++                field.reset();
++                assert.equal(field.getValue('input.myValue'), undefined);
++                assert.equal(field.getValue('input.otherValue'), undefined);
++            });
++
++            it('should reset all to undefined when given `values` in constructor and call `reset`', function() {
++                const fieldDefault = 'field default value';
++                const field = new Field(this, {
++                    parseName: true,
++                    values: {
++                        input: {
++                            myValue: fieldDefault,
++                            otherValue: fieldDefault
++                        },
++                    },
++                });
++                field.init('input.myValue');
++                field.init('input.otherValue');
++                field.reset();
++                assert.equal(field.getValue('input.myValue'), undefined);
++                assert.equal(field.getValue('input.otherValue'), undefined);
++            });
++
++            it('should reset only `input.myValue` to undefined when given `values` in constructor and pass `input.myValue` to `reset`', function() {
++                const fieldDefault = 'field default value';
++                const field = new Field(this, {
++                    parseName: true,
++                    values: {
++                        input: {
++                            myValue: fieldDefault,
++                            otherValue: fieldDefault
++                        },
++                    },
++                });
++                field.init('input.myValue');
++                field.reset('input.myValue');
++                assert.equal(field.getValue('input.myValue'), undefined);
++                assert.equal(field.getValue('input.otherValue'), fieldDefault);
++            });
++
++            it('should reset all to undefined when call `resetToDefault` with no defaults', function() {
++                const fieldDefault = 'field default value';
++                const field = new Field(this, {
++                    parseName: true,
++                });
++                field.setValue('input.myValue', fieldDefault);
++                field.setValue('input.otherValue', fieldDefault);
++                field.resetToDefault();
++                assert.equal(field.getValue('input.myValue'), undefined);
++                assert.equal(field.getValue('input.otherValue'), undefined);
++            });
++    
++            it('should reset all to undefined when given `values` in constructor and call `resetToDefault`', function() {
++                const fieldDefault = 'field default value';
++                const secondValue = 'second';
++                const field = new Field(this, {
++                    parseName: true,
++                    values: {
++                        input: {
++                            myValue: fieldDefault,
++                            otherValue: fieldDefault
++                        },
++                    },
++                });
++                field.init('input.myValue');
++                field.init('input.otherValue');
++                field.setValue('input.myValue', secondValue);
++                field.setValue('input.otherValue', secondValue);
++                field.resetToDefault();
++                assert.equal(field.getValue('input.myValue'), fieldDefault);
++                assert.equal(field.getValue('input.otherValue'), fieldDefault);
++            });
++
++            it('should reset `input` to undefined when given `values` in constructor and call `resetToDefault`', function() {
++                const fieldDefault = 'field default value';
++                const secondValue = 'second';
++                const field = new Field(this, {
++                    parseName: true,
++                    values: {
++                        input: {
++                            myValue: fieldDefault,
++                            otherValue: fieldDefault
++                        },
++                    },
++                });
++                field.init('input.myValue');
++                field.setValue('input.myValue', secondValue);
++                field.setValue('input.otherValue', secondValue);
++                field.resetToDefault('input.myValue');
++                assert.equal(field.getValue('input.myValue'), fieldDefault);
++                assert.equal(field.getValue('input.otherValue'), secondValue);
++            });
++        });
+     });
+ 
+     describe('should support autoValidate=false', () => {
+diff --git a/test/field/utils-spec.js b/test/field/utils-spec.js
+index 40fe2b1fc4..3f3f99d422 100644
+--- a/test/field/utils-spec.js
++++ b/test/field/utils-spec.js
+@@ -1,6 +1,6 @@
+ import React from 'react';
+ import assert from 'power-assert';
+-import {getErrorStrs} from '../../src/field/utils';
++import {getErrorStrs, getIn, setIn, deleteIn} from '../../src/field/utils';
+ 
+ /* eslint-disable react/jsx-filename-extension */
+ /* global describe it */
+@@ -55,4 +55,110 @@ describe('Field Utils', () => {
+             assert.deepEqual(result[1].props.children, 'message 2');
+         });
+     })
++
++    describe('getIn', () => {
++        it('should return state when state is falsy', () => {
++            assert(getIn(undefined, 'a') === undefined);
++        });
++
++        it('should return undefind when no name', () => {
++            assert(getIn({a: 1}, '') === undefined);
++        });
++
++        it('should return undefind when value for name', () => {
++            assert(getIn({a: 1}, 'b') === undefined);
++        });
++
++        it('should get top level element', () => {
++            assert(getIn({a: 1}, 'a') === 1);
++        });
++
++        it('should get deep level element', () => {
++            assert(getIn({a: {b: {c: 1}}}, 'a.b.c') === 1);
++        });
++
++        it('should get array element with dot notation', () => {
++            assert(getIn({a: [1, 2]}, 'a.1') === 2);
++        });
++
++        it('should get array element with bracket notation', () => {
++            assert(getIn({a: [1, 2]}, 'a[1]') === 2);
++        });
++
++        it('should get element that is deep array combination', () => {
++            assert(getIn({a: [1, {b: {c: 2}}]}, 'a[1].b.c') === 2);
++        });
++    });
++
++    describe('setIn', () => {
++        it('should initialize state with object when it is falsy and path is NaN', () => {
++            assert(setIn(undefined, 'a', 5).a === 5);
++        });
++
++        it('should initialize state with array when it is falsy and path is NaN', () => {
++            assert(setIn(undefined, '1', 5)[1] === 5);
++        });
++
++        it('should initialize state with whole path', () => {
++            assert(setIn(undefined, 'a.b.c', 5).a.b.c === 5);
++        });
++
++        it('should not modify state when setting new value', () => {
++            const state = {a: {b: { c: 1}}};
++            setIn(state, 'a.b.c', 5);
++            assert(state.a.b.c === 1);
++        });
++
++        it('should duplicate state with new value', () => {
++            const state = {a: {b: { c: 1}}};
++            const newState = setIn(state, 'a.b.c', 5);
++            assert(newState.a.b.c === 5);
++        });
++
++        it('should handle array dot notation', () => {
++            const state = {a: {b: [1, 2]}};
++            const newState = setIn(state, 'a.b.1', 5);
++            assert(newState.a.b[1] === 5);
++        });
++
++        it('should handle array bracket notation', () => {
++            const state = {a: {b: [1, 2]}};
++            const newState = setIn(state, 'a.b[1]', 5);
++            assert(newState.a.b[1] === 5);
++        });
++
++        it('should add to existing nested object', () => {
++            const state = {a: {b: 1 }};
++            const newState = setIn(state, 'a.c.d', 5);
++            assert(newState.a.c.d === 5);
++        });
++
++        it('should add to empty object', () => {
++            const newState = setIn({}, 'a.b.c', 5);
++            assert(newState.a.b.c === 5);
++        });
++    });
++
++    describe('deleteIn', () => {
++        it('should do nothing when name is not present', () => {
++            assert.deepEqual(deleteIn({a: { b: 1}}, 'x'), { a: { b: 1 }});
++        });
++
++        it('should do nothing given empty object', () => {
++            assert.deepEqual(deleteIn({}, 'x'), {});
++        });
++
++        it('should delete nested element, but leave object', () => {
++            assert.deepEqual(deleteIn({a : { b: 1}}, 'a.b'), {a: {}});
++        });
++
++        it('should delete top level element, but leave object', () => {
++            assert.deepEqual(deleteIn({a : { b: 1}}, 'a'), {});
++        });
++
++        it('should delete array element, but not change later indices', () => {
++            // eslint-disable-next-line no-sparse-arrays
++            assert.deepEqual(deleteIn({a : { b: [1, 2, 3]}}, 'a.b.0'), {a : { b: [, 2, 3]}}); 
++        });
++    });
+ });
+diff --git a/test/menu/index-spec.js b/test/menu/index-spec.js
+index 3dcaa72ff3..acde87880a 100644
+--- a/test/menu/index-spec.js
++++ b/test/menu/index-spec.js
+@@ -835,6 +835,46 @@ describe('Menu', () => {
+         ReactDOM.unmountComponentAtNode(div);
+         document.body.removeChild(div);
+     });
++
++    it('should support hozInLine in hoz', () => {
++
++        const div = document.createElement('div');
++        document.body.appendChild(div);
++
++        ReactDOM.render(
++            <Menu
++                direction="hoz"
++                style={{width: 300}}
++                mode="popup"
++                hozInLine
++            >
++                <Item key="0" style={{width: 100}}>0</Item>
++                <Item key="1" style={{width: 60}}>1</Item>
++                <SubMenu key="sub-menu" label="Sub menu" style={{width: 50}}>
++                    <Item key="2">2</Item>
++                    <Item key="3">3</Item>
++                </SubMenu>
++                <Item key="4" style={{width: 30}}>4</Item>
++                <Item key="5">5</Item>
++                <Item key="6">6</Item>
++            </Menu>,
++            div
++        );
++
++        const menu = document.querySelector('.next-menu.next-hoz');
++        assert(menu.querySelectorAll('li.next-menu-more').length === 2);
++
++        const indicator = menu.querySelectorAll('li.next-menu-more')[0].querySelector('.next-menu-item-inner');
++        indicator.click();
++        const overlay = document.querySelector('.next-overlay-wrapper');
++
++        assert(overlay);
++        assert(overlay.querySelectorAll('li').length === 2);
++
++        ReactDOM.unmountComponentAtNode(div);
++        document.body.removeChild(div);
++
++    });
+ });
+ 
+ describe('Menu.create', () => {
+diff --git a/test/tab/index-spec.js b/test/tab/index-spec.js
+index bcb0785597..c66ae3656e 100644
+--- a/test/tab/index-spec.js
++++ b/test/tab/index-spec.js
+@@ -141,7 +141,7 @@ describe('Tab', () => {
+             const tabBar = wrapper.find('.next-tabs-bar').instance();
+             assert(
+                 tabBar.style.background === 'red' ||
+-                    tabBar.style.background.startsWith('red')
++                tabBar.style.background.startsWith('red')
+             );
+         });
+ 
+@@ -161,7 +161,7 @@ describe('Tab', () => {
+             const tabContent = wrapper.find('.next-tabs-content').instance();
+             assert(
+                 tabContent.style.background === 'red' ||
+-                    tabContent.style.background.startsWith('red')
++                tabContent.style.background.startsWith('red')
+             );
+         });
+ 
+@@ -464,7 +464,7 @@ describe('Tab', () => {
+             );
+         });
+     });
+-    describe('animation sensitive tests', ()=>{
++    describe('animation sensitive tests', () => {
+         let target;
+         const delay = time => new Promise(resolve => setTimeout(resolve, time));
+         const panes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((item, index) => (
+@@ -476,7 +476,7 @@ describe('Tab', () => {
+             target = document.createElement('div');
+             document.body.appendChild(target);
+         });
+-    
++
+         afterEach(() => {
+             ReactDOM.unmountComponentAtNode(target);
+             document.body.removeChild(target);
+@@ -500,27 +500,27 @@ describe('Tab', () => {
+         it('should show slide buttons', async () => {
+             ReactDOM.render(
+                 <div style={boxStyle}>
+-                <Tab rtl excessMode="slide">
+-                    {panes}
+-                </Tab>
+-            </div>, target);
++                    <Tab rtl excessMode="slide">
++                        {panes}
++                    </Tab>
++                </div>, target);
+             await delay(800);
+             assert(target.querySelector('.next-tabs-btn-prev').classList.contains("disabled"));
+         });
+         it('should slide', async () => {
+             ReactDOM.render(
+-            <div style={boxStyle}>
+-                <Tab rtl excessMode="slide">
+-                    {panes}
+-                </Tab>
+-            </div>, target);
++                <div style={boxStyle}>
++                    <Tab rtl excessMode="slide">
++                        {panes}
++                    </Tab>
++                </div>, target);
+             let prev, newpos;
+             await delay(1800);
+             prev = target.querySelector(".next-tabs-nav").getBoundingClientRect().left;
+             target.querySelector(".next-tabs-btn-next").click();
+             await delay(200);
+             newpos = target.querySelector(".next-tabs-nav").getBoundingClientRect().left;
+-            assert(newpos > prev);                
++            assert(newpos > prev);
+         });
+ 
+         it('should adjust scroll length so that tab not partially in view', async () => {
+@@ -558,7 +558,7 @@ describe('Tab', () => {
+             assert(rst[1] === '0');
+         });
+ 
+-        it('should adjust scroll length', async() => {
++        it('should adjust scroll length', async () => {
+             const newpanes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(
+                 (item, index) => (
+                     <Tab.Item title={`tabsss item ${item}`} key={index}>
+@@ -578,12 +578,12 @@ describe('Tab', () => {
+                         {newpanes}
+                     </Tab>
+                 </div>, target);
+-            await delay(1000);
++            await delay(1200);
+             let transStr = target.querySelector('.next-tabs-nav').style.transform;
+             let rst = transStr.match(
+                 /translate3d\((\-?\d+\.\d+|\-?\d+)px,.*\)/i
+             );
+-            assert(parseInt(rst[1])>0);
++            assert(parseInt(rst[1]) > 0);
+             target.querySelector('.next-tabs-btn-prev').click();
+             await delay(1000);
+             transStr = target.querySelector('.next-tabs-nav').style.transform;
+@@ -592,6 +592,45 @@ describe('Tab', () => {
+             );
+             assert(rst[1] === '0');
+         });
++
++        it('should auto scroll to active tab', async () => {
++            const tabs = [
++                { tab: 'Home', key: 1 },
++                { tab: 'Documnet', key: 2 },
++                { tab: 'Setting', key: 3 },
++                { tab: 'Help', key: 4 },
++                { tab: 'Admin', key: 5 },
++                { tab: 'More 1', key: 6 },
++                { tab: 'More 2', key: 7 },
++                { tab: 'More 3', key: 8 },
++                { tab: 'More 4', key: 9 },
++                { tab: 'More 5', key: 10 },
++                { tab: 'More 6', key: 11 },
++                { tab: 'More 7', key: 12 },
++                { tab: 'More 8', key: 13 },
++                { tab: 'More 9', key: 14 },
++                { tab: 'More 10', key: 15 },
++                { tab: 'More 11', key: 16 },
++                { tab: 'More 12', key: 17 },
++                { tab: 'More 13', key: 18 },
++                { tab: 'More 14', key: 19 }
++            ];
++            ReactDOM.render(
++                <div className="fusion-demo" style={{ maxWidth: '520px' }}>
++                    <div className="demo-item-title">Controlled mode</div>
++                    <Tab excessMode="slide" activeKey={9}>
++                        {
++                            tabs.map(item => <Tab.Item key={item.key} title={item.tab}>{item.tab} content, content, content</Tab.Item>)
++                        }
++                    </Tab>
++                </div>, target);
++            await delay(1200);
++            let transStr = target.querySelector('.next-tabs-nav').style.transform;
++            let rst = transStr.match(
++                /translate3d\((\-?\d+\.\d+|\-?\d+)px,.*\)/i
++            );
++            assert(parseInt(rst[1]) < 560);
++        });
+     });
+     describe('rtl mode', () => {
+         let wrapper, target;

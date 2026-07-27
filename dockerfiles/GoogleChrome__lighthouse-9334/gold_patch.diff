@@ -1,0 +1,134 @@
+diff --git a/lighthouse-core/index.js b/lighthouse-core/index.js
+index 65b9ba1bbb3f..bc7093ad3f83 100644
+--- a/lighthouse-core/index.js
++++ b/lighthouse-core/index.js
+@@ -10,9 +10,6 @@ const log = require('lighthouse-logger');
+ const ChromeProtocol = require('./gather/connections/cri.js');
+ const Config = require('./config/config.js');
+ 
+-const URL = require('./lib/url-shim.js');
+-const LHError = require('./lib/lh-error.js');
+-
+ /** @typedef {import('./gather/connections/connection.js')} Connection */
+ 
+ /*
+@@ -39,11 +36,6 @@ const LHError = require('./lib/lh-error.js');
+  * @return {Promise<LH.RunnerResult|undefined>}
+  */
+ async function lighthouse(url, flags = {}, configJSON, connection) {
+-  // verify the url is valid and that protocol is allowed
+-  if (url && (!URL.isValid(url) || !URL.isProtocolAllowed(url))) {
+-    throw new LHError(LHError.errors.INVALID_URL);
+-  }
+-
+   // set logging preferences, assume quiet
+   flags.logLevel = flags.logLevel || 'error';
+   log.setLevel(flags.logLevel);
+diff --git a/lighthouse-core/runner.js b/lighthouse-core/runner.js
+index 689ed67996c1..029f89807a46 100644
+--- a/lighthouse-core/runner.js
++++ b/lighthouse-core/runner.js
+@@ -70,15 +70,12 @@ class Runner {
+           throw new Error('Cannot run audit mode on different URL');
+         }
+       } else {
+-        if (typeof runOpts.url !== 'string' || runOpts.url.length === 0) {
+-          throw new Error(`You must provide a url to the runner. '${runOpts.url}' provided.`);
+-        }
+-
+-        try {
++        // verify the url is valid and that protocol is allowed
++        if (runOpts.url && URL.isValid(runOpts.url) && URL.isProtocolAllowed(runOpts.url)) {
+           // Use canonicalized URL (with trailing slashes and such)
+           requestedUrl = new URL(runOpts.url).href;
+-        } catch (e) {
+-          throw new Error('The url provided should have a proper protocol and hostname.');
++        } else {
++          throw new LHError(LHError.errors.INVALID_URL);
+         }
+ 
+         artifacts = await Runner._gatherArtifactsFromBrowser(requestedUrl, runOpts, connection);
+diff --git a/lighthouse-core/test/index-test.js b/lighthouse-core/test/index-test.js
+index e5c678c77154..c56e77851f6e 100644
+--- a/lighthouse-core/test/index-test.js
++++ b/lighthouse-core/test/index-test.js
+@@ -87,22 +87,26 @@ describe('Module Tests', function() {
+       });
+   });
+ 
+-  it('should throw an error when the url is invalid', function() {
+-    return lighthouse('https:/i-am-not-valid', {}, {})
+-      .then(() => {
+-        throw new Error('Should not have resolved when url is invalid');
+-      }, err => {
+-        assert.ok(err);
+-      });
+-  });
+-
+-  it('should throw an error when the url is invalid protocol (file:///)', function() {
+-    return lighthouse('file:///a/fake/index.html', {}, {})
+-      .then(() => {
+-        throw new Error('Should not have resolved when url is file:///');
+-      }, err => {
+-        assert.ok(err);
+-      });
++  it('should throw an error when the url is invalid', async () => {
++    expect.hasAssertions();
++    try {
++      await lighthouse('i-am-not-valid', {}, {});
++    } catch (err) {
++      expect(err.friendlyMessage)
++          .toBeDisplayString('The URL you have provided appears to be invalid.');
++      expect(err.code).toEqual('INVALID_URL');
++    }
++  });
++
++  it('should throw an error when the url is invalid protocol (file:///)', async () => {
++    expect.hasAssertions();
++    try {
++      await lighthouse('file:///a/fake/index.html', {}, {});
++    } catch (err) {
++      expect(err.friendlyMessage)
++          .toBeDisplayString('The URL you have provided appears to be invalid.');
++      expect(err.code).toEqual('INVALID_URL');
++    }
+   });
+ 
+   it('should return formatted LHR when given no categories', function() {
+diff --git a/lighthouse-core/test/runner-test.js b/lighthouse-core/test/runner-test.js
+index bb9b38c6cb11..ccf4bf339401 100644
+--- a/lighthouse-core/test/runner-test.js
++++ b/lighthouse-core/test/runner-test.js
+@@ -514,20 +514,24 @@ describe('Runner', () => {
+   });
+ 
+ 
+-  it('rejects when not given a URL', () => {
+-    return Runner.run({}, {}).then(_ => assert.ok(false), _ => assert.ok(true));
++  it('rejects when not given a URL', async () => {
++    const config = new Config({});
++    await expect(Runner.run({}, {config})).rejects.toThrow('INVALID_URL');
+   });
+ 
+-  it('rejects when given a URL of zero length', () => {
+-    return Runner.run({}, {url: ''}).then(_ => assert.ok(false), _ => assert.ok(true));
++  it('rejects when given a URL of zero length', async () => {
++    const config = new Config({});
++    await expect(Runner.run({}, {url: '', config})).rejects.toThrow('INVALID_URL');
+   });
+ 
+-  it('rejects when given a URL without protocol', () => {
+-    return Runner.run({}, {url: 'localhost'}).then(_ => assert.ok(false), _ => assert.ok(true));
++  it('rejects when given a URL without protocol', async () => {
++    const config = new Config({});
++    await expect(Runner.run({}, {url: 'localhost', config})).rejects.toThrow('INVALID_URL');
+   });
+ 
+-  it('rejects when given a URL without hostname', () => {
+-    return Runner.run({}, {url: 'https://'}).then(_ => assert.ok(false), _ => assert.ok(true));
++  it('rejects when given a URL without hostname', async () => {
++    const config = new Config({});
++    await expect(Runner.run({}, {url: 'https://', config})).rejects.toThrow('INVALID_URL');
+   });
+ 
+   it('only supports core audits with names matching their filename', () => {

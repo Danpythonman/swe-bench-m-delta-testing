@@ -1,0 +1,492 @@
+[
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/ojs/test-ojs-echo-false-codetools-dropdown-2.qmd --to html",
+        "passed": false
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/ojs/test-ojs-es-modules.qmd --to html",
+        "passed": false
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/ojs/test-ojs-computes.qmd --to html",
+        "passed": false
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/ojs/test-ojs-static-data.qmd --to html",
+        "passed": false
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/ojs/test-inline-spans.qmd --to html",
+        "passed": false
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/yaml/guess-chunk-options-format-knitr.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto convert docs/empty-frontmatter.qmd",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/chapters.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/all-docx.qmd --to docx",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/equations.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/simple.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/python.qmd --to html",
+        "passed": false
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/python-subfig.qmd --to html",
+        "passed": false
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/knitr.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/all.qmd --to latex",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/listings.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/options.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/numbering.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/sections.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/syntax.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > test html produced by different figure syntax",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/tables.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/knitr-tables.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/knitr-tables-latex.qmd --to latex",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/theorems.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/theorem-types.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/crossrefs/unresolved.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/engine/test-include-engine-detection.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto check ",
+        "passed": false
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto tools list",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/ojs/test-complex-layout-string.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/ojs/test-dependency-traversal.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto create-project simple-test --type book",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/project/book --to pdf",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/project/book --to docx",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/project/book --to epub",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/project/book --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto create-project simple-test",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/project/plain --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto create-project simple-test --type website",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/project/site",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/callouts.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/callouts.qmd --to latex",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/callouts.qmd --to docx",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/markdown/commonmark-plain.qmd --to commonmark",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/markdown/commonmark-r.qmd --to commonmark",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/markdown/commonmark-python.qmd --to commonmark",
+        "passed": false
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/date/today.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/date/lastmodified.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/test.Rmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/test.qmd --to docx",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/extensions/format/academic/document.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/extensions/format/academic/document.qmd --to acm-html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/extensions/format/academic/document.qmd --to acs-html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/extensions/format/academic/document.qmd --to elsevier-html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/extensions/format/academic/document.qmd --to pdf",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/extensions/format/academic/document.qmd --to acm-pdf",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/extensions/format/academic/document.qmd --to acs-pdf",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/extensions/format/academic/document.qmd --to elsevier-pdf",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/extensions/format/academic/document.qmd --to elsevier-pdf+foobar",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render /tmp/e5b1e3ff/ --to html (clean fzr - auto)",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render /tmp/e5b1e3ff/ --to html (dirty fzr - auto)",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render /tmp/e5b1e3ff/ --to html (dirty fzr - freeze)",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/test-jupyter.md --to pdf",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/unpaired.ipynb --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/unpaired-md.md --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/latex-output/captionless-margin-image.qmd --to latex",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/latex-output/figure-div.qmd --to latex",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/minimal.qmd --to html",
+        "passed": true
+    },
+    {
+        "instance_id": "quarto-dev__quarto-cli-1029",
+        "patch_type": "before_patch",
+        "agent_name": "BASE",
+        "test_name": "[smoke] > quarto render docs/ojs/test-ojs.qmd --to html",
+        "passed": true
+    }
+]

@@ -1,0 +1,524 @@
+diff --git a/lib/features/modeling/Modeling.js b/lib/features/modeling/Modeling.js
+index 4af7d064bc..d4c53c9a7a 100644
+--- a/lib/features/modeling/Modeling.js
++++ b/lib/features/modeling/Modeling.js
+@@ -2,6 +2,7 @@ import inherits from 'inherits';
+ 
+ import BaseModeling from 'diagram-js/lib/features/modeling/Modeling';
+ 
++import UpdateDataObjectHandler from './cmd/UpdateDataObjectHandler';
+ import UpdatePropertiesHandler from './cmd/UpdatePropertiesHandler';
+ import UpdateCanvasRootHandler from './cmd/UpdateCanvasRootHandler';
+ import AddLaneHandler from './cmd/AddLaneHandler';
+@@ -44,6 +45,7 @@ Modeling.$inject = [
+ Modeling.prototype.getHandlers = function() {
+   var handlers = BaseModeling.prototype.getHandlers.call(this);
+ 
++  handlers['element.updateDataObject'] = UpdateDataObjectHandler;
+   handlers['element.updateProperties'] = UpdatePropertiesHandler;
+   handlers['canvas.updateRoot'] = UpdateCanvasRootHandler;
+   handlers['lane.add'] = AddLaneHandler;
+@@ -84,6 +86,13 @@ Modeling.prototype.connect = function(source, target, attrs, hints) {
+ };
+ 
+ 
++Modeling.prototype.updateDataObject = function(dataObject, properties) {
++  this._commandStack.execute('element.updateDataObject', {
++    dataObject: dataObject,
++    properties: properties
++  });
++};
++
+ Modeling.prototype.updateProperties = function(element, properties) {
+   this._commandStack.execute('element.updateProperties', {
+     element: element,
+diff --git a/lib/features/modeling/cmd/UpdateDataObjectHandler.js b/lib/features/modeling/cmd/UpdateDataObjectHandler.js
+new file mode 100644
+index 0000000000..117ffe468b
+--- /dev/null
++++ b/lib/features/modeling/cmd/UpdateDataObjectHandler.js
+@@ -0,0 +1,75 @@
++'use strict';
++
++var reduce = require('min-dash').reduce,
++    keys = require('min-dash').keys,
++    forEach = require('min-dash').forEach,
++    is = require('../../../util/ModelUtil').is,
++    getBusinessObject = require('../../../util/ModelUtil').getBusinessObject;
++
++
++function UpdateDataObjectHandler(elementRegistry) {
++  this._elementRegistry = elementRegistry;
++
++  UpdateDataObjectHandler.prototype.execute = function(context) {
++    var dataObject = context.dataObject;
++
++    if (!dataObject) {
++      throw new Error('dataObject required');
++    }
++
++    var dataObjectReferences = getAllDataObjectReferences(
++      dataObject,
++      this._elementRegistry
++    );
++
++    var changed = dataObjectReferences;
++
++    var properties = context.properties,
++        oldProperties = context.oldProperties || getProperties(dataObject, keys(properties));
++
++    setProperties(dataObject, properties);
++
++    context.oldProperties = oldProperties;
++    context.changed = changed;
++
++    return changed;
++  };
++
++  UpdateDataObjectHandler.prototype.revert = function(context) {
++    var oldProperties = context.oldProperties,
++        dataObject = context.dataObject;
++
++    setProperties(dataObject, oldProperties);
++
++    return context.changed;
++  };
++
++  // helpers /////////////////
++
++  function getProperties(dataObject, propertyNames) {
++    return reduce(propertyNames, function(result, key) {
++      result[key] = dataObject.get(key);
++      return result;
++    }, {});
++  }
++
++  function setProperties(dataObject, properties) {
++    forEach(properties, function(value, key) {
++      dataObject.set(key, value);
++    });
++  }
++
++  function getAllDataObjectReferences(dataObject, elementRegistry) {
++    return elementRegistry.filter(function(element) {
++      return (
++        is(element, 'bpmn:DataObjectReference') &&
++            getBusinessObject(element).dataObjectRef === dataObject
++      );
++    });
++  }
++
++}
++
++UpdateDataObjectHandler.$inject = ['elementRegistry'];
++
++module.exports = UpdateDataObjectHandler;
+\ No newline at end of file
+diff --git a/lib/features/popup-menu/ReplaceMenuProvider.js b/lib/features/popup-menu/ReplaceMenuProvider.js
+index c11a224cd7..0ce22c602a 100644
+--- a/lib/features/popup-menu/ReplaceMenuProvider.js
++++ b/lib/features/popup-menu/ReplaceMenuProvider.js
+@@ -256,6 +256,10 @@ ReplaceMenuProvider.prototype.getHeaderEntries = function(element) {
+     headerEntries = headerEntries.concat(this._getLoopEntries(element));
+   }
+ 
++  if (is(element, 'bpmn:DataObjectReference')) {
++    headerEntries = headerEntries.concat(this._getDataObjectIsCollection(element));
++  }
++
+   if (is(element, 'bpmn:SubProcess') &&
+       !is(element, 'bpmn:Transaction') &&
+       !isEventSubProcess(element)) {
+@@ -468,6 +472,39 @@ ReplaceMenuProvider.prototype._getLoopEntries = function(element) {
+   return loopEntries;
+ };
+ 
++/**
++ * Get a list of menu items containing buttons for multi instance markers
++ *
++ * @param  {djs.model.Base} element
++ *
++ * @return {Array<Object>} a list of menu items
++ */
++ReplaceMenuProvider.prototype._getDataObjectIsCollection = function(element) {
++
++  var self = this;
++  var translate = this._translate;
++
++  function toggleIsCollection(event, entry) {
++    self._modeling.updateDataObject(
++      dataObject,
++      { isCollection: !entry.active });
++  }
++
++  var dataObject = element.businessObject.dataObjectRef,
++      isCollection = dataObject.isCollection;
++
++  var dataObjectEntries = [
++    {
++      id: 'toggle-is-collection',
++      className: 'bpmn-icon-parallel-mi-marker',
++      title: translate('Collection'),
++      active: isCollection,
++      action: toggleIsCollection,
++    }
++  ];
++  return dataObjectEntries;
++};
++
+ 
+ /**
+  * Get the menu items containing a button for the ad hoc marker
+diff --git a/test/fixtures/bpmn/features/replace/data-object.bpmn b/test/fixtures/bpmn/features/replace/data-object.bpmn
+new file mode 100644
+index 0000000000..1476dd7b48
+--- /dev/null
++++ b/test/fixtures/bpmn/features/replace/data-object.bpmn
+@@ -0,0 +1,24 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
++  <bpmn:process id="Process" isExecutable="false">
++    <bpmn:dataObjectReference id="DataObjectReference_1" dataObjectRef="DataObject" />
++    <bpmn:dataObject id="DataObject" />
++    <bpmn:dataObjectReference id="DataObjectReference_2" dataObjectRef="DataObject" />
++  </bpmn:process>
++  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
++    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process">
++      <bpmndi:BPMNShape id="DataObjectReference_1_di" bpmnElement="DataObjectReference_1">
++        <dc:Bounds x="201" y="184" width="36" height="50" />
++        <bpmndi:BPMNLabel>
++          <dc:Bounds x="174" y="234" width="90" height="20" />
++        </bpmndi:BPMNLabel>
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="DataObjectReference_2_di" bpmnElement="DataObjectReference_2">
++        <dc:Bounds x="301" y="184" width="36" height="50" />
++        <bpmndi:BPMNLabel>
++          <dc:Bounds x="274" y="234" width="90" height="20" />
++        </bpmndi:BPMNLabel>
++      </bpmndi:BPMNShape>
++    </bpmndi:BPMNPlane>
++  </bpmndi:BPMNDiagram>
++</bpmn:definitions>
+diff --git a/test/spec/features/context-pad/ContextPadProviderSpec.js b/test/spec/features/context-pad/ContextPadProviderSpec.js
+index 79bcf55656..bd6159fbbf 100644
+--- a/test/spec/features/context-pad/ContextPadProviderSpec.js
++++ b/test/spec/features/context-pad/ContextPadProviderSpec.js
+@@ -276,7 +276,7 @@ describe('features - context-pad', function() {
+       expectContextPadEntries('DataObjectReference', [
+         'connect',
+         'append.text-annotation',
+-        '!replace',
++        'replace',
+         '!append.end-event'
+       ]);
+     }));
+@@ -489,11 +489,11 @@ describe('features - context-pad', function() {
+ 
+           // given
+           var rootShape = canvas.getRootElement(),
+-              dataObject = elementFactory.createShape({ type: 'bpmn:DataObjectReference' }),
++              dataStore = elementFactory.createShape({ type: 'bpmn:DataStoreReference' }),
+               replaceMenu;
+ 
+           // when
+-          create.start(canvasEvent({ x: 0, y: 0 }), dataObject);
++          create.start(canvasEvent({ x: 0, y: 0 }), dataStore);
+ 
+           dragging.move(canvasEvent({ x: 50, y: 50 }));
+           dragging.hover({ element: rootShape });
+diff --git a/test/spec/features/modeling/UpdateDataObject.bpmn b/test/spec/features/modeling/UpdateDataObject.bpmn
+new file mode 100644
+index 0000000000..1476dd7b48
+--- /dev/null
++++ b/test/spec/features/modeling/UpdateDataObject.bpmn
+@@ -0,0 +1,24 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
++  <bpmn:process id="Process" isExecutable="false">
++    <bpmn:dataObjectReference id="DataObjectReference_1" dataObjectRef="DataObject" />
++    <bpmn:dataObject id="DataObject" />
++    <bpmn:dataObjectReference id="DataObjectReference_2" dataObjectRef="DataObject" />
++  </bpmn:process>
++  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
++    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process">
++      <bpmndi:BPMNShape id="DataObjectReference_1_di" bpmnElement="DataObjectReference_1">
++        <dc:Bounds x="201" y="184" width="36" height="50" />
++        <bpmndi:BPMNLabel>
++          <dc:Bounds x="174" y="234" width="90" height="20" />
++        </bpmndi:BPMNLabel>
++      </bpmndi:BPMNShape>
++      <bpmndi:BPMNShape id="DataObjectReference_2_di" bpmnElement="DataObjectReference_2">
++        <dc:Bounds x="301" y="184" width="36" height="50" />
++        <bpmndi:BPMNLabel>
++          <dc:Bounds x="274" y="234" width="90" height="20" />
++        </bpmndi:BPMNLabel>
++      </bpmndi:BPMNShape>
++    </bpmndi:BPMNPlane>
++  </bpmndi:BPMNDiagram>
++</bpmn:definitions>
+diff --git a/test/spec/features/modeling/UpdateDataObjectSpec.js b/test/spec/features/modeling/UpdateDataObjectSpec.js
+new file mode 100644
+index 0000000000..90c8748535
+--- /dev/null
++++ b/test/spec/features/modeling/UpdateDataObjectSpec.js
+@@ -0,0 +1,100 @@
++import {
++  bootstrapModeler,
++  inject
++} from 'test/TestHelper';
++
++import modelingModule from 'lib/features/modeling';
++import coreModule from 'lib/core';
++
++describe('features/modeling - update data object', function() {
++
++  var diagramXML = require('./UpdateDataObject.bpmn');
++
++  var testModules = [ coreModule, modelingModule ];
++
++  beforeEach(bootstrapModeler(diagramXML, { modules: testModules }));
++
++
++  it('should do', inject(function(elementRegistry, modeling, eventBus) {
++
++    // given
++    var dataObjectReference1 = elementRegistry.get('DataObjectReference_1');
++    var dataObjectReference2 = elementRegistry.get('DataObjectReference_2');
++    var dataObject = dataObjectReference1.businessObject.dataObjectRef;
++    var changedElements;
++
++    var elementsChangedListener = sinon.spy(function(event) {
++      changedElements = event.elements;
++    });
++
++    eventBus.on('elements.changed', elementsChangedListener);
++
++    // assume
++    expect(dataObject).to.eql(dataObjectReference2.businessObject.dataObjectRef);
++
++    // when
++    modeling.updateDataObject(dataObject, { isCollection: true });
++
++    // then
++    expect(changedElements).to.have.length(2);
++    expect(changedElements).to.contain(dataObjectReference1);
++    expect(changedElements).to.contain(dataObjectReference2);
++    expect(dataObject.isCollection).to.be.true;
++  }));
++
++
++  it('should undo', inject(function(commandStack, elementRegistry, eventBus, modeling) {
++
++    // given
++    var dataObjectReference1 = elementRegistry.get('DataObjectReference_1');
++    var dataObjectReference2 = elementRegistry.get('DataObjectReference_2');
++    var dataObject = dataObjectReference1.businessObject.dataObjectRef;
++    var changedElements;
++
++    var elementsChangedListener = sinon.spy(function(event) {
++      changedElements = event.elements;
++    });
++
++    modeling.updateDataObject(dataObject, { isCollection: true });
++
++    eventBus.on('elements.changed', elementsChangedListener);
++
++    // when
++    commandStack.undo();
++
++    // then
++    expect(changedElements).to.have.length(2);
++    expect(changedElements).to.contain(dataObjectReference1);
++    expect(changedElements).to.contain(dataObjectReference2);
++    expect(dataObject.isCollection).to.be.false;
++  }));
++
++
++  it('should redo', inject(function(commandStack, elementRegistry, eventBus, modeling) {
++
++    // given
++    var dataObjectReference1 = elementRegistry.get('DataObjectReference_1');
++    var dataObjectReference2 = elementRegistry.get('DataObjectReference_2');
++    var dataObject = dataObjectReference1.businessObject.dataObjectRef;
++    var changedElements;
++
++    var elementsChangedListener = sinon.spy(function(event) {
++      changedElements = event.elements;
++    });
++
++    modeling.updateDataObject(dataObject, { isCollection: true });
++
++    commandStack.undo();
++
++    eventBus.on('elements.changed', elementsChangedListener);
++
++    // when
++    commandStack.redo();
++
++    // then
++    expect(changedElements).to.have.length(2);
++    expect(changedElements).to.contain(dataObjectReference1);
++    expect(changedElements).to.contain(dataObjectReference2);
++    expect(dataObject.isCollection).to.be.true;
++  }));
++});
+\ No newline at end of file
+diff --git a/test/spec/features/popup-menu/ReplaceMenuProviderSpec.js b/test/spec/features/popup-menu/ReplaceMenuProviderSpec.js
+index 5287495b76..26cad9c052 100644
+--- a/test/spec/features/popup-menu/ReplaceMenuProviderSpec.js
++++ b/test/spec/features/popup-menu/ReplaceMenuProviderSpec.js
+@@ -28,7 +28,8 @@ import { isExpanded } from 'lib/util/DiUtil';
+ describe('features/popup-menu - replace menu provider', function() {
+ 
+   var diagramXMLMarkers = require('../../../fixtures/bpmn/draw/activity-markers-simple.bpmn'),
+-      diagramXMLReplace = require('../../../fixtures/bpmn/features/replace/01_replace.bpmn');
++      diagramXMLReplace = require('../../../fixtures/bpmn/features/replace/01_replace.bpmn'),
++      diagramXMLDataObject = require('../../../fixtures/bpmn/features/replace/data-object.bpmn');
+ 
+   var testModules = [
+     coreModule,
+@@ -49,6 +50,144 @@ describe('features/popup-menu - replace menu provider', function() {
+     });
+   };
+ 
++  describe('data object - collection marker', function() {
++
++    beforeEach(bootstrapModeler(diagramXMLDataObject, { modules: testModules }));
++
++
++    it('should toggle on', inject(function(elementRegistry) {
++
++      // given
++      var dataObjectReference = elementRegistry.get('DataObjectReference_1');
++
++      openPopup(dataObjectReference);
++
++      // when
++      triggerAction('toggle-is-collection');
++
++      openPopup(dataObjectReference);
++
++      var isCollectionMarker = queryEntry('toggle-is-collection');
++
++      // then
++      expect(domClasses(isCollectionMarker).has('active')).to.be.true;
++      expect(dataObjectReference.businessObject.dataObjectRef.isCollection).to.be.true;
++    }));
++
++
++    it('should undo toggle on', inject(function(commandStack, elementRegistry) {
++
++      // given
++      var dataObjectReference = elementRegistry.get('DataObjectReference_1');
++
++      openPopup(dataObjectReference);
++
++      triggerAction('toggle-is-collection');
++
++      // when
++      commandStack.undo();
++
++      openPopup(dataObjectReference);
++
++      var isCollectionMarker = queryEntry('toggle-is-collection');
++
++      // then
++      expect(domClasses(isCollectionMarker).has('active')).not.to.be.true;
++      expect(dataObjectReference.businessObject.dataObjectRef.isCollection).not.to.be.true;
++    }));
++
++
++    it('should redo toggle on', inject(function(commandStack, elementRegistry) {
++
++      // given
++      var dataObjectReference = elementRegistry.get('DataObjectReference_1');
++
++      openPopup(dataObjectReference);
++
++      triggerAction('toggle-is-collection');
++
++      commandStack.undo();
++
++      // when
++      commandStack.redo();
++
++      openPopup(dataObjectReference);
++
++      var isCollectionMarker = queryEntry('toggle-is-collection');
++
++      // then
++      expect(domClasses(isCollectionMarker).has('active')).to.be.true;
++      expect(dataObjectReference.businessObject.dataObjectRef.isCollection).to.be.true;
++    }));
++
++
++    it('should toggle off', inject(function(elementRegistry) {
++
++      // given
++      var dataObjectReference = elementRegistry.get('DataObjectReference_1');
++
++      openPopup(dataObjectReference);
++
++      triggerAction('toggle-is-collection');
++
++      openPopup(dataObjectReference);
++
++      // when
++      triggerAction('toggle-is-collection');
++
++      openPopup(dataObjectReference);
++
++      var isCollectionMarker = queryEntry('toggle-is-collection');
++
++      // then
++      expect(domClasses(isCollectionMarker).has('active')).to.be.false;
++      expect(dataObjectReference.businessObject.dataObjectRef.isCollection).to.be.false;
++    }));
++
++
++    it('should activate marker of linked data object reference', inject(function(elementRegistry) {
++
++      // given
++      var dataObjectReference1 = elementRegistry.get('DataObjectReference_1');
++      var dataObjectReference2 = elementRegistry.get('DataObjectReference_2');
++
++      openPopup(dataObjectReference1);
++
++      // when
++      triggerAction('toggle-is-collection');
++
++      openPopup(dataObjectReference2);
++
++      var isCollectionMarker = queryEntry('toggle-is-collection');
++
++      // then
++      expect(domClasses(isCollectionMarker).has('active')).to.be.true;
++    }));
++
++
++    it('should deactivate marker of linked data object reference', inject(function(elementRegistry) {
++
++      // given
++      var dataObjectReference1 = elementRegistry.get('DataObjectReference_1');
++      var dataObjectReference2 = elementRegistry.get('DataObjectReference_2');
++
++      openPopup(dataObjectReference1);
++
++      triggerAction('toggle-is-collection');
++
++      openPopup(dataObjectReference1);
++
++      // when
++      triggerAction('toggle-is-collection');
++
++      openPopup(dataObjectReference2);
++
++      var isCollectionMarker = queryEntry('toggle-is-collection');
++
++      // then
++      expect(domClasses(isCollectionMarker).has('active')).to.be.false;
++    }));
++  });
+ 
+   describe('toggle', function() {
+ 

@@ -1,0 +1,157 @@
+diff --git a/changelog_unreleased/markdown/16347.md b/changelog_unreleased/markdown/16347.md
+new file mode 100644
+index 000000000000..8f2c85d5c03d
+--- /dev/null
++++ b/changelog_unreleased/markdown/16347.md
+@@ -0,0 +1,39 @@
++#### Preserve empty lines in front matter (#16347 by @fisker)
++
++<!-- prettier-ignore -->
++```markdown
++<!-- Input -->
++---
++foo:
++  - bar1
++
++  - bar2
++
++  - bar3
++---
++Markdown
++
++<!-- Prettier stable -->
++
++---
++foo:
++  - bar1
++  - bar2
++  - bar3
++---
++
++Markdown
++
++
++<!-- Prettier main -->
++---
++foo:
++  - bar1
++
++  - bar2
++
++  - bar3
++---
++
++Markdown
++```
+diff --git a/src/document/utils.js b/src/document/utils.js
+index 89aa5e4a52f6..7be0b7c55cdd 100644
+--- a/src/document/utils.js
++++ b/src/document/utils.js
+@@ -212,7 +212,6 @@ function stripTrailingHardlineFromParts(parts) {
+ 
+ function stripTrailingHardlineFromDoc(doc) {
+   switch (getDocType(doc)) {
+-    case DOC_TYPE_ALIGN:
+     case DOC_TYPE_INDENT:
+     case DOC_TYPE_INDENT_IF_BREAK:
+     case DOC_TYPE_GROUP:
+@@ -238,6 +237,7 @@ function stripTrailingHardlineFromDoc(doc) {
+     case DOC_TYPE_STRING:
+       return doc.replace(/[\n\r]*$/, "");
+ 
++    case DOC_TYPE_ALIGN:
+     case DOC_TYPE_CURSOR:
+     case DOC_TYPE_TRIM:
+     case DOC_TYPE_LINE_SUFFIX_BOUNDARY:
+diff --git a/tests/format/misc/embedded_language_formatting/in-markdown/__snapshots__/format.test.js.snap b/tests/format/misc/embedded_language_formatting/in-markdown/__snapshots__/format.test.js.snap
+index 7809e8056f07..00d8b5b1ce36 100644
+--- a/tests/format/misc/embedded_language_formatting/in-markdown/__snapshots__/format.test.js.snap
++++ b/tests/format/misc/embedded_language_formatting/in-markdown/__snapshots__/format.test.js.snap
+@@ -106,6 +106,71 @@ Hello world!
+ ================================================================================
+ `;
+ 
++exports[`issue-16342.md - {"embeddedLanguageFormatting":"off"} format 1`] = `
++====================================options=====================================
++embeddedLanguageFormatting: "off"
++parsers: ["markdown"]
++printWidth: 80
++                                                                                | printWidth
++=====================================input======================================
++---
++foo:
++  - bar1
++
++  - bar2
++
++  - bar3
++---
++
++Markdown
++
++=====================================output=====================================
++---
++foo:
++  - bar1
++
++  - bar2
++
++  - bar3
++---
++
++Markdown
++
++================================================================================
++`;
++
++exports[`issue-16342.md format 1`] = `
++====================================options=====================================
++parsers: ["markdown"]
++printWidth: 80
++                                                                                | printWidth
++=====================================input======================================
++---
++foo:
++  - bar1
++
++  - bar2
++
++  - bar3
++---
++
++Markdown
++
++=====================================output=====================================
++---
++foo:
++  - bar1
++
++  - bar2
++
++  - bar3
++---
++
++Markdown
++
++================================================================================
++`;
++
+ exports[`test.md - {"embeddedLanguageFormatting":"off"} format 1`] = `
+ ====================================options=====================================
+ embeddedLanguageFormatting: "off"
+diff --git a/tests/format/misc/embedded_language_formatting/in-markdown/issue-16342.md b/tests/format/misc/embedded_language_formatting/in-markdown/issue-16342.md
+new file mode 100644
+index 000000000000..bfad81ff8974
+--- /dev/null
++++ b/tests/format/misc/embedded_language_formatting/in-markdown/issue-16342.md
+@@ -0,0 +1,10 @@
++---
++foo:
++  - bar1
++
++  - bar2
++
++  - bar3
++---
++
++Markdown
