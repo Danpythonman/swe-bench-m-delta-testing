@@ -281,6 +281,22 @@ def _request_shutdown(signum: int) -> None:
     log.warning('Shutdown signal has been set')
 
 
+def _register_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
+    """Registers ``_request_shutdown`` for SIGINT/SIGTERM.
+
+    ``loop.add_signal_handler`` is POSIX-only (``ProactorEventLoop`` on
+    Windows raises ``NotImplementedError``), so this falls back to
+    ``signal.signal`` there. The plain handler still runs on the main
+    thread, same as the event loop, so calling ``_shutdown.set()`` from it
+    directly is safe.
+    """
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            loop.add_signal_handler(sig, _request_shutdown, sig)
+        except NotImplementedError:
+            signal.signal(sig, lambda signum, frame: _request_shutdown(signum))
+
+
 async def _terminate_known_instances() -> None:
     """Terminates every instance currently tracked in ``_cleanup_state``.
 
@@ -316,8 +332,7 @@ async def main(pred_keys: list[str] | None = None) -> None:
     already-running work to unwind before returning.
     """
     loop = asyncio.get_running_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, _request_shutdown, sig)
+    _register_signal_handlers(loop)
 
     all_pred_s3_keys = get_all_keys_in_s3_bucket(PREDS_S3_BUCKET_NAME)
     if pred_keys is None:
