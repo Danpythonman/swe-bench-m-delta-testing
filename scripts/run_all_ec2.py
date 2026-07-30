@@ -15,15 +15,28 @@ import random
 import shlex
 import signal
 from collections.abc import Coroutine
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, get_args
 
 import boto3
 from mypy_boto3_ec2 import EC2Client
+from mypy_boto3_ec2.literals import InstanceTypeType
 
 from sbmdt.aws.ec2 import (
     create_instance,
     terminate_instance,
     wait_for_instance,
+)
+from sbmdt.aws.env import (
+    AWS_PROFILE,
+    BLOCK_DEVICE_NAME,
+    BLOCK_VOLUME_SIZE_GB,
+    IMAGE_ID,
+    INSTANCE_PROFILE_ARN,
+    INSTANCE_TYPE,
+    REGION,
+    SECURITY_GROUP_ID,
+    SUBNET_ID,
 )
 from sbmdt.aws.s3 import (
     PREDS_S3_BUCKET_NAME,
@@ -35,13 +48,6 @@ from sbmdt.aws.s3 import (
 from sbmdt.aws.ssm import send_ssm_command, wait_for_ssm
 from sbmdt.evaluator.base import PatchType
 from sbmdt.log import setup_logging, setup_logging_for_asyncio
-
-N_CONCURRENT = 5
-"""Maximum number of EC2 instances allowed to be running (i.e. mid-evaluation)
-at the same time; enforced via the semaphore in `main()`.
-
-Overridden by ``--n-concurrent`` when run as a script.
-"""
 
 _shutdown = asyncio.Event()
 """Set by the SIGINT/SIGTERM handler.
@@ -56,17 +62,29 @@ set.
 log = logging.getLogger(__name__)
 
 
-IMAGE_ID = 'ami-04934ddbd9e03f358'
-INSTANCE_TYPE = 't3a.large'
-SUBNET_ID = 'subnet-0d1aeaaad9a22c741'
-SECURITY_GROUP_ID = 'sg-09f9a76d742f8549d'
-INSTANCE_PROFILE_ARN = (
-    'arn:aws:iam::607869540801:instance-profile/sbmdt-instance-profile'
-)
-REGION = 'us-east-1'
-BLOCK_DEVICE_NAME = '/dev/xvda'
-BLOCK_VOLUME_SIZE_GB = 16
-AWS_PROFILE = 'admin-user'
+@dataclass(kw_only=True)
+class RunArgs:
+    pred_keys: list[str] | None
+    n_concurrent: int
+    image_id: str
+    instance_type: InstanceTypeType
+    subnet_id: str
+    security_group_id: str
+    instance_profile_arn: str
+    region: str
+    block_device_name: str
+    block_volume_size_gb: int
+    aws_profile: str
+    git_branch: str | None
+
+
+N_CONCURRENT = 5
+"""Maximum number of EC2 instances allowed to be running (i.e. mid-evaluation)
+at the same time; enforced via the semaphore in `main()`.
+
+Overridden by ``--n-concurrent`` when run as a script.
+"""
+
 """Local AWS CLI profile used to create the boto3 session in
 ``run_instance``, rather than the default credential chain.
 """
@@ -74,10 +92,6 @@ GIT_BRANCH: str | None = None
 """If set, checked out on the instance (via ``make_git_checkout_command``)
 before the evaluation command is run.
 """
-# The values above are all overridable via CLI flags -- see `parse_args()`
-# -- and are read as module globals by the functions below, so
-# `if __name__ == '__main__'` rebinds these names directly after parsing.
-
 
 _cleanup_state: list[tuple[EC2Client, str]] = []
 """(ec2 client, instance_id) pairs for instances that have been created.
@@ -169,7 +183,10 @@ def make_git_checkout_command(branch: str) -> str:
 
 
 async def run_instance(
-    sbmdt_instance_id: str, patch_type: PatchType, pred_s3_key: str
+    sbmdt_instance_id: str,
+    patch_type: PatchType,
+    pred_s3_key: str,
+    run_args: RunArgs,
 ) -> None:
     """Create an EC2 instance, run a single evaluation command on it via
     SSM, then tear it down.
@@ -183,31 +200,32 @@ async def run_instance(
     instance_name = f'sbmdt-ec2-{now.timestamp()}'
 
     log.info('Starting session')
-    session = boto3.Session(profile_name=AWS_PROFILE)
-    ec2 = session.client('ec2', region_name=REGION)
+    session = boto3.Session(profile_name=run_args.aws_profile)
+    ec2 = session.client('ec2', region_name=run_args.region)
 
     # Once the instance exists, always terminate it on the way out, even if
     # waiting for SSM, sending the command, or anything else below raises.
     instance_id = None
     try:
         log.info(
-            f'Creating instance with image_id={IMAGE_ID} '
-            f'instance_type={INSTANCE_TYPE} subnet_id={SUBNET_ID} '
-            f'security_group_id={SECURITY_GROUP_ID} '
-            f'instance_profile_arn={INSTANCE_PROFILE_ARN} '
-            f'block_device_name={BLOCK_DEVICE_NAME} '
-            f'block_volume_size_gb={BLOCK_VOLUME_SIZE_GB}'
+            f'Creating instance with image_id={run_args.image_id} '
+            f'instance_type={run_args.instance_type} '
+            f'subnet_id={run_args.subnet_id} '
+            f'security_group_id={run_args.security_group_id} '
+            f'instance_profile_arn={run_args.instance_profile_arn} '
+            f'block_device_name={run_args.block_device_name} '
+            f'block_volume_size_gb={run_args.block_volume_size_gb}'
         )
         instance_id = await create_instance(
             ec2,
             instance_name,
-            image_id=IMAGE_ID,
-            instance_type=INSTANCE_TYPE,
-            subnet_id=SUBNET_ID,
-            security_group_ids=[SECURITY_GROUP_ID],
-            instance_profile_arn=INSTANCE_PROFILE_ARN,
-            block_device_name=BLOCK_DEVICE_NAME,
-            block_volume_size_gb=BLOCK_VOLUME_SIZE_GB,
+            image_id=run_args.image_id,
+            instance_type=run_args.instance_type,
+            subnet_id=run_args.subnet_id,
+            security_group_ids=[run_args.security_group_id],
+            instance_profile_arn=run_args.instance_profile_arn,
+            block_device_name=run_args.block_device_name,
+            block_volume_size_gb=run_args.block_volume_size_gb,
         )
         log.info(f'Created instance: {instance_id}')
         _cleanup_state.append((ec2, instance_id))
@@ -215,15 +233,17 @@ async def run_instance(
         log.info('Waiting for instance to become ready')
         await wait_for_instance(ec2, instance_id)
 
-        ssm = session.client('ssm', region_name=REGION)
+        ssm = session.client('ssm', region_name=run_args.region)
 
         log.info('Waiting for SSM')
         await wait_for_ssm(ssm, instance_id)
 
-        if GIT_BRANCH is not None:
-            log.info(f'Checking out branch {GIT_BRANCH}')
+        if run_args.git_branch is not None:
+            log.info(f'Checking out branch {run_args.git_branch}')
             await send_ssm_command(
-                ssm, instance_id, make_git_checkout_command(GIT_BRANCH)
+                ssm,
+                instance_id,
+                make_git_checkout_command(run_args.git_branch),
             )
 
         log.info('Sending command')
@@ -234,7 +254,9 @@ async def run_instance(
         )
         log.info(f'Received output: {output}')
     except Exception as e:
-        log.error(f'Error running instance {instance_id} {patch_type}: {e}')
+        log.error(
+            f'Error running instance {sbmdt_instance_id} {patch_type}: {e}'
+        )
     finally:
         if instance_id is not None:
             log.info('Terminating instance')
@@ -247,6 +269,7 @@ async def run_instance_async(
     sbmdt_instance_id: str,
     patch_type: PatchType,
     pred_s3_key: str,
+    run_args: RunArgs,
     sem: asyncio.Semaphore,
 ) -> None:
     """Run ``run_instance`` in a worker thread, bounded by ``sem``.
@@ -271,7 +294,9 @@ async def run_instance_async(
         log.info(
             f'Running {sbmdt_instance_id} {patch_type} with pred {pred_s3_key}'
         )
-        return await run_instance(sbmdt_instance_id, patch_type, pred_s3_key)
+        await run_instance(
+            sbmdt_instance_id, patch_type, pred_s3_key, run_args
+        )
 
 
 def _request_shutdown(signum: int) -> None:
@@ -312,7 +337,7 @@ async def _terminate_known_instances() -> None:
     await asyncio.gather(*coros, return_exceptions=True)
 
 
-async def main(pred_keys: list[str] | None = None) -> None:
+async def main(run_args: RunArgs) -> None:
     """Evaluate predictions in ``PREDS_S3_BUCKET_NAME``.
 
     Launches one EC2 instance per prediction file (up to ``N_CONCURRENT``
@@ -334,6 +359,7 @@ async def main(pred_keys: list[str] | None = None) -> None:
     loop = asyncio.get_running_loop()
     _register_signal_handlers(loop)
 
+    pred_keys = run_args.pred_keys
     all_pred_s3_keys = get_all_keys_in_s3_bucket(PREDS_S3_BUCKET_NAME)
     if pred_keys is None:
         pred_s3_keys = all_pred_s3_keys
@@ -353,7 +379,9 @@ async def main(pred_keys: list[str] | None = None) -> None:
         sbmdt_instance_id = pred_filename.instance_id
         patch_type = pred_filename.patch_type
         tasks.append(
-            run_instance_async(sbmdt_instance_id, patch_type, key, sem)
+            run_instance_async(
+                sbmdt_instance_id, patch_type, key, run_args, sem
+            )
         )
 
     random.shuffle(tasks)
@@ -387,7 +415,7 @@ async def main(pred_keys: list[str] | None = None) -> None:
     log.info('Done!')
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args() -> RunArgs:
     """Parse CLI overrides for the AWS resource settings and other globals
     used throughout this module.
 
@@ -427,6 +455,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--instance-type',
         default=INSTANCE_TYPE,
+        choices=get_args(InstanceTypeType),
+        # Avoids dumping the full 700+ item list in --help
+        metavar='INSTANCE_TYPE',
         help='EC2 instance type to launch.',
     )
     parser.add_argument(
@@ -477,23 +508,27 @@ def parse_args() -> argparse.Namespace:
             'command.'
         ),
     )
-    return parser.parse_args()
+
+    args = parser.parse_args()
+
+    return RunArgs(
+        pred_keys=args.pred_keys,
+        n_concurrent=args.n_concurrent,
+        image_id=args.image_id,
+        instance_type=args.instance_type,
+        subnet_id=args.subnet_id,
+        security_group_id=args.security_group_id,
+        instance_profile_arn=args.instance_profile_arn,
+        region=args.region,
+        block_device_name=args.block_device_name,
+        block_volume_size_gb=args.block_volume_size_gb,
+        aws_profile=args.aws_profile,
+        git_branch=args.git_branch,
+    )
 
 
 if __name__ == '__main__':
-    args = parse_args()
-    N_CONCURRENT = args.n_concurrent
-    IMAGE_ID = args.image_id
-    INSTANCE_TYPE = args.instance_type
-    SUBNET_ID = args.subnet_id
-    SECURITY_GROUP_ID = args.security_group_id
-    INSTANCE_PROFILE_ARN = args.instance_profile_arn
-    REGION = args.region
-    BLOCK_DEVICE_NAME = args.block_device_name
-    BLOCK_VOLUME_SIZE_GB = args.block_volume_size_gb
-    AWS_PROFILE = args.aws_profile
-    GIT_BRANCH = args.git_branch
-
     setup_logging(level=logging.INFO)
     setup_logging_for_asyncio(log)
-    asyncio.run(main(pred_keys=args.pred_keys))
+    run_args = parse_args()
+    asyncio.run(main(run_args))
