@@ -26,22 +26,21 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
-# How long a single instance evaluation is allowed to take. Two separate
-# limits have to agree, or the shorter one silently wins:
+# Default time limit for a single instance evaluation, overridable per
+# call via the `timeout_seconds` argument to `send_ssm_command`.
 #
-#   COMMAND_TIMEOUT_MINUTES  how long we poll for the command to finish
-#   EXECUTION_TIMEOUT_SECONDS the `executionTimeout` given to
-#                             AWS-RunShellScript, after which SSM kills
-#                             the command on the instance. Defaults to
-#                             3600 when unset, which is why it must be
-#                             passed explicitly here.
+# Two separate limits bound a command, and the shorter one silently wins:
+# how long SSM lets it run on the instance (the `executionTimeout`
+# parameter to AWS-RunShellScript, which defaults to 3600 when unset and
+# so must be passed explicitly), and how long we poll for it to finish.
+# Both derive from this one value.
 #
 # Sized from the 1,072 runs already in S3: median 6.7 min, p90 22.0 min,
 # p99 29.7 min, max 65.8 min. The previous 30-minute poll cut off the
 # slowest 0.6% of runs, and the unset 1-hour execution timeout cut off
 # the slowest run. 90 minutes clears the observed maximum with headroom.
-COMMAND_TIMEOUT_MINUTES: Final[int] = 90
-EXECUTION_TIMEOUT_SECONDS: Final[int] = COMMAND_TIMEOUT_MINUTES * 60
+DEFAULT_TIMEOUT_MINUTES: Final[int] = 90
+EXECUTION_TIMEOUT_SECONDS: Final[int] = DEFAULT_TIMEOUT_MINUTES * 60
 POLL_INTERVAL_SECONDS: Final[int] = 10
 
 
@@ -80,7 +79,10 @@ async def wait_for_ssm(
 
 
 async def start_running_ssm_command(
-    ssm: SSMClient, instance_id: str, command: str
+    ssm: SSMClient,
+    instance_id: str,
+    command: str,
+    timeout_seconds: int = EXECUTION_TIMEOUT_SECONDS,
 ) -> SendCommandResultTypeDef:
     """Send a shell command to an instance via SSM without waiting for it.
 
@@ -88,6 +90,9 @@ async def start_running_ssm_command(
         ssm: SSM client used to send the command.
         instance_id: ID of the instance to run the command on.
         command: Shell command to execute on the instance.
+        timeout_seconds: How long SSM lets the command run on the
+            instance before killing it. Defaults to
+            :data:`EXECUTION_TIMEOUT_SECONDS`.
 
     Returns:
         The raw ``send_command`` response, including the command ID needed
@@ -103,7 +108,7 @@ async def start_running_ssm_command(
                 'commands': [command],
                 # Without this, SSM applies its own 3600s default and
                 # kills long evaluations regardless of how long we wait.
-                'executionTimeout': [str(EXECUTION_TIMEOUT_SECONDS)],
+                'executionTimeout': [str(timeout_seconds)],
             },
         ),
     )
@@ -166,7 +171,10 @@ async def get_ssm_command_invocation(
 
 
 async def send_ssm_command(
-    ssm: SSMClient, instance_id: str, command: str
+    ssm: SSMClient,
+    instance_id: str,
+    command: str,
+    timeout_seconds: int = EXECUTION_TIMEOUT_SECONDS,
 ) -> str:
     """Run shell commands on an instance via SSM and return the stdout.
 
@@ -175,10 +183,18 @@ async def send_ssm_command(
     stderr) before re-raising if the command does not complete
     successfully.
 
+    ``timeout_seconds`` drives both limits that bound a command: how long
+    SSM lets it run on the instance, and how long this function waits for
+    it. Passing one value keeps the two from drifting apart, since the
+    shorter of them silently wins.
+
     Args:
         ssm: SSM client used to send and track the command.
         instance_id: ID of the instance to run the commands on.
         command: Shell commands to execute on the instance.
+        timeout_seconds: How long the command may run before SSM kills it
+            and this function gives up. Defaults to
+            :data:`EXECUTION_TIMEOUT_SECONDS`.
 
     Returns:
         The captured standard output of the command.
@@ -188,7 +204,9 @@ async def send_ssm_command(
         WaiterError: If the command does not complete successfully.
     """
     log.info(f'Running command {command}')
-    send = await start_running_ssm_command(ssm, instance_id, command)
+    send = await start_running_ssm_command(
+        ssm, instance_id, command, timeout_seconds=timeout_seconds
+    )
 
     command_id = send.get('Command', {}).get('CommandId', None)
     if command_id is None:
@@ -196,7 +214,6 @@ async def send_ssm_command(
 
     log.info(f'Waiting for command ID {command_id}')
 
-    timeout_seconds = COMMAND_TIMEOUT_MINUTES * 60
     poll_interval_seconds = POLL_INTERVAL_SECONDS
     terminal_statuses = {'Success', 'Failed', 'Cancelled', 'TimedOut'}
     deadline = time.monotonic() + timeout_seconds
