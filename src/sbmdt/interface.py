@@ -84,6 +84,7 @@ def evaluate(
     timestamp: dt.datetime,
     patch_type: PatchType,
     pred: Pred | None,
+    apply_test_patch: bool = False,
 ) -> list[TestResult]:
     """Run a benchmark evaluation for a single instance.
 
@@ -101,6 +102,10 @@ def evaluate(
             is applied before the test suite runs.
         pred: The model-generated patch to apply, or ``None`` when
             ``patch_type`` is :attr:`PatchType.BEFORE_PATCH`.
+        apply_test_patch: Whether to apply the instance's
+            ``test_patch.diff`` on top of ``pred``, so the maintainer's
+            FAIL_TO_PASS tests are present regardless of what the model
+            wrote. Requires ``scripts/split_gold_patch.py`` to have run.
 
     Returns:
         A list of :class:`TestResult` from the evaluation run.
@@ -123,6 +128,7 @@ def evaluate(
         patch_type=patch_type,
         agent_name=Pred.get_agent_name(pred),
         pred=pred,
+        apply_test_patch=apply_test_patch,
     )
 
     log.info(f'Running evaluation with {evaluator_cls.__name__}')
