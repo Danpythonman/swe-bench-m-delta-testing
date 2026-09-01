@@ -8,6 +8,7 @@ registration and command completion.
 import asyncio
 import logging
 import time
+from typing import Final
 
 from botocore.exceptions import ClientError
 from mypy_boto3_ssm import SSMClient
@@ -24,6 +25,24 @@ __all__ = [
 ]
 
 log = logging.getLogger(__name__)
+
+# How long a single instance evaluation is allowed to take. Two separate
+# limits have to agree, or the shorter one silently wins:
+#
+#   COMMAND_TIMEOUT_MINUTES  how long we poll for the command to finish
+#   EXECUTION_TIMEOUT_SECONDS the `executionTimeout` given to
+#                             AWS-RunShellScript, after which SSM kills
+#                             the command on the instance. Defaults to
+#                             3600 when unset, which is why it must be
+#                             passed explicitly here.
+#
+# Sized from the 1,072 runs already in S3: median 6.7 min, p90 22.0 min,
+# p99 29.7 min, max 65.8 min. The previous 30-minute poll cut off the
+# slowest 0.6% of runs, and the unset 1-hour execution timeout cut off
+# the slowest run. 90 minutes clears the observed maximum with headroom.
+COMMAND_TIMEOUT_MINUTES: Final[int] = 90
+EXECUTION_TIMEOUT_SECONDS: Final[int] = COMMAND_TIMEOUT_MINUTES * 60
+POLL_INTERVAL_SECONDS: Final[int] = 10
 
 
 async def wait_for_ssm(
@@ -80,7 +99,12 @@ async def start_running_ssm_command(
         lambda: ssm.send_command(
             InstanceIds=[instance_id],
             DocumentName='AWS-RunShellScript',
-            Parameters={'commands': [command]},
+            Parameters={
+                'commands': [command],
+                # Without this, SSM applies its own 3600s default and
+                # kills long evaluations regardless of how long we wait.
+                'executionTimeout': [str(EXECUTION_TIMEOUT_SECONDS)],
+            },
         ),
     )
     return send
@@ -172,9 +196,8 @@ async def send_ssm_command(
 
     log.info(f'Waiting for command ID {command_id}')
 
-    timeout_minutes = 30
-    timeout_seconds = timeout_minutes * 60
-    poll_interval_seconds = 10
+    timeout_seconds = COMMAND_TIMEOUT_MINUTES * 60
+    poll_interval_seconds = POLL_INTERVAL_SECONDS
     terminal_statuses = {'Success', 'Failed', 'Cancelled', 'TimedOut'}
     deadline = time.monotonic() + timeout_seconds
 
