@@ -40,6 +40,7 @@ class Args:
     destination: Literal['file'] | Literal['s3']
     bucket: str
     overwrite: bool
+    apply_test_patch: bool
 
 
 def parse_args() -> Args:
@@ -122,6 +123,16 @@ def parse_args() -> Args:
         action='store_true',
         help='Overwrite when results already exist.',
     )
+    parser.add_argument(
+        '--apply-test-patch',
+        action='store_true',
+        help=(
+            "Apply the instance's test_patch.diff on top of the patch, so "
+            "the maintainer's FAIL_TO_PASS tests are present no matter "
+            'what the model wrote. Requires scripts/split_gold_patch.py to '
+            'have run. Off by default, which reproduces the old behaviour.'
+        ),
+    )
 
     ns = parser.parse_args()
 
@@ -158,6 +169,7 @@ def parse_args() -> Args:
         destination=ns.destination,
         bucket=ns.bucket,
         overwrite=ns.overwrite,
+        apply_test_patch=ns.apply_test_patch,
     )
 
 
@@ -210,6 +222,7 @@ def run_instance(args: Args):
         timestamp=timestamp,
         patch_type=args.patch_type,
         pred=args.pred,
+        apply_test_patch=args.apply_test_patch,
     )
 
     log.info('Evaluation complete, saving results')

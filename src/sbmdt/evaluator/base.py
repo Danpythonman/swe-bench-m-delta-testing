@@ -37,6 +37,8 @@ __all__ = [
 log = logging.getLogger(__name__)
 
 PATCH_FILE: Final[str] = '/tmp/model.patch'
+TEST_PATCH_FILE: Final[str] = '/tmp/test.patch'
+TEST_PATCH_DIFF_FILENAME: Final[str] = 'test_patch.diff'
 
 LABEL_KEY = 'ca.maleknazn.sbmdt.managed'
 LABEL_VALUE = 'true'
@@ -309,6 +311,7 @@ class Evaluator(ABC):
         patch_type: PatchType,
         agent_name: str,
         pred: Pred | None,
+        apply_test_patch: bool = False,
     ):
         """Initialize the evaluator for the given instance.
 
@@ -321,6 +324,10 @@ class Evaluator(ABC):
             agent_name: Name of the agent that produced ``pred``.
             pred: The model-generated patch to apply, or ``None`` when
                 ``patch_type`` is :attr:`PatchType.BEFORE_PATCH`.
+            apply_test_patch: Whether to apply the instance's
+                ``test_patch.diff`` on top of ``pred`` (see
+                :meth:`apply_test_patch`). Off by default so existing
+                behaviour is unchanged.
         """
         self.instance_id = instance_id
         self.timestamp = timestamp
@@ -328,6 +335,7 @@ class Evaluator(ABC):
         self.patch_type = patch_type
         self.agent_name = agent_name
         self.pred = pred
+        self.apply_test_patch_enabled = apply_test_patch
         self.image = None
         self.container = None
 
@@ -408,6 +416,89 @@ class Evaluator(ABC):
             log.error('Failed to apply patch')
             raise Exception(
                 f'Failed to apply patch for {self.instance_id}: '
+                f'{output.decode()}'
+            )
+
+    def apply_test_patch(self) -> None:
+        """Apply the instance's ``test_patch.diff`` on top of the model patch.
+
+        SWE-bench scores a model patch against the maintainer's tests, so
+        those tests have to be present in the container no matter what the
+        model wrote. This project's ``gold_patch.diff`` bundles the code
+        fix and the new tests together, so a model run — which only ever
+        receives ``pred.model_patch`` — never sees them, and its
+        FAIL_TO_PASS tests are absent rather than failing.
+
+        Applying the test half separately fixes that. The test files are
+        first restored to their committed state, because a model patch may
+        have edited the same files and would otherwise make the test patch
+        conflict.
+
+        Does nothing when the instance has no ``test_patch.diff`` or the
+        file is empty.
+
+        Raises:
+            Exception: If the container has not been started, or if
+                ``git apply`` exits non-zero.
+        """
+
+        if self.container is None:
+            raise Exception('no container')
+
+        test_patch_path = (
+            DOCKERFILES_BASE / self.instance_id / TEST_PATCH_DIFF_FILENAME
+        )
+        if not test_patch_path.is_file():
+            log.warning(
+                f'No {TEST_PATCH_DIFF_FILENAME} for {self.instance_id}; '
+                'run scripts/split_gold_patch.py first'
+            )
+            return
+
+        test_patch = test_patch_path.read_text(
+            encoding='utf-8', errors='surrogateescape'
+        )
+        if not test_patch.strip():
+            log.info('Test patch is empty, nothing to apply')
+            return
+
+        # Discard any model edits to the files the test patch touches, so
+        # the patch applies against the state it was generated from. Paths
+        # come from the post-image (b/) side of each diff header.
+        paths = re.findall(r'^diff --git a/\S+ b/(\S+)', test_patch, re.M)
+        if paths:
+            quoted = ' '.join(f"'{p}'" for p in paths)
+            exit_code, output = self.container.exec_run(
+                f'git checkout -- {quoted}',
+                workdir='/testbed',
+                stream=False,
+            )
+            # Newly added test files are untracked, so checkout fails for
+            # them. That is expected and harmless: the patch creates them.
+            if exit_code != 0:
+                assert isinstance(output, bytes)
+                log.info(
+                    'git checkout of test paths returned '
+                    f'{exit_code} (expected for newly added files): '
+                    f'{output.decode()}'
+                )
+
+        write_to_container(self.container, TEST_PATCH_FILE, test_patch)
+
+        exit_code, output = self.container.exec_run(
+            f'git apply {TEST_PATCH_FILE}',
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+
+        log.info(exit_code)
+        log.info(output.decode())
+
+        if exit_code != 0:
+            log.error('Failed to apply test patch')
+            raise Exception(
+                f'Failed to apply test patch for {self.instance_id}: '
                 f'{output.decode()}'
             )
 
@@ -504,8 +595,19 @@ class Evaluator(ABC):
                 self.apply_patch()
             else:
                 log.info('No patch to apply')
+            if self.apply_test_patch_enabled:
+                log.info('Applying test patch...')
+                self.apply_test_patch()
             log.info('Evaluating...')
             results = self.evaluate()
+        except Exception:
+            # Without this the stage that failed is invisible: the run
+            # goes straight from its last INFO line to "Cleaning up",
+            # leaving no cause to diagnose.
+            log.exception(
+                f'Run failed for {self.instance_id} ({self.patch_type})'
+            )
+            raise
         finally:
             log.info('Cleaning up...')
             self.cleanup()
