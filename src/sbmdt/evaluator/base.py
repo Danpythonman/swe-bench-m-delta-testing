@@ -22,6 +22,7 @@ from docker.models.containers import Container
 from docker.models.images import Image
 
 from sbmdt.env import DOCKERFILES_BASE
+from sbmdt.patches import test_patch_for
 from sbmdt.pred import Pred
 from sbmdt.utils import write_to_container
 
@@ -38,7 +39,6 @@ log = logging.getLogger(__name__)
 
 PATCH_FILE: Final[str] = '/tmp/model.patch'
 TEST_PATCH_FILE: Final[str] = '/tmp/test.patch'
-TEST_PATCH_DIFF_FILENAME: Final[str] = 'test_patch.diff'
 
 LABEL_KEY = 'ca.maleknazn.sbmdt.managed'
 LABEL_VALUE = 'true'
@@ -434,30 +434,23 @@ class Evaluator(ABC):
         have edited the same files and would otherwise make the test patch
         conflict.
 
-        Does nothing when the instance has no ``test_patch.diff`` or the
-        file is empty.
+        The test half is derived from ``gold_patch.diff`` when no
+        ``test_patch.diff`` has been written, so this works on a fresh
+        clone without ``scripts/split_gold_patch.py`` having been run.
+
+        Does nothing when the gold patch touches no test file.
 
         Raises:
             Exception: If the container has not been started, or if
                 ``git apply`` exits non-zero.
+            FileNotFoundError: If the instance has no patch to derive the
+                test half from.
         """
 
         if self.container is None:
             raise Exception('no container')
 
-        test_patch_path = (
-            DOCKERFILES_BASE / self.instance_id / TEST_PATCH_DIFF_FILENAME
-        )
-        if not test_patch_path.is_file():
-            log.warning(
-                f'No {TEST_PATCH_DIFF_FILENAME} for {self.instance_id}; '
-                'run scripts/split_gold_patch.py first'
-            )
-            return
-
-        test_patch = test_patch_path.read_text(
-            encoding='utf-8', errors='surrogateescape'
-        )
+        test_patch = test_patch_for(self.instance_id)
         if not test_patch.strip():
             log.info('Test patch is empty, nothing to apply')
             return

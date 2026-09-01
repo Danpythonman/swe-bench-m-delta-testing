@@ -32,87 +32,26 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import re
 from dataclasses import asdict
 from pathlib import Path
 from typing import Final
 
 from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.log import setup_logging
+from sbmdt.patches import (
+    CODE_PATCH_DIFF_FILENAME,
+    CODE_PATCH_PRED_FILENAME,
+    DIFF_HEADER,
+    GOLD_PATCH_DIFF_FILENAME,
+    TEST_PATCH_DIFF_FILENAME,
+    read_diff,
+    split_diff,
+)
 from sbmdt.pred import Pred
 
 log = logging.getLogger(__name__)
 
-CODE_PATCH_DIFF_FILENAME: Final[str] = 'code_patch.diff'
-TEST_PATCH_DIFF_FILENAME: Final[str] = 'test_patch.diff'
-CODE_PATCH_PRED_FILENAME: Final[str] = 'code_patch.pred'
-GOLD_PATCH_DIFF_FILENAME: Final[str] = 'gold_patch.diff'
-
 CODE_MODEL_NAME: Final[str] = 'GOLD_CODE_ONLY'
-
-# A path is a test path if it sits in a test directory or carries a test
-# suffix. Kept deliberately broad: misfiling a test file as code would
-# silently reintroduce the very bug this script exists to fix.
-TEST_PATH: Final[re.Pattern[str]] = re.compile(
-    r"""
-    (^|/)(test|tests|spec|specs|__tests__|__test__|e2e|cypress)/
-    | [-_.](test|spec)\.[cm]?[jt]sx?$
-    | \.(test|spec)\.[cm]?[jt]sx?$
-    | (^|/)conftest\.py$
-    | (^|/)test_[^/]*\.py$
-    | [^/]*_test\.py$
-    """,
-    re.IGNORECASE | re.VERBOSE,
-)
-
-# Start of a per-file section in a unified diff.
-DIFF_HEADER: Final[re.Pattern[str]] = re.compile(
-    r'^diff --git a/(\S+) b/(\S+)', re.M
-)
-
-
-def is_test_path(path: str) -> bool:
-    """Return True when `path` looks like a test file.
-
-    Args:
-        path: A repository-relative path taken from a diff header.
-
-    Returns:
-        Whether the path belongs to the test suite.
-    """
-    return TEST_PATH.search(path) is not None
-
-
-def split_diff(diff: str) -> tuple[str, str]:
-    """Split a unified diff into its non-test and test halves.
-
-    The diff is cut at each ``diff --git`` header, and every per-file
-    section is routed by its path. Section order is preserved within
-    each half, so both outputs remain applicable with ``git apply``.
-
-    Args:
-        diff: The full unified diff.
-
-    Returns:
-        A ``(code_diff, test_diff)`` pair. Either may be empty.
-    """
-    starts = [m.start() for m in DIFF_HEADER.finditer(diff)]
-    if not starts:
-        return diff, ''
-
-    code_parts: list[str] = []
-    test_parts: list[str] = []
-    bounds = starts + [len(diff)]
-    for begin, end in zip(bounds[:-1], bounds[1:], strict=True):
-        section = diff[begin:end]
-        header = DIFF_HEADER.match(section)
-        assert header is not None
-        # b/ is the post-image path, which is the one that exists after
-        # the patch applies; a/ is /dev/null for a newly added file.
-        path = header.group(2)
-        (test_parts if is_test_path(path) else code_parts).append(section)
-
-    return ''.join(code_parts), ''.join(test_parts)
 
 
 def split_instance(instance_dir: Path, write: bool = True) -> dict[str, int]:
@@ -132,7 +71,7 @@ def split_instance(instance_dir: Path, write: bool = True) -> dict[str, int]:
     if not gold.is_file():
         raise FileNotFoundError(f'no gold patch: {gold}')
 
-    diff = gold.read_text(encoding='utf-8', errors='surrogateescape')
+    diff = read_diff(gold)
     code_diff, test_diff = split_diff(diff)
 
     counts = {
