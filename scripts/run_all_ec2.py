@@ -76,6 +76,7 @@ class RunArgs:
     block_volume_size_gb: int
     aws_profile: str
     git_branch: str | None
+    apply_test_patch: bool
 
 
 N_CONCURRENT = 5
@@ -107,7 +108,10 @@ harmless no-op.
 
 
 def make_command(
-    sbmdt_instance_id: str, patch_type: PatchType, pred_s3_key: str
+    sbmdt_instance_id: str,
+    patch_type: PatchType,
+    pred_s3_key: str,
+    apply_test_patch: bool = False,
 ) -> str:
     """Build the shell command to run on the EC2 instance via SSM.
 
@@ -125,6 +129,9 @@ def make_command(
             evaluation results should be uploaded to.
         --stdout-bucket   ``STDOUT_S3_BUCKET_NAME`` -- bucket the command's
             stdout/log should be uploaded to.
+        --apply-test-patch  present when ``apply_test_patch`` is set;
+            applies the instance's test patch on top of the model
+            patch so the maintainer's FAIL_TO_PASS tests are present.
         --stdout-key      ``stdout_s3_key`` -- key the command's
             stdout/log should be uploaded to within that bucket (derived
             from ``pred_s3_key`` by swapping the ``.pred`` extension for
@@ -135,6 +142,8 @@ def make_command(
         patch_type: Patch state to evaluate under.
         pred_s3_key: S3 key of the prediction file to evaluate, within
             ``PREDS_S3_BUCKET_NAME``.
+        apply_test_patch: Whether to pass ``--apply-test-patch``
+            through to ``run_instance.py``.
 
     Returns:
         The full shell command string to execute on the instance.
@@ -158,6 +167,8 @@ def make_command(
         '--stdout-key',
         stdout_s3_key,
     ]
+    if apply_test_patch:
+        args.append('--apply-test-patch')
     command = 'cd /opt/sbmdt && ' + shlex.join(args)
     return command
 
@@ -250,7 +261,12 @@ async def run_instance(
         output = await send_ssm_command(
             ssm,
             instance_id,
-            make_command(sbmdt_instance_id, patch_type, pred_s3_key),
+            make_command(
+                sbmdt_instance_id,
+                patch_type,
+                pred_s3_key,
+                apply_test_patch=run_args.apply_test_patch,
+            ),
         )
         log.info(f'Received output: {output}')
     except Exception as e:
@@ -500,6 +516,16 @@ def parse_args() -> RunArgs:
         ),
     )
     parser.add_argument(
+        '--apply-test-patch',
+        action='store_true',
+        help=(
+            "Apply each instance's test patch on top of the model "
+            "patch, so the maintainer's FAIL_TO_PASS tests are "
+            'present regardless of what the model wrote. Without '
+            'this every FAIL_TO_PASS test is reported as not run.'
+        ),
+    )
+    parser.add_argument(
         '--git-branch',
         default=GIT_BRANCH,
         help=(
@@ -524,6 +550,7 @@ def parse_args() -> RunArgs:
         block_volume_size_gb=args.block_volume_size_gb,
         aws_profile=args.aws_profile,
         git_branch=args.git_branch,
+        apply_test_patch=args.apply_test_patch,
     )
 
 
