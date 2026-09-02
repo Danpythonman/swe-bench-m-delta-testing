@@ -1,0 +1,20 @@
+diff --git a/tests/docs/smoke-all/2022/10/06/issue-2228.qmd b/tests/docs/smoke-all/2022/10/06/issue-2228.qmd
+new file mode 100644
+index 00000000000..b38139b57fa
+--- /dev/null
++++ b/tests/docs/smoke-all/2022/10/06/issue-2228.qmd
+@@ -0,0 +1,13 @@
++---
++format: html
++---
++
++::: {#thm-line}
++
++## Line (with or without the Lua filter error occurs)
++
++```
++1+1
++```
++
++:::
+\ No newline at end of file

@@ -1,0 +1,42 @@
+diff --git a/tests/docs/smoke-all/2023/03/09/code.R b/tests/docs/smoke-all/2023/03/09/code.R
+new file mode 100644
+index 00000000000..041a291f37c
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/03/09/code.R
+@@ -0,0 +1 @@
++cat("this is code.R\n")
+\ No newline at end of file
+diff --git a/tests/docs/smoke-all/2023/03/09/revealjs-knitr-embed-verbatim.qmd b/tests/docs/smoke-all/2023/03/09/revealjs-knitr-embed-verbatim.qmd
+new file mode 100644
+index 00000000000..e9bf9d1bf69
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/03/09/revealjs-knitr-embed-verbatim.qmd
+@@ -0,0 +1,28 @@
++---
++format: 
++  revealjs: default
++engine: knitr
++_quarto:
++  tests:
++    revealjs:
++      ensureHtmlElements:
++        - ["#verbatim div.sourceCode pre code", "#embed div.sourceCode pre code"]
++        - ["#verbatim div.cell", "#embed div.cell"]
++      ensureFileRegexMatches:
++        - ["this is code\\.R"]
++        - []
++---
++
++From issue : https://github.com/quarto-dev/quarto-cli/issues/4712
++
++## Verbatim {#verbatim}
++
++````{verbatim}
++Some content
++````
++
++## Embed {#embed}
++
++````{embed, file = "code.R"}
++````
++

@@ -1,0 +1,84 @@
+diff --git a/tests/docs/reveal/stretch.qmd b/tests/docs/reveal/stretch.qmd
+index 6c42951cf61..d81abb27515 100644
+--- a/tests/docs/reveal/stretch.qmd
++++ b/tests/docs/reveal/stretch.qmd
+@@ -183,3 +183,55 @@ plot(cars)
+ ## {#no-content-caption}
+ 
+ ![A logo](https://revealjs.com/images/logo/reveal-black-text.svg)
++
++## No auto stretch if nested {#custom-divs-simple}
++
++::: {.custom-block}
++
++Some content with an image below
++
++![](https://revealjs.com/images/logo/reveal-black-text.svg)
++
++:::
++
++## No auto stretch if nested 2 {#custom-divs-caption}
++
++::: {.custom-block}
++
++Some content with an image below
++
++![A logo](https://revealjs.com/images/logo/reveal-black-text.svg)
++
++:::
++
++## No auto stretch if nested 3 {#custom-divs-knitr}
++
++::: {.custom-block}
++
++```{r, echo = FALSE}
++plot(cars)
++```
++
++:::
++
++## No auto stretch if nested 4 {#custom-divs-knitr-caption}
++
++::: {.custom-block}
++
++```{r, echo = FALSE, fig.cap = "Caption"}
++plot(cars)
++```
++
++:::
++
++## Nested in div supports opt-in  {#custom-divs-opt-in}
++
++::: {.custom-block .r-stretch}
++
++Some content
++
++```{r, echo = FALSE, fig.cap = "Caption"}
++plot(cars)
++```
++
++:::
+\ No newline at end of file
+diff --git a/tests/smoke/render/render-reveal.test.ts b/tests/smoke/render/render-reveal.test.ts
+index 900e662e07f..f2de8abaef3 100644
+--- a/tests/smoke/render/render-reveal.test.ts
++++ b/tests/smoke/render/render-reveal.test.ts
+@@ -50,6 +50,7 @@ testRender(input, "revealjs", false, [
+     "#knitr-no-caption-and-content > img.r-stretch + div.cell",
+     "#no-content > img.r-stretch",
+     "#no-content-caption > img.r-stretch + p.caption",
++    "#custom-divs-opt-in > div.custom-block:not(.r-stretch) + img.r-stretch + p.caption",
+   ], [
+     "#columns img.r-stretch",
+     "#more-than-one img.r-stretch",
+@@ -60,5 +61,10 @@ testRender(input, "revealjs", false, [
+     "#block-layout img.r-stretch",
+     "#block-layout2 img.r-stretch",
+     "#fig-tab-layout img.r-stretch",
++    "#custom-divs-simple img.r-stretch",
++    "#custom-divs-caption img.r-stretch",
++    "#custom-divs-caption img.r-stretch",
++    "#custom-divs-knitr img.r-stretch",
++    "#custom-divs-knitr-caption img.r-stretch",
+   ]),
+ ]);

@@ -1,0 +1,21 @@
+diff --git a/tests/docs/smoke-all/2023/01/23/reveal-config-quote-4063.qmd b/tests/docs/smoke-all/2023/01/23/reveal-config-quote-4063.qmd
+new file mode 100644
+index 00000000000..17ad621a81b
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/01/23/reveal-config-quote-4063.qmd
+@@ -0,0 +1,14 @@
++---
++format: 
++  revealjs:
++    width: 5.3%
++    height: 53%
++_quarto:
++  tests:
++    revealjs:
++      ensureFileRegexMatches:
++        - ["width: '5\\.3%',", "height: '53%',"]
++        - ["width: 5\\.3%,", "height: 53%,"]
++---
++
++# Slide
+\ No newline at end of file

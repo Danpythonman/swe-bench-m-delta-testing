@@ -129,8 +129,9 @@ def parse_args() -> Args:
         help=(
             "Apply the instance's test_patch.diff on top of the patch, so "
             "the maintainer's FAIL_TO_PASS tests are present no matter "
-            'what the model wrote. Requires scripts/split_gold_patch.py to '
-            'have run. Off by default, which reproduces the old behaviour.'
+            'what the model wrote. Falls back to deriving the test half '
+            'from gold_patch.diff. Off by default, which reproduces the '
+            'old behaviour.'
         ),
     )
 
