@@ -116,7 +116,7 @@ build {
     # ssm-user.
     provisioner "shell" {
         inline = [
-            "sudo -i -u ssm-user bash -c 'GIT_TERMINAL_PROMPT=0 git clone --depth 1 --single-branch --branch aws ${var.repo_url} /opt/sbmdt'",
+            "sudo -i -u ssm-user bash -c 'GIT_TERMINAL_PROMPT=0 git clone --depth 1 --single-branch --branch master ${var.repo_url} /opt/sbmdt'",
             "sudo -i -u ssm-user bash -c 'cd /opt/sbmdt && uv sync --frozen || uv sync'",
         ]
     }

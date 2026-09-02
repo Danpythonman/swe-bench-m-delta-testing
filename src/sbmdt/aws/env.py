@@ -4,7 +4,7 @@ from typing import Final
 
 from mypy_boto3_ec2.literals import InstanceTypeType
 
-IMAGE_ID: Final[str] = 'ami-04934ddbd9e03f358'
+IMAGE_ID: Final[str] = 'ami-070ff54484e26f9bb'
 """Default AMI ID used by ``scripts/run_all_ec2.py`` to launch instances."""
 
 INSTANCE_TYPE: Final[InstanceTypeType] = 't3a.large'
