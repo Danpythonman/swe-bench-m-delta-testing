@@ -1,0 +1,28 @@
+diff --git a/tests/smoke/crossref/latex.test.ts b/tests/smoke/crossref/latex.test.ts
+index 0dcf7296c1b..77d3df41f96 100644
+--- a/tests/smoke/crossref/latex.test.ts
++++ b/tests/smoke/crossref/latex.test.ts
+@@ -32,10 +32,14 @@ const subTableRegexes = [
+ ];
+ 
+ const theoremRegexes = [
+-  /\\begin{theorem}[^]*?\\label{thm-line}[^]*?\\end{theorem}/,
++  /\\begin{theorem}[^]*?\\protect\\hypertarget{thm-line}{}\\label{thm-line}[^]*?\\end{theorem}/,
+   /Theorem~\\ref{thm-line}/,
+ ];
+ 
++const theoremRegexesNo = [
++  /\\leavevmode\\vadjust pre{\\hypertarget{thm-line}{}}%/,
++];
++
+ testRender(allQmd.input, "latex", true, [
+   ensureFileRegexMatches(allQmd.output.outputPath, [
+     ...simpleFigRegexes,
+@@ -43,5 +47,7 @@ testRender(allQmd.input, "latex", true, [
+     ...simpleTableRegexes,
+     ...subTableRegexes,
+     ...theoremRegexes,
++  ], [
++    ...theoremRegexesNo,
+   ]),
+ ]);

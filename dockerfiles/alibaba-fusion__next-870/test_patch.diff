@@ -1,0 +1,943 @@
+diff --git a/test/badge/index-spec.js b/test/badge/index-spec.js
+index 20d74c2ee0..99ae1e6e7f 100644
+--- a/test/badge/index-spec.js
++++ b/test/badge/index-spec.js
+@@ -1,7 +1,7 @@
+ import React from 'react';
+ import ReactDOM from 'react-dom';
+ import ReactTestUtils from 'react-dom/test-utils';
+-import Enzyme, { mount } from 'enzyme';
++import Enzyme, { mount, render } from 'enzyme';
+ import Adapter from 'enzyme-adapter-react-16';
+ import assert from 'power-assert';
+ import co from 'co';
+@@ -269,4 +269,10 @@ describe('Badge', () => {
+         ReactDOM.unmountComponentAtNode(div);
+         document.body.removeChild(div);
+     });
++
++    it('should show zero when count is even zero by setting showZero', () => {
++        const wrapper = render(<Badge count={0} showZero />);
++        assert.notStrictEqual(wrapper.find('.next-badge-count'), null);
++        assert(wrapper.find('.next-badge-count').hasClass('next-badge-scroll-number'));
++    })
+ });
+diff --git a/test/calendar/index-spec.js b/test/calendar/index-spec.js
+index a54d2a6ccc..6997ffcb78 100644
+--- a/test/calendar/index-spec.js
++++ b/test/calendar/index-spec.js
+@@ -1,4 +1,5 @@
+ import React from 'react';
++import sinon from 'sinon';
+ import Enzyme, { mount } from 'enzyme';
+ import Adapter from 'enzyme-adapter-react-16';
+ import assert from 'power-assert';
+@@ -154,13 +155,16 @@ describe('Calendar', () => {
+ 
+     describe('action', () => {
+         it('should change mode', () => {
+-            wrapper = mount(<Calendar />);
++            const onModeChange = sinon.spy();
++
++            wrapper = mount(<Calendar onModeChange={onModeChange} />);
+             wrapper
+                 .find('.next-radio-wrapper input')
+                 .at(1)
+                 .simulate('change', { target: { checked: true } });
+             assert(wrapper.find('td').length === 12);
+             assert(wrapper.find('td[title="1月"]').length === 1);
++            assert(onModeChange.calledOnce);
+         });
+ 
+         it('should change panel mode to month', () => {
+diff --git a/test/field/index-spec.js b/test/field/index-spec.js
+index 994c4980ea..b2350c9108 100644
+--- a/test/field/index-spec.js
++++ b/test/field/index-spec.js
+@@ -334,6 +334,56 @@ describe('field', () => {
+             done();
+         });
+ 
++        it('should return `undefined` for `getValue` on uninitialized field', function() {
++            const field = new Field(this);
++            assert.equal(field.getValue('input'), undefined);
++        });
++
++        it('should return empty object for `getValues` on uninitialized field', function() {
++            const field = new Field(this);
++            assert.equal(Object.keys(field.getValues()).length, 0);
++        });
++
++        it('should set value with `setValue` on uninitialized field', function() {
++            const field = new Field(this);
++            field.setValue('input', 1)
++            field.init('input');
++            assert.equal(field.getValue('input'), 1);
++        });
++
++        it('should set value with `setValues` on uninitialized field', function() {
++            const field = new Field(this);
++            field.setValues({input: 1})
++            field.init('input');
++            assert.equal(field.getValue('input'), 1);
++        });
++
++        it('should return value from `setValue` when calling `getValue` on uninitialized field', function() {
++            const field = new Field(this);
++            field.setValue('input', 1)
++            assert.equal(field.getValue('input'), 1);
++        });
++
++        it('should return value from `setValue` when calling `getValues` on uninitialized field', function() {
++            const field = new Field(this);
++            field.setValue('input', 1)
++            assert.equal(field.getValues().input, 1);
++        });
++
++        it('should return values from `setValue` and init when calling `getValues`', function() {
++            const field = new Field(this);
++            field.setValue('input', 1)
++            field.init('input2', {initValue: 2})
++            assert.deepEqual(field.getValues(), { input: 1, input2: 2});
++        });
++
++        it('should return `setValue` value instead of initValue', function() {
++            const field = new Field(this);
++            field.setValue('input', 1)
++            field.init('input', {initValue: 2})
++            assert.deepEqual(field.getValues(), { input: 1 });
++        });
++
+         it('setError & setErrors & getError & getErrors', function(done) {
+             const field = new Field(this);
+             field.setError('input', 'error1');
+@@ -466,22 +516,46 @@ describe('field', () => {
+                 done();
+             });
+         });
++        
++        describe('reset', function() {
++            it('should set value to `undefined` on `reset()` if init with `initValue`', function() {
++                const field = new Field(this);
++                field.init('input', { initValue: '1' });
++    
++                field.reset();
++                assert(field.getValue('input') === undefined);
++            });
+ 
+-        it('reset', function(done) {
+-            const field = new Field(this);
+-            field.init('input', { initValue: '1' });
+-
+-            field.reset();
+-            assert(field.getValue('input') === undefined);
+-
+-            field.init('input2', { initValue: '4' });
+-            field.setValue('input2', '33');
+-
+-            field.resetToDefault();
+-            assert(field.getValue('input2') === '4');
++            it('should set only named value to `undefined` on `reset()` if init with `initValue`', function() {
++                const field = new Field(this);
++                field.init('input', { initValue: '1' });
++                field.init('input2', { initValue: '2' });
++    
++                field.reset('input');
++                assert.deepEqual(field.getValues(), { input: undefined, input2: '2'});
++            });
++    
++            it('should set value to `initValue` on `resetToDefaults()` if init with `initValue`', function() {
++                const field = new Field(this);
++                field.init('input', { initValue: '4' });
++                field.setValue('input', '33');
++    
++                field.resetToDefault();
++                assert(field.getValue('input') === '4');
++            });
+ 
+-            done();
++            it('should set only named value to `initValue` on `resetToDefaults()` if init with `initValue`', function() {
++                const field = new Field(this);
++                field.init('input', { initValue: '4' });
++                field.setValue('input', '33');
++                field.init('input2', { initValue: '4' });
++                field.setValue('input2', '33');
++    
++                field.resetToDefault('input');
++                assert.deepEqual(field.getValues(), { input: '4', input2: '33'});
++            });
+         });
++
+         it('remove', function(done) {
+             const field = new Field(this);
+             field.init('input', { initValue: 1 });
+@@ -498,24 +572,58 @@ describe('field', () => {
+ 
+             done();
+         });
+-        it('spliceArray', function(done) {
+-            const field = new Field(this);
+-            field.init('input.0', { initValue: 0 });
+-            field.init('input.1', { initValue: 1 });
+-            field.init('input.2', { initValue: 2 });
++        describe('spliceArray', function() {
++            it('should remove the middle field item', () => {
++                const field = new Field(this);
++                field.init('input.0', { initValue: 0 });
++                field.init('input.1', { initValue: 1 });
++                field.init('input.2', { initValue: 2 });
++
++                field.spliceArray('input.{index}', 1);
++
++                assert(field.getValue('input.0') === 0);
++                assert(field.getValue('input.1') === 2);
++                assert(field.getValue('input.2') === undefined);
++            });
+ 
+-            field.spliceArray('input.{index}', 1);
++            it('should remove the first 2 field items', () => {
++                const field = new Field(this);
++                field.init('input.0', { initValue: 0 });
++                field.init('input.1', { initValue: 1 });
++                field.init('input.2', { initValue: 2 });
++
++                field.spliceArray('input.{index}', 1);
++                field.spliceArray('input.{index}', 0);
++                assert(field.getValue('input.0') === 2);
++                assert(field.getValue('input.1') === undefined);
++                assert(field.getValue('input.2') === undefined);
++            });
+ 
+-            assert(field.getValue('input.0') === 0);
+-            assert(field.getValue('input.1') === 2);
+-            assert(field.getValue('input.2') === undefined);
++            it('should make no change `keymatch` does not contain `{index}', () => {
++                const field = new Field(this);
++                field.init('input.0', { initValue: 0 });
++                field.init('input.1', { initValue: 1 });
++                field.init('input.2', { initValue: 2 });
+ 
+-            field.spliceArray('input.{index}', 0);
+-            assert(field.getValue('input.0') === 2);
+-            assert(field.getValue('input.1') === undefined);
+-            assert(field.getValue('input.2') === undefined);
++                field.spliceArray('input', 0);
++                assert(field.getValue('input.0') === 0);
++                assert(field.getValue('input.1') === 1);
++                assert(field.getValue('input.2') === 2);
++            });
+ 
+-            done();
++            it('should remove the middle field item when parseName=true', () => {
++                const field = new Field(this, { parseName: true });
++                field.init('input.0', { initValue: 0 });
++                field.init('input.1', { initValue: 1 });
++                field.init('input.2', { initValue: 2 });
++
++                field.spliceArray('input.{index}', 1);
++
++                assert(field.getValue('input.0') === 0);
++                assert(field.getValue('input.1') === 2);
++                assert(field.getValue('input.2') === undefined);
++                assert(field.getValue('input').length === 2);
++            });
+         });
+     });
+ });
+diff --git a/test/field/options-spec.js b/test/field/options-spec.js
+index 38bb40fc42..47d7ea271e 100644
+--- a/test/field/options-spec.js
++++ b/test/field/options-spec.js
+@@ -171,7 +171,6 @@ describe('options', () => {
+                     input: inputValue
+                 },
+             });
+-            field.init('input');
+             assert.equal(field.getValue('input'), inputValue);
+         });
+ 
+@@ -189,7 +188,7 @@ describe('options', () => {
+             assert.equal(field.getValue('input.child'), inputValue);
+         });
+ 
+-        it('should allow access to field values before init when given `values` in constructor', function() {
++        it('should allow access with `getValue` before init when given `values` in constructor', function() {
+             const inputValue = 'my value';
+             const field = new Field(this, {
+                 values: {
+@@ -199,6 +198,27 @@ describe('options', () => {
+             assert.equal(field.getValue('input'), inputValue);
+         });
+ 
++        it('should allow access to with `getValues` before init when given `values` in constructor', function() {
++            const inputValue = 'my value';
++            const field = new Field(this, {
++                values: {
++                    input: inputValue,
++                },
++            });
++            assert.equal(field.getValues().input, inputValue);
++        });
++
++        it('should use setValues instead of constructor values on field that has not been initialized', function() {
++            const inputValue = 'my value';            
++            const field = new Field(this, {
++                values: {
++                    input: inputValue,
++                },
++            });
++            field.setValue('input', 1)
++            assert.equal(field.getValue('input'), 1);
++        });
++
+         it('should reset `input` to undefined when given `values` in constructor and call `reset`', function() {
+             const fieldDefault = 'field default value';
+             const field = new Field(this, {
+@@ -223,35 +243,38 @@ describe('options', () => {
+             assert.equal(field.getValue('input'), fieldDefault);
+         });
+ 
+-        it('should reset `input` to undefined when given `values` and `parseName` = true in constructor and call `reset`', function() {
++        it('should reset `input` to undefined when given `values` in constructor and call `reset`', function() {
+             const fieldDefault = 'field default value';
+             const field = new Field(this, {
+-                parseName: true,
+                 values: {
+-                    input: {
+-                        child: fieldDefault
+-                    },
++                    input: fieldDefault
+                 },
+             });
+-            field.init('input.child');
++            field.init('input');
+             field.reset();
+-            assert.equal(field.getValue('input.child'), undefined);
++            assert.equal(field.getValue('input'), undefined);
+         });
+ 
+-        it('should reset `input` to undefined when given `values` and `parseName` = true in constructor and call `resetToDefault`', function() {
++        it('should return `{}` for `getValues after all fields are removed', function() {
+             const fieldDefault = 'field default value';
+             const field = new Field(this, {
+-                parseName: true,
+                 values: {
+-                    input: {
+-                        child: fieldDefault
+-                    },
++                    input: fieldDefault
+                 },
+             });
+-            field.init('input.child');
+-            field.resetToDefault('input.child');
+-            assert.equal(field.getValue('input.child'), fieldDefault);
++            field.init('input');
++            field.remove('input');
++            assert.equal(Object.keys(field.getValues()).length, 0);
+         });
++
++        it('should return `undefined` after `remove` then re-`init`', function() {
++            const field = new Field(this, {values: {input: 4}});
++            field.init('input');
++            field.remove('input');
++            field.init('input');
++
++            assert(field.getValue('input') === undefined);
++        })
+     });
+ 
+     describe('should support parseName', () => {
+@@ -261,7 +284,6 @@ describe('options', () => {
+             field.init('user.pwd', { initValue: 12345 });
+             field.init('option[0]', { initValue: 'option1' });
+             field.init('option[1]', { initValue: 'option2' });
+-
+             const values = field.getValues();
+ 
+             assert(Object.keys(values).length === 2);
+@@ -273,6 +295,27 @@ describe('options', () => {
+ 
+             done();
+         });
++        it('should get constructor value of `name` if `getValue` called before init', function() {
++            const field = new Field(this, {
++                parseName: true,
++                values: { a: { b: 1 } },
++            });
++            assert(field.getValue('a.b') === 1);
++        });
++
++        it('should return constructor value for `names` if `getValues` called before init', function() {
++            const field = new Field(this, {parseName: true, values: {a: 1, b: 2, c: 3}});
++            const {a, b} = field.getValues(['a', 'b']);
++            assert(a === 1);
++            assert(b === 2);
++        });
++        it('should return all of constructor value if `getValues` called with no names before init', function() {
++            const field = new Field(this, {parseName: true, values: {a: 1, b: 2, c: 3}});
++            const {a, b, c} = field.getValues();
++            assert(a === 1);
++            assert(b === 2);
++            assert(c === 3);
++        });
+         it('setValues', function(done) {
+             const field = new Field(this, { parseName: true });
+             field.init('user.name', { initValue: 'frankqian' });
+@@ -297,6 +340,235 @@ describe('options', () => {
+ 
+             done();
+         });
++
++        it('should allow access with `getValue` before init when given `values` in constructor', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    },
++                },
++            });
++            assert.equal(field.getValue('input.myValue'), fieldDefault);
++        });
++
++        it('should allow access to with `getValues` before init when given `values` in constructor', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    },
++                },
++            });
++            assert.equal(field.getValues().input.myValue, fieldDefault);
++        });
++
++        it('should use setValue instead of constructor values on field that has not been initialized', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    },
++                },
++            });
++            field.setValue('input.myValue', 1)
++            assert.equal(field.getValue('input.myValue'), 1);
++        });
++
++        
++
++        it('should remove top level field after removed', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    }
++                },
++            });
++            field.init('input.myValue');
++            field.remove('input.myValue');
++            assert.equal(Object.keys(field.getValues()).input, undefined);
++        });
++
++        it('should return `{}` for `getValues after `remove()`', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    }
++                },
++            });
++            field.init('input.myValue');
++            field.setValue('input.value2', fieldDefault);
++            field.remove();
++            assert.equal(Object.keys(field.getValues()).length, 0);
++        });
++
++        it('should return `undefined` after `remove` then re-`init`', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++                values: {
++                    input: {
++                        myValue: fieldDefault
++                    }
++                },
++            });
++            field.init('input.myValue');
++            field.remove('input.myValue');
++            field.init('input.myValue');
++
++            assert(field.getValue('input.myValue') === undefined);
++        });
++
++        it('should return all setValues', function() {
++            const fieldDefault = 'field default value';
++            const field = new Field(this, {
++                parseName: true,
++            });
++            field.setValues({
++                input: {
++                    myValue: fieldDefault,
++                },
++            });
++
++            assert.deepEqual(field.getValues(), {
++                input: { myValue: fieldDefault },
++            });
++        });
++
++        it('should return all setValues and initValues', function() {
++            const fieldDefault = 'field default value';
++            const otherDefault = 'other default value';
++            const field = new Field(this, {
++                parseName: true,
++            });
++            field.setValues({
++                input: {
++                    myValue: fieldDefault,
++                },
++            });
++
++            field.init('input.otherValue', { initValue: otherDefault });
++
++            assert.deepEqual(field.getValues(), {
++                input: {
++                    myValue: fieldDefault,
++                    otherValue: otherDefault,
++                },
++            });
++        });
++        describe('reset', function() {
++            it('should reset all to undefined when call `reset`', function() {
++                const fieldDefault = 'field default value';
++                const field = new Field(this, {
++                    parseName: true,
++                });
++                field.setValue('input.myValue', fieldDefault);
++                field.setValue('input.otherValue', fieldDefault);
++                field.reset();
++                assert.equal(field.getValue('input.myValue'), undefined);
++                assert.equal(field.getValue('input.otherValue'), undefined);
++            });
++
++            it('should reset all to undefined when given `values` in constructor and call `reset`', function() {
++                const fieldDefault = 'field default value';
++                const field = new Field(this, {
++                    parseName: true,
++                    values: {
++                        input: {
++                            myValue: fieldDefault,
++                            otherValue: fieldDefault
++                        },
++                    },
++                });
++                field.init('input.myValue');
++                field.init('input.otherValue');
++                field.reset();
++                assert.equal(field.getValue('input.myValue'), undefined);
++                assert.equal(field.getValue('input.otherValue'), undefined);
++            });
++
++            it('should reset only `input.myValue` to undefined when given `values` in constructor and pass `input.myValue` to `reset`', function() {
++                const fieldDefault = 'field default value';
++                const field = new Field(this, {
++                    parseName: true,
++                    values: {
++                        input: {
++                            myValue: fieldDefault,
++                            otherValue: fieldDefault
++                        },
++                    },
++                });
++                field.init('input.myValue');
++                field.reset('input.myValue');
++                assert.equal(field.getValue('input.myValue'), undefined);
++                assert.equal(field.getValue('input.otherValue'), fieldDefault);
++            });
++
++            it('should reset all to undefined when call `resetToDefault` with no defaults', function() {
++                const fieldDefault = 'field default value';
++                const field = new Field(this, {
++                    parseName: true,
++                });
++                field.setValue('input.myValue', fieldDefault);
++                field.setValue('input.otherValue', fieldDefault);
++                field.resetToDefault();
++                assert.equal(field.getValue('input.myValue'), undefined);
++                assert.equal(field.getValue('input.otherValue'), undefined);
++            });
++    
++            it('should reset all to undefined when given `values` in constructor and call `resetToDefault`', function() {
++                const fieldDefault = 'field default value';
++                const secondValue = 'second';
++                const field = new Field(this, {
++                    parseName: true,
++                    values: {
++                        input: {
++                            myValue: fieldDefault,
++                            otherValue: fieldDefault
++                        },
++                    },
++                });
++                field.init('input.myValue');
++                field.init('input.otherValue');
++                field.setValue('input.myValue', secondValue);
++                field.setValue('input.otherValue', secondValue);
++                field.resetToDefault();
++                assert.equal(field.getValue('input.myValue'), fieldDefault);
++                assert.equal(field.getValue('input.otherValue'), fieldDefault);
++            });
++
++            it('should reset `input` to undefined when given `values` in constructor and call `resetToDefault`', function() {
++                const fieldDefault = 'field default value';
++                const secondValue = 'second';
++                const field = new Field(this, {
++                    parseName: true,
++                    values: {
++                        input: {
++                            myValue: fieldDefault,
++                            otherValue: fieldDefault
++                        },
++                    },
++                });
++                field.init('input.myValue');
++                field.setValue('input.myValue', secondValue);
++                field.setValue('input.otherValue', secondValue);
++                field.resetToDefault('input.myValue');
++                assert.equal(field.getValue('input.myValue'), fieldDefault);
++                assert.equal(field.getValue('input.otherValue'), secondValue);
++            });
++        });
+     });
+ 
+     describe('should support autoValidate=false', () => {
+diff --git a/test/field/utils-spec.js b/test/field/utils-spec.js
+index 40fe2b1fc4..3f3f99d422 100644
+--- a/test/field/utils-spec.js
++++ b/test/field/utils-spec.js
+@@ -1,6 +1,6 @@
+ import React from 'react';
+ import assert from 'power-assert';
+-import {getErrorStrs} from '../../src/field/utils';
++import {getErrorStrs, getIn, setIn, deleteIn} from '../../src/field/utils';
+ 
+ /* eslint-disable react/jsx-filename-extension */
+ /* global describe it */
+@@ -55,4 +55,110 @@ describe('Field Utils', () => {
+             assert.deepEqual(result[1].props.children, 'message 2');
+         });
+     })
++
++    describe('getIn', () => {
++        it('should return state when state is falsy', () => {
++            assert(getIn(undefined, 'a') === undefined);
++        });
++
++        it('should return undefind when no name', () => {
++            assert(getIn({a: 1}, '') === undefined);
++        });
++
++        it('should return undefind when value for name', () => {
++            assert(getIn({a: 1}, 'b') === undefined);
++        });
++
++        it('should get top level element', () => {
++            assert(getIn({a: 1}, 'a') === 1);
++        });
++
++        it('should get deep level element', () => {
++            assert(getIn({a: {b: {c: 1}}}, 'a.b.c') === 1);
++        });
++
++        it('should get array element with dot notation', () => {
++            assert(getIn({a: [1, 2]}, 'a.1') === 2);
++        });
++
++        it('should get array element with bracket notation', () => {
++            assert(getIn({a: [1, 2]}, 'a[1]') === 2);
++        });
++
++        it('should get element that is deep array combination', () => {
++            assert(getIn({a: [1, {b: {c: 2}}]}, 'a[1].b.c') === 2);
++        });
++    });
++
++    describe('setIn', () => {
++        it('should initialize state with object when it is falsy and path is NaN', () => {
++            assert(setIn(undefined, 'a', 5).a === 5);
++        });
++
++        it('should initialize state with array when it is falsy and path is NaN', () => {
++            assert(setIn(undefined, '1', 5)[1] === 5);
++        });
++
++        it('should initialize state with whole path', () => {
++            assert(setIn(undefined, 'a.b.c', 5).a.b.c === 5);
++        });
++
++        it('should not modify state when setting new value', () => {
++            const state = {a: {b: { c: 1}}};
++            setIn(state, 'a.b.c', 5);
++            assert(state.a.b.c === 1);
++        });
++
++        it('should duplicate state with new value', () => {
++            const state = {a: {b: { c: 1}}};
++            const newState = setIn(state, 'a.b.c', 5);
++            assert(newState.a.b.c === 5);
++        });
++
++        it('should handle array dot notation', () => {
++            const state = {a: {b: [1, 2]}};
++            const newState = setIn(state, 'a.b.1', 5);
++            assert(newState.a.b[1] === 5);
++        });
++
++        it('should handle array bracket notation', () => {
++            const state = {a: {b: [1, 2]}};
++            const newState = setIn(state, 'a.b[1]', 5);
++            assert(newState.a.b[1] === 5);
++        });
++
++        it('should add to existing nested object', () => {
++            const state = {a: {b: 1 }};
++            const newState = setIn(state, 'a.c.d', 5);
++            assert(newState.a.c.d === 5);
++        });
++
++        it('should add to empty object', () => {
++            const newState = setIn({}, 'a.b.c', 5);
++            assert(newState.a.b.c === 5);
++        });
++    });
++
++    describe('deleteIn', () => {
++        it('should do nothing when name is not present', () => {
++            assert.deepEqual(deleteIn({a: { b: 1}}, 'x'), { a: { b: 1 }});
++        });
++
++        it('should do nothing given empty object', () => {
++            assert.deepEqual(deleteIn({}, 'x'), {});
++        });
++
++        it('should delete nested element, but leave object', () => {
++            assert.deepEqual(deleteIn({a : { b: 1}}, 'a.b'), {a: {}});
++        });
++
++        it('should delete top level element, but leave object', () => {
++            assert.deepEqual(deleteIn({a : { b: 1}}, 'a'), {});
++        });
++
++        it('should delete array element, but not change later indices', () => {
++            // eslint-disable-next-line no-sparse-arrays
++            assert.deepEqual(deleteIn({a : { b: [1, 2, 3]}}, 'a.b.0'), {a : { b: [, 2, 3]}}); 
++        });
++    });
+ });
+diff --git a/test/menu/index-spec.js b/test/menu/index-spec.js
+index 3dcaa72ff3..acde87880a 100644
+--- a/test/menu/index-spec.js
++++ b/test/menu/index-spec.js
+@@ -835,6 +835,46 @@ describe('Menu', () => {
+         ReactDOM.unmountComponentAtNode(div);
+         document.body.removeChild(div);
+     });
++
++    it('should support hozInLine in hoz', () => {
++
++        const div = document.createElement('div');
++        document.body.appendChild(div);
++
++        ReactDOM.render(
++            <Menu
++                direction="hoz"
++                style={{width: 300}}
++                mode="popup"
++                hozInLine
++            >
++                <Item key="0" style={{width: 100}}>0</Item>
++                <Item key="1" style={{width: 60}}>1</Item>
++                <SubMenu key="sub-menu" label="Sub menu" style={{width: 50}}>
++                    <Item key="2">2</Item>
++                    <Item key="3">3</Item>
++                </SubMenu>
++                <Item key="4" style={{width: 30}}>4</Item>
++                <Item key="5">5</Item>
++                <Item key="6">6</Item>
++            </Menu>,
++            div
++        );
++
++        const menu = document.querySelector('.next-menu.next-hoz');
++        assert(menu.querySelectorAll('li.next-menu-more').length === 2);
++
++        const indicator = menu.querySelectorAll('li.next-menu-more')[0].querySelector('.next-menu-item-inner');
++        indicator.click();
++        const overlay = document.querySelector('.next-overlay-wrapper');
++
++        assert(overlay);
++        assert(overlay.querySelectorAll('li').length === 2);
++
++        ReactDOM.unmountComponentAtNode(div);
++        document.body.removeChild(div);
++
++    });
+ });
+ 
+ describe('Menu.create', () => {
+diff --git a/test/tab/index-spec.js b/test/tab/index-spec.js
+index bcb0785597..c66ae3656e 100644
+--- a/test/tab/index-spec.js
++++ b/test/tab/index-spec.js
+@@ -141,7 +141,7 @@ describe('Tab', () => {
+             const tabBar = wrapper.find('.next-tabs-bar').instance();
+             assert(
+                 tabBar.style.background === 'red' ||
+-                    tabBar.style.background.startsWith('red')
++                tabBar.style.background.startsWith('red')
+             );
+         });
+ 
+@@ -161,7 +161,7 @@ describe('Tab', () => {
+             const tabContent = wrapper.find('.next-tabs-content').instance();
+             assert(
+                 tabContent.style.background === 'red' ||
+-                    tabContent.style.background.startsWith('red')
++                tabContent.style.background.startsWith('red')
+             );
+         });
+ 
+@@ -464,7 +464,7 @@ describe('Tab', () => {
+             );
+         });
+     });
+-    describe('animation sensitive tests', ()=>{
++    describe('animation sensitive tests', () => {
+         let target;
+         const delay = time => new Promise(resolve => setTimeout(resolve, time));
+         const panes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((item, index) => (
+@@ -476,7 +476,7 @@ describe('Tab', () => {
+             target = document.createElement('div');
+             document.body.appendChild(target);
+         });
+-    
++
+         afterEach(() => {
+             ReactDOM.unmountComponentAtNode(target);
+             document.body.removeChild(target);
+@@ -500,27 +500,27 @@ describe('Tab', () => {
+         it('should show slide buttons', async () => {
+             ReactDOM.render(
+                 <div style={boxStyle}>
+-                <Tab rtl excessMode="slide">
+-                    {panes}
+-                </Tab>
+-            </div>, target);
++                    <Tab rtl excessMode="slide">
++                        {panes}
++                    </Tab>
++                </div>, target);
+             await delay(800);
+             assert(target.querySelector('.next-tabs-btn-prev').classList.contains("disabled"));
+         });
+         it('should slide', async () => {
+             ReactDOM.render(
+-            <div style={boxStyle}>
+-                <Tab rtl excessMode="slide">
+-                    {panes}
+-                </Tab>
+-            </div>, target);
++                <div style={boxStyle}>
++                    <Tab rtl excessMode="slide">
++                        {panes}
++                    </Tab>
++                </div>, target);
+             let prev, newpos;
+             await delay(1800);
+             prev = target.querySelector(".next-tabs-nav").getBoundingClientRect().left;
+             target.querySelector(".next-tabs-btn-next").click();
+             await delay(200);
+             newpos = target.querySelector(".next-tabs-nav").getBoundingClientRect().left;
+-            assert(newpos > prev);                
++            assert(newpos > prev);
+         });
+ 
+         it('should adjust scroll length so that tab not partially in view', async () => {
+@@ -558,7 +558,7 @@ describe('Tab', () => {
+             assert(rst[1] === '0');
+         });
+ 
+-        it('should adjust scroll length', async() => {
++        it('should adjust scroll length', async () => {
+             const newpanes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(
+                 (item, index) => (
+                     <Tab.Item title={`tabsss item ${item}`} key={index}>
+@@ -578,12 +578,12 @@ describe('Tab', () => {
+                         {newpanes}
+                     </Tab>
+                 </div>, target);
+-            await delay(1000);
++            await delay(1200);
+             let transStr = target.querySelector('.next-tabs-nav').style.transform;
+             let rst = transStr.match(
+                 /translate3d\((\-?\d+\.\d+|\-?\d+)px,.*\)/i
+             );
+-            assert(parseInt(rst[1])>0);
++            assert(parseInt(rst[1]) > 0);
+             target.querySelector('.next-tabs-btn-prev').click();
+             await delay(1000);
+             transStr = target.querySelector('.next-tabs-nav').style.transform;
+@@ -592,6 +592,45 @@ describe('Tab', () => {
+             );
+             assert(rst[1] === '0');
+         });
++
++        it('should auto scroll to active tab', async () => {
++            const tabs = [
++                { tab: 'Home', key: 1 },
++                { tab: 'Documnet', key: 2 },
++                { tab: 'Setting', key: 3 },
++                { tab: 'Help', key: 4 },
++                { tab: 'Admin', key: 5 },
++                { tab: 'More 1', key: 6 },
++                { tab: 'More 2', key: 7 },
++                { tab: 'More 3', key: 8 },
++                { tab: 'More 4', key: 9 },
++                { tab: 'More 5', key: 10 },
++                { tab: 'More 6', key: 11 },
++                { tab: 'More 7', key: 12 },
++                { tab: 'More 8', key: 13 },
++                { tab: 'More 9', key: 14 },
++                { tab: 'More 10', key: 15 },
++                { tab: 'More 11', key: 16 },
++                { tab: 'More 12', key: 17 },
++                { tab: 'More 13', key: 18 },
++                { tab: 'More 14', key: 19 }
++            ];
++            ReactDOM.render(
++                <div className="fusion-demo" style={{ maxWidth: '520px' }}>
++                    <div className="demo-item-title">Controlled mode</div>
++                    <Tab excessMode="slide" activeKey={9}>
++                        {
++                            tabs.map(item => <Tab.Item key={item.key} title={item.tab}>{item.tab} content, content, content</Tab.Item>)
++                        }
++                    </Tab>
++                </div>, target);
++            await delay(1200);
++            let transStr = target.querySelector('.next-tabs-nav').style.transform;
++            let rst = transStr.match(
++                /translate3d\((\-?\d+\.\d+|\-?\d+)px,.*\)/i
++            );
++            assert(parseInt(rst[1]) < 560);
++        });
+     });
+     describe('rtl mode', () => {
+         let wrapper, target;

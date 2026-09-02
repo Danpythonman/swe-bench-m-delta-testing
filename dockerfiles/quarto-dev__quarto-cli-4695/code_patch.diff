@@ -1,0 +1,45 @@
+diff --git a/src/publish/confluence/confluence-helper.ts b/src/publish/confluence/confluence-helper.ts
+index 51f2771c993..512fce775a1 100644
+--- a/src/publish/confluence/confluence-helper.ts
++++ b/src/publish/confluence/confluence-helper.ts
+@@ -688,6 +688,14 @@ export const updateLinks = (
+         }
+       }
+ 
++      if (!documentFileName.endsWith(".xml")) {
++        //this is a flattened index in a folder with contents
++        const siteFilePathParent = `${documentFileName}/${linkFullFileName}`;
++        if (fileMetadataTable[siteFilePathParent]) {
++          siteFilePath = siteFilePathParent;
++        }
++      }
++
+       const sitePage: SitePage | null = fileMetadataTable[siteFilePath] ?? null;
+ 
+       if (sitePage) {
+diff --git a/src/publish/confluence/confluence.ts b/src/publish/confluence/confluence.ts
+index 59faf1a6a6b..2cb96b040b3 100644
+--- a/src/publish/confluence/confluence.ts
++++ b/src/publish/confluence/confluence.ts
+@@ -678,6 +678,9 @@ async function publish(
+ 
+     changeList = flattenIndexes(changeList, metadataByFilename);
+ 
++    console.log("updateLinks");
++    console.log("metadataByFilename", metadataByFilename);
++
+     const { pass1Changes, pass2Changes } = updateLinks(
+       metadataByFilename,
+       changeList,
+@@ -685,6 +688,11 @@ async function publish(
+       siteParent
+     );
+ 
++    console.log("{ pass1Changes, pass2Changes }", {
++      pass1Changes,
++      pass2Changes,
++    });
++
+     changeList = pass1Changes;
+ 
+     trace("changelist Pass 1", changeList);

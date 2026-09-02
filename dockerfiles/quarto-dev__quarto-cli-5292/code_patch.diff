@@ -1,0 +1,13 @@
+diff --git a/src/format/pdf/format-pdf.ts b/src/format/pdf/format-pdf.ts
+index 6bd5b9a8515..481296ce8f8 100644
+--- a/src/format/pdf/format-pdf.ts
++++ b/src/format/pdf/format-pdf.ts
+@@ -921,7 +921,7 @@ const placePandocBibliographyEntries = (
+ };
+ 
+ const kCodeAnnotationRegex =
+-  /(.*)\\CommentTok\{[^\s]* \\textless\{\}(\d+)\\textgreater\{\}\s*\}$/gm;
++  /(.*)\\CommentTok\{.* \\textless\{\}(\d+)\\textgreater\{\}.*\}$/gm;
+ const kCodePlainAnnotationRegex = /(.*)% \((\d+)\)$/g;
+ const codeAnnotationPostProcessor = () => {
+   let lastAnnotation: string | undefined;

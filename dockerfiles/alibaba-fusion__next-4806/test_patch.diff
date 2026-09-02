@@ -1,0 +1,31 @@
+diff --git a/components/cascader-select/__tests__/index-spec.tsx b/components/cascader-select/__tests__/index-spec.tsx
+index 8c7259dd30..a80851ea2e 100644
+--- a/components/cascader-select/__tests__/index-spec.tsx
++++ b/components/cascader-select/__tests__/index-spec.tsx
+@@ -536,4 +536,26 @@ describe('CascaderSelect', () => {
+         cy.get('input').type('{upArrow}', { force: true });
+         cy.get('.next-cascader-select-dropdown').should('exist');
+     });
++
++    it('should support empty search value after selection , close #3008', () => {
++        const handleChange = cy.spy();
++        cy.mount(
++            <CascaderSelect
++                showSearch
++                style={{ width: '240px' }}
++                dataSource={ChinaArea}
++                placeholder="搜索名字"
++                onChange={handleChange}
++                autoClearSearchValue
++                multiple
++            />
++        );
++        cy.get('.next-select-trigger-search input').type('西安');
++        cy.get('.next-cascader-filtered-list').should('have.length', 1);
++        cy.get('.next-menu-item').first().click();
++        cy.get('.next-cascader-filtered-list').should('have.length', 0);
++        cy.get('.next-cascader > .next-cascader-inner').should('not.be.empty');
++        cy.get('.next-tag').invoke('text').should('eq', '西安');
++        cy.get('.next-select-trigger-search input').should('have.text', '');
++    });
+ });

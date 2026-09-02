@@ -27,3 +27,6 @@ s3-sync/
 # Secrets
 .env
 *.pem
+
+# Analysis output (regenerate from the synced results)
+analysis/

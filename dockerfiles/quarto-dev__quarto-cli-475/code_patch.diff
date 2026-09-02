@@ -1,0 +1,22 @@
+diff --git a/src/resources/filters/quarto-pre/callout.lua b/src/resources/filters/quarto-pre/callout.lua
+index b021363d192..9d45f14fdbf 100644
+--- a/src/resources/filters/quarto-pre/callout.lua
++++ b/src/resources/filters/quarto-pre/callout.lua
+@@ -254,7 +254,7 @@ function calloutLatex(div)
+     if caption == nil then
+       caption = displayName(type)
+     else
+-      caption = pandoc.utils.stringify(caption)
++      caption = pandoc.write(pandoc.Pandoc(pandoc.Plain(caption)), 'latex')
+     end
+     callout = latexCalloutBoxDefault(caption, type, icon)
+   else
+@@ -307,7 +307,7 @@ function latexCalloutBoxDefault(caption, type, icon)
+     bottomrule = borderWidth,
+     rightrule = borderWidth,
+     arc = borderRadius,
+-    title = caption,
++    title = '{' .. caption .. '}',
+     titlerule = '0mm',
+     toptitle = '1mm',
+     bottomtitle = '1mm',

@@ -1,0 +1,1834 @@
+diff --git a/rendering/cases/layer-image/expected.png b/rendering/cases/layer-image/expected.png
+new file mode 100644
+index 00000000000..abe61291b4e
+Binary files /dev/null and b/rendering/cases/layer-image/expected.png differ
+diff --git a/rendering/cases/layer-image/main.js b/rendering/cases/layer-image/main.js
+new file mode 100644
+index 00000000000..6f44ba8e531
+--- /dev/null
++++ b/rendering/cases/layer-image/main.js
+@@ -0,0 +1,28 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import Static from '../../../src/ol/source/ImageStatic.js';
++import {
++  get as getProjection,
++  transform,
++  transformExtent
++} from '../../../src/ol/proj';
++import ImageLayer from '../../../src/ol/layer/Image.js';
++const center = transform([-122.416667, 37.783333], 'EPSG:4326', 'EPSG:3857');
++
++new Map({
++  pixelRatio: 1,
++  target: 'map',
++  layers: [new ImageLayer({
++    source: new Static({
++      url: '/data/tiles/osm/5/5/12.png',
++      imageExtent: transformExtent([-123, 37, -122, 38], 'EPSG:4326', 'EPSG:3857'),
++      projection: getProjection('EPSG:3857')
++    })
++  })],
++  view: new View({
++    center,
++    zoom: 8
++  })
++});
++
++render();
+diff --git a/rendering/cases/layer-tile-none-square/expected.png b/rendering/cases/layer-tile-none-square/expected.png
+new file mode 100644
+index 00000000000..9807e3f5084
+Binary files /dev/null and b/rendering/cases/layer-tile-none-square/expected.png differ
+diff --git a/rendering/cases/layer-tile-none-square/main.js b/rendering/cases/layer-tile-none-square/main.js
+new file mode 100644
+index 00000000000..c490ed252af
+--- /dev/null
++++ b/rendering/cases/layer-tile-none-square/main.js
+@@ -0,0 +1,30 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import XYZ from '../../../src/ol/source/XYZ';
++import {createXYZ} from '../../../src/ol/tilegrid.js';
++
++const center = [-10997148, 4569099];
++
++const layer = new TileLayer({
++  source: new XYZ({
++    url: '/data/tiles/512x256/{z}/{x}/{y}.png',
++    tileGrid: createXYZ({
++      tileSize: [512, 256]
++    }),
++    transition: 0
++  })
++});
++
++const map = new Map({
++  target: 'map',
++  pixelRatio: 1,
++  view: new View({
++    center: center,
++    zoom: 5
++  })
++});
++
++map.addLayer(layer);
++
++render();
+diff --git a/rendering/cases/layer-tile-opacity/expected.png b/rendering/cases/layer-tile-opacity/expected.png
+new file mode 100644
+index 00000000000..ab8f230eb1a
+Binary files /dev/null and b/rendering/cases/layer-tile-opacity/expected.png differ
+diff --git a/rendering/cases/layer-tile-opacity/main.js b/rendering/cases/layer-tile-opacity/main.js
+new file mode 100644
+index 00000000000..c34fc5d55d1
+--- /dev/null
++++ b/rendering/cases/layer-tile-opacity/main.js
+@@ -0,0 +1,26 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import {fromLonLat} from '../../../src/ol/proj';
++import XYZ from '../../../src/ol/source/XYZ';
++
++const center = fromLonLat([8.6, 50.1]);
++
++new Map({
++  layers: [
++    new TileLayer({
++      source: new XYZ({
++        url: '/data/tiles/satellite/{z}/{x}/{y}.jpg',
++        transition: 0
++      }),
++      opacity: 0.2
++    })
++  ],
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 3
++  })
++});
++
++render();
+diff --git a/rendering/cases/layer-tile-two-layers/expected.png b/rendering/cases/layer-tile-two-layers/expected.png
+new file mode 100644
+index 00000000000..e037067f81c
+Binary files /dev/null and b/rendering/cases/layer-tile-two-layers/expected.png differ
+diff --git a/rendering/cases/layer-tile-two-layers/main.js b/rendering/cases/layer-tile-two-layers/main.js
+new file mode 100644
+index 00000000000..709636fdfd3
+--- /dev/null
++++ b/rendering/cases/layer-tile-two-layers/main.js
+@@ -0,0 +1,35 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import {fromLonLat} from '../../../src/ol/proj';
++import XYZ from '../../../src/ol/source/XYZ';
++
++const center = fromLonLat([8.6, 50.1]);
++
++const layer1 = new TileLayer({
++  source: new XYZ({
++    url: '/data/tiles/satellite/{z}/{x}/{y}.jpg',
++    transition: 0
++  }),
++  opacity: 0.2
++});
++const layer2 = new TileLayer({
++  source: new XYZ({
++    url: '/data/tiles/stamen-labels/{z}/{x}/{y}.png',
++    transition: 0
++  })
++});
++
++const map = new Map({
++  pixelRatio: 1,
++  layers: [layer1, layer2],
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 3
++  })
++});
++
++map.getView().setRotation(Math.PI / 2);
++
++render();
+diff --git a/rendering/cases/layer-vector-decluttering/expected.png b/rendering/cases/layer-vector-decluttering/expected.png
+new file mode 100644
+index 00000000000..9e862e38d80
+Binary files /dev/null and b/rendering/cases/layer-vector-decluttering/expected.png differ
+diff --git a/rendering/cases/layer-vector-decluttering/main.js b/rendering/cases/layer-vector-decluttering/main.js
+new file mode 100644
+index 00000000000..a709c5d207d
+--- /dev/null
++++ b/rendering/cases/layer-vector-decluttering/main.js
+@@ -0,0 +1,161 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import Style from '../../../src/ol/style/Style.js';
++import Text from '../../../src/ol/style/Text.js';
++import CircleStyle from '../../../src/ol/style/Circle.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++
++let center = [1825927.7316762917, 6143091.089223046];
++const map = new Map({
++  pixelRatio: 1,
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 13
++  })
++});
++
++const source1 = new VectorSource();
++const layer1 = new VectorLayer({
++  declutter: true,
++  source: source1
++});
++
++const source2 = new VectorSource();
++const layer2 = new VectorLayer({
++  declutter: true,
++  source: source2
++});
++
++const source3 = new VectorSource();
++const layer3 = new VectorLayer({
++  declutter: true,
++  source: source3
++});
++
++const source4 = new VectorSource();
++const layer4 = new VectorLayer({
++  declutter: true,
++  source: source4
++});
++
++const feature1 = new Feature({
++  geometry: new Point(center),
++  zIndex: 2
++});
++source1.addFeature(feature1);
++source1.addFeature(new Feature({
++  geometry: new Point([center[0] - 540, center[1]]),
++  zIndex: 3
++}));
++source1.addFeature(new Feature({
++  geometry: new Point([center[0] + 540, center[1]]),
++  zIndex: 1
++}));
++layer1.setStyle(function(feature) {
++  return new Style({
++    image: new CircleStyle({
++      radius: 15,
++      stroke: new Stroke({
++        color: 'blue'
++      })
++    })
++  });
++});
++map.addLayer(layer1);
++
++center = [center[0] + 500, center[1] + 500];
++const feature2 = new Feature({
++  geometry: new Point(center),
++  text: 'center',
++  zIndex: 2
++});
++source2.addFeature(feature2);
++source2.addFeature(new Feature({
++  geometry: new Point([center[0] - 540, center[1]]),
++  text: 'west',
++  zIndex: 3
++}));
++source2.addFeature(new Feature({
++  geometry: new Point([center[0] + 540, center[1]]),
++  text: 'east',
++  zIndex: 1
++}));
++layer2.setStyle(function(feature) {
++  return new Style({
++    text: new Text({
++      text: feature.get('text'),
++      font: '12px sans-serif'
++    })
++  });
++});
++map.addLayer(layer2);
++
++center = [center[0] + 500, center[1] + 500];
++source3.addFeature(new Feature({
++  geometry: new Point(center),
++  text: 'center'
++}));
++source3.addFeature(new Feature({
++  geometry: new Point([center[0] - 540, center[1]]),
++  text: 'west'
++}));
++source3.addFeature(new Feature({
++  geometry: new Point([center[0] + 540, center[1]]),
++  text: 'east'
++}));
++layer3.setStyle(function(feature) {
++  return new Style({
++    image: new CircleStyle({
++      radius: 5,
++      stroke: new Stroke({
++        color: 'red'
++      })
++    }),
++    text: new Text({
++      text: feature.get('text'),
++      font: '12px sans-serif',
++      textBaseline: 'bottom',
++      offsetY: -5
++    })
++  });
++});
++map.addLayer(layer3);
++
++center = [center[0] - 2000, center[1] - 2000];
++const point = new Feature(new Point(center));
++point.setStyle(new Style({
++  zIndex: 2,
++  image: new CircleStyle({
++    radius: 8,
++    stroke: new Stroke({
++      color: 'blue'
++    })
++  })
++}));
++const line = new Feature(new LineString([
++  [center[0] - 650, center[1] - 200],
++  [center[0] + 650, center[1] - 200]
++]));
++line.setStyle(new Style({
++  zIndex: 1,
++  stroke: new Stroke({
++    color: '#CCC',
++    width: 12
++  }),
++  text: new Text({
++    placement: 'line',
++    text: 'east-west',
++    font: '12px sans-serif'
++  })
++}));
++source4.addFeature(point);
++source4.addFeature(line);
++map.addLayer(layer4);
++
++render({tolerance: 0.02});
+diff --git a/rendering/cases/layer-vector-polygon-partial/expected.png b/rendering/cases/layer-vector-polygon-partial/expected.png
+new file mode 100644
+index 00000000000..56e2fa461bd
+Binary files /dev/null and b/rendering/cases/layer-vector-polygon-partial/expected.png differ
+diff --git a/rendering/cases/layer-vector-polygon-partial/main.js b/rendering/cases/layer-vector-polygon-partial/main.js
+new file mode 100644
+index 00000000000..83706491019
+--- /dev/null
++++ b/rendering/cases/layer-vector-polygon-partial/main.js
+@@ -0,0 +1,54 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Feature from '../../../src/ol/Feature.js';
++import Polygon from '../../../src/ol/geom/Polygon.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import Fill from '../../../src/ol/style/Fill.js';
++
++const src = new VectorSource({
++  features: [
++    new Feature(new Polygon([[
++      [-22, 18],
++      [-22, 78],
++      [-9, 78],
++      [-9, 18],
++      [-22, 18]
++    ]])),
++    new Feature(new Polygon([[
++      [-9, 18],
++      [-9, 78],
++      [4, 78],
++      [4, 18],
++      [-9, 18]
++    ]]))
++  ]
++});
++const layer = new VectorLayer({
++  renderBuffer: 0,
++  source: src,
++  style: new Style({
++    stroke: new Stroke({
++      color: [0, 0, 0, 1],
++      width: 2
++    }),
++    fill: new Fill({
++      color: [255, 0, 0, 1]
++    })
++  })
++});
++const view = new View({
++  center: [-9.5, 78],
++  zoom: 2,
++  projection: 'EPSG:4326'
++});
++new Map({
++  pixelRatio: 1,
++  layers: [layer],
++  target: 'map',
++  view: view
++});
++
++render();
+diff --git a/rendering/cases/layer-vector-polygon/expected.png b/rendering/cases/layer-vector-polygon/expected.png
+new file mode 100644
+index 00000000000..f205b88c891
+Binary files /dev/null and b/rendering/cases/layer-vector-polygon/expected.png differ
+diff --git a/rendering/cases/layer-vector-polygon/main.js b/rendering/cases/layer-vector-polygon/main.js
+new file mode 100644
+index 00000000000..811c6d7673b
+--- /dev/null
++++ b/rendering/cases/layer-vector-polygon/main.js
+@@ -0,0 +1,43 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Feature from '../../../src/ol/Feature.js';
++import Polygon from '../../../src/ol/geom/Polygon.js';
++import Style from '../../../src/ol/style/Style.js';
++import Fill from '../../../src/ol/style/Fill.js';
++
++const feature = new Feature({
++  geometry: new Polygon([
++    [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]],
++    [[0, 60], [-17.6336, 24.2705], [-57.0634, 18.5410], [-28.5317, -9.2705], [-35.2671, -48.5410], [0, -30], [35.2671, -48.5410], [28.5317, -9.2705], [57.0634, 18.5410], [17.6336, 24.2705], [0, 60]]
++  ])
++});
++
++const src = new VectorSource({
++  features: [
++    feature
++  ]
++});
++const layer = new VectorLayer({
++  renderBuffer: 0,
++  source: src,
++  style: new Style({
++    fill: new Fill({
++      color: 'blue'
++    })
++  })
++});
++const view = new View({
++  center: [0, 0],
++  zoom: 1,
++  projection: 'EPSG:4326'
++});
++new Map({
++  pixelRatio: 1,
++  layers: [layer],
++  target: 'map',
++  view: view
++});
++
++render();
+diff --git a/rendering/cases/layer-vector/expected.png b/rendering/cases/layer-vector/expected.png
+new file mode 100644
+index 00000000000..e1a9deecf72
+Binary files /dev/null and b/rendering/cases/layer-vector/expected.png differ
+diff --git a/rendering/cases/layer-vector/main.js b/rendering/cases/layer-vector/main.js
+new file mode 100644
+index 00000000000..2b178d53518
+--- /dev/null
++++ b/rendering/cases/layer-vector/main.js
+@@ -0,0 +1,110 @@
++import Feature from '../../../src/ol/Feature.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import Polygon from '../../../src/ol/geom/Polygon.js';
++import Circle from '../../../src/ol/geom/Circle.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++
++const center = [1825927.7316762917, 6143091.089223046];
++
++const source1 = new VectorSource();
++const source2 = new VectorSource();
++const vectorLayer1 = new VectorLayer({
++  source: source1,
++  style: new Style({
++    stroke: new Stroke({
++      color: '#3399CC',
++      width: 1.25
++    })
++  })
++});
++const vectorLayer2 = new VectorLayer({
++  source: source2,
++  opacity: 0.6
++});
++
++function addCircle(r, source) {
++  source.addFeature(new Feature(new Circle(center, r)));
++}
++
++function addPolygon(r, source) {
++  source.addFeature(new Feature(new Polygon([
++    [
++      [center[0] - r, center[1] - r],
++      [center[0] + r, center[1] - r],
++      [center[0] + r, center[1] + r],
++      [center[0] - r, center[1] + r],
++      [center[0] - r, center[1] - r]
++    ]
++  ])));
++}
++
++const smallLine = new Feature(new LineString([
++  [center[0], center[1] - 1],
++  [center[0], center[1] + 1]
++]));
++smallLine.setStyle(new Style({
++  zIndex: -99,
++  stroke: new Stroke({width: 75, color: 'red'})
++}));
++smallLine.getGeometry().translate(-1000, 1000);
++source1.addFeature(smallLine);
++addPolygon(100, source1);
++addCircle(200, source1);
++addPolygon(250, source1);
++addCircle(500, source1);
++addPolygon(600, source1);
++addPolygon(720, source1);
++
++const smallLine2 = new Feature(new LineString([
++  [center[0], center[1] - 1000],
++  [center[0], center[1] + 1000]
++]));
++smallLine2.setStyle([
++  new Style({
++    stroke: new Stroke({width: 35, color: 'blue'})
++  }),
++  new Style({
++    stroke: new Stroke({width: 15, color: 'green'})
++  })
++]);
++smallLine2.getGeometry().translate(1000, 1000);
++source1.addFeature(smallLine2);
++
++const smallLine3 = new Feature(new LineString([
++  [center[0], center[1] - 1],
++  [center[0], center[1] + 1]
++]));
++smallLine3.setStyle([
++  new Style({
++    stroke: new Stroke({width: 75, color: 'red'})
++  }),
++  new Style({
++    stroke: new Stroke({width: 45, color: 'white'})
++  })
++]);
++smallLine3.getGeometry().translate(-1000, -1000);
++
++addPolygon(400, source2);
++addCircle(400, source2);
++source2.addFeature(smallLine3);
++
++const map = new Map({
++  layers: [
++    vectorLayer1,
++    vectorLayer2
++  ],
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 13
++  })
++});
++
++map.getView().setRotation(Math.PI + Math.PI / 4);
++
++render();
+diff --git a/rendering/cases/layer-vectorimage/expected.png b/rendering/cases/layer-vectorimage/expected.png
+new file mode 100644
+index 00000000000..63ecb9b426b
+Binary files /dev/null and b/rendering/cases/layer-vectorimage/expected.png differ
+diff --git a/rendering/cases/layer-vectorimage/main.js b/rendering/cases/layer-vectorimage/main.js
+new file mode 100644
+index 00000000000..e14f3eaa2c3
+--- /dev/null
++++ b/rendering/cases/layer-vectorimage/main.js
+@@ -0,0 +1,110 @@
++import Feature from '../../../src/ol/Feature.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import Polygon from '../../../src/ol/geom/Polygon.js';
++import Circle from '../../../src/ol/geom/Circle.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++import VectorImageLayer from '../../../src/ol/layer/VectorImage.js';
++
++const center = [1825927.7316762917, 6143091.089223046];
++
++const source1 = new VectorSource();
++const source2 = new VectorSource();
++const vectorLayer1 = new VectorImageLayer({
++  source: source1,
++  style: new Style({
++    stroke: new Stroke({
++      color: '#3399CC',
++      width: 1.25
++    })
++  })
++});
++const vectorLayer2 = new VectorImageLayer({
++  source: source2,
++  opacity: 0.6
++});
++
++function addCircle(r, source) {
++  source.addFeature(new Feature(new Circle(center, r)));
++}
++
++function addPolygon(r, source) {
++  source.addFeature(new Feature(new Polygon([
++    [
++      [center[0] - r, center[1] - r],
++      [center[0] + r, center[1] - r],
++      [center[0] + r, center[1] + r],
++      [center[0] - r, center[1] + r],
++      [center[0] - r, center[1] - r]
++    ]
++  ])));
++}
++
++const smallLine = new Feature(new LineString([
++  [center[0], center[1] - 1],
++  [center[0], center[1] + 1]
++]));
++smallLine.setStyle(new Style({
++  zIndex: -99,
++  stroke: new Stroke({width: 75, color: 'red'})
++}));
++smallLine.getGeometry().translate(-1000, 1000);
++source1.addFeature(smallLine);
++addPolygon(100, source1);
++addCircle(200, source1);
++addPolygon(250, source1);
++addCircle(500, source1);
++addPolygon(600, source1);
++addPolygon(720, source1);
++
++const smallLine2 = new Feature(new LineString([
++  [center[0], center[1] - 1000],
++  [center[0], center[1] + 1000]
++]));
++smallLine2.setStyle([
++  new Style({
++    stroke: new Stroke({width: 35, color: 'blue'})
++  }),
++  new Style({
++    stroke: new Stroke({width: 15, color: 'green'})
++  })
++]);
++smallLine2.getGeometry().translate(1000, 1000);
++source1.addFeature(smallLine2);
++
++const smallLine3 = new Feature(new LineString([
++  [center[0], center[1] - 1],
++  [center[0], center[1] + 1]
++]));
++smallLine3.setStyle([
++  new Style({
++    stroke: new Stroke({width: 75, color: 'red'})
++  }),
++  new Style({
++    stroke: new Stroke({width: 45, color: 'white'})
++  })
++]);
++smallLine3.getGeometry().translate(-1000, -1000);
++
++addPolygon(400, source2);
++addCircle(1000, source2);
++source2.addFeature(smallLine3);
++
++const map = new Map({
++  layers: [
++    vectorLayer1,
++    vectorLayer2
++  ],
++  target: 'map',
++  view: new View({
++    center: center,
++    zoom: 13
++  })
++});
++
++map.getView().setRotation(Math.PI + Math.PI / 4);
++
++render({tolerance: 0.005});
+diff --git a/rendering/cases/layer-vectortile-rotate-hidpi/expected.png b/rendering/cases/layer-vectortile-rotate-hidpi/expected.png
+new file mode 100644
+index 00000000000..75ee66b54bd
+Binary files /dev/null and b/rendering/cases/layer-vectortile-rotate-hidpi/expected.png differ
+diff --git a/rendering/cases/layer-vectortile-rotate-hidpi/main.js b/rendering/cases/layer-vectortile-rotate-hidpi/main.js
+new file mode 100644
+index 00000000000..2a4061257df
+--- /dev/null
++++ b/rendering/cases/layer-vectortile-rotate-hidpi/main.js
+@@ -0,0 +1,31 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorTileSource from '../../../src/ol/source/VectorTile';
++import MVT from '../../../src/ol/format/MVT';
++import {createXYZ} from '../../../src/ol/tilegrid';
++import VectorTileLayer from '../../../src/ol/layer/VectorTile';
++
++const map = new Map({
++  pixelRatio: 2,
++  layers: [
++    new VectorTileLayer({
++      source: new VectorTileSource({
++        format: new MVT(),
++        tileGrid: createXYZ(),
++        url: '/data/tiles/mapbox-streets-v6/{z}/{x}/{y}.vector.pbf',
++        transition: 0
++      })
++    })
++  ],
++  target: 'map',
++  view: new View({
++    center: [1825927.7316762917, 6143091.089223046],
++    zoom: 14
++  })
++});
++
++map.getView().setRotation(Math.PI / 4);
++render({
++  message: 'Vector tile layer rotates (hidip)',
++  tolerance: 0.01
++});
+diff --git a/rendering/cases/map-pan/expected.png b/rendering/cases/map-pan/expected.png
+new file mode 100644
+index 00000000000..ede48fc1211
+Binary files /dev/null and b/rendering/cases/map-pan/expected.png differ
+diff --git a/rendering/cases/map-pan/main.js b/rendering/cases/map-pan/main.js
+new file mode 100644
+index 00000000000..e5569792cb7
+--- /dev/null
++++ b/rendering/cases/map-pan/main.js
+@@ -0,0 +1,28 @@
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++
++const map = new Map({
++  pixelRatio: 1,
++  target: 'map',
++  layers: [
++    new VectorLayer({
++      source: new VectorSource({
++        features: [new Feature({
++          geometry: new Point([0, 0])
++        })]
++      })
++    })
++  ],
++  view: new View({
++    projection: 'EPSG:4326',
++    center: [0, 0],
++    resolution: 1
++  })
++});
++map.getView().setCenter([10, 10]);
++
++render();
+diff --git a/rendering/cases/map/expected.png b/rendering/cases/map/expected.png
+new file mode 100644
+index 00000000000..d3e71854e87
+Binary files /dev/null and b/rendering/cases/map/expected.png differ
+diff --git a/rendering/cases/map/main.js b/rendering/cases/map/main.js
+new file mode 100644
+index 00000000000..21b9d0c36f8
+--- /dev/null
++++ b/rendering/cases/map/main.js
+@@ -0,0 +1,27 @@
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++
++new Map({
++  pixelRatio: 1,
++  target: 'map',
++  layers: [
++    new VectorLayer({
++      source: new VectorSource({
++        features: [new Feature({
++          geometry: new Point([0, 0])
++        })]
++      })
++    })
++  ],
++  view: new View({
++    projection: 'EPSG:4326',
++    center: [0, 0],
++    resolution: 1
++  })
++});
++
++render();
+diff --git a/rendering/cases/multipoint-style/expected.png b/rendering/cases/multipoint-style/expected.png
+new file mode 100644
+index 00000000000..14831a4c033
+Binary files /dev/null and b/rendering/cases/multipoint-style/expected.png differ
+diff --git a/rendering/cases/multipoint-style/main.js b/rendering/cases/multipoint-style/main.js
+new file mode 100644
+index 00000000000..a3e61c5b891
+--- /dev/null
++++ b/rendering/cases/multipoint-style/main.js
+@@ -0,0 +1,169 @@
++import Feature from '../../../src/ol/Feature.js';
++import MultiPoint from '../../../src/ol/geom/MultiPoint.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import CircleStyle from '../../../src/ol/style/Circle.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++
++const vectorSource = new VectorSource();
++
++let feature;
++feature = new Feature({
++  geometry: new MultiPoint([[-20, 18]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    fill: new Fill({
++      color: '#91E339'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[-10, 18]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: '#5447E6'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[4, 18]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: '#92A8A6'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[-20, 3]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    fill: new Fill({
++      color: '#91E339'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 1
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[-10, 3]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: '#5447E6'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 2
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[4, 3]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: '#92A8A6'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 3
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[-20, -15]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    stroke: new Stroke({
++      color: '#256308',
++      width: 1
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[-10, -15]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: 'rgba(0, 0, 255, 0.3)'
++    }),
++    stroke: new Stroke({
++      color: '#256308',
++      width: 2
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new MultiPoint([[4, -15]])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: 'rgba(235, 45, 70, 0.6)'
++    }),
++    stroke: new Stroke({
++      color: '#256308',
++      width: 3
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++const vectorLayer = new VectorLayer({
++  source: vectorSource
++});
++
++new Map({
++  layers: [
++    vectorLayer
++  ],
++  target: 'map',
++  view: new View({
++    projection: 'EPSG:4326',
++    center: [0, 0],
++    zoom: 1
++  })
++});
++
++render();
+diff --git a/rendering/cases/point-style/expected.png b/rendering/cases/point-style/expected.png
+new file mode 100644
+index 00000000000..14831a4c033
+Binary files /dev/null and b/rendering/cases/point-style/expected.png differ
+diff --git a/rendering/cases/point-style/main.js b/rendering/cases/point-style/main.js
+new file mode 100644
+index 00000000000..7f1e425396f
+--- /dev/null
++++ b/rendering/cases/point-style/main.js
+@@ -0,0 +1,169 @@
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import CircleStyle from '../../../src/ol/style/Circle.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++
++const vectorSource = new VectorSource();
++
++let feature;
++feature = new Feature({
++  geometry: new Point([-20, 18])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    fill: new Fill({
++      color: '#91E339'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([-10, 18])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: '#5447E6'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([4, 18])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: '#92A8A6'
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([-20, 3])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    fill: new Fill({
++      color: '#91E339'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 1
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([-10, 3])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: '#5447E6'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 2
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([4, 3])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: '#92A8A6'
++    }),
++    stroke: new Stroke({
++      color: '#000000',
++      width: 3
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([-20, -15])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 2,
++    stroke: new Stroke({
++      color: '#256308',
++      width: 1
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([-10, -15])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 4,
++    fill: new Fill({
++      color: 'rgba(0, 0, 255, 0.3)'
++    }),
++    stroke: new Stroke({
++      color: '#256308',
++      width: 2
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++feature = new Feature({
++  geometry: new Point([4, -15])
++});
++feature.setStyle(new Style({
++  image: new CircleStyle({
++    radius: 6,
++    fill: new Fill({
++      color: 'rgba(235, 45, 70, 0.6)'
++    }),
++    stroke: new Stroke({
++      color: '#256308',
++      width: 3
++    })
++  })
++}));
++vectorSource.addFeature(feature);
++
++const vectorLayer = new VectorLayer({
++  source: vectorSource
++});
++
++new Map({
++  layers: [
++    vectorLayer
++  ],
++  target: 'map',
++  view: new View({
++    projection: 'EPSG:4326',
++    center: [0, 0],
++    zoom: 1
++  })
++});
++
++render();
+diff --git a/rendering/cases/regularshape-style/expected.png b/rendering/cases/regularshape-style/expected.png
+new file mode 100644
+index 00000000000..b89511eef3b
+Binary files /dev/null and b/rendering/cases/regularshape-style/expected.png differ
+diff --git a/rendering/cases/regularshape-style/main.js b/rendering/cases/regularshape-style/main.js
+new file mode 100644
+index 00000000000..9d98bcd573f
+--- /dev/null
++++ b/rendering/cases/regularshape-style/main.js
+@@ -0,0 +1,114 @@
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import RegularShape from '../../../src/ol/style/RegularShape.js';
++import Style from '../../../src/ol/style/Style.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++
++const vectorSource = new VectorSource();
++function createFeatures(stroke, fill, offSet = [0, 0]) {
++  let feature;
++  feature = new Feature({
++    geometry: new Point([-15 + offSet[0], 15 + offSet[1]])
++  });
++  // square
++  feature.setStyle(new Style({
++    image: new RegularShape({
++      fill: fill,
++      stroke: stroke,
++      points: 4,
++      radius: 10,
++      angle: Math.PI / 4
++    })
++  }));
++  vectorSource.addFeature(feature);
++
++  feature = new Feature({
++    geometry: new Point([8 + offSet[0], 15 + offSet[1]])
++  });
++  // triangle
++  feature.setStyle(new Style({
++    image: new RegularShape({
++      fill: fill,
++      stroke: stroke,
++      points: 3,
++      radius: 10,
++      rotation: Math.PI / 4,
++      angle: 0
++    })
++  }));
++  vectorSource.addFeature(feature);
++
++  feature = new Feature({
++    geometry: new Point([-10 + offSet[0], -8 + offSet[1]])
++  });
++  // star
++  feature.setStyle(new Style({
++    image: new RegularShape({
++      fill: fill,
++      stroke: stroke,
++      points: 5,
++      radius: 10,
++      radius2: 4,
++      angle: 0
++    })
++  }));
++  vectorSource.addFeature(feature);
++
++  feature = new Feature({
++    geometry: new Point([12 + offSet[0], -8 + offSet[1]])
++  });
++  // cross
++  feature.setStyle(new Style({
++    image: new RegularShape({
++      fill: fill,
++      stroke: stroke,
++      points: 4,
++      radius: 10,
++      radius2: 0,
++      angle: 0
++    })
++  }));
++  vectorSource.addFeature(feature);
++}
++
++createFeatures(
++  new Stroke({width: 2}),
++  new Fill({color: 'red'})
++);
++createFeatures(
++  new Stroke({
++    lineDash: [10, 5]
++  }),
++  null,
++  [50, 50]
++);
++createFeatures(
++  new Stroke({
++    lineDash: [10, 5],
++    lineDashOffset: 5
++  }),
++  null,
++  [-50, -50]
++);
++
++createFeatures(new Stroke(), new Fill(), [50, -50]);
++
++const vectorLayer = new VectorLayer({
++  source: vectorSource
++});
++
++new Map({
++  target: 'map',
++  layers: [vectorLayer],
++  view: new View({
++    center: [0, 0],
++    resolution: 1
++  })
++});
++
++render();
+diff --git a/rendering/cases/source-raster/expected.png b/rendering/cases/source-raster/expected.png
+new file mode 100644
+index 00000000000..3f3eff36725
+Binary files /dev/null and b/rendering/cases/source-raster/expected.png differ
+diff --git a/rendering/cases/source-raster/main.js b/rendering/cases/source-raster/main.js
+new file mode 100644
+index 00000000000..215609e5ddc
+--- /dev/null
++++ b/rendering/cases/source-raster/main.js
+@@ -0,0 +1,32 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import ImageLayer from '../../../src/ol/layer/Image.js';
++import RasterSource from '../../../src/ol/source/Raster.js';
++import XYZ from '../../../src/ol/source/XYZ.js';
++
++const raster = new RasterSource({
++  sources: [new XYZ({
++    url: '/data/tiles/osm/{z}/{x}/{y}.png',
++    transition: 0
++  })],
++  threads: 0, // Avoid using workers to work with puppeteer
++  operation: function(pixels) {
++    const pixel = pixels[0];
++    const red = pixel[0];
++    pixel[0] = pixel[2];
++    pixel[2] = red;
++    return pixel;
++  }
++});
++
++new Map({
++  layers: [new ImageLayer({source: raster})],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    zoom: 0
++  })
++});
++
++render();
++
+diff --git a/rendering/cases/source-tilewms-gutter0/expected.png b/rendering/cases/source-tilewms-gutter0/expected.png
+new file mode 100644
+index 00000000000..8a2f9ed6352
+Binary files /dev/null and b/rendering/cases/source-tilewms-gutter0/expected.png differ
+diff --git a/rendering/cases/source-tilewms-gutter0/main.js b/rendering/cases/source-tilewms-gutter0/main.js
+new file mode 100644
+index 00000000000..101dee53221
+--- /dev/null
++++ b/rendering/cases/source-tilewms-gutter0/main.js
+@@ -0,0 +1,26 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import TileWMS from '../../../src/ol/source/TileWMS.js';
++
++const tileWms = new TileWMS({
++  params: {
++    'LAYERS': 'layer'
++  },
++  gutter: 0,
++  url: '/data/tiles/wms/wms0.png',
++  transition: 0
++});
++
++new Map({
++  pixelRatio: 1,
++  layers: [new TileLayer({source: tileWms})],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    zoom: 5
++  })
++});
++
++render();
++
+diff --git a/rendering/cases/source-tilewms-gutter20/expected.png b/rendering/cases/source-tilewms-gutter20/expected.png
+new file mode 100644
+index 00000000000..03b9bcc8d6e
+Binary files /dev/null and b/rendering/cases/source-tilewms-gutter20/expected.png differ
+diff --git a/rendering/cases/source-tilewms-gutter20/main.js b/rendering/cases/source-tilewms-gutter20/main.js
+new file mode 100644
+index 00000000000..060d2dcff5b
+--- /dev/null
++++ b/rendering/cases/source-tilewms-gutter20/main.js
+@@ -0,0 +1,26 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import TileLayer from '../../../src/ol/layer/Tile.js';
++import TileWMS from '../../../src/ol/source/TileWMS.js';
++
++const tileWms = new TileWMS({
++  params: {
++    'LAYERS': 'layer'
++  },
++  gutter: 20,
++  url: '/data/tiles/wms/wms20.png',
++  transition: 0
++});
++
++new Map({
++  pixelRatio: 1,
++  layers: [new TileLayer({source: tileWms})],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    zoom: 5
++  })
++});
++
++render();
++
+diff --git a/rendering/cases/text-style-linestring-nice/expected.png b/rendering/cases/text-style-linestring-nice/expected.png
+new file mode 100644
+index 00000000000..7d0c9beaa20
+Binary files /dev/null and b/rendering/cases/text-style-linestring-nice/expected.png differ
+diff --git a/rendering/cases/text-style-linestring-nice/main.js b/rendering/cases/text-style-linestring-nice/main.js
+new file mode 100644
+index 00000000000..dbfa9fa703b
+--- /dev/null
++++ b/rendering/cases/text-style-linestring-nice/main.js
+@@ -0,0 +1,130 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import Feature from '../../../src/ol/Feature.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Text from '../../../src/ol/style/Text.js';
++import Style from '../../../src/ol/style/Style.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++
++
++const vectorSource = new VectorSource();
++
++const nicePath = [
++  20, 33, 40, 31, 60, 30, 80, 31, 100, 33, 120, 37, 140, 39, 160, 40,
++  180, 39, 200, 37, 220, 33, 240, 31, 260, 30, 280, 31, 300, 33
++];
++
++const lineString1 = new LineString(nicePath, 'XY');
++const feature1 = new Feature({geometry: lineString1});
++feature1.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Hello world',
++    placement: 'line'
++  })
++}));
++vectorSource.addFeature(feature1);
++
++const lineString2 = lineString1.clone();
++lineString2.translate(0, 30);
++const feature2 = new Feature({geometry: lineString2});
++feature2.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Scale 2',
++    scale: 2,
++    textBaseline: 'bottom',
++    textAlign: 'right',
++    placement: 'line',
++    font: 'bold italic 0.8em serif'
++  })
++}));
++vectorSource.addFeature(feature2);
++
++const lineString3 = lineString2.clone();
++lineString3.translate(0, 30);
++const feature3 = new Feature({geometry: lineString3});
++feature3.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Set properties'
++  })
++}));
++feature3.getStyle().getText().setFont('bold italic 1.2em monospace');
++feature3.getStyle().getText().setTextAlign('left');
++feature3.getStyle().getText().setOffsetX(10);
++feature3.getStyle().getText().setOffsetY(-10);
++feature3.getStyle().getText().setPlacement('line');
++feature3.getStyle().getText().setScale(1.1);
++feature3.getStyle().getText().setStroke(new Stroke({color: '#00F7F8'}));
++feature3.getStyle().getText().setFill(new Fill({color: '#006772'}));
++
++vectorSource.addFeature(feature3);
++
++const lineString4 = lineString3.clone();
++lineString4.translate(0, 30);
++const feature4 = new Feature({geometry: lineString4});
++feature4.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'negative offsetX',
++    offsetX: -10,
++    textAlign: 'start',
++    textBaseline: 'top',
++    placement: 'line'
++  })
++}));
++vectorSource.addFeature(feature4);
++
++const lineString5 = lineString4.clone();
++lineString5.translate(0, 30);
++const feature5 = new Feature({geometry: lineString5});
++feature5.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Small text',
++    offsetY: 5,
++    scale: 0.7,
++    textAlign: 'end',
++    placement: 'line'
++  })
++}));
++vectorSource.addFeature(feature5);
++
++const lineString6 = lineString5.clone();
++lineString6.translate(0, 30);
++const feature6 = new Feature({geometry: lineString6});
++feature6.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'FILL AND STROKE',
++    placement: 'line',
++    fill: new Fill({color: '#FFC0CB'}),
++    stroke: new Stroke({
++      color: '#00FF00',
++      width: 1
++    })
++  })
++}));
++vectorSource.addFeature(feature6);
++
++const map = new Map({
++  pixelRatio: 1,
++  layers: [
++    new VectorLayer({
++      source: vectorSource
++    })
++  ],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    resolution: 1,
++    rotation: Math.PI / 4
++  })
++});
++map.getView().fit(vectorSource.getExtent());
++
++render({tolerance: 0.02});
+diff --git a/rendering/cases/text-style-linestring-ugly/expected.png b/rendering/cases/text-style-linestring-ugly/expected.png
+new file mode 100644
+index 00000000000..e15763b567e
+Binary files /dev/null and b/rendering/cases/text-style-linestring-ugly/expected.png differ
+diff --git a/rendering/cases/text-style-linestring-ugly/main.js b/rendering/cases/text-style-linestring-ugly/main.js
+new file mode 100644
+index 00000000000..c5a8f0ac651
+--- /dev/null
++++ b/rendering/cases/text-style-linestring-ugly/main.js
+@@ -0,0 +1,135 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import Feature from '../../../src/ol/Feature.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Text from '../../../src/ol/style/Text.js';
++import Style from '../../../src/ol/style/Style.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++
++
++const vectorSource = new VectorSource();
++
++const uglyPath = [163, 22, 159, 30, 150, 30, 143, 24, 151, 17];
++
++const lineString1 = new LineString(uglyPath, 'XY');
++const feature1 = new Feature({geometry: lineString1});
++feature1.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Hello world',
++    placement: 'line',
++    overflow: true
++  })
++}));
++vectorSource.addFeature(feature1);
++
++const lineString2 = lineString1.clone();
++lineString2.translate(0, 30);
++const feature2 = new Feature({geometry: lineString2});
++feature2.setStyle(new Style({
++  stroke: new Stroke({color: 'red'}),
++  text: new Text({
++    text: 'Scale 2',
++    scale: 2,
++    textBaseline: 'bottom',
++    textAlign: 'right',
++    placement: 'line',
++    font: 'bold italic 0.8em serif',
++    overflow: true
++  })
++}));
++vectorSource.addFeature(feature2);
++
++const lineString3 = lineString2.clone();
++lineString3.translate(0, 30);
++const feature3 = new Feature({geometry: lineString3});
++feature3.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Set properties'
++  })
++}));
++feature3.getStyle().getText().setFont('bold italic 1.2em monospace');
++feature3.getStyle().getText().setTextAlign('left');
++feature3.getStyle().getText().setOffsetX(10);
++feature3.getStyle().getText().setOffsetY(-10);
++feature3.getStyle().getText().setOverflow(true);
++feature3.getStyle().getText().setPlacement('line');
++feature3.getStyle().getText().setScale(1.2);
++feature3.getStyle().getText().setStroke(new Stroke({color: '#00F7F8'}));
++feature3.getStyle().getText().setFill(new Fill({color: '#006772'}));
++feature3.getStyle().getText().setMaxAngle(Math.PI);
++
++vectorSource.addFeature(feature3);
++
++const lineString4 = lineString3.clone();
++lineString4.translate(0, 30);
++const feature4 = new Feature({geometry: lineString4});
++feature4.setStyle(new Style({
++  stroke: new Stroke({color: 'red'}),
++  text: new Text({
++    text: 'PLEASE OMIT ME IM UGLY',
++    offsetX: -10,
++    textAlign: 'start',
++    textBaseline: 'top',
++    placement: 'line',
++    overflow: true
++  })
++}));
++vectorSource.addFeature(feature4);
++
++const lineString5 = lineString4.clone();
++lineString5.translate(0, 30);
++const feature5 = new Feature({geometry: lineString5});
++feature5.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Small text',
++    offsetY: 5,
++    scale: 0.7,
++    rotation: 4,
++    textAlign: 'end',
++    placement: 'line',
++    maxAngle: Math.PI,
++    overflow: true
++  })
++}));
++vectorSource.addFeature(feature5);
++
++const lineString6 = lineString5.clone();
++lineString6.translate(0, 30);
++const feature6 = new Feature({geometry: lineString6});
++feature6.setStyle(new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'FILL AND STROKE',
++    placement: 'line',
++    overflow: true,
++    fill: new Fill({color: '#FFC0CB'}),
++    stroke: new Stroke({
++      color: '#00FF00'
++    })
++  })
++}));
++vectorSource.addFeature(feature6);
++
++const map = new Map({
++  pixelRatio: 1,
++  layers: [
++    new VectorLayer({
++      source: vectorSource
++    })
++  ],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    resolution: 1,
++    rotation: -(Math.PI / 4)
++  })
++});
++map.getView().fit(vectorSource.getExtent());
++
++render({tolerance: 0.02});
+diff --git a/rendering/cases/text-style-overlap/expected.png b/rendering/cases/text-style-overlap/expected.png
+new file mode 100644
+index 00000000000..f4f1c2daac7
+Binary files /dev/null and b/rendering/cases/text-style-overlap/expected.png differ
+diff --git a/rendering/cases/text-style-overlap/main.js b/rendering/cases/text-style-overlap/main.js
+new file mode 100644
+index 00000000000..a67c75936e3
+--- /dev/null
++++ b/rendering/cases/text-style-overlap/main.js
+@@ -0,0 +1,104 @@
++import Map from '../../../src/ol/Map.js';
++import View from '../../../src/ol/View.js';
++import Feature from '../../../src/ol/Feature.js';
++import Point from '../../../src/ol/geom/Point.js';
++import VectorLayer from '../../../src/ol/layer/Vector.js';
++import VectorSource from '../../../src/ol/source/Vector.js';
++import Text from '../../../src/ol/style/Text.js';
++import Style from '../../../src/ol/style/Style.js';
++import Fill from '../../../src/ol/style/Fill.js';
++import Stroke from '../../../src/ol/style/Stroke.js';
++import LineString from '../../../src/ol/geom/LineString.js';
++
++const nicePath = [
++  20, 33, 40, 31, 60, 30, 80, 31, 100, 33, 120, 37, 140, 39, 160, 40,
++  180, 39, 200, 37, 220, 33, 240, 31, 260, 30, 280, 31, 300, 33
++];
++
++const vectorSource = new VectorSource();
++const pointStyle = new Style({
++  text: new Text({
++    text: 'Point Label',
++    fill: new Fill({
++      color: 'red'
++    }),
++    stroke: new Stroke({
++      color: 'black'
++    })
++  })
++});
++const lineStyle = new Style({
++  stroke: new Stroke({color: 'blue'}),
++  text: new Text({
++    text: 'Line Label',
++    fill: new Fill({
++      color: 'red'
++    }),
++    stroke: new Stroke({
++      color: 'black'
++    }),
++    placement: 'line'
++  })
++});
++
++const pointFeature1 = new Feature({
++  geometry: new Point([160, 100])
++});
++pointFeature1.setStyle(pointStyle.clone());
++pointFeature1.getStyle().getText().setText('POINT ONE');
++vectorSource.addFeature(pointFeature1);
++
++const pointFeature2 = new Feature({
++  geometry: new Point([170, 105])
++});
++pointFeature2.setStyle(pointStyle.clone());
++pointFeature2.getStyle().getText().setText('POINT TWO');
++pointFeature2.getStyle().getText().setFill(new Fill({color: 'green'}));
++vectorSource.addFeature(pointFeature2);
++
++const pointFeature3 = new Feature({
++  geometry: new Point([150, 95])
++});
++pointFeature3.setStyle(pointStyle.clone());
++pointFeature3.getStyle().getText().setText('POINT THREE');
++pointFeature3.getStyle().getText().setFill(new Fill({color: 'yellow'}));
++vectorSource.addFeature(pointFeature3);
++
++const lineString1 = new LineString(nicePath, 'XY');
++const lineFeature1 = new Feature({geometry: lineString1});
++lineFeature1.setStyle(lineStyle);
++lineFeature1.getStyle().getText().setText('LINE ONE');
++vectorSource.addFeature(lineFeature1);
++
++const lineString2 = lineString1.clone();
++lineString2.translate(10, 10);
++const lineFeature2 = new Feature({geometry: lineString2});
++lineFeature2.setStyle(lineStyle.clone());
++lineFeature2.getStyle().getText().setText('LINE TWO');
++lineFeature2.getStyle().getText().setFill(new Fill({color: 'green'}));
++vectorSource.addFeature(lineFeature2);
++
++const lineString3 = lineString1.clone();
++lineString3.translate(-10, 10);
++const lineFeature3 = new Feature({geometry: lineString3});
++lineFeature3.setStyle(lineStyle.clone());
++lineFeature3.getStyle().getText().setText('LINE THREE');
++lineFeature3.getStyle().getText().setFill(new Fill({color: 'yellow'}));
++vectorSource.addFeature(lineFeature3);
++
++const map = new Map({
++  pixelRatio: 1,
++  layers: [
++    new VectorLayer({
++      source: vectorSource
++    })
++  ],
++  target: 'map',
++  view: new View({
++    center: [0, 0],
++    resolution: 1
++  })
++});
++map.getView().fit(vectorSource.getExtent());
++
++render({tolerance: 0.02});
+diff --git a/rendering/data/tiles/512x256/5/3/12.png b/rendering/data/tiles/512x256/5/3/12.png
+new file mode 100644
+index 00000000000..00f5a328572
+Binary files /dev/null and b/rendering/data/tiles/512x256/5/3/12.png differ
+diff --git a/rendering/data/tiles/osm/0/0/0.png b/rendering/data/tiles/osm/0/0/0.png
+new file mode 100644
+index 00000000000..732e9096b14
+Binary files /dev/null and b/rendering/data/tiles/osm/0/0/0.png differ
+diff --git a/rendering/data/tiles/osm/5/4/12.png b/rendering/data/tiles/osm/5/4/12.png
+new file mode 100644
+index 00000000000..4468321919a
+Binary files /dev/null and b/rendering/data/tiles/osm/5/4/12.png differ
+diff --git a/rendering/data/tiles/osm/5/5/12.png b/rendering/data/tiles/osm/5/5/12.png
+new file mode 100644
+index 00000000000..ada08786c98
+Binary files /dev/null and b/rendering/data/tiles/osm/5/5/12.png differ
+diff --git a/rendering/data/tiles/osm/5/5/13.png b/rendering/data/tiles/osm/5/5/13.png
+new file mode 100644
+index 00000000000..84a6879b3e3
+Binary files /dev/null and b/rendering/data/tiles/osm/5/5/13.png differ
+diff --git a/rendering/data/tiles/osm/5/6/12.png b/rendering/data/tiles/osm/5/6/12.png
+new file mode 100644
+index 00000000000..54b877726e1
+Binary files /dev/null and b/rendering/data/tiles/osm/5/6/12.png differ
+diff --git a/rendering/data/tiles/osm/5/6/13.png b/rendering/data/tiles/osm/5/6/13.png
+new file mode 100644
+index 00000000000..9fe6d7bc550
+Binary files /dev/null and b/rendering/data/tiles/osm/5/6/13.png differ
+diff --git a/rendering/data/tiles/wms/wms0.png b/rendering/data/tiles/wms/wms0.png
+new file mode 100644
+index 00000000000..55c3ce686fa
+Binary files /dev/null and b/rendering/data/tiles/wms/wms0.png differ
+diff --git a/rendering/data/tiles/wms/wms20.png b/rendering/data/tiles/wms/wms20.png
+new file mode 100644
+index 00000000000..34a5a73d2f6
+Binary files /dev/null and b/rendering/data/tiles/wms/wms20.png differ

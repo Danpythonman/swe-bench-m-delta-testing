@@ -1,0 +1,16 @@
+diff --git a/components/cascader/menu.tsx b/components/cascader/menu.tsx
+index 0122ed8d2c..dc15f39627 100644
+--- a/components/cascader/menu.tsx
++++ b/components/cascader/menu.tsx
+@@ -104,7 +104,10 @@ export default class CascaderMenu extends Component<CascaderMenuProps> {
+             <div
+                 ref={this.saveMenuRef}
+                 className={`${prefix}cascader-menu-wrapper ${className ? className : ''}`}
+-                style={style}
++                style={{
++                    ...style,
++                    backgroundColor: style?.backgroundColor ?? (useVirtual ? '#fff' : undefined),
++                }}
+             >
+                 {useVirtual ? (
+                     <VirtualList

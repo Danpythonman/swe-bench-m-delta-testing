@@ -1,0 +1,45 @@
+diff --git a/tests/docs/smoke-all/2023/03/08/revealjs-hash-number-pandoc-style.qmd b/tests/docs/smoke-all/2023/03/08/revealjs-hash-number-pandoc-style.qmd
+new file mode 100644
+index 00000000000..1114ce86702
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/03/08/revealjs-hash-number-pandoc-style.qmd
+@@ -0,0 +1,17 @@
++---
++title: Slide title
++format:
++  revealjs:
++    hash-type: number
++title-slide-style: pandoc
++_quarto:
++  tests:
++    revealjs:
++      ensureHtmlElements:
++        - ["div.reveal > div.slides > section.quarto-title-block" ]
++        - ["#title-slide"]
++---
++
++## slide 1
++
++Content
+diff --git a/tests/docs/smoke-all/2023/03/08/revealjs-hash-number.qmd b/tests/docs/smoke-all/2023/03/08/revealjs-hash-number.qmd
+new file mode 100644
+index 00000000000..921b5b93d6e
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/03/08/revealjs-hash-number.qmd
+@@ -0,0 +1,16 @@
++---
++title: Slide title
++format:
++  revealjs:
++    hash-type: number
++_quarto:
++  tests:
++    revealjs:
++      ensureHtmlElements:
++        - ["div.reveal > div.slides > section.quarto-title-block" ]
++        - ["#title-slide"]
++---
++
++## slide 1
++
++Content

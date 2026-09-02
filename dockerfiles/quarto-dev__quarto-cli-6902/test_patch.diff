@@ -1,0 +1,61 @@
+diff --git a/tests/docs/smoke-all/2023/09/19/issue-2492-b.qmd b/tests/docs/smoke-all/2023/09/19/issue-2492-b.qmd
+new file mode 100644
+index 00000000000..b53fa0c313c
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/09/19/issue-2492-b.qmd
+@@ -0,0 +1,26 @@
++---
++title: "MWE"
++format: latex
++_quarto:
++  tests:
++    latex:
++      ensureFileRegexMatches:
++        - 
++          - "\\\\label\\{fig-e1b\\}"
++          - "\\\\label\\{fig-e1a\\}"
++          - "\\\\subcaption\\{.*Surus\\}"
++          - "\\\\subcaption\\{.*Hanno\\}"
++        - []
++---
++
++Figures
++
++::: {#fig-elephants layout-ncol="2"}
++
++![Surus](elephant.jpg){#fig-e1a}
++
++![Hanno](elephant.jpg){#fig-e1b}
++
++Famous Elephants
++:::
++
+diff --git a/tests/docs/smoke-all/2023/09/19/issue-2492.qmd b/tests/docs/smoke-all/2023/09/19/issue-2492.qmd
+new file mode 100644
+index 00000000000..0f7a45b3ff4
+--- /dev/null
++++ b/tests/docs/smoke-all/2023/09/19/issue-2492.qmd
+@@ -0,0 +1,23 @@
++---
++title: "MWE"
++format: latex
++_quarto:
++  tests:
++    latex:
++      ensureFileRegexMatches:
++        - 
++          - "\\\\subcaption\\{.*Surus\\}"
++          - "\\\\subcaption\\{.*Hanno\\}"
++        - []
++---
++
++Figures
++
++::: {#fig-elephants layout-ncol="2"}
++
++![Surus](elephant.jpg)
++
++![Hanno](elephant.jpg)
++
++Famous Elephants
++:::

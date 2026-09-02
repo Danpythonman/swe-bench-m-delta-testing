@@ -1,0 +1,13 @@
+diff --git a/tests/docs/smoke-all/2022/09/30/crossref-false/crossref-false.qmd b/tests/docs/smoke-all/2022/09/30/crossref-false/crossref-false.qmd
+new file mode 100644
+index 00000000000..78b43d84510
+--- /dev/null
++++ b/tests/docs/smoke-all/2022/09/30/crossref-false/crossref-false.qmd
+@@ -0,0 +1,7 @@
++---
++format:
++  html:
++    crossref: false
++---
++
++# A test

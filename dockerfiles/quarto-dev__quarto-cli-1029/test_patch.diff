@@ -1,0 +1,29 @@
+diff --git a/tests/docs/reveal/stretch.qmd b/tests/docs/reveal/stretch.qmd
+index d81abb27515..65f191e877b 100644
+--- a/tests/docs/reveal/stretch.qmd
++++ b/tests/docs/reveal/stretch.qmd
+@@ -234,4 +234,12 @@ Some content
+ plot(cars)
+ ```
+ 
++:::
++
++## With aside on slide  {#aside}
++
++![Caption](https://revealjs.com/images/logo/reveal-black-text.svg)
++
++::: {.aside}
++Something here as an aside
+ :::
+\ No newline at end of file
+diff --git a/tests/smoke/render/render-reveal.test.ts b/tests/smoke/render/render-reveal.test.ts
+index f2de8abaef3..724f296fea4 100644
+--- a/tests/smoke/render/render-reveal.test.ts
++++ b/tests/smoke/render/render-reveal.test.ts
+@@ -66,5 +66,6 @@ testRender(input, "revealjs", false, [
+     "#custom-divs-caption img.r-stretch",
+     "#custom-divs-knitr img.r-stretch",
+     "#custom-divs-knitr-caption img.r-stretch",
++    "#aside img.r-stretch",
+   ]),
+ ]);

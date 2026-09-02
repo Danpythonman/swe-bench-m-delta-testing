@@ -1,0 +1,30 @@
+diff --git a/news/changelog-1.4.md b/news/changelog-1.4.md
+index 24bf6ca57be..8dbe1bb1d7d 100644
+--- a/news/changelog-1.4.md
++++ b/news/changelog-1.4.md
+@@ -18,6 +18,10 @@
+ - ([#5393](https://github.com/quarto-dev/quarto-cli/issues/5393)): Properly set color of headings without using opacity.
+ - ([#5431](https://github.com/quarto-dev/quarto-cli/issues/5431)): Properly apply column positioning to title metadata.
+ 
++## RevealJS Format
++
++- [#5546](https://github.com/quarto-dev/quarto-cli/issues/5546): Images inside links can't be stretched, and so auto-stretch feature now ignores them.
++
+ ## Website Listings
+ 
+ - ([#5371](https://github.com/quarto-dev/quarto-cli/issues/5371)): Properly compute the trimmed length of descriptions included in listings.
+diff --git a/src/format/reveal/format-reveal.ts b/src/format/reveal/format-reveal.ts
+index 1ad2d72fa2d..5d9b779eff4 100644
+--- a/src/format/reveal/format-reveal.ts
++++ b/src/format/reveal/format-reveal.ts
+@@ -787,7 +787,9 @@ function applyStretch(doc: Document, autoStretch: boolean) {
+           !imageEl.getAttribute("style")?.match("height:") &&
+           !imageEl.hasAttribute("height") &&
+           // do not add when .absolute is used
+-          !imageEl.classList.contains("absolute")
++          !imageEl.classList.contains("absolute") &&
++          // do not add when image is inside a link
++          imageEl.parentElement?.nodeName !== "A"
+         ) {
+           imageEl.classList.add("r-stretch");
+         }

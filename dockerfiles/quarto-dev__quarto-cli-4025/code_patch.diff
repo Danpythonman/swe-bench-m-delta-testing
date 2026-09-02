@@ -1,0 +1,155 @@
+diff --git a/news/changelog-1.3.md b/news/changelog-1.3.md
+index 94b4a7be9d0..61dbeae4e55 100644
+--- a/news/changelog-1.3.md
++++ b/news/changelog-1.3.md
+@@ -2,6 +2,7 @@
+ 
+ - Add support for embedding cell outputs in quarto documents using `{{< embed >}}`. You can address cells by Id, Tag, or label, such as `{{< embed mynotebook.ipynb#fig-output >}}` which would embed the output of a cell with the label `fig-output`). You can also provide a list of ids like `{{< embed mynotebook.ipynb#fig-output,tbl-out >}}`.
+ - Only attempt to postprocess `text/plain` output if it's nonempty ([#3896](https://github.com/quarto-dev/quarto-cli/issues/3896)).
++- Fix output of bokeh plots so the right number of cells is generated ([#2107](https://github.com/quarto-dev/quarto-cli/issues/2107)).
+ 
+ ## Code Annotation
+ 
+diff --git a/src/core/jupyter/jupyter-fixups.ts b/src/core/jupyter/jupyter-fixups.ts
+new file mode 100644
+index 00000000000..da77224d747
+--- /dev/null
++++ b/src/core/jupyter/jupyter-fixups.ts
+@@ -0,0 +1,103 @@
++/*
++* jupyter-shared.ts
++*
++* Copyright (C) 2020-2023 Posit Software, PBC
++*
++*/
++
++import {
++  JupyterNotebook,
++  JupyterOutput,
++  JupyterToMarkdownOptions,
++} from "./types.ts";
++
++function fixupBokehCells(
++  nb: JupyterNotebook,
++  _options: JupyterToMarkdownOptions,
++): JupyterNotebook {
++  for (const cell of nb.cells) {
++    if (cell.cell_type === "code") {
++      let needsFixup = false;
++      for (const output of cell?.outputs ?? []) {
++        if (output.data === undefined) {
++          continue;
++        }
++        if (output.data["application/vnd.bokehjs_load.v0+json"]) {
++          needsFixup = true;
++        }
++      }
++
++      if (!needsFixup) {
++        continue;
++      }
++      const asTextHtml = (data: Record<string, unknown>) => {
++        if (data["text/html"]) {
++          return data["text/html"];
++        }
++        if (data["application/javascript"]) {
++          return [
++            "<script>",
++            ...data["application/javascript"] as string[],
++            "</script>",
++          ];
++        }
++        throw new Error(
++          "Internal Error: Unknown data types " +
++            JSON.stringify(Object.keys(data)),
++        );
++      };
++
++      // bokeh emits one 'initialization' cell once per notebook,
++      // and then two cells per plot. So we merge the three first cells into
++      // one, and then merge every two cells after that.
++
++      const oldOutputs = cell.outputs!;
++
++      const newOutputs: JupyterOutput[] = [
++        {
++          metadata: {},
++          output_type: "display_data",
++          data: {
++            "text/html": [
++              asTextHtml(oldOutputs[0].data!),
++              asTextHtml(oldOutputs[1].data!),
++              asTextHtml(oldOutputs[2].data!),
++            ].flat(),
++          },
++        },
++      ];
++      for (let i = 3; i < oldOutputs.length; i += 2) {
++        newOutputs.push({
++          metadata: {},
++          output_type: "display_data",
++          data: {
++            "text/html": [
++              asTextHtml(oldOutputs[i].data!),
++              asTextHtml(oldOutputs[i + 1].data!),
++            ].flat(),
++          },
++        });
++      }
++      cell.outputs = newOutputs;
++    }
++  }
++
++  return nb;
++}
++
++const fixups: ((
++  nb: JupyterNotebook,
++  options: JupyterToMarkdownOptions,
++) => JupyterNotebook)[] = [
++  fixupBokehCells,
++];
++
++export function fixupJupyterNotebook(
++  nb: JupyterNotebook,
++  options: JupyterToMarkdownOptions,
++): JupyterNotebook {
++  for (const fixup of fixups) {
++    nb = fixup(nb, options);
++  }
++  return nb;
++}
+diff --git a/src/core/jupyter/jupyter.ts b/src/core/jupyter/jupyter.ts
+index 793fb3a681f..55592b08dfe 100644
+--- a/src/core/jupyter/jupyter.ts
++++ b/src/core/jupyter/jupyter.ts
+@@ -151,6 +151,7 @@ import { ProjectContext } from "../../project/types.ts";
+ import { mergeConfigs } from "../config.ts";
+ import { encode as encodeBase64 } from "encoding/base64.ts";
+ import { isIpynbOutput } from "../../config/format.ts";
++import { fixupJupyterNotebook } from "./jupyter-fixups.ts";
+ 
+ export const kQuartoMimeType = "quarto_mimetype";
+ export const kQuartoOutputOrder = "quarto_order";
+@@ -631,6 +632,9 @@ export async function jupyterToMarkdown(
+   nb: JupyterNotebook,
+   options: JupyterToMarkdownOptions,
+ ): Promise<JupyterToMarkdownResult> {
++  // perform fixups
++  nb = fixupJupyterNotebook(nb, options);
++
+   // optional content injection / html preservation for html output
+   // that isn't an ipynb
+   const isHtml = options.toHtml && !options.toIpynb;
+diff --git a/src/core/jupyter/types.ts b/src/core/jupyter/types.ts
+index 3d60a63d0f9..5a496458251 100644
+--- a/src/core/jupyter/types.ts
++++ b/src/core/jupyter/types.ts
+@@ -144,6 +144,7 @@ export interface JupyterOutput {
+   execution_count?: null | number;
+   isolated?: boolean;
+   metadata?: Record<string, unknown>;
++  data?: Record<string, unknown>;
+ }
+ 
+ export interface JupyterOutputStream extends JupyterOutput {
