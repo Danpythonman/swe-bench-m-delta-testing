@@ -25,6 +25,11 @@
 #                                               run's log to.
 #   --stdout-key       s3_stdout_key         - S3 key to upload this run's
 #                                               log to.
+#   --apply-test-patch                       - forwarded to run_instance.py:
+#                                               apply the instance's test
+#                                               patch on top of the model patch,
+#                                               so the maintainer's FAIL_TO_PASS
+#                                               tests are present. Optional.
 
 set -euo pipefail
 
@@ -35,6 +40,7 @@ PRED_KEY=
 RESULTS_BUCKET=
 STDOUT_BUCKET=
 STDOUT_KEY=
+APPLY_TEST_PATCH=
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -65,6 +71,10 @@ while [[ $# -gt 0 ]]; do
         --stdout-key)
             STDOUT_KEY="$2"
             shift 2
+            ;;
+        --apply-test-patch)
+            APPLY_TEST_PATCH=--apply-test-patch
+            shift 1
             ;;
         *)
             echo "run_ec2.sh: unknown argument: $1" >&2
@@ -117,11 +127,18 @@ else
     echo "Running instance ${INSTANCE_ID} ${PATCH_TYPE} into results bucket ${RESULTS_BUCKET}, log into ${STDOUT_URI}"
 fi
 
+# Empty array expands to nothing, so the flag is absent when unset.
+test_patch_args=()
+if [[ -n "${APPLY_TEST_PATCH}" ]]; then
+    test_patch_args=("${APPLY_TEST_PATCH}")
+fi
+
 uv run \
     ./scripts/run_instance.py \
     "${INSTANCE_ID}" \
     "${PATCH_TYPE}" \
     "${pred_file_args[@]}" \
+    "${test_patch_args[@]}" \
     --parquet \
     --s3 \
     --bucket "${RESULTS_BUCKET}" \
