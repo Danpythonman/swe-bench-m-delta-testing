@@ -178,6 +178,14 @@ def make_git_checkout_command(branch: str) -> str:
     ``/opt/sbmdt`` on the EC2 instance, ahead of running the evaluation
     command built by ``make_command``.
 
+    Two details of the AMI have to be worked around. The repository is
+    cloned as ``ssm-user`` at image build time but SSM runs commands as
+    root, so git refuses to touch it as "dubious ownership" until the
+    directory is marked safe. And the clone already has a local branch
+    for whatever the image was built from, so a plain ``checkout -b``
+    fails when asked for that same branch; ``-B`` resets it to the
+    fetched ref instead.
+
     Args:
         branch: Name of the git branch to fetch and check out.
 
@@ -185,10 +193,23 @@ def make_git_checkout_command(branch: str) -> str:
         The full shell command string to execute on the instance.
     """
     ref = f'refs/remotes/origin/{branch}'
+    safe = [
+        'git',
+        'config',
+        '--global',
+        '--add',
+        'safe.directory',
+        '/opt/sbmdt',
+    ]
     fetch = ['git', 'fetch', '--depth', '1', 'origin', f'{branch}:{ref}']
-    checkout = ['git', 'checkout', '-b', branch, f'origin/{branch}']
-    command = (
-        'cd /opt/sbmdt && ' + shlex.join(fetch) + ' && ' + shlex.join(checkout)
+    checkout = ['git', 'checkout', '-B', branch, f'origin/{branch}']
+    command = ' && '.join(
+        [
+            'cd /opt/sbmdt',
+            shlex.join(safe),
+            shlex.join(fetch),
+            shlex.join(checkout),
+        ]
     )
     return command
 
