@@ -283,9 +283,13 @@ async def run_instance(
         )
         log.info(f'Received output: {output}')
     except Exception as e:
+        # Re-raise so gather() records it and _report_results can surface
+        # it. Logging alone made every failure invisible to the batch
+        # summary, which then counted the instance as a success.
         log.error(
             f'Error running instance {sbmdt_instance_id} {patch_type}: {e}'
         )
+        raise
     finally:
         if instance_id is not None:
             log.info('Terminating instance')

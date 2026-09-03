@@ -46,6 +46,7 @@ from sbmdt.patches import (
     TEST_PATCH_DIFF_FILENAME,
     read_diff,
     split_diff,
+    write_diff,
 )
 from sbmdt.pred import Pred
 
@@ -81,12 +82,8 @@ def split_instance(instance_dir: Path, write: bool = True) -> dict[str, int]:
     if not write:
         return counts
 
-    (instance_dir / CODE_PATCH_DIFF_FILENAME).write_text(
-        code_diff, encoding='utf-8', errors='surrogateescape'
-    )
-    (instance_dir / TEST_PATCH_DIFF_FILENAME).write_text(
-        test_diff, encoding='utf-8', errors='surrogateescape'
-    )
+    write_diff(instance_dir / CODE_PATCH_DIFF_FILENAME, code_diff)
+    write_diff(instance_dir / TEST_PATCH_DIFF_FILENAME, test_diff)
 
     pred = Pred(
         instance_id=instance_dir.name,
