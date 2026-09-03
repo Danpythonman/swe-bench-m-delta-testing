@@ -366,6 +366,49 @@ async def _terminate_known_instances() -> None:
     await asyncio.gather(*coros, return_exceptions=True)
 
 
+def _report_results(
+    pred_s3_keys: list[str], work_tasks: asyncio.Future[list[Any]]
+) -> None:
+    """Log how the batch went and exit non-zero if anything failed.
+
+    ``gather`` is called with ``return_exceptions=True`` so one bad
+    instance cannot cancel the rest, but that also means a failure is
+    only ever a value in the results list. Nothing used to read it, so a
+    batch where every instance failed still logged ``Done!`` and exited
+    0, which is indistinguishable from a batch that worked.
+
+    Args:
+        pred_s3_keys: The keys evaluated, in the order tasks were built.
+        work_tasks: The gathered tasks, which may not have completed if
+            the run was cut short by a shutdown request.
+
+    Raises:
+        SystemExit: If any instance raised.
+    """
+    if not work_tasks.done():
+        log.warning('Work did not finish; results are incomplete')
+        return
+
+    results = work_tasks.result()
+    failures = [
+        (key, outcome)
+        for key, outcome in zip(pred_s3_keys, results, strict=True)
+        if isinstance(outcome, BaseException)
+    ]
+
+    succeeded = len(results) - len(failures)
+    log.info(f'{succeeded}/{len(results)} instance(s) succeeded')
+
+    if not failures:
+        log.info('Done!')
+        return
+
+    log.error(f'{len(failures)} instance(s) failed:')
+    for key, exc in failures:
+        log.error(f'  {key}: {type(exc).__name__}: {exc}')
+    raise SystemExit(1)
+
+
 async def main(run_args: RunArgs) -> None:
     """Evaluate predictions in ``PREDS_S3_BUCKET_NAME``.
 
@@ -441,7 +484,7 @@ async def main(run_args: RunArgs) -> None:
     else:
         log.info('Work finished without a shutdown request')
 
-    log.info('Done!')
+    _report_results(pred_s3_keys, work_tasks)
 
 
 def parse_args() -> RunArgs:
