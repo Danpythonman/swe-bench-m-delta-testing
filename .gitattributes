@@ -1,1 +1,8 @@
 dockerfiles/** linguist-generated=true
+
+# Patch files are byte-exact input to `git apply`. Their line endings are
+# content, not formatting: a diff of a CRLF file carries CRLF in its
+# context lines, and one patch can mix both. Letting git normalise them
+# rewrites those lines and the patch then fails to apply on the worker.
+dockerfiles/**/*.diff -text
+dockerfiles/**/*.pred -text
