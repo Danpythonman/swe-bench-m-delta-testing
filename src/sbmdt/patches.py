@@ -29,6 +29,7 @@ __all__ = [
     'is_test_path',
     'split_diff',
     'test_patch_for',
+    'write_diff',
 ]
 
 GOLD_PATCH_DIFF_FILENAME: Final[str] = 'gold_patch.diff'
@@ -102,19 +103,42 @@ def split_diff(diff: str) -> tuple[str, str]:
 
 
 def read_diff(path: Path) -> str:
-    """Read a diff off disk without mangling non-UTF-8 bytes.
+    """Read a diff off disk without mangling its bytes or line endings.
 
-    Patches routinely carry fixture files that are not valid UTF-8, and
-    those bytes have to survive the round trip or ``git apply`` will
-    reject the result.
+    Two things have to survive the round trip or ``git apply`` will
+    reject the result. Patches routinely carry fixture files that are not
+    valid UTF-8, hence ``surrogateescape``. And a patch's line endings
+    are content rather than formatting: a diff of a CRLF file carries
+    CRLF in its context lines, and one gold patch can mix both. Universal
+    newline mode would collapse that distinction, so it is disabled here.
 
     Args:
         path: The diff file to read.
 
     Returns:
-        The diff contents.
+        The diff contents, byte for byte.
     """
-    return path.read_text(encoding='utf-8', errors='surrogateescape')
+    with open(
+        path, encoding='utf-8', errors='surrogateescape', newline=''
+    ) as handle:
+        return handle.read()
+
+
+def write_diff(path: Path, diff: str) -> None:
+    """Write a diff back out with its line endings untouched.
+
+    Disabling newline translation matters on Windows, where the default
+    rewrites every line feed as CRLF and silently corrupts the context
+    lines of any patch that was not CRLF to begin with.
+
+    Args:
+        path: Where to write the diff.
+        diff: The diff contents.
+    """
+    with open(
+        path, 'w', encoding='utf-8', errors='surrogateescape', newline=''
+    ) as handle:
+        handle.write(diff)
 
 
 def test_patch_for(instance_id: str, base: Path = DOCKERFILES_BASE) -> str:
