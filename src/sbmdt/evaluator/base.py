@@ -65,6 +65,11 @@ class PatchType(StrEnum):
     WITHOUT_IMAGE = 'without_image'
     GOLD = 'gold'
 
+MODEL_PATCH_TYPES: Final[frozenset[str]] = frozenset(
+    {PatchType.WITH_IMAGE, PatchType.WITHOUT_IMAGE}
+)
+"""Patch types the gold test patch may be applied on top of."""
+
 
 def factory(items: list[tuple[str, Any]]) -> dict[str, Any]:
     """Build a JSON-safe dict from dataclass fields.
@@ -589,8 +594,18 @@ class Evaluator(ABC):
             else:
                 log.info('No patch to apply')
             if self.apply_test_patch_enabled:
-                log.info('Applying test patch...')
-                self.apply_test_patch()
+                if self.patch_type in MODEL_PATCH_TYPES:
+                    log.info('Applying test patch...')
+                    self.apply_test_patch()
+                else:
+                    # gold already carries the maintainer's tests in the
+                    # same diff, and before_patch must not have them at
+                    # all: injecting them into the baseline would make
+                    # the patch's new tests look pre-existing and break
+                    # the FAIL_TO_PASS split for the whole corpus.
+                    log.info(
+                        f'Not applying test patch for {self.patch_type}'
+                    )
             log.info('Evaluating...')
             results = self.evaluate()
         except Exception:
