@@ -45,7 +45,11 @@ from sbmdt.aws.s3 import (
     S3PredFilename,
     get_all_keys_in_s3_bucket,
 )
-from sbmdt.aws.ssm import send_ssm_command, wait_for_ssm
+from sbmdt.aws.ssm import (
+    DEFAULT_TIMEOUT_MINUTES,
+    send_ssm_command,
+    wait_for_ssm,
+)
 from sbmdt.evaluator.base import PatchType
 from sbmdt.log import setup_logging, setup_logging_for_asyncio
 
@@ -77,6 +81,7 @@ class RunArgs:
     aws_profile: str
     git_branch: str | None
     apply_test_patch: bool
+    run_timeout_minutes: int
 
 
 N_CONCURRENT = 5
@@ -274,7 +279,8 @@ async def run_instance(
         output = await send_ssm_command(
             ssm,
             instance_id,
-            make_command(
+            timeout_seconds=run_args.run_timeout_minutes * 60,
+            command=make_command(
                 sbmdt_instance_id,
                 patch_type,
                 pred_s3_key,
@@ -449,7 +455,7 @@ async def main(run_args: RunArgs) -> None:
         pred_s3_keys = pred_keys
 
     tasks: list[Coroutine[Any, Any, None]] = []
-    sem = asyncio.Semaphore(N_CONCURRENT)
+    sem = asyncio.Semaphore(run_args.n_concurrent)
     for key in pred_s3_keys:
         pred_filename = S3PredFilename.decode(key)
         sbmdt_instance_id = pred_filename.instance_id
@@ -586,6 +592,18 @@ def parse_args() -> RunArgs:
         ),
     )
     parser.add_argument(
+        '--run-timeout-minutes',
+        type=int,
+        default=DEFAULT_TIMEOUT_MINUTES,
+        help=(
+            'Kill an evaluation that has not finished within this '
+            'many minutes. The default is generous; a successful '
+            'run has a median of about 8 minutes, so a much lower '
+            'value fails a hung instance fast instead of paying '
+            'for it to sit until the ceiling.'
+        ),
+    )
+    parser.add_argument(
         '--git-branch',
         default=GIT_BRANCH,
         help=(
@@ -611,6 +629,7 @@ def parse_args() -> RunArgs:
         aws_profile=args.aws_profile,
         git_branch=args.git_branch,
         apply_test_patch=args.apply_test_patch,
+        run_timeout_minutes=args.run_timeout_minutes,
     )
 
 
