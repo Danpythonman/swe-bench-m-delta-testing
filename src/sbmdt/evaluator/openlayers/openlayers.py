@@ -82,7 +82,7 @@ class OpenlayersEvaluator(Evaluator):
                 'find',
                 '/testbed',
                 '-maxdepth',
-                '4',
+                '6',
                 '(',
                 '-iname',
                 'karma.config.js',
@@ -108,10 +108,21 @@ class OpenlayersEvaluator(Evaluator):
         elif candidates:
             karma_config_file = candidates[0]
         else:
+            # Diagnostic broad search, so a failure here leaves
+            # something to look at instead of only "not found": what
+            # test-related files this checkout actually has, if any.
+            _, diag_output = self.container.exec_run(
+                ['find', '/testbed', '-iname', '*karma*'],
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(diag_output, bytes)
             raise Exception(
                 f'No karma config found under /testbed for '
                 f'{self.instance_id} (searched for karma.config.js and '
-                f'karma.conf.js, excluding node_modules and rendering)'
+                f'karma.conf.js up to 6 levels deep, excluding '
+                f'node_modules and rendering). Files matching *karma*'
+                f'anywhere under /testbed: {diag_output.decode()!r}'
             )
         if karma_config_file != DEFAULT_KARMA_CONFIG_FILE:
             log.info(
