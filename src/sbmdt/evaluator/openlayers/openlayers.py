@@ -17,7 +17,11 @@ from sbmdt.evaluator.alibaba.karma_junit_parser import (
     results_xml_to_test_results,
 )
 from sbmdt.evaluator.base import Evaluator, TestResult
-from sbmdt.utils import apply_change_literal, read_from_container
+from sbmdt.utils import (
+    apply_change_literal,
+    apply_change_regex,
+    read_from_container,
+)
 
 __all__ = [
     'OpenlayersEvaluator',
@@ -81,19 +85,24 @@ class OpenlayersEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
-        apply_change_literal(
-            container=self.container,
-            file=KARMA_CONFIG_FILE,
-            find="reporters: ['dots', 'coverage-istanbul'],",
-            replace=(
-                "reporters: ['dots', 'coverage-istanbul', 'junit'],\n"
+        def _add_junit_reporter(m):
+            inner = m.group(1).rstrip()
+            sep = ', ' if inner and not inner.endswith(',') else ' '
+            return (
+                f"reporters: [{inner}{sep}'junit'],\n"
                 '    junitReporter: {\n'
                 "      outputDir: 'test-results',\n"
                 "      outputFile: 'results.xml',\n"
                 '      useBrowserName: false,\n'
                 '    },'
-            ),
-            assertion="reporters: ['dots', 'coverage-istanbul', 'junit'],",
+            )
+
+        apply_change_regex(
+            container=self.container,
+            file=KARMA_CONFIG_FILE,
+            find=r"reporters:\s*\[([^\]]*)\],",
+            replace=_add_junit_reporter,
+            assertion='junitReporter: {',
         )
 
         apply_change_literal(
@@ -114,10 +123,10 @@ class OpenlayersEvaluator(Evaluator):
             assertion="plugins: [\n      'karma-mocha',",
         )
 
-        apply_change_literal(
+        apply_change_regex(
             container=self.container,
             file=KARMA_CONFIG_FILE,
-            find="browsers: ['Chrome'],",
+            find=r"browsers:\s*\[[^\]]*\],",
             replace=(
                 "browsers: ['ChromeNoSandbox'],\n"
                 '    customLaunchers: {\n'
