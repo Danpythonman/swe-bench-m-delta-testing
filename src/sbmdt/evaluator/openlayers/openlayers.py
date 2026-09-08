@@ -29,8 +29,7 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
-KARMA_CONFIG_FILE: Final[str] = '/testbed/test/karma.config.js'
-RESULTS_FILE: Final[str] = '/testbed/test/test-results/results.xml'
+DEFAULT_KARMA_CONFIG_FILE: Final[str] = '/testbed/test/karma.config.js'
 
 
 class OpenlayersEvaluator(Evaluator):
@@ -71,6 +70,60 @@ class OpenlayersEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
+        # The commit checked out inside the container varies per instance
+        # (SWE-bench resolves it at container runtime, not build time), and
+        # karma's config file has not lived at a single stable path across
+        # openlayers' history. Discovering it here, instead of assuming
+        # /testbed/test/karma.config.js, is what makes setup() work across
+        # different commits rather than only the ones that happen to match
+        # the current default layout.
+        exit_code, find_output = self.container.exec_run(
+            [
+                'find',
+                '/testbed',
+                '-maxdepth',
+                '4',
+                '(',
+                '-iname',
+                'karma.config.js',
+                '-o',
+                '-iname',
+                'karma.conf.js',
+                ')',
+                '-not',
+                '-path',
+                '*/node_modules/*',
+            ],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(find_output, bytes)
+        candidates = [
+            c
+            for c in find_output.decode().splitlines()
+            if c.strip() and 'rendering' not in c
+        ]
+        if DEFAULT_KARMA_CONFIG_FILE in candidates:
+            karma_config_file = DEFAULT_KARMA_CONFIG_FILE
+        elif candidates:
+            karma_config_file = candidates[0]
+        else:
+            raise Exception(
+                f'No karma config found under /testbed for '
+                f'{self.instance_id} (searched for karma.config.js and '
+                f'karma.conf.js, excluding node_modules and rendering)'
+            )
+        if karma_config_file != DEFAULT_KARMA_CONFIG_FILE:
+            log.info(
+                f'karma config for {self.instance_id} is at '
+                f'{karma_config_file!r}, not the default '
+                f'{DEFAULT_KARMA_CONFIG_FILE!r}'
+            )
+        self._karma_config_file = karma_config_file
+        self._results_file = (
+            karma_config_file.rsplit('/', 1)[0] + '/test-results/results.xml'
+        )
+
         exit_code, output = self.container.exec_run(
             'npm install karma-junit-reporter --save-dev',
             workdir='/testbed',
@@ -99,7 +152,7 @@ class OpenlayersEvaluator(Evaluator):
 
         apply_change_regex(
             container=self.container,
-            file=KARMA_CONFIG_FILE,
+            file=self._karma_config_file,
             find=r"reporters:\s*\[([^\]]*)\],",
             replace=_add_junit_reporter,
             assertion='junitReporter: {',
@@ -107,7 +160,7 @@ class OpenlayersEvaluator(Evaluator):
 
         apply_change_literal(
             container=self.container,
-            file=KARMA_CONFIG_FILE,
+            file=self._karma_config_file,
             find='webpackMiddleware: {',
             replace=(
                 'plugins: [\n'
@@ -125,7 +178,7 @@ class OpenlayersEvaluator(Evaluator):
 
         apply_change_regex(
             container=self.container,
-            file=KARMA_CONFIG_FILE,
+            file=self._karma_config_file,
             find=r"browsers:\s*\[[^\]]*\],",
             replace=(
                 "browsers: ['ChromeNoSandbox'],\n"
@@ -173,7 +226,7 @@ class OpenlayersEvaluator(Evaluator):
         log.info(exit_code)
         log.info(output.decode())
 
-        results = read_from_container(self.container, RESULTS_FILE)
+        results = read_from_container(self.container, self._results_file)
 
         return results_xml_to_test_results(
             self.instance_id,
