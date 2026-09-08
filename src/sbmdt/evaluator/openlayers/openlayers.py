@@ -240,14 +240,42 @@ class OpenlayersEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
+        # karma-chrome-launcher (which the browsers: patch targets) finds
+        # Chrome on its own without any env var here, so some Chrome binary
+        # is already reachable in this container. Some commits' karma
+        # config resolves the browser through puppeteer instead, which
+        # uses a separate mechanism (PUPPETEER_EXECUTABLE_PATH, or its own
+        # download cache) and does not see whatever karma-chrome-launcher
+        # found. Locating the same binary and exporting it under
+        # puppeteer's variable lets both resolution paths agree instead of
+        # puppeteer only working when it happened to download its own copy.
+        _, which_output = self.container.exec_run(
+            [
+                'sh',
+                '-c',
+                'command -v google-chrome-stable || command -v '
+                'google-chrome || command -v chromium || true',
+            ],
+        )
+        assert isinstance(which_output, bytes)
+        chrome_path = which_output.decode().strip().splitlines()
+        environment = {
+            # webpack 4's MD4-based hashing is incompatible with the
+            # default OpenSSL 3 provider bundled with this container's
+            # Node version.
+            'NODE_OPTIONS': '--openssl-legacy-provider',
+        }
+        if chrome_path:
+            environment['PUPPETEER_EXECUTABLE_PATH'] = chrome_path[0]
+        else:
+            log.info(
+                f'no system Chrome found for {self.instance_id}; leaving '
+                f'PUPPETEER_EXECUTABLE_PATH unset'
+            )
+
         exit_code, output = self.container.exec_run(
             'xvfb-run -a npm run karma -- --single-run --log-level error',
-            environment={
-                # webpack 4's MD4-based hashing is incompatible with the
-                # default OpenSSL 3 provider bundled with this container's
-                # Node version.
-                'NODE_OPTIONS': '--openssl-legacy-provider',
-            },
+            environment=environment,
             workdir='/testbed',
             stream=False,
         )
