@@ -85,10 +85,10 @@ class OpenlayersEvaluator(Evaluator):
                 '6',
                 '(',
                 '-iname',
-                'karma.config.js',
+                'karma.config.*js',
                 '-o',
                 '-iname',
-                'karma.conf.js',
+                'karma.conf.*js',
                 ')',
                 '-not',
                 '-path',
@@ -119,8 +119,8 @@ class OpenlayersEvaluator(Evaluator):
             assert isinstance(diag_output, bytes)
             raise Exception(
                 f'No karma config found under /testbed for '
-                f'{self.instance_id} (searched for karma.config.js and '
-                f'karma.conf.js up to 6 levels deep, excluding '
+                f'{self.instance_id} (searched for karma.config.*js and '
+                f'karma.conf.*js up to 6 levels deep, excluding '
                 f'node_modules and rendering). Files matching *karma*'
                 f'anywhere under /testbed: {diag_output.decode()!r}'
             )
@@ -237,7 +237,40 @@ class OpenlayersEvaluator(Evaluator):
         log.info(exit_code)
         log.info(output.decode())
 
-        results = read_from_container(self.container, self._results_file)
+        # junitReporter's outputDir is relative to karma's basePath, which
+        # each config sets for itself, so the results file does not
+        # reliably sit beside the config. Prefer the derived path when it
+        # is really there and otherwise take what karma actually wrote.
+        _, results_find = self.container.exec_run(
+            [
+                'find',
+                '/testbed',
+                '-name',
+                'results.xml',
+                '-not',
+                '-path',
+                '*/node_modules/*',
+            ],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(results_find, bytes)
+        written = [p for p in results_find.decode().splitlines() if p.strip()]
+        if self._results_file in written:
+            results_file = self._results_file
+        elif written:
+            results_file = written[0]
+            log.info(
+                f'results.xml for {self.instance_id} is at {results_file!r}, '
+                f'not the expected {self._results_file!r}'
+            )
+        else:
+            raise Exception(
+                f'karma wrote no results.xml for {self.instance_id}; '
+                f'expected it at {self._results_file!r}'
+            )
+
+        results = read_from_container(self.container, results_file)
 
         return results_xml_to_test_results(
             self.instance_id,
