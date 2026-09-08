@@ -169,22 +169,42 @@ class OpenlayersEvaluator(Evaluator):
             assertion='junitReporter: {',
         )
 
+        # The old fixed plugin list assumed every instance's package.json
+        # carries the same karma-* packages this evaluator happened to be
+        # written against. It does not: different commits have different
+        # karma plugins installed, and an allowlist naming one that is not
+        # there makes karma refuse to start ("Cannot find plugin"), while
+        # omitting one that provides a framework/reporter the config
+        # actually uses does the same ("No provider for ..."). Discovering
+        # what is really in node_modules keeps this working across commits
+        # instead of only the one layout the list was written from.
+        exit_code, ls_output = self.container.exec_run(
+            "sh -c \"ls node_modules | grep '^karma-'\"",
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(ls_output, bytes)
+        installed = {p for p in ls_output.decode().splitlines() if p.strip()}
+        # karma-junit-reporter was installed above; the log lines already
+        # printed prove that succeeded, so add it explicitly instead of
+        # re-listing node_modules to confirm.
+        installed.add('karma-junit-reporter')
+        # karma-firefox-launcher is excluded on purpose (see the setup()
+        # docstring): its load-time probe throws in this container.
+        installed.discard('karma-firefox-launcher')
+        plugin_lines = ''.join(f"      '{p}',\n" for p in sorted(installed))
+
         apply_change_literal(
             container=self.container,
             file=self._karma_config_file,
             find='webpackMiddleware: {',
             replace=(
                 'plugins: [\n'
-                "      'karma-mocha',\n"
-                "      'karma-chrome-launcher',\n"
-                "      'karma-webpack',\n"
-                "      'karma-sourcemap-loader',\n"
-                "      'karma-coverage-istanbul-reporter',\n"
-                "      'karma-junit-reporter',\n"
+                f'{plugin_lines}'
                 '    ],\n'
                 '    webpackMiddleware: {'
             ),
-            assertion="plugins: [\n      'karma-mocha',",
+            assertion="plugins: [\n",
         )
 
         apply_change_regex(
