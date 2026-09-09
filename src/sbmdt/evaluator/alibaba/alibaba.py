@@ -160,22 +160,31 @@ class AlibabaEvaluator(Evaluator):
             replace="options.browsers = ['ChromeTravis']",
             assertion="options.browsers = ['ChromeTravis']",
         )
-        apply_change_regex(
-            container=self.container,
-            file=KARMA_FILE,
-            find=(
-                r"process\.env\.CHROME_BIN\s*=\s*"
-                r"require\('puppeteer'\)\.executablePath\(\);"
-            ),
-            replace=(
-                "process.env.CHROME_BIN = process.env.CHROME_BIN || "
-                "require('puppeteer').executablePath();"
-            ),
-            assertion=(
-                "process.env.CHROME_BIN = process.env.CHROME_BIN || "
-                "require('puppeteer').executablePath();"
-            ),
-        )
+        # Optional: some commits assign CHROME_BIN from puppeteer with
+        # slightly different formatting; ChromeTravis already supplies
+        # --no-sandbox, so failing this edit must not abort setup.
+        try:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=(
+                    r"process\.env\.CHROME_BIN\s*=\s*\n?\s*"
+                    r"require\(['\"]puppeteer['\"]\)\.executablePath\(\);"
+                ),
+                replace=(
+                    "process.env.CHROME_BIN = process.env.CHROME_BIN || "
+                    "require('puppeteer').executablePath();"
+                ),
+                assertion=(
+                    "process.env.CHROME_BIN = process.env.CHROME_BIN || "
+                    "require('puppeteer').executablePath();"
+                ),
+            )
+        except Exception as exc:
+            log.info(
+                f'Skipping CHROME_BIN puppeteer preserve for '
+                f'{self.instance_id}: {exc}'
+            )
 
         log.info('All changes applied successfully.')
 
