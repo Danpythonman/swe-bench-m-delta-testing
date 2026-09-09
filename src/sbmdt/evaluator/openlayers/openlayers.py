@@ -179,13 +179,21 @@ class OpenlayersEvaluator(Evaluator):
         # actually uses does the same ("No provider for ..."). Discovering
         # what is really in node_modules keeps this working across commits
         # instead of only the one layout the list was written from.
+        # -maxdepth 1 keeps this to direct node_modules entries; a scoped
+        # package (@scope/karma-*) would sort under its scope directory
+        # and needs its own lookup, which the -o branch below adds.
         exit_code, ls_output = self.container.exec_run(
-            "sh -c \"ls node_modules | grep '^karma-'\"",
+            "sh -c \"find node_modules -maxdepth 1 -iname 'karma-*' "
+            "-o -maxdepth 2 -path 'node_modules/@*/karma-*'\"",
             workdir='/testbed',
             stream=False,
         )
         assert isinstance(ls_output, bytes)
-        installed = {p for p in ls_output.decode().splitlines() if p.strip()}
+        installed = {
+            p.rsplit('/', 1)[-1]
+            for p in ls_output.decode().splitlines()
+            if p.strip()
+        }
         # karma-junit-reporter was installed above; the log lines already
         # printed prove that succeeded, so add it explicitly instead of
         # re-listing node_modules to confirm.
@@ -193,6 +201,10 @@ class OpenlayersEvaluator(Evaluator):
         # karma-firefox-launcher is excluded on purpose (see the setup()
         # docstring): its load-time probe throws in this container.
         installed.discard('karma-firefox-launcher')
+        log.info(
+            f'karma plugins discovered for {self.instance_id} '
+            f'(exit_code={exit_code}): {sorted(installed)}'
+        )
         plugin_lines = ''.join(f"      '{p}',\n" for p in sorted(installed))
 
         # webpackMiddleware is not guaranteed present -- it is only there
@@ -241,21 +253,63 @@ class OpenlayersEvaluator(Evaluator):
         # The puppeteer path already gets --no-sandbox from the binary
         # shim, so skipping this override there loses nothing.
         if 'karma-chrome-launcher' in installed:
-            apply_change_regex(
-                container=self.container,
-                file=self._karma_config_file,
-                find=r"browsers:\s*\[[^\]]*\],",
-                replace=(
-                    "browsers: ['ChromeNoSandbox'],\n"
-                    '    customLaunchers: {\n'
-                    '      ChromeNoSandbox: {\n'
-                    "        base: 'Chrome',\n"
-                    "        flags: ['--no-sandbox', '--disable-gpu'],\n"
-                    '      },\n'
-                    '    },'
-                ),
-                assertion="browsers: ['ChromeNoSandbox'],",
+            # A config that launches Chrome itself for other purposes (see
+            # evaluate()'s shim) may already declare its own
+            # customLaunchers: {. A JS object literal with the key
+            # written twice does not error -- the later one silently wins
+            # -- so inserting a second customLaunchers: { block here would
+            # get the whole block discarded, ChromeNoSandbox included,
+            # while apply_change_regex's assertion still passes because
+            # the text is genuinely there, just inert. Adding the entry
+            # inside the existing block when there is one avoids creating
+            # that duplicate key.
+            _, existing_launchers = self.container.exec_run(
+                ['cat', self._karma_config_file],
             )
+            assert isinstance(existing_launchers, bytes)
+            has_custom_launchers = bool(
+                re.search(
+                    r'customLaunchers\s*:\s*\{', existing_launchers.decode()
+                )
+            )
+
+            if has_custom_launchers:
+                apply_change_regex(
+                    container=self.container,
+                    file=self._karma_config_file,
+                    find=r"browsers:\s*\[[^\]]*\],",
+                    replace="browsers: ['ChromeNoSandbox'],",
+                    assertion="browsers: ['ChromeNoSandbox'],",
+                )
+                apply_change_regex(
+                    container=self.container,
+                    file=self._karma_config_file,
+                    find=r'customLaunchers\s*:\s*\{',
+                    replace=(
+                        'customLaunchers: {\n'
+                        '      ChromeNoSandbox: {\n'
+                        "        base: 'Chrome',\n"
+                        "        flags: ['--no-sandbox', '--disable-gpu'],\n"
+                        '      },'
+                    ),
+                    assertion='ChromeNoSandbox: {',
+                )
+            else:
+                apply_change_regex(
+                    container=self.container,
+                    file=self._karma_config_file,
+                    find=r"browsers:\s*\[[^\]]*\],",
+                    replace=(
+                        "browsers: ['ChromeNoSandbox'],\n"
+                        '    customLaunchers: {\n'
+                        '      ChromeNoSandbox: {\n'
+                        "        base: 'Chrome',\n"
+                        "        flags: ['--no-sandbox', '--disable-gpu'],\n"
+                        '      },\n'
+                        '    },'
+                    ),
+                    assertion="browsers: ['ChromeNoSandbox'],",
+                )
         else:
             log.info(
                 f'karma-chrome-launcher not installed for '
