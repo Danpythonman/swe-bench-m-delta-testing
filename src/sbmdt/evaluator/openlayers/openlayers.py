@@ -300,7 +300,7 @@ class OpenlayersEvaluator(Evaluator):
                 apply_change_regex(
                     container=self.container,
                     file=self._karma_config_file,
-                    find=r"browsers:\s*\[[^\]]*\],",
+                    find=r"browsers:\s*\[[^\]]*\]\s*,?",
                     replace="browsers: ['ChromeNoSandbox'],",
                     assertion="browsers: ['ChromeNoSandbox'],",
                 )
@@ -321,7 +321,10 @@ class OpenlayersEvaluator(Evaluator):
                 apply_change_regex(
                     container=self.container,
                     file=self._karma_config_file,
-                    find=r"browsers:\s*\[[^\]]*\],",
+                    # Older configs (openlayers-7554) omit the trailing
+                    # comma after browsers: ['Chrome'] because it is the
+                    # last property inside karma.set({...}).
+                    find=r"browsers:\s*\[[^\]]*\]\s*,?",
                     replace=(
                         "browsers: ['ChromeNoSandbox'],\n"
                         '    customLaunchers: {\n'
