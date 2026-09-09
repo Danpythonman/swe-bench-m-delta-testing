@@ -206,10 +206,38 @@ class LighthouseEvaluator(Evaluator):
         # 3. Create results directory
         self.container.exec_run(f'mkdir -p {RESULTS_DIR}', workdir='/testbed')
 
+        # run-mocha.sh's location is not fixed: lighthouse-5688 (the
+        # install-all/build-all layout) has no
+        # lighthouse-core/scripts/run-mocha.sh at all. Finding it directly
+        # rather than assuming the path avoids repeating that mistake for
+        # every future layout difference.
+        _, find_output = self.container.exec_run(
+            ['find', '/testbed', '-name', 'run-mocha.sh'],
+        )
+        assert isinstance(find_output, bytes)
+        candidates = [
+            c for c in find_output.decode().splitlines() if c.strip()
+        ]
+        if RUN_MOCHA_SCRIPT in candidates:
+            run_mocha_script = RUN_MOCHA_SCRIPT
+        elif candidates:
+            run_mocha_script = candidates[0]
+        else:
+            raise Exception(
+                f'No run-mocha.sh found under /testbed for '
+                f'{self.instance_id}'
+            )
+        if run_mocha_script != RUN_MOCHA_SCRIPT:
+            log.info(
+                f'run-mocha.sh for {self.instance_id} is at '
+                f'{run_mocha_script!r}, not the default {RUN_MOCHA_SCRIPT!r}'
+            )
+        self._run_mocha_script = run_mocha_script
+
         # 4. Add the JUnit reporter to each Mocha invocation
         apply_change_literal(
             container=self.container,
-            file=RUN_MOCHA_SCRIPT,
+            file=self._run_mocha_script,
             find='--timeout 60000;',
             replace=(
                 '--timeout 60000 --reporter mocha-junit-reporter'
@@ -248,9 +276,9 @@ class LighthouseEvaluator(Evaluator):
         # non-standard) so ``mocha`` resolves.
         commands = [
             'export PATH="/testbed/node_modules/.bin:$PATH"',
-            f'bash {RUN_MOCHA_SCRIPT} --cli',
-            f'bash {RUN_MOCHA_SCRIPT} --core',
-            f'bash {RUN_MOCHA_SCRIPT} --viewer',
+            f'bash {self._run_mocha_script} --cli',
+            f'bash {self._run_mocha_script} --core',
+            f'bash {self._run_mocha_script} --viewer',
         ]
         exit_code, output = self.container.exec_run(
             ['bash', '-c', '; '.join(commands)],
