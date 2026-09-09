@@ -174,13 +174,21 @@ class OpenlayersEvaluator(Evaluator):
         def _add_junit_reporter(m):
             inner = m.group(1).rstrip()
             sep = ', ' if inner and not inner.endswith(',') else ' '
+            # Long suites (openlayers-14945 ~2500 tests) can trip karma's
+            # default disconnect/no-activity timeouts; when Chrome is
+            # abandoned mid-run, karma-junit-reporter never flushes
+            # results.xml. Raise the ceilings next to the reporter config.
             return (
                 f"reporters: [{inner}{sep}'junit'],\n"
                 '    junitReporter: {\n'
                 "      outputDir: 'test-results',\n"
                 "      outputFile: 'results.xml',\n"
                 '      useBrowserName: false,\n'
-                '    },'
+                '    },\n'
+                '    browserDisconnectTimeout: 20000,\n'
+                '    browserDisconnectTolerance: 3,\n'
+                '    browserNoActivityTimeout: 120000,\n'
+                '    captureTimeout: 120000,'
             )
 
         apply_change_regex(
