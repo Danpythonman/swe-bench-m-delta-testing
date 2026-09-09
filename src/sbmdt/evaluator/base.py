@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import re
+import time
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from enum import StrEnum
@@ -277,6 +278,58 @@ class TestResultsFilename:
         )
 
 
+# Docker Hub throttles anonymous (unauthenticated) image pulls per source
+# IP over a rolling window. Every EC2 worker in a batch shares the same
+# NAT gateway, so pulling the base image from many workers at once can
+# exhaust that shared quota well before any one worker is individually
+# abusive -- this showed up as unrelated instances across several
+# different repositories all failing within the same few minutes, which
+# first looked like environment or resource contention until the actual
+# docker.errors.BuildError text turned out to name the real cause. The
+# quota resets on a sliding window, so a short wait and retry recovers
+# once the burst that exhausted it has passed, without needing Docker Hub
+# credentials this project does not have.
+_IMAGE_BUILD_RETRIES: Final[int] = 4
+_IMAGE_BUILD_RETRY_DELAY_SECONDS: Final[float] = 45.0
+
+
+def _build_image_with_retry(
+    client: docker.DockerClient, **build_kwargs: Any
+) -> tuple[Image, Any]:
+    """Build a Docker image, retrying on a Docker Hub rate limit.
+
+    Every other :class:`docker.errors.BuildError` (a real Dockerfile
+    problem, a missing file, etc.) is not retried and raises immediately,
+    since retrying it would only waste the same amount of time again for
+    the same guaranteed failure.
+
+    Args:
+        client: Docker client to build with.
+        **build_kwargs: Forwarded to :meth:`docker.models.images.build`.
+
+    Returns:
+        Whatever :meth:`docker.models.images.build` returns.
+
+    Raises:
+        docker.errors.BuildError: If every retry is also rate-limited, or
+            immediately for any other build failure.
+    """
+    for attempt in range(1, _IMAGE_BUILD_RETRIES + 1):
+        try:
+            return client.images.build(**build_kwargs)
+        except docker.errors.BuildError as e:
+            rate_limited = 'toomanyrequests' in str(e)
+            if not rate_limited or attempt == _IMAGE_BUILD_RETRIES:
+                raise
+            log.info(
+                f'Docker Hub rate limit hit on image build (attempt '
+                f'{attempt}/{_IMAGE_BUILD_RETRIES}), retrying in '
+                f'{_IMAGE_BUILD_RETRY_DELAY_SECONDS}s...'
+            )
+            time.sleep(_IMAGE_BUILD_RETRY_DELAY_SECONDS)
+    raise Exception('image build retries exceeded')
+
+
 class Evaluator(ABC):
     """Abstract base for Docker-based benchmark evaluators.
 
@@ -362,7 +415,8 @@ class Evaluator(ABC):
         resource_name = f'sbmdt-{self.instance_id}'.lower()
         # Note that rm=True remove intermediate containers after build
         log.info('Building image...')
-        self.image, _ = client.images.build(
+        self.image, _ = _build_image_with_retry(
+            client,
             path=str(self.dockerfile_path.parent.resolve()),
             tag=f'{resource_name}:latest',
             labels={LABEL_KEY: LABEL_VALUE},
