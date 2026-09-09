@@ -171,6 +171,41 @@ class OpenlayersEvaluator(Evaluator):
                 f'{output.decode()}'
             )
 
+        # npm often strips NODE_OPTIONS, so --require from evaluate() may
+        # never run. Prepend the wasm init into the karma config itself so
+        # it loads in the same process as karma-server (openlayers-11545).
+        source_map_init = '/tmp/sbmdt-source-map-init.js'
+        write_to_container(
+            self.container,
+            source_map_init,
+            (
+                "try {\n"
+                "  var path = require('path');\n"
+                "  var sm = require('source-map');\n"
+                "  if (sm.SourceMapConsumer && "
+                "sm.SourceMapConsumer.initialize) {\n"
+                "    var wasm = path.join(\n"
+                "      path.dirname(require.resolve('source-map/package.json')),\n"
+                "      'lib', 'mappings.wasm');\n"
+                "    sm.SourceMapConsumer.initialize("
+                "{ 'lib/mappings.wasm': wasm });\n"
+                "  }\n"
+                "} catch (e) {}\n"
+            ),
+        )
+        _, karma_raw = self.container.exec_run(
+            ['cat', self._karma_config_file],
+        )
+        assert isinstance(karma_raw, bytes)
+        karma_text = karma_raw.decode()
+        init_require = f"require({source_map_init!r});\n"
+        if init_require not in karma_text:
+            write_to_container(
+                self.container,
+                self._karma_config_file,
+                init_require + karma_text,
+            )
+
         def _add_junit_reporter(m):
             inner = m.group(1).rstrip()
             sep = ', ' if inner and not inner.endswith(',') else ' '
