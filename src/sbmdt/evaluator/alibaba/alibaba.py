@@ -67,6 +67,20 @@ class AlibabaEvaluator(Evaluator):
         log.info(exit_code)
         log.info(output.decode())
 
+        # next-2984 hit "npm: executable file not found in $PATH" here
+        # (exit_code 126) and setup() logged "All changes applied
+        # successfully" anyway, since nothing checked this step's exit
+        # code the way every other step below (and every other
+        # evaluator) does. The steps that follow only edit text files and
+        # so happened not to depend on this one succeeding, but silently
+        # continuing past a failed dependency install is not something to
+        # rely on staying harmless.
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to install karma-junit-reporter for '
+                f'{self.instance_id}: {output.decode()}'
+            )
+
         # 2. Add junit to reporters
         apply_change_literal(
             container=self.container,
@@ -129,9 +143,49 @@ class AlibabaEvaluator(Evaluator):
 
         log.info(exit_code)
         log.info(output.decode())
-        results = read_from_container(
-            self.container, '/testbed/scripts/test/test-results/results.xml'
+
+        # junitReporter's outputDir is relative to karma's basePath, which
+        # is not guaranteed to put results.xml next to karma.js -- two
+        # instances (next-4182, next-3454) failed with the results file
+        # missing at exactly that assumed path. Finding whatever karma
+        # actually wrote, the same way openlayers' evaluator does, instead
+        # of assuming a fixed location.
+        default_results_file = (
+            '/testbed/scripts/test/test-results/results.xml'
         )
+        _, results_find = self.container.exec_run(
+            [
+                'find',
+                '/testbed',
+                '-name',
+                'results.xml',
+                '-not',
+                '-path',
+                '*/node_modules/*',
+            ],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(results_find, bytes)
+        written = [
+            p for p in results_find.decode().splitlines() if p.strip()
+        ]
+        if default_results_file in written:
+            results_file = default_results_file
+        elif written:
+            results_file = written[0]
+            log.info(
+                f'results.xml for {self.instance_id} is at '
+                f'{results_file!r}, not the expected '
+                f'{default_results_file!r}'
+            )
+        else:
+            raise Exception(
+                f'karma wrote no results.xml for {self.instance_id}; '
+                f'expected it at {default_results_file!r}'
+            )
+
+        results = read_from_container(self.container, results_file)
 
         return results_xml_to_test_results(
             self.instance_id,
