@@ -103,18 +103,17 @@ class LighthouseEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
-        # 2. Install lighthouse-cli's own dependencies. This script name
-        # is not guaranteed across the pre-ESM era this evaluator targets
-        # -- the whole rest of setup() below is already pinned to one
-        # specific commit's exact quirks (typescript@2.0.3, a silent
-        # prepublish hook failure), so a missing install-cli script here
-        # most likely means an even older or newer package.json layout
-        # this evaluator has not been made to handle, not something a
-        # single fallback command could guess correctly. Failing with the
-        # scripts actually available keeps that distinction visible
-        # instead of guessing at a replacement command with no evidence
-        # it's the right one, or continuing into a chain of confusing
-        # downstream failures.
+        # 2. Install lighthouse-cli's own dependencies. install-cli is not
+        # the script name in every commit's package.json: two separate
+        # instances failed with "Missing script: install-cli", and npm's
+        # own error both times suggested install-all as one of the
+        # existing scripts -- direct evidence for that alternative name,
+        # not a guess. Beyond those two names, the rest of setup() below
+        # is already pinned to one specific commit's exact quirks
+        # (typescript@2.0.3, a silent prepublish hook failure), so a
+        # package.json with neither script most likely needs handling
+        # this evaluator has never been given evidence for. Failing with
+        # the scripts actually available keeps that distinction visible.
         node_snippet = (
             "console.log(JSON.stringify("
             "require('./package.json').scripts || {}))"
@@ -124,17 +123,21 @@ class LighthouseEvaluator(Evaluator):
             workdir='/testbed',
         )
         assert isinstance(scripts_output, bytes)
-        if b'"install-cli"' not in scripts_output:
+        if b'"install-cli"' in scripts_output:
+            install_script = 'install-cli'
+        elif b'"install-all"' in scripts_output:
+            install_script = 'install-all'
+        else:
             raise Exception(
-                f'{self.instance_id} has no "install-cli" script in '
-                f'package.json, so this evaluator cannot install '
-                f'lighthouse-cli\'s dependencies the way it does for the '
-                f'commit it was written against. Scripts available: '
-                f'{scripts_output.decode()!r}'
+                f'{self.instance_id} has neither "install-cli" nor '
+                f'"install-all" in package.json, so this evaluator '
+                f'cannot install lighthouse-cli\'s dependencies the way '
+                f'it does for the commits it was written against. '
+                f'Scripts available: {scripts_output.decode()!r}'
             )
 
         exit_code, output = self.container.exec_run(
-            'npm run install-cli',
+            f'npm run {install_script}',
             workdir='/testbed',
             stream=False,
         )
@@ -146,7 +149,8 @@ class LighthouseEvaluator(Evaluator):
         if exit_code != 0:
             raise Exception(
                 f'Failed to install lighthouse-cli dependencies for '
-                f'{self.instance_id}: {output.decode()}'
+                f'{self.instance_id} (via "{install_script}"): '
+                f'{output.decode()}'
             )
 
         # lighthouse-cli/package.json declares loose ranges
