@@ -121,6 +121,9 @@ class BpmnEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
+        self._ensure_chrome_binary()
+        self._patch_chrome_bin_assignment()
+
         # ------------------------------------------------------------------
         # 2. Add 'junit' to the reporters array.
         #
@@ -177,6 +180,113 @@ class BpmnEvaluator(Evaluator):
         self._ensure_chrome_docker_launcher()
 
         log.info('BpmnEvaluator setup complete for %s', self.instance_id)
+
+    def _ensure_chrome_binary(self) -> None:
+        """Make sure a Chrome/Chromium binary exists for Karma.
+
+        SWE-bench bpmn images often ship ``puppeteer`` without its
+        downloaded Chromium (or with a stale path). Without a binary,
+        Karma fails immediately with ``Can not find the binary .../chrome``.
+        Try puppeteer's own installer first, then fall back to apt.
+        """
+        assert self.container is not None
+
+        check_script = (
+            "const fs=require('fs');"
+            "let p='';"
+            "try{p=require('puppeteer').executablePath()}catch(e){}"
+            "console.log(p&&fs.existsSync(p)?'ok:'+p:'missing:'+p)"
+        )
+        exit_code, output = self.container.exec_run(
+            ['node', '-e', check_script],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        status = output.decode().strip()
+        log.info('puppeteer chrome check: %s (exit_code=%s)', status, exit_code)
+        if status.startswith('ok:'):
+            return
+
+        # Older puppeteer: node_modules/puppeteer/install.js
+        # Newer: npx puppeteer browsers install chrome
+        for cmd in (
+            'node node_modules/puppeteer/install.js',
+            'npx --yes puppeteer browsers install chrome',
+        ):
+            log.info('Attempting Chromium download via: %s', cmd)
+            exit_code, output = self.container.exec_run(
+                ['bash', '-lc', cmd],
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info('chromium download exit_code=%s', exit_code)
+            log.info(output.decode()[-4000:])
+            exit_code, output = self.container.exec_run(
+                ['node', '-e', check_script],
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            status = output.decode().strip()
+            log.info('puppeteer chrome check after download: %s', status)
+            if status.startswith('ok:'):
+                return
+
+        # Last resort: distro Chromium. karma-chrome-launcher picks this up
+        # via CHROME_BIN if we export it at test time.
+        log.info('Falling back to apt-get install chromium')
+        exit_code, output = self.container.exec_run(
+            [
+                'bash',
+                '-lc',
+                'export DEBIAN_FRONTEND=noninteractive; '
+                'apt-get update -qq && '
+                '(apt-get install -y -qq chromium-browser || '
+                'apt-get install -y -qq chromium)',
+            ],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        log.info('apt chromium exit_code=%s', exit_code)
+        log.info(output.decode()[-2000:])
+        if exit_code != 0:
+            raise Exception(
+                'No Chrome/Chromium binary available for Karma '
+                f'(puppeteer missing and apt failed): {output.decode()[-1000:]}'
+            )
+
+    def _patch_chrome_bin_assignment(self) -> None:
+        """Stop karma.unit.js from overwriting CHROME_BIN with a missing path.
+
+        Newer bpmn-js configs do
+        ``process.env.CHROME_BIN = require('puppeteer').executablePath()``
+        unconditionally. If Chromium was never downloaded that clobbers a
+        working system ``CHROME_BIN`` (or points at a nonexistent file).
+        """
+        assert self.container is not None
+        content = read_from_container(self.container, KARMA_CONFIG_FILE)
+        needle = (
+            "process.env.CHROME_BIN = require('puppeteer').executablePath();"
+        )
+        if needle not in content:
+            return
+        replacement = (
+            "(function() {"
+            "  var fs = require('fs');"
+            "  var p = null;"
+            "  try { p = require('puppeteer').executablePath(); } catch (e) {}"
+            "  if (p && fs.existsSync(p)) { process.env.CHROME_BIN = p; }"
+            "})();"
+        )
+        write_to_container(
+            self.container,
+            KARMA_CONFIG_FILE,
+            content.replace(needle, replacement, 1),
+        )
+        log.info('Patched unconditional puppeteer CHROME_BIN assignment')
 
     def _ensure_chrome_docker_launcher(self) -> None:
         """Install or rewrite ``ChromeHeadless_Linux`` with Docker-safe flags."""
@@ -267,6 +377,32 @@ class BpmnEvaluator(Evaluator):
             'NO_PROXY': 'localhost,127.0.0.1,::1',
             'no_proxy': 'localhost,127.0.0.1,::1',
         }
+
+        # Prefer puppeteer's binary when present; otherwise use distro chrome.
+        locate_script = (
+            "const fs=require('fs');"
+            "const candidates=[];"
+            "try{candidates.push(require('puppeteer').executablePath())}catch(e){}"
+            "candidates.push("
+            "'/usr/bin/chromium-browser','/usr/bin/chromium',"
+            "'/usr/bin/google-chrome','/usr/bin/google-chrome-stable');"
+            "for (const p of candidates){"
+            "  if(p&&fs.existsSync(p)){console.log(p);process.exit(0)}"
+            "}"
+            "process.exit(1)"
+        )
+        exit_code, output = self.container.exec_run(
+            ['node', '-e', locate_script],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        chrome_bin = output.decode().strip()
+        if exit_code == 0 and chrome_bin:
+            env['CHROME_BIN'] = chrome_bin
+            log.info('Using CHROME_BIN=%s', chrome_bin)
+        else:
+            log.warning('Could not locate a Chrome binary to set CHROME_BIN')
 
         try:
             major = int(node_version.split('.', 1)[0])
