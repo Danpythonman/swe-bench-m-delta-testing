@@ -405,10 +405,44 @@ class BpmnEvaluator(Evaluator):
 
         log.info(output.decode())
 
-        results_xml = read_from_container(
-            self.container,
-            RESULTS_XML,
+        # junitReporter's outputDir is relative to karma's basePath, which
+        # is not always /testbed. Prefer the configured path when present
+        # and otherwise take whatever karma actually wrote (same pattern
+        # as openlayers/alibaba/carbon).
+        _, results_find = self.container.exec_run(
+            [
+                'find',
+                '/testbed',
+                '-name',
+                'results.xml',
+                '-not',
+                '-path',
+                '*/node_modules/*',
+            ],
+            workdir='/testbed',
+            stream=False,
         )
+        assert isinstance(results_find, bytes)
+        written = [
+            p for p in results_find.decode().splitlines() if p.strip()
+        ]
+        if RESULTS_XML in written:
+            results_file = RESULTS_XML
+        elif written:
+            results_file = written[0]
+            log.info(
+                'results.xml for %s is at %r, not the expected %r',
+                self.instance_id,
+                results_file,
+                RESULTS_XML,
+            )
+        else:
+            raise Exception(
+                f'karma wrote no results.xml for {self.instance_id}; '
+                f'expected it at {RESULTS_XML!r}'
+            )
+
+        results_xml = read_from_container(self.container, results_file)
 
         return results_xml_to_test_results(
             self.instance_id,

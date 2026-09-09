@@ -85,30 +85,28 @@ class CarbonEvaluator(Evaluator):
             raise Exception('no container')
 
         # carbon-9136 and carbon-8912 both failed npm test with
-        # "/testbed/node_modules/.bin/cross-env: Permission denied" --
-        # npm's own installed binary missing its execute bit, not
-        # anything about the test itself. Running this in setup() did not
-        # hold: the same permission error still appeared here, meaning
-        # something between setup() and this point (applying the model
-        # and test patches, most likely a package.json script hook) resets
-        # it again. Doing it immediately before npm test instead, so
-        # nothing downstream of this call can undo it. Restoring broadly
-        # across node_modules/.bin rather than cross-env specifically,
-        # since any other binary hit the same way would fail identically.
-        exit_code, chmod_output = self.container.exec_run(
-            'chmod -R +x node_modules/.bin',
-            workdir='/testbed',
-            stream=False,
-        )
-        assert isinstance(chmod_output, bytes)
-        log.info(exit_code)
-        log.info(chmod_output.decode())
-
+        # "/testbed/node_modules/.bin/cross-env: Permission denied" even
+        # after `chmod -R +x node_modules/.bin` (exit 0): .bin entries are
+        # often symlinks, and chmod on the link does not always restore
+        # the target. Chmod the targets too, then run npm test in the
+        # same shell so nothing can undo the bits in between.
         exit_code, output = self.container.exec_run(
-            'npm test',
+            [
+                'bash',
+                '-c',
+                'chmod -R a+x node_modules/.bin 2>/dev/null || true; '
+                'find node_modules/.bin -type l -print0 '
+                '| xargs -0 -r -I{} sh -c '
+                '\'t=$(readlink -f "{}"); '
+                '[ -n "$t" ] && chmod a+x "$t" 2>/dev/null || true\'; '
+                'find node_modules -path "*/cross-env*/bin/*" '
+                '-type f -exec chmod a+x {} + 2>/dev/null || true; '
+                'npm test',
+            ],
             environment={
                 'JEST_JUNIT_OUTPUT_DIR': RESULTS_DIR,
                 'JEST_JUNIT_OUTPUT_NAME': RESULTS_FILE,
+                'BABEL_ENV': 'test',
             },
             workdir='/testbed',
             stream=False,

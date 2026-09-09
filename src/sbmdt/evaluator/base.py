@@ -549,6 +549,30 @@ class Evaluator(ABC):
                     f'{output.decode()}'
                 )
 
+            # If the model (or a prior partial apply) left an untracked
+            # copy of a path the test patch wants to *add*, git apply
+            # fails with "already exists in working directory"
+            # (bpmn-js-1382, carbon-8720). Remove only paths that are
+            # not in HEAD so we do not clobber restored tracked files.
+            exit_code, output = self.container.exec_run(
+                [
+                    'bash',
+                    '-c',
+                    'if ! git cat-file -e "HEAD:$1" 2>/dev/null '
+                    '&& [ -e "$1" ]; then rm -rf -- "$1"; fi',
+                    'git-clear-untracked-test-path',
+                    path,
+                ],
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            if exit_code != 0 and output.strip():
+                log.info(
+                    f'clearing untracked test path {path!r} returned '
+                    f'{exit_code}: {output.decode()}'
+                )
+
         write_to_container(self.container, TEST_PATCH_FILE, test_patch)
 
         exit_code, output = self.container.exec_run(
