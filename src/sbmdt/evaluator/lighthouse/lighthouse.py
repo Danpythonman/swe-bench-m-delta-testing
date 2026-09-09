@@ -178,9 +178,16 @@ class LighthouseEvaluator(Evaluator):
         # install-cli's prepublish hook is supposed to build the CLI
         # automatically, but fails silently due to an npm lifecycle
         # working-directory quirk on this old npm version, so the build is
-        # triggered explicitly here instead.
+        # triggered explicitly here instead. The install-all layout pairs
+        # with build-all the same way install-cli pairs with build-cli --
+        # confirmed directly: lighthouse-5688 got past install-all only to
+        # hit "Missing script: build-cli", and npm's own suggestion was
+        # build-all.
+        build_script = (
+            'build-all' if install_script == 'install-all' else 'build-cli'
+        )
         exit_code, output = self.container.exec_run(
-            'npm run build-cli',
+            f'npm run {build_script}',
             workdir='/testbed',
             stream=False,
         )
@@ -191,7 +198,8 @@ class LighthouseEvaluator(Evaluator):
 
         if exit_code != 0:
             raise Exception(
-                f'Failed to build lighthouse-cli for {self.instance_id}: '
+                f'Failed to build lighthouse-cli for {self.instance_id} '
+                f'(via "{build_script}"): '
                 f'{output.decode()}'
             )
 
