@@ -228,9 +228,13 @@ class OpenlayersEvaluator(Evaluator):
 
         # webpackMiddleware is not guaranteed present -- it is only there
         # if this commit's config configures webpack's dev middleware, and
-        # not every commit does. config.set({ is the one thing every karma
-        # config has (it's the config file's whole purpose), so it is the
-        # anchor of last resort when webpackMiddleware is absent.
+        # not every commit does. Older configs (openlayers-7554) also name
+        # the karma config argument `karma` rather than `config`, so the
+        # set() call is `karma.set({` -- matching only `config.set` left
+        # those instances unable to inject the plugins allowlist.
+        # config/karma.set({ is the one thing every karma config has (it's
+        # the config file's whole purpose), so it is the anchor of last
+        # resort when webpackMiddleware is absent.
         _, config_content = self.container.exec_run(
             ['cat', self._karma_config_file],
         )
@@ -256,7 +260,7 @@ class OpenlayersEvaluator(Evaluator):
             apply_change_regex(
                 container=self.container,
                 file=self._karma_config_file,
-                find=r'config\.set\(\s*\{',
+                find=r'(?:config|karma)\.set\(\s*\{',
                 replace=lambda m: (
                     m.group(0) + '\n    plugins: [\n' + plugin_lines + '    ],'
                 ),
