@@ -8,9 +8,14 @@ registration and command completion.
 import asyncio
 import logging
 import time
+from collections.abc import Callable
 from typing import Final
 
-from botocore.exceptions import ClientError
+from botocore.exceptions import (
+    ClientError,
+    ConnectionError,
+    EndpointConnectionError,
+)
 from mypy_boto3_ssm import SSMClient
 from mypy_boto3_ssm.type_defs import (
     GetCommandInvocationResultTypeDef,
@@ -44,6 +49,55 @@ EXECUTION_TIMEOUT_SECONDS: Final[int] = DEFAULT_TIMEOUT_MINUTES * 60
 POLL_INTERVAL_SECONDS: Final[int] = 10
 
 
+# A network blip between this machine and the AWS API is a different
+# failure than anything AWS-side: the EC2 instance already exists and is
+# already being paid for, so losing the whole evaluation to a one-off
+# connection drop is wasteful in a way retrying a few seconds later is
+# not. Kept separate from get_ssm_command_invocation's existing retry,
+# which is for an AWS-side eventual-consistency race, not a transport
+# failure.
+TRANSIENT_CONNECTION_RETRIES: Final[int] = 4
+TRANSIENT_CONNECTION_DELAY_SECONDS: Final[float] = 3.0
+
+
+async def _call_with_connection_retry(
+    call: 'Callable[[], object]',
+    description: str,
+    max_retries: int = TRANSIENT_CONNECTION_RETRIES,
+    retry_delay_seconds: float = TRANSIENT_CONNECTION_DELAY_SECONDS,
+) -> object:
+    """Run a blocking boto3 call, retrying on a transient connection drop.
+
+    Args:
+        call: Zero-argument callable making the boto3 request.
+        description: Short label for what is being called, used in the
+            retry log line.
+        max_retries: Maximum number of attempts before giving up.
+        retry_delay_seconds: Delay between retries, in seconds.
+
+    Returns:
+        Whatever ``call`` returns.
+
+    Raises:
+        EndpointConnectionError: If every attempt fails to connect.
+        ConnectionError: If every attempt fails to connect.
+    """
+    loop = asyncio.get_running_loop()
+    for attempt in range(1, max_retries + 1):
+        try:
+            return await loop.run_in_executor(None, call)
+        except (EndpointConnectionError, ConnectionError):
+            if attempt == max_retries:
+                raise
+            log.info(
+                f'{description} could not connect (attempt '
+                f'{attempt}/{max_retries}), retrying in '
+                f'{retry_delay_seconds}s...'
+            )
+            await asyncio.sleep(retry_delay_seconds)
+    raise Exception('connection retries exceeded')
+
+
 async def wait_for_ssm(
     ssm: SSMClient, instance_id: str, timeout_s: int = 300
 ) -> None:
@@ -63,14 +117,13 @@ async def wait_for_ssm(
         TimeoutError: If the instance has not registered within
             ``timeout_s`` seconds.
     """
-    loop = asyncio.get_running_loop()
     start = time.monotonic()
     while time.monotonic() - start < timeout_s:
-        resp = await loop.run_in_executor(
-            None,
+        resp = await _call_with_connection_retry(
             lambda: ssm.describe_instance_information(
                 Filters=[{'Key': 'InstanceIds', 'Values': [instance_id]}]
             ),
+            'describe_instance_information',
         )
         if resp['InstanceInformationList']:
             return
@@ -98,9 +151,7 @@ async def start_running_ssm_command(
         The raw ``send_command`` response, including the command ID needed
         to poll for its result.
     """
-    loop = asyncio.get_running_loop()
-    send = await loop.run_in_executor(
-        None,
+    send = await _call_with_connection_retry(
         lambda: ssm.send_command(
             InstanceIds=[instance_id],
             DocumentName='AWS-RunShellScript',
@@ -111,6 +162,7 @@ async def start_running_ssm_command(
                 'executionTimeout': [str(timeout_seconds)],
             },
         ),
+        'send_command',
     )
     return send
 
@@ -143,16 +195,14 @@ async def get_ssm_command_invocation(
             than the invocation not existing yet, or if it still does not
             exist after ``max_retries`` attempts.
     """
-    loop = asyncio.get_running_loop()
-
     for attempt in range(1, max_retries + 1):
         try:
             log.info(f'Getting command invocation {command_id}')
-            return await loop.run_in_executor(
-                None,
+            return await _call_with_connection_retry(
                 lambda: ssm.get_command_invocation(
                     CommandId=command_id, InstanceId=instance_id
                 ),
+                'get_command_invocation',
             )
         except ClientError as e:
             if (
