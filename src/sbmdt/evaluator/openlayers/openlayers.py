@@ -11,6 +11,7 @@ retrieves the results.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Final, override
 
 from sbmdt.evaluator.alibaba.karma_junit_parser import (
@@ -18,7 +19,6 @@ from sbmdt.evaluator.alibaba.karma_junit_parser import (
 )
 from sbmdt.evaluator.base import Evaluator, TestResult
 from sbmdt.utils import (
-    apply_change_literal,
     apply_change_regex,
     read_from_container,
 )
@@ -194,18 +194,42 @@ class OpenlayersEvaluator(Evaluator):
         installed.discard('karma-firefox-launcher')
         plugin_lines = ''.join(f"      '{p}',\n" for p in sorted(installed))
 
-        apply_change_literal(
-            container=self.container,
-            file=self._karma_config_file,
-            find='webpackMiddleware: {',
-            replace=(
-                'plugins: [\n'
-                f'{plugin_lines}'
-                '    ],\n'
-                '    webpackMiddleware: {'
-            ),
-            assertion="plugins: [\n",
+        # webpackMiddleware is not guaranteed present -- it is only there
+        # if this commit's config configures webpack's dev middleware, and
+        # not every commit does. config.set({ is the one thing every karma
+        # config has (it's the config file's whole purpose), so it is the
+        # anchor of last resort when webpackMiddleware is absent.
+        _, config_content = self.container.exec_run(
+            ['cat', self._karma_config_file],
         )
+        assert isinstance(config_content, bytes)
+        has_webpack_middleware = bool(
+            re.search(r'webpackMiddleware\s*:\s*\{', config_content.decode())
+        )
+
+        if has_webpack_middleware:
+            apply_change_regex(
+                container=self.container,
+                file=self._karma_config_file,
+                find=r'webpackMiddleware\s*:\s*\{',
+                replace=(
+                    'plugins: [\n'
+                    f'{plugin_lines}'
+                    '    ],\n'
+                    '    webpackMiddleware: {'
+                ),
+                assertion="plugins: [\n",
+            )
+        else:
+            apply_change_regex(
+                container=self.container,
+                file=self._karma_config_file,
+                find=r'config\.set\(\s*\{',
+                replace=lambda m: (
+                    m.group(0) + '\n    plugins: [\n' + plugin_lines + '    ],'
+                ),
+                assertion="plugins: [\n",
+            )
 
         apply_change_regex(
             container=self.container,
