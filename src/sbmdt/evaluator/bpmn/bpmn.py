@@ -84,6 +84,27 @@ class BpmnEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
+        # DIAGNOSTIC (temporary): PhantomJS -- the browser these configs
+        # currently launch -- is ES5-only and can't parse a template
+        # literal in this codebase's own compiled test bundle, so every
+        # test fails before running with a SyntaxError, not a real
+        # assertion failure. Switching to Chrome the same way the
+        # openlayers evaluator does is the fix, but this file's `browsers:`
+        # line is unknown -- the `reporters:` line right below it is
+        # already a non-trivial `.concat(...)` expression per this
+        # evaluator's own comments, so guessing the browsers: syntax
+        # blind risks the same wasted-run mistake made twice on
+        # openlayers. Logging it here first for real evidence before
+        # writing a regex against it.
+        _, config_dump = self.container.exec_run(
+            ['cat', KARMA_CONFIG_FILE],
+        )
+        assert isinstance(config_dump, bytes)
+        log.info(
+            f'karma.unit.js for {self.instance_id}:\n'
+            f'{config_dump.decode()}'
+        )
+
         # ------------------------------------------------------------------
         # 1. Install karma-junit-reporter.
         #    --legacy-peer-deps is required because karma-webpack@3 declares
