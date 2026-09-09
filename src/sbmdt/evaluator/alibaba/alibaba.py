@@ -57,8 +57,18 @@ class AlibabaEvaluator(Evaluator):
             raise Exception('no container')
 
         # 1. Install package
+        #
+        # next-2984, next-3454 and next-4182 all failed here with
+        # "npm: executable file not found in $PATH" even though npm
+        # plainly exists in this environment (other instances install it
+        # successfully) -- exec_run's default invocation does not source
+        # a login shell, so if node/npm were installed via nvm (which adds
+        # itself to PATH from ~/.bashrc / ~/.profile, not the image's
+        # baked-in ENV PATH), a bare exec never sees it. Running through
+        # `bash -lc` sources that profile the way an interactive shell
+        # would.
         exit_code, output = self.container.exec_run(
-            'npm install karma-junit-reporter --save-dev',
+            ['bash', '-lc', 'npm install karma-junit-reporter --save-dev'],
             workdir='/testbed',
             stream=False,
         )
@@ -133,7 +143,7 @@ class AlibabaEvaluator(Evaluator):
             raise Exception('no container')
 
         exit_code, output = self.container.exec_run(
-            'npm test',
+            ['bash', '-lc', 'npm test'],
             environment={'TRAVIS': 'true'},
             workdir='/testbed',
             stream=False,
