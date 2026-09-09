@@ -154,9 +154,11 @@ class OpenlayersEvaluator(Evaluator):
         # initialize(); without that call karma dies mid-run with
         # UnhandledRejection and never flushes junit results.xml
         # (openlayers-11545). Pinning 0.6.x keeps the sync API that
-        # webpack 4 / karma expect.
+        # webpack 4 / karma expect; --save-exact (not --no-save) so the
+        # lockfile / nested resolvers actually see 0.6.x. evaluate() also
+        # preloads an initialize() shim in case a nested 0.7+ still wins.
         exit_code, output = self.container.exec_run(
-            'npm install source-map@0.6.1 --save-exact --no-save',
+            'npm install source-map@0.6.1 --save-exact',
             workdir='/testbed',
             stream=False,
         )
@@ -379,11 +381,34 @@ class OpenlayersEvaluator(Evaluator):
         )
         assert isinstance(which_output, bytes)
         chrome_path = which_output.decode().strip().splitlines()
+        # Pre-init source-map's wasm mapping when a 0.7+ copy is still on
+        # the resolve path after the 0.6.1 pin (nested webpack deps).
+        source_map_init = '/tmp/sbmdt-source-map-init.js'
+        write_to_container(
+            self.container,
+            source_map_init,
+            (
+                "try {\n"
+                "  var path = require('path');\n"
+                "  var sm = require('source-map');\n"
+                "  if (sm.SourceMapConsumer && "
+                "sm.SourceMapConsumer.initialize) {\n"
+                "    var wasm = path.join(\n"
+                "      path.dirname(require.resolve('source-map/package.json')),\n"
+                "      'lib', 'mappings.wasm');\n"
+                "    sm.SourceMapConsumer.initialize("
+                "{ 'lib/mappings.wasm': wasm });\n"
+                "  }\n"
+                "} catch (e) {}\n"
+            ),
+        )
         environment = {
             # webpack 4's MD4-based hashing is incompatible with the
             # default OpenSSL 3 provider bundled with this container's
-            # Node version.
-            'NODE_OPTIONS': '--openssl-legacy-provider',
+            # Node version. Also preload the source-map wasm init above.
+            'NODE_OPTIONS': (
+                f'--openssl-legacy-provider --require {source_map_init}'
+            ),
         }
         if chrome_path:
             # Some commits launch Chrome themselves inside karma.config.cjs
