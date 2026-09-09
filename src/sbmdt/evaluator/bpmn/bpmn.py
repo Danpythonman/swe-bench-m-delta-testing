@@ -8,7 +8,11 @@ bpmn-js uses Karma as its test runner, configured at
 2. Patches the Karma config to emit JUnit XML output.
 3. Runs ``npm test`` with ``NODE_OPTIONS=--openssl-legacy-provider`` (required
    because the pinned webpack version uses a legacy OpenSSL hash algorithm
-   that Node ≥ 17 disables by default).
+   that Node ≥ 17 disables by default) and ``TEST_BROWSERS=ChromeHeadless``
+   (the config defaults to PhantomJS, an ES5-only browser unmaintained
+   since 2018 that can't parse a template literal in this project's own
+   compiled test bundle; the config already supports Chrome via this
+   variable, it is simply not the default).
 4. Reads the resulting XML from the container and returns parsed results.
 
 All bpmn-js instances share the same project layout and test infrastructure,
@@ -83,27 +87,6 @@ class BpmnEvaluator(Evaluator):
 
         if self.container is None:
             raise Exception('no container')
-
-        # DIAGNOSTIC (temporary): PhantomJS -- the browser these configs
-        # currently launch -- is ES5-only and can't parse a template
-        # literal in this codebase's own compiled test bundle, so every
-        # test fails before running with a SyntaxError, not a real
-        # assertion failure. Switching to Chrome the same way the
-        # openlayers evaluator does is the fix, but this file's `browsers:`
-        # line is unknown -- the `reporters:` line right below it is
-        # already a non-trivial `.concat(...)` expression per this
-        # evaluator's own comments, so guessing the browsers: syntax
-        # blind risks the same wasted-run mistake made twice on
-        # openlayers. Logging it here first for real evidence before
-        # writing a regex against it.
-        _, config_dump = self.container.exec_run(
-            ['cat', KARMA_CONFIG_FILE],
-        )
-        assert isinstance(config_dump, bytes)
-        log.info(
-            f'karma.unit.js for {self.instance_id}:\n'
-            f'{config_dump.decode()}'
-        )
 
         # ------------------------------------------------------------------
         # 1. Install karma-junit-reporter.
@@ -196,6 +179,17 @@ class BpmnEvaluator(Evaluator):
                 # hash internally, which Node ≥ 17 marks as unsupported by
                 # default.  The legacy provider re-enables it.
                 'NODE_OPTIONS': '--openssl-legacy-provider',
+                # karma.unit.js reads this to pick its browser and defaults
+                # to PhantomJS when it is unset. PhantomJS is ES5-only and
+                # can't parse a template literal already present in this
+                # project's own compiled test bundle, so every test fails
+                # on a SyntaxError before running at all, not a real
+                # result. The config already handles ChromeHeadless as a
+                # first-class option (it points CHROME_BIN at puppeteer's
+                # bundled Chromium and adds --no-sandbox via its own
+                # customLaunchers entry), so this only selects a path the
+                # config was already written to support.
+                'TEST_BROWSERS': 'ChromeHeadless',
             },
             workdir='/testbed',
             stream=False,
