@@ -517,20 +517,34 @@ class Evaluator(ABC):
         # Discard any model edits to the files the test patch touches, so
         # the patch applies against the state it was generated from. Paths
         # come from the post-image (b/) side of each diff header.
+        #
+        # Restore each path that exists in HEAD individually. A single
+        # `git checkout -- a b c` where b/c are newly-added test files
+        # returns non-zero; on some git builds that mixed failure mode has
+        # been observed not to reliably restore the tracked paths that
+        # *do* exist (openlayers-14066: model edited GeoTIFF.test.js, the
+        # bundled checkout reported only missing rendering fixtures, then
+        # the test patch failed against the still-dirty test file).
         paths = re.findall(r'^diff --git a/\S+ b/(\S+)', test_patch, re.M)
-        if paths:
-            quoted = ' '.join(f"'{p}'" for p in paths)
+        for path in paths:
             exit_code, output = self.container.exec_run(
-                f'git checkout -- {quoted}',
+                [
+                    'bash',
+                    '-c',
+                    'git cat-file -e "HEAD:$1" 2>/dev/null '
+                    '&& git checkout HEAD -- "$1"',
+                    'git-restore-test-path',
+                    path,
+                ],
                 workdir='/testbed',
                 stream=False,
             )
-            # Newly added test files are untracked, so checkout fails for
-            # them. That is expected and harmless: the patch creates them.
-            if exit_code != 0:
-                assert isinstance(output, bytes)
+            assert isinstance(output, bytes)
+            # Newly added test files are absent from HEAD, so cat-file
+            # fails and we skip them; the patch creates them.
+            if exit_code != 0 and output.strip():
                 log.info(
-                    'git checkout of test paths returned '
+                    f'git checkout of test path {path!r} returned '
                     f'{exit_code} (expected for newly added files): '
                     f'{output.decode()}'
                 )

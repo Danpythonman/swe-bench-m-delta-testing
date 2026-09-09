@@ -150,6 +150,25 @@ class OpenlayersEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
+        # source-map >= 0.7 loads mappings.wasm via SourceMapConsumer
+        # initialize(); without that call karma dies mid-run with
+        # UnhandledRejection and never flushes junit results.xml
+        # (openlayers-11545). Pinning 0.6.x keeps the sync API that
+        # webpack 4 / karma expect.
+        exit_code, output = self.container.exec_run(
+            'npm install source-map@0.6.1 --save-exact --no-save',
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        log.info(exit_code)
+        log.info(output.decode())
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to pin source-map for {self.instance_id}: '
+                f'{output.decode()}'
+            )
+
         def _add_junit_reporter(m):
             inner = m.group(1).rstrip()
             sep = ', ' if inner and not inner.endswith(',') else ' '

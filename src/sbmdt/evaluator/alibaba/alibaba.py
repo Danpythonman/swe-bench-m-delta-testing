@@ -30,6 +30,29 @@ log = logging.getLogger(__name__)
 KARMA_FILE: Final[str] = '/testbed/scripts/test/karma.js'
 PATCH_FILE: Final[str] = '/tmp/model.patch'
 
+# next-2984/3454/4182 ship node via nvm (or a one-off path under
+# ~/.nvm/versions) that is not on the image ENV PATH. `bash -lc` alone is
+# not enough: non-interactive login shells often hit the early-return in
+# .bashrc before nvm is sourced, leaving `npm` missing. Resolve npm the
+# same way an interactive shell eventually would, then run the command.
+_NPM_PREFIX: Final[str] = (
+    'export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"; '
+    'if [ -s "$NVM_DIR/nvm.sh" ]; then . "$NVM_DIR/nvm.sh"; fi; '
+    'if ! command -v npm >/dev/null 2>&1; then '
+    '  for d in /root/.nvm/versions/node/*/bin '
+    '           /home/*/.nvm/versions/node/*/bin '
+    '           /usr/local/bin; do '
+    '    if [ -x "$d/npm" ]; then export PATH="$d:$PATH"; break; fi; '
+    '  done; '
+    'fi; '
+    'command -v npm >/dev/null 2>&1 || { '
+    '  echo "npm not found after nvm/path bootstrap" >&2; '
+    '  echo "PATH=$PATH" >&2; '
+    '  ls -la "$HOME/.nvm" /root/.nvm 2>&1 | head -n 40 >&2; '
+    '  exit 127; '
+    '}; '
+)
+
 
 class AlibabaEvaluator(Evaluator):
     """Evaluator for Alibaba benchmark instances.
@@ -61,14 +84,13 @@ class AlibabaEvaluator(Evaluator):
         # next-2984, next-3454 and next-4182 all failed here with
         # "npm: executable file not found in $PATH" even though npm
         # plainly exists in this environment (other instances install it
-        # successfully) -- exec_run's default invocation does not source
-        # a login shell, so if node/npm were installed via nvm (which adds
-        # itself to PATH from ~/.bashrc / ~/.profile, not the image's
-        # baked-in ENV PATH), a bare exec never sees it. Running through
-        # `bash -lc` sources that profile the way an interactive shell
-        # would.
+        # successfully) -- see _NPM_PREFIX.
         exit_code, output = self.container.exec_run(
-            ['bash', '-lc', 'npm install karma-junit-reporter --save-dev'],
+            [
+                'bash',
+                '-lc',
+                f'{_NPM_PREFIX}npm install karma-junit-reporter --save-dev',
+            ],
             workdir='/testbed',
             stream=False,
         )
@@ -143,7 +165,7 @@ class AlibabaEvaluator(Evaluator):
             raise Exception('no container')
 
         exit_code, output = self.container.exec_run(
-            ['bash', '-lc', 'npm test'],
+            ['bash', '-lc', f'{_NPM_PREFIX}npm test'],
             environment={'TRAVIS': 'true'},
             workdir='/testbed',
             stream=False,
