@@ -206,6 +206,60 @@ class OpenlayersEvaluator(Evaluator):
                 init_require + karma_text,
             )
 
+        # Force webpack off source maps. Nested source-map@0.7+ still wins
+        # over the 0.6.1 pin / initialize shim (openlayers-11545), and karma
+        # then dies on mappings.wasm before junit can flush.
+        try:
+            apply_change_regex(
+                container=self.container,
+                file=self._karma_config_file,
+                find=r"devtool\s*:\s*['\"][^'\"]*['\"]",
+                replace='devtool: false',
+                assertion='devtool: false',
+            )
+        except Exception as exc:
+            log.info(
+                f'Skipping webpack devtool disable for '
+                f'{self.instance_id}: {exc}'
+            )
+        _, karma_for_loader = self.container.exec_run(
+            ['cat', self._karma_config_file],
+        )
+        assert isinstance(karma_for_loader, bytes)
+        loader_text = karma_for_loader.decode()
+        if 'source-map-loader' in loader_text:
+            write_to_container(
+                self.container,
+                self._karma_config_file,
+                re.sub(
+                    r"['\"]source-map-loader['\"]\s*,?",
+                    '',
+                    loader_text,
+                    count=1,
+                ),
+            )
+        # Replace any nested source-map@>=0.7 with the pinned 0.6.1 tree.
+        exit_code, output = self.container.exec_run(
+            [
+                'bash',
+                '-c',
+                'root=$(node -p \'require("path").dirname('
+                'require.resolve("source-map/package.json"))\'); '
+                'find node_modules -path "*/source-map/package.json" '
+                '-print0 | while IFS= read -r -d "" p; do '
+                '  ver=$(node -p "require(process.argv[1]).version" "$p"); '
+                '  case "$ver" in 0.7*|0.8*|0.9*|1.*) '
+                '    d=$(dirname "$p"); rm -rf "$d"; cp -a "$root" "$d";; '
+                '  esac; '
+                'done',
+            ],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        log.info(exit_code)
+        log.info(output.decode())
+
         def _add_junit_reporter(m):
             inner = m.group(1).rstrip()
             sep = ', ' if inner and not inner.endswith(',') else ' '
