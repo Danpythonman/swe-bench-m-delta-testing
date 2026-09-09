@@ -103,7 +103,36 @@ class LighthouseEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
-        # 2. Install lighthouse-cli's own dependencies
+        # 2. Install lighthouse-cli's own dependencies. This script name
+        # is not guaranteed across the pre-ESM era this evaluator targets
+        # -- the whole rest of setup() below is already pinned to one
+        # specific commit's exact quirks (typescript@2.0.3, a silent
+        # prepublish hook failure), so a missing install-cli script here
+        # most likely means an even older or newer package.json layout
+        # this evaluator has not been made to handle, not something a
+        # single fallback command could guess correctly. Failing with the
+        # scripts actually available keeps that distinction visible
+        # instead of guessing at a replacement command with no evidence
+        # it's the right one, or continuing into a chain of confusing
+        # downstream failures.
+        node_snippet = (
+            "console.log(JSON.stringify("
+            "require('./package.json').scripts || {}))"
+        )
+        exit_code, scripts_output = self.container.exec_run(
+            ['node', '-e', node_snippet],
+            workdir='/testbed',
+        )
+        assert isinstance(scripts_output, bytes)
+        if b'"install-cli"' not in scripts_output:
+            raise Exception(
+                f'{self.instance_id} has no "install-cli" script in '
+                f'package.json, so this evaluator cannot install '
+                f'lighthouse-cli\'s dependencies the way it does for the '
+                f'commit it was written against. Scripts available: '
+                f'{scripts_output.decode()!r}'
+            )
+
         exit_code, output = self.container.exec_run(
             'npm run install-cli',
             workdir='/testbed',
