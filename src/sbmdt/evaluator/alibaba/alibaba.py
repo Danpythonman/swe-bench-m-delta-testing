@@ -148,6 +148,35 @@ class AlibabaEvaluator(Evaluator):
             assertion="'karma-junit-reporter',",
         )
 
+        # 5. Under CI=true, karma.js forces browsers: ['ChromeHeadless']
+        # with no --no-sandbox (next-3454/4182). ChromeTravis is already
+        # defined with the flag; point CI at it. Also stop puppeteer's
+        # executablePath() from clobbering the CHROME_BIN shim evaluate()
+        # installs.
+        apply_change_literal(
+            container=self.container,
+            file=KARMA_FILE,
+            find="options.browsers = ['ChromeHeadless']",
+            replace="options.browsers = ['ChromeTravis']",
+            assertion="options.browsers = ['ChromeTravis']",
+        )
+        apply_change_regex(
+            container=self.container,
+            file=KARMA_FILE,
+            find=(
+                r"process\.env\.CHROME_BIN\s*=\s*"
+                r"require\('puppeteer'\)\.executablePath\(\);"
+            ),
+            replace=(
+                "process.env.CHROME_BIN = process.env.CHROME_BIN || "
+                "require('puppeteer').executablePath();"
+            ),
+            assertion=(
+                "process.env.CHROME_BIN = process.env.CHROME_BIN || "
+                "require('puppeteer').executablePath();"
+            ),
+        )
+
         log.info('All changes applied successfully.')
 
     @override
