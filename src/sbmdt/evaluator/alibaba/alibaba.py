@@ -166,7 +166,10 @@ class AlibabaEvaluator(Evaluator):
 
         exit_code, output = self.container.exec_run(
             ['bash', '-lc', f'{_NPM_PREFIX}npm test'],
-            environment={'TRAVIS': 'true'},
+            # scripts/test/index.js prompts interactively unless CI is set
+            # (next-3454/4182); TRAVIS is what older commits used to pick
+            # the headless ChromeTravis launcher.
+            environment={'TRAVIS': 'true', 'CI': 'true'},
             workdir='/testbed',
             stream=False,
         )
