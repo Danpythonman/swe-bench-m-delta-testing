@@ -65,6 +65,23 @@ class CarbonEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
+        # carbon-9136 and carbon-8912 both failed npm test with
+        # "/testbed/node_modules/.bin/cross-env: Permission denied" --
+        # npm's own installed binary missing its execute bit, not
+        # anything about the test itself. Restoring it broadly across
+        # node_modules/.bin rather than for cross-env specifically, since
+        # any other binary hit the same way would fail exactly the same
+        # way and there's no reason to assume cross-env is the only one
+        # affected.
+        exit_code, output = self.container.exec_run(
+            'chmod -R +x node_modules/.bin',
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        log.info(exit_code)
+        log.info(output.decode())
+
     @override
     def evaluate(self) -> list[TestResult]:
         """Run ``npm test`` and retrieve the JUnit XML results.
