@@ -22,6 +22,7 @@ so a single evaluator class handles every ``bpmn-io__bpmn-js-*`` instance ID.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Final, override
 
 from sbmdt.evaluator.base import Evaluator, TestResult
@@ -147,6 +148,27 @@ class BpmnEvaluator(Evaluator):
                 '\n    },'
             ),
             assertion='junitReporter:',
+        )
+
+        # ------------------------------------------------------------------
+        # 4. Add --disable-dev-shm-usage to the ChromeHeadless_Linux
+        #    launcher. Switching browsers off PhantomJS got Chrome
+        #    launching (confirmed: "Launching browsers ChromeHeadless_Linux"
+        #    appears in the log), but it then never captured within
+        #    karma's 60s timeout and was killed -- the classic symptom of
+        #    Chrome crashing on Docker's default 64MB /dev/shm, which
+        #    --no-sandbox alone (already present in this launcher's flags)
+        #    does not address.
+        # ------------------------------------------------------------------
+        apply_change_regex(
+            container=self.container,
+            file=KARMA_CONFIG_FILE,
+            find=r"(ChromeHeadless_Linux:\s*\{[^}]*?flags:\s*\[)",
+            replace=lambda m: (
+                f"{m.group(1)}\n          '--disable-dev-shm-usage',"
+            ),
+            assertion='--disable-dev-shm-usage',
+            flags=re.DOTALL,
         )
 
         log.info('BpmnEvaluator setup complete for %s', self.instance_id)
