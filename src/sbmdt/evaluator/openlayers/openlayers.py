@@ -232,21 +232,36 @@ class OpenlayersEvaluator(Evaluator):
                 assertion="plugins: [\n",
             )
 
-        apply_change_regex(
-            container=self.container,
-            file=self._karma_config_file,
-            find=r"browsers:\s*\[[^\]]*\],",
-            replace=(
-                "browsers: ['ChromeNoSandbox'],\n"
-                '    customLaunchers: {\n'
-                '      ChromeNoSandbox: {\n'
-                "        base: 'Chrome',\n"
-                "        flags: ['--no-sandbox', '--disable-gpu'],\n"
-                '      },\n'
-                '    },'
-            ),
-            assertion="browsers: ['ChromeNoSandbox'],",
-        )
+        # This override's base: 'Chrome' comes from karma-chrome-launcher.
+        # A commit that launches Chrome itself via puppeteer inside the
+        # config (see evaluate()'s shim) has no reason to depend on that
+        # plugin and may not have it installed, in which case overriding
+        # browsers: to require it breaks a config that was already working
+        # ("Cannot load browser 'ChromeNoSandbox': it is not registered!").
+        # The puppeteer path already gets --no-sandbox from the binary
+        # shim, so skipping this override there loses nothing.
+        if 'karma-chrome-launcher' in installed:
+            apply_change_regex(
+                container=self.container,
+                file=self._karma_config_file,
+                find=r"browsers:\s*\[[^\]]*\],",
+                replace=(
+                    "browsers: ['ChromeNoSandbox'],\n"
+                    '    customLaunchers: {\n'
+                    '      ChromeNoSandbox: {\n'
+                    "        base: 'Chrome',\n"
+                    "        flags: ['--no-sandbox', '--disable-gpu'],\n"
+                    '      },\n'
+                    '    },'
+                ),
+                assertion="browsers: ['ChromeNoSandbox'],",
+            )
+        else:
+            log.info(
+                f'karma-chrome-launcher not installed for '
+                f'{self.instance_id}; leaving browsers: as-is and relying '
+                f'on the PUPPETEER_EXECUTABLE_PATH shim for --no-sandbox'
+            )
 
         log.info('All changes applied successfully.')
 
