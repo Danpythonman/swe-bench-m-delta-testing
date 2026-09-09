@@ -19,6 +19,7 @@ from sbmdt.utils import (
     apply_change_literal,
     apply_change_regex,
     read_from_container,
+    write_to_container,
 )
 
 __all__ = [
@@ -164,12 +165,56 @@ class AlibabaEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
+        # next-3454/4182 launch ChromeHeadless under CI=true; as root that
+        # needs --no-sandbox. Older commits used a ChromeTravis custom
+        # launcher that already had the flag when TRAVIS was set. Shim the
+        # system Chrome the same way openlayers/bpmn do so both paths work.
+        _, which_output = self.container.exec_run(
+            [
+                'sh',
+                '-c',
+                'command -v google-chrome-stable || command -v '
+                'google-chrome || command -v chromium || true',
+            ],
+        )
+        assert isinstance(which_output, bytes)
+        chrome_path = which_output.decode().strip().splitlines()
+        environment = {
+            'TRAVIS': 'true',
+            'CI': 'true',
+        }
+        if chrome_path:
+            shim_path = '/tmp/chrome-no-sandbox'
+            write_to_container(
+                self.container,
+                shim_path,
+                (
+                    f'#!/bin/sh\n'
+                    f'exec {chrome_path[0]} --no-sandbox --disable-gpu "$@"\n'
+                ),
+            )
+            self.container.exec_run(['chmod', '+x', shim_path])
+            environment['CHROME_BIN'] = shim_path
+            log.info(
+                f'Using CHROME_BIN shim -> {chrome_path[0]} for '
+                f'{self.instance_id}'
+            )
+        else:
+            log.info(
+                f'no system Chrome found for {self.instance_id}; '
+                f'leaving CHROME_BIN unset'
+            )
+
         exit_code, output = self.container.exec_run(
-            ['bash', '-lc', f'{_NPM_PREFIX}npm test'],
-            # scripts/test/index.js prompts interactively unless CI is set
-            # (next-3454/4182); TRAVIS is what older commits used to pick
-            # the headless ChromeTravis launcher.
-            environment={'TRAVIS': 'true', 'CI': 'true'},
+            [
+                'bash',
+                '-lc',
+                # Inline CI/TRAVIS as well as the docker environment= map:
+                # bash -lc can drop unset-looking env on some images, and
+                # the test runner only skips inquirer when CI is visible.
+                f'export CI=true TRAVIS=true; {_NPM_PREFIX}npm test',
+            ],
+            environment=environment,
             workdir='/testbed',
             stream=False,
         )
