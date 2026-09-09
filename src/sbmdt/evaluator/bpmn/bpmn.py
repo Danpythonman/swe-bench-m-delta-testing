@@ -208,10 +208,12 @@ class BpmnEvaluator(Evaluator):
         if status.startswith('ok:'):
             return
 
-        # Older puppeteer: node_modules/puppeteer/install.js
-        # Newer: npx puppeteer browsers install chrome
+        # SWE-bench images set PUPPETEER_SKIP_DOWNLOAD, so the normal
+        # postinstall is a no-op unless we clear those env vars.
         for cmd in (
+            'env -u PUPPETEER_SKIP_DOWNLOAD -u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
             'node node_modules/puppeteer/install.js',
+            'env -u PUPPETEER_SKIP_DOWNLOAD -u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
             'npx --yes puppeteer browsers install chrome',
         ):
             log.info('Attempting Chromium download via: %s', cmd)
@@ -234,28 +236,34 @@ class BpmnEvaluator(Evaluator):
             if status.startswith('ok:'):
                 return
 
-        # Last resort: distro Chromium. karma-chrome-launcher picks this up
-        # via CHROME_BIN if we export it at test time.
-        log.info('Falling back to apt-get install chromium')
+        # Ubuntu's chromium-browser package is a snap stub and does not
+        # work in Docker. Install Google Chrome's .deb instead.
+        log.info('Falling back to Google Chrome .deb install')
         exit_code, output = self.container.exec_run(
             [
                 'bash',
                 '-lc',
+                'set -euo pipefail; '
                 'export DEBIAN_FRONTEND=noninteractive; '
-                'apt-get update -qq && '
-                '(apt-get install -y -qq chromium-browser || '
-                'apt-get install -y -qq chromium)',
+                'apt-get update -qq; '
+                'apt-get install -y -qq wget gnupg ca-certificates; '
+                'wget -q -O /tmp/chrome.deb '
+                'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb; '
+                'apt-get install -y -qq /tmp/chrome.deb || '
+                '(dpkg -i /tmp/chrome.deb; apt-get install -y -f -qq); '
+                'test -x /usr/bin/google-chrome-stable',
             ],
             workdir='/testbed',
             stream=False,
         )
         assert isinstance(output, bytes)
-        log.info('apt chromium exit_code=%s', exit_code)
+        log.info('google-chrome install exit_code=%s', exit_code)
         log.info(output.decode()[-2000:])
         if exit_code != 0:
             raise Exception(
                 'No Chrome/Chromium binary available for Karma '
-                f'(puppeteer missing and apt failed): {output.decode()[-1000:]}'
+                f'(puppeteer missing and Chrome .deb failed): '
+                f'{output.decode()[-1000:]}'
             )
 
     def _patch_chrome_bin_assignment(self) -> None:
@@ -378,14 +386,15 @@ class BpmnEvaluator(Evaluator):
             'no_proxy': 'localhost,127.0.0.1,::1',
         }
 
-        # Prefer puppeteer's binary when present; otherwise use distro chrome.
+        # Prefer puppeteer's binary; then real Chrome. Skip Ubuntu's
+        # chromium-browser snap stub (exists as a file but cannot run).
         locate_script = (
             "const fs=require('fs');"
             "const candidates=[];"
             "try{candidates.push(require('puppeteer').executablePath())}catch(e){}"
             "candidates.push("
-            "'/usr/bin/chromium-browser','/usr/bin/chromium',"
-            "'/usr/bin/google-chrome','/usr/bin/google-chrome-stable');"
+            "'/usr/bin/google-chrome-stable','/usr/bin/google-chrome',"
+            "'/usr/bin/chromium');"
             "for (const p of candidates){"
             "  if(p&&fs.existsSync(p)){console.log(p);process.exit(0)}"
             "}"
