@@ -99,9 +99,49 @@ class CarbonEvaluator(Evaluator):
         log.info(exit_code)
         log.info(output.decode())
 
-        results = read_from_container(
-            self.container, f'/testbed/{RESULTS_DIR}/{RESULTS_FILE}'
+        # JEST_JUNIT_OUTPUT_DIR is resolved by jest-junit relative to the
+        # jest process's own working directory, not necessarily /testbed.
+        # Three instances (carbon-9136, carbon-5156, carbon-8912) failed
+        # with results.xml missing at exactly that assumed path -- likely
+        # because their npm test script cds into a package subdirectory
+        # (this is a monorepo: packages/react, packages/web-components,
+        # etc.) before running jest. Finding whatever jest-junit actually
+        # wrote, the same way already fixed for openlayers, lighthouse
+        # and alibaba-fusion, instead of assuming /testbed itself.
+        default_results_file = f'/testbed/{RESULTS_DIR}/{RESULTS_FILE}'
+        _, results_find = self.container.exec_run(
+            [
+                'find',
+                '/testbed',
+                '-name',
+                RESULTS_FILE,
+                '-not',
+                '-path',
+                '*/node_modules/*',
+            ],
+            workdir='/testbed',
+            stream=False,
         )
+        assert isinstance(results_find, bytes)
+        written = [
+            p for p in results_find.decode().splitlines() if p.strip()
+        ]
+        if default_results_file in written:
+            results_file = default_results_file
+        elif written:
+            results_file = written[0]
+            log.info(
+                f'results.xml for {self.instance_id} is at '
+                f'{results_file!r}, not the expected '
+                f'{default_results_file!r}'
+            )
+        else:
+            raise Exception(
+                f'jest-junit wrote no results.xml for {self.instance_id}; '
+                f'expected it at {default_results_file!r}'
+            )
+
+        results = read_from_container(self.container, results_file)
 
         return results_xml_to_test_results(
             self.instance_id,
