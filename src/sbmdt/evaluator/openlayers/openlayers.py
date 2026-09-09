@@ -21,6 +21,7 @@ from sbmdt.evaluator.base import Evaluator, TestResult
 from sbmdt.utils import (
     apply_change_regex,
     read_from_container,
+    write_to_container,
 )
 
 __all__ = [
@@ -290,7 +291,23 @@ class OpenlayersEvaluator(Evaluator):
             'NODE_OPTIONS': '--openssl-legacy-provider',
         }
         if chrome_path:
-            environment['PUPPETEER_EXECUTABLE_PATH'] = chrome_path[0]
+            # Some commits launch Chrome themselves inside karma.config.cjs
+            # (via puppeteer directly) rather than through karma-chrome-
+            # launcher's browsers: array, so they never see the --no-sandbox
+            # flag the browsers: patch adds -- Chrome then refuses to start
+            # as root, which is the only user available in this container.
+            # Wrapping the real binary in a shim that always adds the flag,
+            # and pointing PUPPETEER_EXECUTABLE_PATH at the shim instead of
+            # the binary itself, reaches both launch paths without needing
+            # to know which one a given commit uses.
+            shim_path = '/tmp/chrome-no-sandbox'
+            shim_script = (
+                f'#!/bin/sh\n'
+                f'exec {chrome_path[0]} --no-sandbox --disable-gpu "$@"\n'
+            )
+            write_to_container(self.container, shim_path, shim_script)
+            self.container.exec_run(['chmod', '+x', shim_path])
+            environment['PUPPETEER_EXECUTABLE_PATH'] = shim_path
         else:
             log.info(
                 f'no system Chrome found for {self.instance_id}; leaving '
