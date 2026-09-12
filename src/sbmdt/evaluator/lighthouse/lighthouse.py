@@ -103,9 +103,41 @@ class LighthouseEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
-        # 2. Install lighthouse-cli's own dependencies
+        # 2. Install lighthouse-cli's own dependencies. install-cli is not
+        # the script name in every commit's package.json: two separate
+        # instances failed with "Missing script: install-cli", and npm's
+        # own error both times suggested install-all as one of the
+        # existing scripts -- direct evidence for that alternative name,
+        # not a guess. Beyond those two names, the rest of setup() below
+        # is already pinned to one specific commit's exact quirks
+        # (typescript@2.0.3, a silent prepublish hook failure), so a
+        # package.json with neither script most likely needs handling
+        # this evaluator has never been given evidence for. Failing with
+        # the scripts actually available keeps that distinction visible.
+        node_snippet = (
+            "console.log(JSON.stringify("
+            "require('./package.json').scripts || {}))"
+        )
+        exit_code, scripts_output = self.container.exec_run(
+            ['node', '-e', node_snippet],
+            workdir='/testbed',
+        )
+        assert isinstance(scripts_output, bytes)
+        if b'"install-cli"' in scripts_output:
+            install_script = 'install-cli'
+        elif b'"install-all"' in scripts_output:
+            install_script = 'install-all'
+        else:
+            raise Exception(
+                f'{self.instance_id} has neither "install-cli" nor '
+                f'"install-all" in package.json, so this evaluator '
+                f'cannot install lighthouse-cli\'s dependencies the way '
+                f'it does for the commits it was written against. '
+                f'Scripts available: {scripts_output.decode()!r}'
+            )
+
         exit_code, output = self.container.exec_run(
-            'npm run install-cli',
+            f'npm run {install_script}',
             workdir='/testbed',
             stream=False,
         )
@@ -117,17 +149,21 @@ class LighthouseEvaluator(Evaluator):
         if exit_code != 0:
             raise Exception(
                 f'Failed to install lighthouse-cli dependencies for '
-                f'{self.instance_id}: {output.decode()}'
+                f'{self.instance_id} (via "{install_script}"): '
+                f'{output.decode()}'
             )
 
         # lighthouse-cli/package.json declares loose ranges
         # (typescript@^2.0.3, @types/node@^6.0.45); npm install resolves
         # these to the newest matching patch release, but a later
         # @types/node 6.x patch uses reference-directive syntax this old
-        # TypeScript can't parse. Pin both to their exact original
-        # versions to avoid that drift.
+        # TypeScript can't parse. Pinning @types/node alone is enough to
+        # stop that drift. Also pinning typescript@2.0.3 breaks some
+        # older cli sources that do not typecheck under that release
+        # (lighthouse-2016 failed build-cli with TS2345), so typescript
+        # is only forced if a first build fails in the @types/node way.
         exit_code, output = self.container.exec_run(
-            'npm install typescript@2.0.3 @types/node@6.0.45 --save-exact',
+            'npm install @types/node@6.0.45 --save-exact',
             workdir='/testbed/lighthouse-cli',
             stream=False,
         )
@@ -138,16 +174,23 @@ class LighthouseEvaluator(Evaluator):
 
         if exit_code != 0:
             raise Exception(
-                f'Failed to pin lighthouse-cli build dependencies for '
+                f'Failed to pin lighthouse-cli @types/node for '
                 f'{self.instance_id}: {output.decode()}'
             )
 
         # install-cli's prepublish hook is supposed to build the CLI
         # automatically, but fails silently due to an npm lifecycle
         # working-directory quirk on this old npm version, so the build is
-        # triggered explicitly here instead.
+        # triggered explicitly here instead. The install-all layout pairs
+        # with build-all the same way install-cli pairs with build-cli --
+        # confirmed directly: lighthouse-5688 got past install-all only to
+        # hit "Missing script: build-cli", and npm's own suggestion was
+        # build-all.
+        build_script = (
+            'build-all' if install_script == 'install-all' else 'build-cli'
+        )
         exit_code, output = self.container.exec_run(
-            'npm run build-cli',
+            f'npm run {build_script}',
             workdir='/testbed',
             stream=False,
         )
@@ -157,18 +200,86 @@ class LighthouseEvaluator(Evaluator):
         log.info(output.decode())
 
         if exit_code != 0:
-            raise Exception(
-                f'Failed to build lighthouse-cli for {self.instance_id}: '
-                f'{output.decode()}'
+            build_log = output.decode()
+            # Floating typescript above 2.0.x cannot parse later
+            # @types/node reference directives; pin typescript and retry
+            # once. Do not pin it up front -- see comment above.
+            needs_ts_pin = (
+                'reference' in build_log.lower()
+                or 'TS2304' in build_log
+                or 'Cannot find type definition' in build_log
+                or '@types/node' in build_log
             )
+            if needs_ts_pin:
+                log.info(
+                    f'build-cli failed for {self.instance_id}; retrying '
+                    'after pinning typescript@2.0.3'
+                )
+                pin_code, pin_out = self.container.exec_run(
+                    'npm install typescript@2.0.3 --save-exact',
+                    workdir='/testbed/lighthouse-cli',
+                    stream=False,
+                )
+                assert isinstance(pin_out, bytes)
+                log.info(pin_code)
+                log.info(pin_out.decode())
+                if pin_code != 0:
+                    raise Exception(
+                        f'Failed to pin typescript for {self.instance_id}: '
+                        f'{pin_out.decode()}'
+                    )
+                exit_code, output = self.container.exec_run(
+                    f'npm run {build_script}',
+                    workdir='/testbed',
+                    stream=False,
+                )
+                assert isinstance(output, bytes)
+                log.info(exit_code)
+                log.info(output.decode())
+                build_log = output.decode()
+
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to build lighthouse-cli for {self.instance_id} '
+                    f'(via "{build_script}"): '
+                    f'{build_log}'
+                )
 
         # 3. Create results directory
         self.container.exec_run(f'mkdir -p {RESULTS_DIR}', workdir='/testbed')
 
+        # run-mocha.sh's location is not fixed: lighthouse-5688 (the
+        # install-all/build-all layout) has no
+        # lighthouse-core/scripts/run-mocha.sh at all. Finding it directly
+        # rather than assuming the path avoids repeating that mistake for
+        # every future layout difference.
+        _, find_output = self.container.exec_run(
+            ['find', '/testbed', '-name', 'run-mocha.sh'],
+        )
+        assert isinstance(find_output, bytes)
+        candidates = [
+            c for c in find_output.decode().splitlines() if c.strip()
+        ]
+        if RUN_MOCHA_SCRIPT in candidates:
+            run_mocha_script = RUN_MOCHA_SCRIPT
+        elif candidates:
+            run_mocha_script = candidates[0]
+        else:
+            raise Exception(
+                f'No run-mocha.sh found under /testbed for '
+                f'{self.instance_id}'
+            )
+        if run_mocha_script != RUN_MOCHA_SCRIPT:
+            log.info(
+                f'run-mocha.sh for {self.instance_id} is at '
+                f'{run_mocha_script!r}, not the default {RUN_MOCHA_SCRIPT!r}'
+            )
+        self._run_mocha_script = run_mocha_script
+
         # 4. Add the JUnit reporter to each Mocha invocation
         apply_change_literal(
             container=self.container,
-            file=RUN_MOCHA_SCRIPT,
+            file=self._run_mocha_script,
             find='--timeout 60000;',
             replace=(
                 '--timeout 60000 --reporter mocha-junit-reporter'
@@ -207,9 +318,9 @@ class LighthouseEvaluator(Evaluator):
         # non-standard) so ``mocha`` resolves.
         commands = [
             'export PATH="/testbed/node_modules/.bin:$PATH"',
-            f'bash {RUN_MOCHA_SCRIPT} --cli',
-            f'bash {RUN_MOCHA_SCRIPT} --core',
-            f'bash {RUN_MOCHA_SCRIPT} --viewer',
+            f'bash {self._run_mocha_script} --cli',
+            f'bash {self._run_mocha_script} --core',
+            f'bash {self._run_mocha_script} --viewer',
         ]
         exit_code, output = self.container.exec_run(
             ['bash', '-c', '; '.join(commands)],
