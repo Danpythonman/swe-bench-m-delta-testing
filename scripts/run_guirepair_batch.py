@@ -4,7 +4,10 @@ from urllib.parse import unquote
 import boto3
 
 def main():
-    s3=boto3.Session(profile_name='default',region_name='us-east-1').client('s3')
+    # Use the active AWS credential chain (environment, shared config, or role).
+    # Do not force a profile name: the AWS CLI may be authenticated via SSO,
+    # environment variables, or a non-default profile.
+    s3=boto3.Session(region_name='us-east-1').client('s3')
     keys=[]
     for page in s3.get_paginator('list_objects_v2').paginate(Bucket='sbmdt-preds'):
         for x in page.get('Contents',[]):
@@ -13,6 +16,13 @@ def main():
                 if any(f'_{p}_GUIRepair-o3-2025-04-16-{p}_' in d for p in ('with_image','without_image')):
                     keys.append(k)
     out=Path('guirepair-runs'); out.mkdir(exist_ok=True)
+    keys = [k for k in sorted(set(keys))
+            if not ((out / (unquote(k).split('_with_image_')[0] + '-with_image.json')).exists()
+                    and '_with_image_' in unquote(k)
+                    and json.loads((out / (unquote(k).split('_with_image_')[0] + '-with_image.json')).read_text()).get('status') == 'Success')
+            and not ((out / (unquote(k).split('_without_image_')[0] + '-without_image.json')).exists()
+                     and '_without_image_' in unquote(k)
+                     and json.loads((out / (unquote(k).split('_without_image_')[0] + '-without_image.json')).read_text()).get('status') == 'Success')]
     def run(k):
         d=unquote(k); inst=d.split('_with_image_')[0] if '_with_image_' in d else d.split('_without_image_')[0]
         typ='with_image' if '_with_image_' in d else 'without_image'
