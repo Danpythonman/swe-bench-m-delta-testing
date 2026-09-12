@@ -179,18 +179,19 @@ class OpenlayersEvaluator(Evaluator):
             self.container,
             source_map_init,
             (
-                "try {\n"
+                'try {\n'
                 "  var path = require('path');\n"
                 "  var sm = require('source-map');\n"
-                "  if (sm.SourceMapConsumer && "
-                "sm.SourceMapConsumer.initialize) {\n"
-                "    var wasm = path.join(\n"
-                "      path.dirname(require.resolve('source-map/package.json')),\n"
+                '  if (sm.SourceMapConsumer && '
+                'sm.SourceMapConsumer.initialize) {\n'
+                '    var wasm = path.join(\n'
+                '      path.dirname(require.resolve(\n'
+                "        'source-map/package.json')),\n"
                 "      'lib', 'mappings.wasm');\n"
-                "    sm.SourceMapConsumer.initialize("
+                '    sm.SourceMapConsumer.initialize('
                 "{ 'lib/mappings.wasm': wasm });\n"
-                "  }\n"
-                "} catch (e) {}\n"
+                '  }\n'
+                '} catch (e) {}\n'
             ),
         )
         _, karma_raw = self.container.exec_run(
@@ -198,7 +199,7 @@ class OpenlayersEvaluator(Evaluator):
         )
         assert isinstance(karma_raw, bytes)
         karma_text = karma_raw.decode()
-        init_require = f"require({source_map_init!r});\n"
+        init_require = f'require({source_map_init!r});\n'
         if init_require not in karma_text:
             write_to_container(
                 self.container,
@@ -283,7 +284,7 @@ class OpenlayersEvaluator(Evaluator):
         apply_change_regex(
             container=self.container,
             file=self._karma_config_file,
-            find=r"reporters:\s*\[([^\]]*)\],",
+            find=r'reporters:\s*\[([^\]]*)\],',
             replace=_add_junit_reporter,
             assertion='junitReporter: {',
         )
@@ -353,7 +354,7 @@ class OpenlayersEvaluator(Evaluator):
                     '    ],\n'
                     '    webpackMiddleware: {'
                 ),
-                assertion="plugins: [\n",
+                assertion='plugins: [\n',
             )
         else:
             apply_change_regex(
@@ -363,7 +364,7 @@ class OpenlayersEvaluator(Evaluator):
                 replace=lambda m: (
                     m.group(0) + '\n    plugins: [\n' + plugin_lines + '    ],'
                 ),
-                assertion="plugins: [\n",
+                assertion='plugins: [\n',
             )
 
         # This override's base: 'Chrome' comes from karma-chrome-launcher.
@@ -399,7 +400,7 @@ class OpenlayersEvaluator(Evaluator):
                 apply_change_regex(
                     container=self.container,
                     file=self._karma_config_file,
-                    find=r"browsers:\s*\[[^\]]*\]\s*,?",
+                    find=r'browsers:\s*\[[^\]]*\]\s*,?',
                     replace="browsers: ['ChromeNoSandbox'],",
                     assertion="browsers: ['ChromeNoSandbox'],",
                 )
@@ -411,7 +412,9 @@ class OpenlayersEvaluator(Evaluator):
                         'customLaunchers: {\n'
                         '      ChromeNoSandbox: {\n'
                         "        base: 'Chrome',\n"
-                        "        flags: ['--no-sandbox', '--disable-gpu'],\n"
+                        "        flags: ['--no-sandbox', '--enable-webgl', "
+                        "'--ignore-gpu-blocklist', "
+                        "'--use-angle=swiftshader'],\n"
                         '      },'
                     ),
                     assertion='ChromeNoSandbox: {',
@@ -423,13 +426,15 @@ class OpenlayersEvaluator(Evaluator):
                     # Older configs (openlayers-7554) omit the trailing
                     # comma after browsers: ['Chrome'] because it is the
                     # last property inside karma.set({...}).
-                    find=r"browsers:\s*\[[^\]]*\]\s*,?",
+                    find=r'browsers:\s*\[[^\]]*\]\s*,?',
                     replace=(
                         "browsers: ['ChromeNoSandbox'],\n"
                         '    customLaunchers: {\n'
                         '      ChromeNoSandbox: {\n'
                         "        base: 'Chrome',\n"
-                        "        flags: ['--no-sandbox', '--disable-gpu'],\n"
+                        "        flags: ['--no-sandbox', '--enable-webgl', "
+                        "'--ignore-gpu-blocklist', "
+                        "'--use-angle=swiftshader'],\n"
                         '      },\n'
                         '    },'
                     ),
@@ -485,18 +490,19 @@ class OpenlayersEvaluator(Evaluator):
             self.container,
             source_map_init,
             (
-                "try {\n"
+                'try {\n'
                 "  var path = require('path');\n"
                 "  var sm = require('source-map');\n"
-                "  if (sm.SourceMapConsumer && "
-                "sm.SourceMapConsumer.initialize) {\n"
-                "    var wasm = path.join(\n"
-                "      path.dirname(require.resolve('source-map/package.json')),\n"
+                '  if (sm.SourceMapConsumer && '
+                'sm.SourceMapConsumer.initialize) {\n'
+                '    var wasm = path.join(\n'
+                '      path.dirname(require.resolve(\n'
+                "        'source-map/package.json')),\n"
                 "      'lib', 'mappings.wasm');\n"
-                "    sm.SourceMapConsumer.initialize("
+                '    sm.SourceMapConsumer.initialize('
                 "{ 'lib/mappings.wasm': wasm });\n"
-                "  }\n"
-                "} catch (e) {}\n"
+                '  }\n'
+                '} catch (e) {}\n'
             ),
         )
         environment = {

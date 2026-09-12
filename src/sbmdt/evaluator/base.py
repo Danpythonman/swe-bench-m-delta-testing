@@ -23,7 +23,7 @@ from docker.models.containers import Container
 from docker.models.images import Image
 
 from sbmdt.env import DOCKERFILES_BASE
-from sbmdt.patches import test_patch_for
+from sbmdt.patches import drop_unappliable_binary, test_patch_for
 from sbmdt.pred import Pred
 from sbmdt.utils import write_to_container
 
@@ -65,6 +65,7 @@ class PatchType(StrEnum):
     WITH_IMAGE = 'with_image'
     WITHOUT_IMAGE = 'without_image'
     GOLD = 'gold'
+
 
 MODEL_PATCH_TYPES: Final[frozenset[str]] = frozenset(
     {PatchType.WITH_IMAGE, PatchType.WITHOUT_IMAGE}
@@ -459,23 +460,45 @@ class Evaluator(ABC):
             raise Exception('no container')
         assert self.pred is not None
 
-        write_to_container(self.container, PATCH_FILE, self.pred.model_patch)
+        # A unified diff must terminate its last line. JSON predictions can
+        # omit that transport newline, which git reports as a corrupt patch.
+        # Preserve every patch line, including explicit no-newline markers.
+        patch = self.pred.model_patch
+        if patch and not patch.endswith('\n'):
+            patch += '\n'
+        patch, dropped = drop_unappliable_binary(patch)
+        if dropped:
+            log.info(
+                f'{self.instance_id}: dropped {len(dropped)} binary '
+                f'section(s) without embedded data: {dropped}'
+            )
+        write_to_container(self.container, PATCH_FILE, patch)
 
-        exit_code, output = self.container.exec_run(
+        outputs = []
+        commands = (
             f'git apply {PATCH_FILE}',
-            workdir='/testbed',
-            stream=False,
+            f'git apply --recount {PATCH_FILE}',
+            f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
         )
-        assert isinstance(output, bytes)
-
-        log.info(exit_code)
-        log.info(output.decode())
+        for index, command in enumerate(commands):
+            exit_code, output = self.container.exec_run(
+                command,
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            outputs.append(output.decode())
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code == 0:
+                break
+            if index < len(commands) - 1:
+                log.info('Patch apply failed; trying the next safe fallback')
 
         if exit_code != 0:
             log.error('Failed to apply patch')
             raise Exception(
-                f'Failed to apply patch for {self.instance_id}: '
-                f'{output.decode()}'
+                f'Failed to apply patch for {self.instance_id}: {outputs[-1]}'
             )
 
     def apply_test_patch(self) -> None:
@@ -575,21 +598,34 @@ class Evaluator(ABC):
 
         write_to_container(self.container, TEST_PATCH_FILE, test_patch)
 
-        exit_code, output = self.container.exec_run(
+        outputs = []
+        commands = (
             f'git apply {TEST_PATCH_FILE}',
-            workdir='/testbed',
-            stream=False,
+            f'git apply --recount {TEST_PATCH_FILE}',
+            f'git apply --3way --whitespace=nowarn {TEST_PATCH_FILE}',
         )
-        assert isinstance(output, bytes)
-
-        log.info(exit_code)
-        log.info(output.decode())
+        for index, command in enumerate(commands):
+            exit_code, output = self.container.exec_run(
+                command,
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            outputs.append(output.decode())
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code == 0:
+                break
+            if index < len(commands) - 1:
+                log.info(
+                    'Test-patch apply failed; trying the next safe fallback'
+                )
 
         if exit_code != 0:
             log.error('Failed to apply test patch')
             raise Exception(
                 f'Failed to apply test patch for {self.instance_id}: '
-                f'{output.decode()}'
+                f'{outputs[-1]}'
             )
 
     @abstractmethod
@@ -668,36 +704,37 @@ class Evaluator(ABC):
     def run(self) -> list[TestResult]:
         """Run the full evaluation lifecycle.
 
-        Stages: :meth:`provision` (build image, start container), then
-        :meth:`setup`, then :meth:`apply_patch` (only when
-        ``self.patch_type`` is not :attr:`PatchType.BEFORE_PATCH`), then
-        :meth:`evaluate`, then :meth:`cleanup`. :meth:`cleanup` runs even
-        if an earlier stage raises, so a failed run never leaves behind a
-        container/image that has to be removed manually before retrying.
+        Stages: :meth:`provision` (build image, start container), then apply
+        the requested patch and benchmark test patch, then :meth:`setup`,
+        :meth:`evaluate`, and :meth:`cleanup`. Patches intentionally precede
+        setup because dependency installation can rewrite tracked manifests
+        and lockfiles, which would make otherwise valid diffs fail to apply.
+        :meth:`cleanup` runs even if an earlier stage raises, so a failed run
+        never leaves behind a container/image that has to be removed manually
+        before retrying.
         """
         try:
             log.info('Provisioning...')
             self.provision()
-            log.info('Setting up...')
-            self.setup()
             if self.patch_type != PatchType.BEFORE_PATCH:
                 log.info('Applying patch...')
                 self.apply_patch()
             else:
                 log.info('No patch to apply')
             if self.apply_test_patch_enabled:
-                if self.patch_type in MODEL_PATCH_TYPES:
+                if (
+                    self.patch_type in MODEL_PATCH_TYPES
+                    or self.patch_type == PatchType.BEFORE_PATCH
+                ):
                     log.info('Applying test patch...')
                     self.apply_test_patch()
                 else:
-                    # gold already carries the maintainer's tests in the
-                    # same diff, and before_patch must not have them at
-                    # all: injecting them into the baseline would make
-                    # the patch's new tests look pre-existing and break
-                    # the FAIL_TO_PASS split for the whole corpus.
-                    log.info(
-                        f'Not applying test patch for {self.patch_type}'
-                    )
+                    # Gold already carries the maintainer's tests in the
+                    # same diff. The baseline needs the separate test patch
+                    # so new regression tests can form FAIL_TO_PASS.
+                    log.info(f'Not applying test patch for {self.patch_type}')
+            log.info('Setting up...')
+            self.setup()
             log.info('Evaluating...')
             results = self.evaluate()
         except Exception:

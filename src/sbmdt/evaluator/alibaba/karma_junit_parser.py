@@ -44,11 +44,15 @@ def results_xml_to_test_results(
     root = ET.fromstring(xml_string)
 
     results: list[TestResult] = []
-    for tc in root.findall('testcase'):
-        test_name = tc.get('name')
-        if test_name is None:
+    for tc in root.findall('.//testcase'):
+        name = tc.get('name')
+        classname = tc.get('classname', '')
+        if name is None:
             log.warning('no test name')
             continue
+        test_name = (
+            f'{classname} {name}' if classname and classname != name else name
+        )
         results.append(
             TestResult(
                 instance_id=instance_id,
@@ -56,7 +60,9 @@ def results_xml_to_test_results(
                 agent_name=agent_name,
                 timestamp=timestamp,
                 test_name=test_name,
-                passed=(tc.find('failure') is None),
+                passed=(
+                    tc.find('failure') is None and tc.find('error') is None
+                ),
             )
         )
 
