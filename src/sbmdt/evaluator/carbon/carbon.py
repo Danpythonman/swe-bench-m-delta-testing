@@ -15,7 +15,11 @@ from sbmdt.evaluator.base import Evaluator, TestResult
 from sbmdt.evaluator.grommet.jest_junit_parser import (
     results_xml_to_test_results,
 )
-from sbmdt.utils import read_from_container
+from sbmdt.utils import (
+    apply_change_literal,
+    read_from_container,
+    write_to_container,
+)
 
 __all__ = [
     'CarbonEvaluator',
@@ -65,6 +69,49 @@ class CarbonEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
+        if self.instance_id == 'carbon-design-system__carbon-5156':
+            # This legacy suite uses @ibma/aat 2.0.6. Its configured IBM
+            # archive endpoint now returns HTML, which crashes JSON parsing
+            # after Jest has run but before jest-junit flushes. The package
+            # ships the same awe-node rule engine in node_modules; use AAT's
+            # documented customRuleServer/rulePack path and serve that pinned
+            # engine locally instead of disabling accessibility assertions.
+            apply_change_literal(
+                container=self.container,
+                file='/testbed/aat/aat.js',
+                find='module.exports = {',
+                replace=(
+                    'module.exports = {\n'
+                    '  customRuleServer: true,\n'
+                    "  rulePack: 'http://127.0.0.1:18123/',"
+                ),
+                assertion='customRuleServer: true',
+            )
+            write_to_container(
+                self.container,
+                '/testbed/aat.js',
+                ("module.exports = require('./aat/aat.js');\n"),
+            )
+            write_to_container(
+                self.container,
+                '/tmp/sbmdt-aat-server.js',
+                (
+                    "const http = require('http');\n"
+                    "const fs = require('fs');\n"
+                    'const engine = require.resolve(\n'
+                    "  '@ibma/aat/lib/engine/awe-node.js'\n"
+                    ');\n'
+                    'http.createServer((req, res) => {\n'
+                    "  if (req.url !== '/awe-node.js') {\n"
+                    '    res.statusCode = 404; res.end(); return;\n'
+                    '  }\n'
+                    "  res.setHeader('Content-Type', "
+                    "'application/javascript');\n"
+                    '  fs.createReadStream(engine).pipe(res);\n'
+                    "}).listen(18123, '127.0.0.1');\n"
+                ),
+            )
+
     @override
     def evaluate(self) -> list[TestResult]:
         """Run ``npm test`` and retrieve the JUnit XML results.
@@ -84,6 +131,15 @@ class CarbonEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
+        test_command = 'npm test'
+        if self.instance_id == 'carbon-design-system__carbon-5156':
+            test_command = (
+                'node /tmp/sbmdt-aat-server.js '
+                '>/tmp/sbmdt-aat-server.log 2>&1 & '
+                'aat_pid=$!; trap \'kill "$aat_pid" 2>/dev/null || true\' '
+                'EXIT; npm test'
+            )
+
         # carbon-9136 and carbon-8912 both failed npm test with
         # "/testbed/node_modules/.bin/cross-env: Permission denied" even
         # after `chmod -R +x node_modules/.bin` (exit 0): .bin entries are
@@ -101,7 +157,7 @@ class CarbonEvaluator(Evaluator):
                 '[ -n "$t" ] && chmod a+x "$t" 2>/dev/null || true\'; '
                 'find node_modules -path "*/cross-env*/bin/*" '
                 '-type f -exec chmod a+x {} + 2>/dev/null || true; '
-                'npm test',
+                + test_command,
             ],
             environment={
                 'JEST_JUNIT_OUTPUT_DIR': RESULTS_DIR,
@@ -141,9 +197,7 @@ class CarbonEvaluator(Evaluator):
             stream=False,
         )
         assert isinstance(results_find, bytes)
-        written = [
-            p for p in results_find.decode().splitlines() if p.strip()
-        ]
+        written = [p for p in results_find.decode().splitlines() if p.strip()]
         if default_results_file in written:
             results_file = default_results_file
         elif written:
