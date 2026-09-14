@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import re
+import time
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from enum import StrEnum
@@ -22,7 +23,7 @@ from docker.models.containers import Container
 from docker.models.images import Image
 
 from sbmdt.env import DOCKERFILES_BASE
-from sbmdt.patches import test_patch_for
+from sbmdt.patches import drop_unappliable_binary, test_patch_for
 from sbmdt.pred import Pred
 from sbmdt.utils import write_to_container
 
@@ -64,6 +65,7 @@ class PatchType(StrEnum):
     WITH_IMAGE = 'with_image'
     WITHOUT_IMAGE = 'without_image'
     GOLD = 'gold'
+
 
 MODEL_PATCH_TYPES: Final[frozenset[str]] = frozenset(
     {PatchType.WITH_IMAGE, PatchType.WITHOUT_IMAGE}
@@ -277,6 +279,58 @@ class TestResultsFilename:
         )
 
 
+# Docker Hub throttles anonymous (unauthenticated) image pulls per source
+# IP over a rolling window. Every EC2 worker in a batch shares the same
+# NAT gateway, so pulling the base image from many workers at once can
+# exhaust that shared quota well before any one worker is individually
+# abusive -- this showed up as unrelated instances across several
+# different repositories all failing within the same few minutes, which
+# first looked like environment or resource contention until the actual
+# docker.errors.BuildError text turned out to name the real cause. The
+# quota resets on a sliding window, so a short wait and retry recovers
+# once the burst that exhausted it has passed, without needing Docker Hub
+# credentials this project does not have.
+_IMAGE_BUILD_RETRIES: Final[int] = 4
+_IMAGE_BUILD_RETRY_DELAY_SECONDS: Final[float] = 45.0
+
+
+def _build_image_with_retry(
+    client: docker.DockerClient, **build_kwargs: Any
+) -> tuple[Image, Any]:
+    """Build a Docker image, retrying on a Docker Hub rate limit.
+
+    Every other :class:`docker.errors.BuildError` (a real Dockerfile
+    problem, a missing file, etc.) is not retried and raises immediately,
+    since retrying it would only waste the same amount of time again for
+    the same guaranteed failure.
+
+    Args:
+        client: Docker client to build with.
+        **build_kwargs: Forwarded to :meth:`docker.models.images.build`.
+
+    Returns:
+        Whatever :meth:`docker.models.images.build` returns.
+
+    Raises:
+        docker.errors.BuildError: If every retry is also rate-limited, or
+            immediately for any other build failure.
+    """
+    for attempt in range(1, _IMAGE_BUILD_RETRIES + 1):
+        try:
+            return client.images.build(**build_kwargs)
+        except docker.errors.BuildError as e:
+            rate_limited = 'toomanyrequests' in str(e)
+            if not rate_limited or attempt == _IMAGE_BUILD_RETRIES:
+                raise
+            log.info(
+                f'Docker Hub rate limit hit on image build (attempt '
+                f'{attempt}/{_IMAGE_BUILD_RETRIES}), retrying in '
+                f'{_IMAGE_BUILD_RETRY_DELAY_SECONDS}s...'
+            )
+            time.sleep(_IMAGE_BUILD_RETRY_DELAY_SECONDS)
+    raise Exception('image build retries exceeded')
+
+
 class Evaluator(ABC):
     """Abstract base for Docker-based benchmark evaluators.
 
@@ -362,7 +416,8 @@ class Evaluator(ABC):
         resource_name = f'sbmdt-{self.instance_id}'.lower()
         # Note that rm=True remove intermediate containers after build
         log.info('Building image...')
-        self.image, _ = client.images.build(
+        self.image, _ = _build_image_with_retry(
+            client,
             path=str(self.dockerfile_path.parent.resolve()),
             tag=f'{resource_name}:latest',
             labels={LABEL_KEY: LABEL_VALUE},
@@ -405,23 +460,45 @@ class Evaluator(ABC):
             raise Exception('no container')
         assert self.pred is not None
 
-        write_to_container(self.container, PATCH_FILE, self.pred.model_patch)
+        # A unified diff must terminate its last line. JSON predictions can
+        # omit that transport newline, which git reports as a corrupt patch.
+        # Preserve every patch line, including explicit no-newline markers.
+        patch = self.pred.model_patch
+        if patch and not patch.endswith('\n'):
+            patch += '\n'
+        patch, dropped = drop_unappliable_binary(patch)
+        if dropped:
+            log.info(
+                f'{self.instance_id}: dropped {len(dropped)} binary '
+                f'section(s) without embedded data: {dropped}'
+            )
+        write_to_container(self.container, PATCH_FILE, patch)
 
-        exit_code, output = self.container.exec_run(
+        outputs = []
+        commands = (
             f'git apply {PATCH_FILE}',
-            workdir='/testbed',
-            stream=False,
+            f'git apply --recount {PATCH_FILE}',
+            f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
         )
-        assert isinstance(output, bytes)
-
-        log.info(exit_code)
-        log.info(output.decode())
+        for index, command in enumerate(commands):
+            exit_code, output = self.container.exec_run(
+                command,
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            outputs.append(output.decode())
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code == 0:
+                break
+            if index < len(commands) - 1:
+                log.info('Patch apply failed; trying the next safe fallback')
 
         if exit_code != 0:
             log.error('Failed to apply patch')
             raise Exception(
-                f'Failed to apply patch for {self.instance_id}: '
-                f'{output.decode()}'
+                f'Failed to apply patch for {self.instance_id}: {outputs[-1]}'
             )
 
     def apply_test_patch(self) -> None:
@@ -463,41 +540,92 @@ class Evaluator(ABC):
         # Discard any model edits to the files the test patch touches, so
         # the patch applies against the state it was generated from. Paths
         # come from the post-image (b/) side of each diff header.
+        #
+        # Restore each path that exists in HEAD individually. A single
+        # `git checkout -- a b c` where b/c are newly-added test files
+        # returns non-zero; on some git builds that mixed failure mode has
+        # been observed not to reliably restore the tracked paths that
+        # *do* exist (openlayers-14066: model edited GeoTIFF.test.js, the
+        # bundled checkout reported only missing rendering fixtures, then
+        # the test patch failed against the still-dirty test file).
         paths = re.findall(r'^diff --git a/\S+ b/(\S+)', test_patch, re.M)
-        if paths:
-            quoted = ' '.join(f"'{p}'" for p in paths)
+        for path in paths:
             exit_code, output = self.container.exec_run(
-                f'git checkout -- {quoted}',
+                [
+                    'bash',
+                    '-c',
+                    'git cat-file -e "HEAD:$1" 2>/dev/null '
+                    '&& git checkout HEAD -- "$1"',
+                    'git-restore-test-path',
+                    path,
+                ],
                 workdir='/testbed',
                 stream=False,
             )
-            # Newly added test files are untracked, so checkout fails for
-            # them. That is expected and harmless: the patch creates them.
-            if exit_code != 0:
-                assert isinstance(output, bytes)
+            assert isinstance(output, bytes)
+            # Newly added test files are absent from HEAD, so cat-file
+            # fails and we skip them; the patch creates them.
+            if exit_code != 0 and output.strip():
                 log.info(
-                    'git checkout of test paths returned '
+                    f'git checkout of test path {path!r} returned '
                     f'{exit_code} (expected for newly added files): '
                     f'{output.decode()}'
                 )
 
+            # If the model (or a prior partial apply) left an untracked
+            # copy of a path the test patch wants to *add*, git apply
+            # fails with "already exists in working directory"
+            # (bpmn-js-1382, carbon-8720). Remove only paths that are
+            # not in HEAD so we do not clobber restored tracked files.
+            exit_code, output = self.container.exec_run(
+                [
+                    'bash',
+                    '-c',
+                    'if ! git cat-file -e "HEAD:$1" 2>/dev/null '
+                    '&& [ -e "$1" ]; then rm -rf -- "$1"; fi',
+                    'git-clear-untracked-test-path',
+                    path,
+                ],
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            if exit_code != 0 and output.strip():
+                log.info(
+                    f'clearing untracked test path {path!r} returned '
+                    f'{exit_code}: {output.decode()}'
+                )
+
         write_to_container(self.container, TEST_PATCH_FILE, test_patch)
 
-        exit_code, output = self.container.exec_run(
+        outputs = []
+        commands = (
             f'git apply {TEST_PATCH_FILE}',
-            workdir='/testbed',
-            stream=False,
+            f'git apply --recount {TEST_PATCH_FILE}',
+            f'git apply --3way --whitespace=nowarn {TEST_PATCH_FILE}',
         )
-        assert isinstance(output, bytes)
-
-        log.info(exit_code)
-        log.info(output.decode())
+        for index, command in enumerate(commands):
+            exit_code, output = self.container.exec_run(
+                command,
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            outputs.append(output.decode())
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code == 0:
+                break
+            if index < len(commands) - 1:
+                log.info(
+                    'Test-patch apply failed; trying the next safe fallback'
+                )
 
         if exit_code != 0:
             log.error('Failed to apply test patch')
             raise Exception(
                 f'Failed to apply test patch for {self.instance_id}: '
-                f'{output.decode()}'
+                f'{outputs[-1]}'
             )
 
     @abstractmethod
@@ -576,36 +704,37 @@ class Evaluator(ABC):
     def run(self) -> list[TestResult]:
         """Run the full evaluation lifecycle.
 
-        Stages: :meth:`provision` (build image, start container), then
-        :meth:`setup`, then :meth:`apply_patch` (only when
-        ``self.patch_type`` is not :attr:`PatchType.BEFORE_PATCH`), then
-        :meth:`evaluate`, then :meth:`cleanup`. :meth:`cleanup` runs even
-        if an earlier stage raises, so a failed run never leaves behind a
-        container/image that has to be removed manually before retrying.
+        Stages: :meth:`provision` (build image, start container), then apply
+        the requested patch and benchmark test patch, then :meth:`setup`,
+        :meth:`evaluate`, and :meth:`cleanup`. Patches intentionally precede
+        setup because dependency installation can rewrite tracked manifests
+        and lockfiles, which would make otherwise valid diffs fail to apply.
+        :meth:`cleanup` runs even if an earlier stage raises, so a failed run
+        never leaves behind a container/image that has to be removed manually
+        before retrying.
         """
         try:
             log.info('Provisioning...')
             self.provision()
-            log.info('Setting up...')
-            self.setup()
             if self.patch_type != PatchType.BEFORE_PATCH:
                 log.info('Applying patch...')
                 self.apply_patch()
             else:
                 log.info('No patch to apply')
             if self.apply_test_patch_enabled:
-                if self.patch_type in MODEL_PATCH_TYPES:
+                if (
+                    self.patch_type in MODEL_PATCH_TYPES
+                    or self.patch_type == PatchType.BEFORE_PATCH
+                ):
                     log.info('Applying test patch...')
                     self.apply_test_patch()
                 else:
-                    # gold already carries the maintainer's tests in the
-                    # same diff, and before_patch must not have them at
-                    # all: injecting them into the baseline would make
-                    # the patch's new tests look pre-existing and break
-                    # the FAIL_TO_PASS split for the whole corpus.
-                    log.info(
-                        f'Not applying test patch for {self.patch_type}'
-                    )
+                    # Gold already carries the maintainer's tests in the
+                    # same diff. The baseline needs the separate test patch
+                    # so new regression tests can form FAIL_TO_PASS.
+                    log.info(f'Not applying test patch for {self.patch_type}')
+            log.info('Setting up...')
+            self.setup()
             log.info('Evaluating...')
             results = self.evaluate()
         except Exception:

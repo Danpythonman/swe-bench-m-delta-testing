@@ -67,10 +67,14 @@ def results_xml_to_test_results(
 
     results: list[TestResult] = []
     for tc in root.findall('.//testcase'):
-        test_name = tc.get('name')
-        if test_name is None:
+        name = tc.get('name')
+        classname = tc.get('classname', '')
+        if name is None:
             log.warning('no test name')
             continue
+        test_name = (
+            f'{classname} {name}' if classname and classname != name else name
+        )
         passed = tc.find('failure') is None and tc.find('error') is None
         results.append(
             TestResult(

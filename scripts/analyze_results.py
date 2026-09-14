@@ -230,6 +230,14 @@ def reference_split(
     subset = frame[
         frame[PATCH].isin([pre, post]) & frame[INSTANCE].isin(keep)
     ].copy()
+    # A repaired reference run must replace, not merge with, an older run.
+    # Mixing timestamps makes deterministic before/gold changes appear flaky
+    # and can leave a stale zero-length FAIL_TO_PASS split after a rerun.
+    if {'agent_name', 'timestamp'} <= set(subset.columns):
+        latest = subset.groupby(
+            [INSTANCE, PATCH, 'agent_name'], observed=True
+        )['timestamp'].transform('max')
+        subset = subset[subset['timestamp'] == latest].copy()
     split = classify_tests(subset, pre_label=pre, post_label=post)
 
     categories = {
@@ -294,7 +302,9 @@ def reference_table(tests: pd.DataFrame) -> pd.DataFrame:
 
 
 def model_verdicts(
-    frame: pd.DataFrame, variant: str
+    frame: pd.DataFrame,
+    variant: str,
+    agent: str | None = None,
 ) -> dict[Any, bool | None]:
     """Collapse a model patch's runs to one verdict per test.
 
@@ -310,16 +320,44 @@ def model_verdicts(
         (instance_id, test_name) -> True (passed), False (failed), or
         None (flaky).
     """
-    subset = frame[frame[PATCH] == variant]
-    agg = subset.groupby([INSTANCE, TEST])[PASSED].agg(['min', 'max'])
-    return {
-        key: (bool(row['min']) if row['min'] == row['max'] else None)
-        for key, row in agg.iterrows()
-    }
+    subset = frame[frame[PATCH] == variant].copy()
+    if agent is not None:
+        subset = subset[subset['agent_name'] == agent].copy()
+        if not subset.empty:
+            latest = subset.groupby(INSTANCE)['timestamp'].transform('max')
+            subset = subset[subset['timestamp'] == latest]
+    statuses = _model_statuses(subset)
+    values = statuses['status'].map(
+        {'passed': True, 'failed': False, 'flaky': None}
+    )
+    return dict(
+        zip(
+            zip(statuses[INSTANCE], statuses[TEST], strict=True),
+            values,
+            strict=True,
+        )
+    )
+
+
+def _model_statuses(subset: pd.DataFrame) -> pd.DataFrame:
+    """Vectorized per-test model status used by the report scorer."""
+    agg = (
+        subset.groupby([INSTANCE, TEST], observed=True)[PASSED]
+        .agg(['min', 'max'])
+        .reset_index()
+    )
+    same = agg['min'] == agg['max']
+    agg['status'] = 'flaky'
+    agg.loc[same & agg['min'].astype(bool), 'status'] = 'passed'
+    agg.loc[same & ~agg['min'].astype(bool), 'status'] = 'failed'
+    return agg[[INSTANCE, TEST, 'status']]
 
 
 def score_variant(
-    frame: pd.DataFrame, tests: pd.DataFrame, variant: str
+    frame: pd.DataFrame,
+    tests: pd.DataFrame,
+    variant: str,
+    agent: str | None = None,
 ) -> pd.DataFrame:
     """Look up each reference test in a model patch's runs.
 
@@ -336,8 +374,13 @@ def score_variant(
         instances, each tagged ``passed``, ``failed``, ``not_run`` or
         ``flaky`` under the model patch.
     """
-    verdicts = model_verdicts(frame, variant)
-    ran = set(frame.loc[frame[PATCH] == variant, INSTANCE].unique())
+    model_runs = frame[frame[PATCH] == variant].copy()
+    if agent is not None:
+        model_runs = model_runs[model_runs['agent_name'] == agent].copy()
+        if not model_runs.empty:
+            latest = model_runs.groupby(INSTANCE)['timestamp'].transform('max')
+            model_runs = model_runs[model_runs['timestamp'] == latest]
+    ran = set(model_runs[INSTANCE].unique())
     scope = ran & set(tests[INSTANCE])
 
     scored = tests[
@@ -345,19 +388,9 @@ def score_variant(
         & tests['category'].isin(['FAIL_TO_PASS', 'PASS_TO_PASS'])
     ].copy()
 
-    def status(instance: str, test: str) -> str:
-        key = (instance, test)
-        if key not in verdicts:
-            return 'not_run'
-        verdict = verdicts[key]
-        if verdict is None:
-            return 'flaky'
-        return 'passed' if verdict else 'failed'
-
-    scored['status'] = [
-        status(i, t)
-        for i, t in zip(scored[INSTANCE], scored[TEST], strict=True)
-    ]
+    statuses = _model_statuses(model_runs)
+    scored = scored.merge(statuses, on=[INSTANCE, TEST], how='left')
+    scored['status'] = scored['status'].fillna('not_run')
     scored['variant'] = variant
     return scored
 
@@ -535,9 +568,7 @@ def main() -> None:
     setup_logging(level=logging.INFO)
 
     frame = load_results(args.data)
-    log.info(
-        f'{len(frame):,} rows over {frame[INSTANCE].nunique()} instances'
-    )
+    log.info(f'{len(frame):,} rows over {frame[INSTANCE].nunique()} instances')
 
     tests, _ = reference_split(frame, PRE, POST)
     args.out.mkdir(parents=True, exist_ok=True)

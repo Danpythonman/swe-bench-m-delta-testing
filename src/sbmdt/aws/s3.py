@@ -119,6 +119,10 @@ class S3PredFilename:
         Raises:
             ValueError: If ``filename`` does not match the expected format.
         """
+        # Callers may pass an S3 key (``prefix/name.pred``) rather than only
+        # the basename.  Decode the filename portion so prefixes never become
+        # part of the benchmark instance ID.
+        filename = filename.rsplit('/', 1)[-1]
         m = _FILENAME_RE.match(filename)
         if not m:
             raise ValueError(f'Cannot parse filename: {filename!r}')

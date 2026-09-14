@@ -15,11 +15,14 @@ preserved within each half, so both remain applicable with ``git apply``.
 
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
 from typing import Final
 
 from sbmdt.env import DOCKERFILES_BASE
+
+log = logging.getLogger(__name__)
 
 __all__ = [
     'GOLD_PATCH_DIFF_FILENAME',
@@ -28,6 +31,7 @@ __all__ = [
     'CODE_PATCH_PRED_FILENAME',
     'is_test_path',
     'split_diff',
+    'drop_unappliable_binary',
     'test_patch_for',
     'write_diff',
 ]
@@ -51,6 +55,14 @@ TEST_PATH: Final[re.Pattern[str]] = re.compile(
     """,
     re.IGNORECASE | re.VERBOSE,
 )
+
+# A binary change that the diff only names instead of carrying.
+BINARY_STUB: Final[re.Pattern[str]] = re.compile(
+    r'^Binary files .* differ$', re.M
+)
+
+# The marker that a binary change does carry its payload.
+GIT_BINARY_PAYLOAD: Final[str] = 'GIT binary patch'
 
 # Start of a per-file section in a unified diff.
 DIFF_HEADER: Final[re.Pattern[str]] = re.compile(
@@ -100,6 +112,43 @@ def split_diff(diff: str) -> tuple[str, str]:
         (test_parts if is_test_path(path) else code_parts).append(section)
 
     return ''.join(code_parts), ''.join(test_parts)
+
+
+def drop_unappliable_binary(diff: str) -> tuple[str, list[str]]:
+    """Drop sections that declare a binary change without carrying it.
+
+    ``git diff`` embeds binary content only when asked with ``--binary``;
+    without it a changed binary file becomes a bare ``Binary files a/x
+    and b/x differ`` line. ``git apply`` refuses such a section ("cannot
+    apply binary patch ... without full index line"), and no retry can
+    succeed, because the bytes are not in the patch to begin with. One
+    such section fails the entire patch and so the whole instance, which
+    is a worse outcome than proceeding without a file the diff never
+    contained.
+
+    Args:
+        diff: A unified diff.
+
+    Returns:
+        A ``(filtered_diff, dropped_paths)`` pair.
+    """
+    starts = [m.start() for m in DIFF_HEADER.finditer(diff)]
+    if not starts:
+        return diff, []
+
+    kept: list[str] = []
+    dropped: list[str] = []
+    bounds = starts + [len(diff)]
+    for begin, end in zip(bounds[:-1], bounds[1:], strict=True):
+        section = diff[begin:end]
+        header = DIFF_HEADER.match(section)
+        assert header is not None
+        if BINARY_STUB.search(section) and GIT_BINARY_PAYLOAD not in section:
+            dropped.append(header.group(2))
+        else:
+            kept.append(section)
+
+    return ''.join(kept), dropped
 
 
 def read_diff(path: Path) -> str:
@@ -166,13 +215,20 @@ def test_patch_for(instance_id: str, base: Path = DOCKERFILES_BASE) -> str:
 
     written = instance_dir / TEST_PATCH_DIFF_FILENAME
     if written.is_file():
-        return read_diff(written)
+        test_diff = read_diff(written)
+    else:
+        gold = instance_dir / GOLD_PATCH_DIFF_FILENAME
+        if not gold.is_file():
+            raise FileNotFoundError(
+                f'{instance_id} has neither {TEST_PATCH_DIFF_FILENAME} nor '
+                f'{GOLD_PATCH_DIFF_FILENAME} in {instance_dir}'
+            )
+        _, test_diff = split_diff(read_diff(gold))
 
-    gold = instance_dir / GOLD_PATCH_DIFF_FILENAME
-    if not gold.is_file():
-        raise FileNotFoundError(
-            f'{instance_id} has neither {TEST_PATCH_DIFF_FILENAME} nor '
-            f'{GOLD_PATCH_DIFF_FILENAME} in {instance_dir}'
+    test_diff, dropped = drop_unappliable_binary(test_diff)
+    if dropped:
+        log.info(
+            f'{instance_id}: dropped {len(dropped)} binary section(s) the '
+            f'patch names but does not carry: {dropped}'
         )
-    _, test_diff = split_diff(read_diff(gold))
     return test_diff
