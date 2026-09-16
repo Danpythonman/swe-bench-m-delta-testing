@@ -137,7 +137,7 @@ class OpenlayersEvaluator(Evaluator):
         )
 
         exit_code, output = self.container.exec_run(
-            'npm install karma-junit-reporter --save-dev',
+            'npm install karma-junit-reporter regenerator-runtime --save-dev',
             workdir='/testbed',
             stream=False,
         )
@@ -199,13 +199,35 @@ class OpenlayersEvaluator(Evaluator):
         )
         assert isinstance(karma_raw, bytes)
         karma_text = karma_raw.decode()
-        init_require = f'require({source_map_init!r});\n'
+        init_require = (
+            "require('regenerator-runtime/runtime');\n"
+            f'require({source_map_init!r});\n'
+        )
         if init_require not in karma_text:
             write_to_container(
                 self.container,
                 self._karma_config_file,
                 init_require + karma_text,
             )
+
+        # Requiring the runtime above fixes the Node-side Karma process, but
+        # Babel-generated async helpers execute in Chrome. Include the same
+        # module as the first browser file so it defines regeneratorRuntime
+        # before any independently bundled spec executes (openlayers-13212).
+        apply_change_regex(
+            container=self.container,
+            file=self._karma_config_file,
+            find=r'files\s*:\s*\[',
+            replace=(
+                'files: [\n'
+                '      {\n'
+                '        pattern: require.resolve('
+                "'regenerator-runtime/runtime.js'),\n"
+                '        watched: false,\n'
+                '      },'
+            ),
+            assertion="require.resolve('regenerator-runtime/runtime.js')",
+        )
 
         # Force webpack off source maps. Nested source-map@0.7+ still wins
         # over the 0.6.1 pin / initialize shim (openlayers-11545), and karma

@@ -1,4 +1,5 @@
 """Build the verified per-prediction benchmark status PDF."""
+# ruff: noqa: I001
 
 from __future__ import annotations
 
@@ -28,12 +29,17 @@ from reportlab.lib.units import mm
 from reportlab.platypus import (
     BaseDocTemplate,
     Frame,
+    Image as ReportLabImage,
     PageBreak,
     PageTemplate,
     Paragraph,
     Spacer,
     Table,
     TableStyle,
+)
+
+WHITEBOARD_IMAGE = Path(
+    r'C:\Users\parsa\AppData\Local\Temp\codex-clipboard-b154938b-848d-45af-8444-b2613e8febb1.png'
 )
 
 
@@ -229,25 +235,60 @@ def build_rows(root: Path, frame: pd.DataFrame, analysis):
             detail = statuses.get((instance, variant), {})
             reason = detail.get('reason')
             patch_state = detail.get('patch', 'not checked')
+            harness_status = 'failed' if reason else 'not run'
             if not reason:
                 note = old_reasons.get((instance, variant))
                 reason = failure_reason(note or '')
                 if 'failed to apply patch' in (note or '').lower():
                     patch_state = 'failed'
+                    harness_status = 'failed'
         else:
             tests = len(run)
             passed = int(run['passed'].sum())
             failed = tests - passed
             patch_state = 'applied'
-            reason = (
-                f'Patch applied; all {tests:,} harness tests passed.'
-                if failed == 0
-                else (f'Patch applied; {failed:,} of {tests:,} tests failed.')
-            )
-        if verdict and verdict['f2p'] == 0:
-            reason += (
-                ' No FAIL_TO_PASS reference tests; resolution is undefined.'
-            )
+            harness_status = 'completed'
+            reason = f'Harness completed: {failed:,} raw test failures.'
+        scoring_status = (
+            'scored' if verdict and reference_complete else 'not scored'
+        )
+        f2p_missing = verdict['f2p_not_run'] if verdict else None
+        p2p_missing = (
+            verdict['p2p'] - verdict['p2p_passed'] - verdict['p2p_failed']
+            if verdict
+            else None
+        )
+        if verdict:
+            if verdict['f2p'] == 0:
+                reason = 'F2P total is 0; resolution is undefined.'
+            else:
+                outcomes = []
+                if verdict['f2p_not_run']:
+                    outcomes.append(
+                        f'{verdict["f2p_not_run"]:,} required F2P tests were '
+                        'not observed'
+                    )
+                elif verdict['f2p_passed'] < verdict['f2p']:
+                    outcomes.append(
+                        f'{verdict["f2p"] - verdict["f2p_passed"]:,} required '
+                        'F2P tests failed'
+                    )
+                if verdict['p2p_failed']:
+                    outcomes.append(
+                        f'{verdict["p2p_failed"]:,} P2P tests regressed'
+                    )
+                if p2p_missing:
+                    outcomes.append(
+                        f'{p2p_missing:,} P2P tests were not observed'
+                    )
+                reason = (
+                    '; '.join(outcomes) + '.'
+                    if outcomes
+                    else (
+                        'All required F2P tests passed; no P2P tests '
+                        'regressed or were missing.'
+                    )
+                )
         if not reference_complete:
             missing_details = []
             for side in ('before_patch', 'gold'):
@@ -261,31 +302,97 @@ def build_rows(root: Path, frame: pd.DataFrame, analysis):
                 + '; '.join(missing_details)
                 + ').'
             )
+            scoring_status = 'not scored'
+        review = ''
+        if (
+            verdict
+            and tests is not None
+            and tests < verdict['f2p'] + verdict['p2p']
+        ):
+            review = 'review'
+            reason += (
+                f' Review: harness reported {tests:,} tests, below the '
+                f'{verdict["f2p"] + verdict["p2p"]:,}-test reference '
+                'scoring set.'
+            )
         rows.append(
             {
                 'repository': instance.split('__', 1)[0],
                 'instance': instance,
                 'set': variant,
                 'patch': patch_state,
+                'harness_status': harness_status,
+                'scoring_status': scoring_status,
                 'tests': tests,
                 'passed': passed,
                 'failed': failed,
                 'f2p': verdict['f2p'] if verdict else None,
                 'f2p_passed': verdict['f2p_passed'] if verdict else None,
+                'f2p_missing': f2p_missing,
                 'p2p': verdict['p2p'] if verdict else None,
                 'p2p_passed': verdict['p2p_passed'] if verdict else None,
                 'p2p_failed': verdict['p2p_failed'] if verdict else None,
+                'p2p_missing': p2p_missing,
                 'resolved': (
                     'yes'
                     if verdict and verdict['f2p'] > 0 and verdict['resolved']
                     else 'no'
                     if verdict and verdict['f2p'] > 0
+                    else 'undefined'
+                    if verdict
                     else '-'
                 ),
+                'review': review,
                 'reason': reason,
             }
         )
     return rows, unmatched
+
+
+def validate_rows(rows):
+    """Attach non-destructive audit flags for arithmetic and pair checks."""
+
+    issues = []
+    for row in rows:
+        if (
+            row['tests'] is not None
+            and row['tests'] != row['passed'] + row['failed']
+        ):
+            issues.append(
+                f'{row["instance"]} {row["set"]}: Tests != raw pass + raw fail'
+            )
+        if row['f2p'] is not None and row['f2p_passed'] > row['f2p']:
+            issues.append(
+                f'{row["instance"]} {row["set"]}: F2P passed > F2P total'
+            )
+        if row['p2p'] is not None:
+            total = row['p2p_passed'] + row['p2p_failed'] + row['p2p_missing']
+            if total != row['p2p']:
+                issues.append(
+                    f'{row["instance"]} {row["set"]}: P2P components != '
+                    'P2P total'
+                )
+    by_instance = defaultdict(list)
+    for row in rows:
+        by_instance[row['instance']].append(row)
+    for instance, pair in by_instance.items():
+        totals = {
+            (row['f2p'], row['p2p']) for row in pair if row['f2p'] is not None
+        }
+        if len(totals) > 1:
+            message = (
+                f'{instance}: with_image/without_image reference totals differ'
+            )
+            issues.append(message)
+            for row in pair:
+                row['review'] = 'review'
+                row['reason'] += f' Review: {message}.'
+    for issue in issues:
+        for row in rows:
+            if row['instance'] in issue:
+                row['review'] = 'review'
+                row['reason'] += f' Review: {issue}.'
+    return issues
 
 
 def build_pdf(rows, unmatched, destination: Path):
@@ -438,21 +545,239 @@ def build_pdf(rows, unmatched, destination: Path):
         )
     )
     story += [card_table, Spacer(1, 8 * mm)]
-    story.append(Paragraph('How to read the table', section))
+    pair_outcomes = defaultdict(dict)
+    for row in rows:
+        pair_outcomes[row['instance']][row['set']] = row['resolved']
+    impact_counts = defaultdict(int)
+    impact_examples = defaultdict(list)
+    for instance, pair in pair_outcomes.items():
+        with_result = pair.get('with_image')
+        without_result = pair.get('without_image')
+        if with_result == 'yes' and without_result == 'no':
+            category = 'Image helped (no -> yes)'
+        elif with_result == 'no' and without_result == 'yes':
+            category = 'Image hurt (yes -> no)'
+        elif with_result == 'yes' and without_result == 'yes':
+            category = 'Both resolved yes'
+        elif with_result == 'no' and without_result == 'no':
+            category = 'Both resolved no'
+        elif with_result in {'-', 'undefined'} and without_result in {
+            '-',
+            'undefined',
+        }:
+            category = 'Both unscored/undefined'
+        elif with_result in {'-', 'undefined'} and without_result == 'no':
+            category = 'With-image unscored, without-image no'
+        else:
+            category = 'Other/mixed status'
+        impact_counts[category] += 1
+        if len(impact_examples[category]) < 4:
+            impact_examples[category].append(instance)
+    story.append(Paragraph('Image-impact feedback', section))
     story.append(
         Paragraph(
-            '<b>Tests / passed / failed</b> describe the model-patch '
-            'suite run. <b>Patch</b> reports real git-apply status in the '
-            'checked-out repository; “not checked” means execution stopped '
-            'before that stage. '
-            '<b>F2P, P2P and Resolved</b> require both before_patch and gold '
-            'reference results. A dash means scoring is still undefined. '
-            '<b>Resolved = no</b> means scoring was possible and the patch '
-            'did '
-            'not satisfy every required test.',
+            'With-image and without-image are separate predictions. In the '
+            'verified pairs below, an image can help, hurt, or make no '
+            'difference. The four explicit image-hurt cases are listed so '
+            'they can be audited directly.',
             body,
         )
     )
+    impact_data = [
+        [
+            Paragraph('Pair outcome', header_cell),
+            Paragraph('Pairs', header_cell),
+            Paragraph('Examples / interpretation', header_cell),
+        ]
+    ]
+    impact_order = [
+        'Image helped (no -> yes)',
+        'Image hurt (yes -> no)',
+        'Both resolved yes',
+        'Both resolved no',
+        'Both unscored/undefined',
+        'With-image unscored, without-image no',
+        'Other/mixed status',
+    ]
+    for category in impact_order:
+        if not impact_counts[category]:
+            continue
+        examples = ', '.join(impact_examples[category])
+        impact_data.append(
+            [
+                Paragraph(category, cell),
+                Paragraph(str(impact_counts[category]), center),
+                Paragraph(examples or 'No example listed.', cell),
+            ]
+        )
+    impact_table = Table(
+        impact_data,
+        colWidths=[57 * mm, 17 * mm, 117 * mm],
+        repeatRows=1,
+        hAlign='LEFT',
+    )
+    impact_table.setStyle(
+        TableStyle(
+            [
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#223C5F')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('GRID', (0, 0), (-1, -1), 0.35, colors.HexColor('#CDD6E0')),
+                (
+                    'ROWBACKGROUNDS',
+                    (0, 1),
+                    (-1, -1),
+                    [colors.white, colors.HexColor('#F5F7FA')],
+                ),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    story.extend([impact_table, Spacer(1, 3 * mm)])
+    hurt_instances = [
+        'alibaba-fusion__next-3454',
+        'openlayers__openlayers-13669',
+        'openlayers__openlayers-15234',
+        'openlayers__openlayers-15365',
+    ]
+    story.append(
+        Paragraph(
+            '<b>Verified image-hurt cases:</b> '
+            + '; '.join(
+                f'{instance}: with_image = no, without_image = yes'
+                for instance in hurt_instances
+            )
+            + '.',
+            body,
+        )
+    )
+    no_difference = (
+        impact_counts['Both resolved yes'] + impact_counts['Both resolved no']
+    )
+    story.append(
+        Paragraph(
+            f'Across {len(pair_outcomes)} complete pairs, '
+            f'{no_difference} scored pairs had the same yes/no outcome '
+            'with and without the image. This is an outcome comparison '
+            'only; it does not imply the image caused the result.',
+            body,
+        )
+    )
+    supplied_counts = (
+        '17 helped, 4 hurt, 27 both yes, 76 both no, '
+        '32 both unscored/undefined, 1 mixed'
+    )
+    computed_counts = (
+        f'{impact_counts["Image helped (no -> yes)"]} helped, '
+        f'{impact_counts["Image hurt (yes -> no)"]} hurt, '
+        f'{impact_counts["Both resolved yes"]} both yes, '
+        f'{impact_counts["Both resolved no"]} both no, '
+        f'{impact_counts["Both unscored/undefined"]} both unscored/undefined, '
+        f'{impact_counts["With-image unscored, without-image no"]} mixed'
+    )
+    story.append(
+        Paragraph(
+            f'The supplied feedback counted {supplied_counts}. This PDF '
+            f'recomputes the categories from the current raw results as '
+            f'{computed_counts}; the difference reflects the latest '
+            'available runs and is intentionally not hidden.',
+            body,
+        )
+    )
+    story.append(Spacer(1, 5 * mm))
+    story.append(Paragraph('How to read the table', section))
+    story.append(
+        Paragraph(
+            '<b>with_image</b> and <b>without_image</b> are two independent '
+            'model patches for the same instance. They are not a pass/fail '
+            'comparison by themselves. <b>Tests / raw pass / raw fail</b> '
+            'describe the whole test suite under that one model patch. '
+            '<b>Patch</b> reports real git-apply status in the checked-out '
+            'repository; “not checked” means execution stopped before that '
+            'stage.',
+            body,
+        )
+    )
+    story.append(Spacer(1, 3 * mm))
+    scoring_key = [
+        [
+            Paragraph('Scoring group', header_cell),
+            Paragraph('Before reference', header_cell),
+            Paragraph('Gold reference', header_cell),
+            Paragraph('Model result counted as success', header_cell),
+        ],
+        [
+            Paragraph('<b>F2P</b> - bug-fix tests', cell),
+            Paragraph('Fail', center),
+            Paragraph('Pass', center),
+            Paragraph('Pass', center),
+        ],
+        [
+            Paragraph('<b>P2P</b> - regression tests', cell),
+            Paragraph('Pass', center),
+            Paragraph('Pass', center),
+            Paragraph('Pass', center),
+        ],
+    ]
+    scoring_table = Table(
+        scoring_key,
+        colWidths=[47 * mm, 37 * mm, 37 * mm, 72 * mm],
+        hAlign='LEFT',
+    )
+    scoring_table.setStyle(
+        TableStyle(
+            [
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#223C5F')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID', (0, 0), (-1, -1), 0.35, colors.HexColor('#CDD6E0')),
+                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#EAF5EA')),
+                ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#F5F7FA')),
+                ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ]
+        )
+    )
+    story.extend([scoring_table, Spacer(1, 3 * mm)])
+    story.append(
+        Paragraph(
+            '<b>F2P total</b> is the number of tests that failed before the '
+            'gold fix and passed after it. <b>F2P passed</b> is how many of '
+            'those bug-fix tests the model patch passes; <b>F2P missing</b> '
+            'is how many were not observed. <b>P2P total</b> is '
+            'the number of tests that passed both reference runs. '
+            '<b>P2P kept passing</b> is how many remained passing with the '
+            'model patch; <b>P2P regressed</b> is how many started failing; '
+            '<b>P2P missing</b> is the remainder not observed. '
+            '<b>Resolved = yes</b> requires every F2P test and every P2P '
+            'test to pass. <b>Resolved = no</b> means a required test failed '
+            'or was missing. <b>Resolved = undefined</b> means F2P total is '
+            'zero. A dash means scoring is not available; use Scoring status '
+            'to distinguish not scored from a resolution result.',
+            body,
+        )
+    )
+    if WHITEBOARD_IMAGE.exists():
+        story.extend(
+            [
+                PageBreak(),
+                Paragraph(
+                    'Whiteboard reference: paired with-image / '
+                    'without-image test outcomes',
+                    section,
+                ),
+                Spacer(1, 3 * mm),
+                ReportLabImage(
+                    str(WHITEBOARD_IMAGE), width=118 * mm, height=88 * mm
+                ),
+            ]
+        )
     story.append(PageBreak())
 
     story.append(Paragraph('With-image / without-image pair audit', section))
@@ -527,31 +852,41 @@ def build_pdf(rows, unmatched, destination: Path):
         'Instance',
         'Set',
         'Patch',
+        'Harness\nstatus',
+        'Scoring\nstatus',
         'Tests',
-        'Pass',
-        'Fail',
-        'F2P',
-        'F2P pass',
-        'P2P',
-        'P2P pass',
-        'P2P fail',
+        'Raw\npass',
+        'Raw\nfail',
+        'F2P\ntotal',
+        'F2P\npassed',
+        'F2P\nmissing',
+        'P2P\ntotal',
+        'P2P kept\npassing',
+        'P2P\nregressed',
+        'P2P\nmissing',
         'Resolved',
+        'Review',
         'Reason',
     ]
     widths = [
-        44 * mm,
-        21 * mm,
+        32 * mm,
         15 * mm,
-        12 * mm,
-        12 * mm,
-        11 * mm,
         10 * mm,
-        13 * mm,
-        12 * mm,
         14 * mm,
         14 * mm,
-        15 * mm,
-        72 * mm,
+        8 * mm,
+        8 * mm,
+        8 * mm,
+        8 * mm,
+        8 * mm,
+        8 * mm,
+        10 * mm,
+        10 * mm,
+        8 * mm,
+        8 * mm,
+        10 * mm,
+        10 * mm,
+        38 * mm,
     ]
     for index, repository in enumerate(sorted(grouped)):
         if index:
@@ -574,15 +909,20 @@ def build_pdf(rows, unmatched, destination: Path):
                     Paragraph(row['instance'], cell),
                     Paragraph(row['set'], cell),
                     Paragraph(row['patch'], center),
+                    Paragraph(row['harness_status'], center),
+                    Paragraph(row['scoring_status'], center),
                     Paragraph(value('tests'), center),
                     Paragraph(value('passed'), center),
                     Paragraph(value('failed'), center),
                     Paragraph(value('f2p'), center),
                     Paragraph(value('f2p_passed'), center),
+                    Paragraph(value('f2p_missing'), center),
                     Paragraph(value('p2p'), center),
                     Paragraph(value('p2p_passed'), center),
                     Paragraph(value('p2p_failed'), center),
+                    Paragraph(value('p2p_missing'), center),
                     Paragraph(row['resolved'], center),
+                    Paragraph(row['review'], center),
                     Paragraph(row['reason'], reason_style),
                 ]
             )
@@ -635,6 +975,10 @@ def main():
     frame['passed'] = frame['passed'].astype(bool)
     analysis = load_analysis(root)
     rows, unmatched = build_rows(root, frame, analysis)
+    issues = validate_rows(rows)
+    if issues:
+        print(f'Validation flagged {len(issues)} issue(s):')
+        print('\n'.join(issues))
     build_pdf(rows, unmatched, args.output)
     print(f'Wrote {args.output} with {len(rows)} rows')
 

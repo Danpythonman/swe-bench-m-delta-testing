@@ -36,6 +36,7 @@ key = (
 state = {}
 status_path = Path('canary_status.json')
 force_claim = False
+execution_timeout = 4200
 TRANSIENT_AWS_ERRORS = (
     ConnectTimeoutError,
     ConnectionError,
@@ -166,7 +167,10 @@ def main():
                     'sbmdt-instance-profile'
                 },
                 InstanceInitiatedShutdownBehavior='terminate',
-                UserData='#!/bin/bash\nshutdown -h +75\n',
+                UserData=(
+                    '#!/bin/bash\nshutdown -h +'
+                    f'{(execution_timeout // 60) + 15}\n'
+                ),
                 BlockDeviceMappings=[
                     {
                         'DeviceName': '/dev/xvda',
@@ -252,12 +256,15 @@ def main():
         sent = ssm.send_command(
             InstanceIds=[instance],
             DocumentName='AWS-RunShellScript',
-            Parameters={'commands': [command], 'executionTimeout': ['4200']},
+            Parameters={
+                'commands': [command],
+                'executionTimeout': [str(execution_timeout)],
+            },
         )
         command_id = sent['Command']['CommandId']
         state.update(command_id=command_id, status='running')
         save()
-        deadline = time.monotonic() + 4260
+        deadline = time.monotonic() + execution_timeout + 60
         while time.monotonic() < deadline:
             time.sleep(15)
             try:
@@ -302,8 +309,12 @@ if __name__ == '__main__':
     parser.add_argument('--key', default=key)
     parser.add_argument('--status-file', type=Path, default=status_path)
     parser.add_argument('--force-claim', action='store_true')
+    parser.add_argument(
+        '--execution-timeout', type=int, default=execution_timeout
+    )
     args = parser.parse_args()
     key = args.key
     status_path = args.status_file
     force_claim = args.force_claim
+    execution_timeout = args.execution_timeout
     main()

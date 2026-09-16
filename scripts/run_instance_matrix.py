@@ -11,7 +11,7 @@ from urllib.parse import unquote
 import boto3
 
 
-def main(instance: str, patches: list[str]) -> None:
+def main(instance: str, patches: list[str], execution_timeout: int) -> None:
     s3 = boto3.Session(profile_name='default', region_name='us-east-1').client(
         's3'
     )
@@ -38,16 +38,19 @@ def main(instance: str, patches: list[str]) -> None:
         with (root / f'{instance}-{patch}.log').open(
             'w', encoding='utf-8'
         ) as output:
+            command = [
+                sys.executable,
+                'scripts/repair_canary.py',
+                '--key',
+                key,
+                '--status-file',
+                str(status),
+                '--force-claim',
+            ]
+            if execution_timeout:
+                command.extend(['--execution-timeout', str(execution_timeout)])
             proc = subprocess.run(
-                [
-                    sys.executable,
-                    'scripts/repair_canary.py',
-                    '--key',
-                    key,
-                    '--status-file',
-                    str(status),
-                    '--force-claim',
-                ],
+                command,
                 stdout=output,
                 stderr=subprocess.STDOUT,
                 check=False,
@@ -69,5 +72,10 @@ if __name__ == '__main__':
         choices=['before_patch', 'gold', 'with_image', 'without_image'],
         default=None,
     )
+    parser.add_argument('--execution-timeout', type=int, default=0)
     args = parser.parse_args()
-    main(args.instance, args.patch or ['before_patch', 'gold'])
+    main(
+        args.instance,
+        args.patch or ['before_patch', 'gold'],
+        args.execution_timeout,
+    )

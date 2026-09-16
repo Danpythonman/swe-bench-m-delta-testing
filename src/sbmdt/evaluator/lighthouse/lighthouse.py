@@ -9,7 +9,9 @@ results.
 
 from __future__ import annotations
 
+import json
 import logging
+import re
 from typing import Final, override
 
 import docker.errors
@@ -78,13 +80,71 @@ class LighthouseEvaluator(Evaluator):
         # evaluator targets. Fail clearly rather than limping through a
         # confusing chain of npm/tsc errors on unsupported instances.
         package_json = read_from_container(self.container, PACKAGE_JSON_FILE)
-        if '"type": "module"' in package_json:
-            raise Exception(
-                f'{self.instance_id} appears to be from the post-rewrite '
-                'ESM/yarn era of Lighthouse, which this evaluator does '
-                'not support (only the older npm/bash-script-based test '
-                'setup is supported).'
+        package_data = json.loads(package_json)
+        scripts = package_data.get('scripts', {})
+        _, find_output = self.container.exec_run(
+            ['find', '/testbed', '-name', 'run-mocha.sh'],
+        )
+        assert isinstance(find_output, bytes)
+        mocha_scripts = [
+            item for item in find_output.decode().splitlines() if item.strip()
+        ]
+        direct_suites = {
+            suite: scripts.get(f'unit-{suite}')
+            for suite in ('core', 'cli', 'viewer')
+            if scripts.get(f'unit-{suite}')
+        }
+        modern_layout = (
+            '"type": "module"' in package_json
+            or not mocha_scripts
+            or not ({'install-cli', 'install-all'} & scripts.keys())
+        )
+        if modern_layout and direct_suites:
+            install = (
+                'yarn install --ignore-scripts --non-interactive '
+                '--network-timeout 300000'
+                if self.container.exec_run(
+                    ['test', '-f', '/testbed/yarn.lock']
+                )[0]
+                == 0
+                else 'npm install --ignore-scripts --legacy-peer-deps'
             )
+            exit_code, output = self.container.exec_run(
+                install,
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to install direct-test dependencies for '
+                    f'{self.instance_id}: {output.decode()}'
+                )
+            self._direct_suites = direct_suites
+            custom_runner = '/testbed/core/test/scripts/run-mocha-tests.js'
+            if self.container.exec_run(['test', '-f', custom_runner])[0] == 0:
+                apply_change_literal(
+                    container=self.container,
+                    file=custom_runner,
+                    find='const mocha = new Mocha({\n      rootHooks,',
+                    replace=(
+                        "const mocha = new Mocha({\n      reporter: 'json',"
+                        '\n      rootHooks,'
+                    ),
+                    assertion="reporter: 'json'",
+                )
+                self._custom_mocha_runner = True
+            self.container.exec_run(
+                f'mkdir -p {RESULTS_DIR}', workdir='/testbed'
+            )
+            log.info(
+                'Using direct Lighthouse unit scripts for %s: %s',
+                self.instance_id,
+                direct_suites,
+            )
+            return
 
         # 1. Install package
         exit_code, output = self.container.exec_run(
@@ -115,7 +175,7 @@ class LighthouseEvaluator(Evaluator):
         # this evaluator has never been given evidence for. Failing with
         # the scripts actually available keeps that distinction visible.
         node_snippet = (
-            "console.log(JSON.stringify("
+            'console.log(JSON.stringify('
             "require('./package.json').scripts || {}))"
         )
         exit_code, scripts_output = self.container.exec_run(
@@ -131,16 +191,32 @@ class LighthouseEvaluator(Evaluator):
             raise Exception(
                 f'{self.instance_id} has neither "install-cli" nor '
                 f'"install-all" in package.json, so this evaluator '
-                f'cannot install lighthouse-cli\'s dependencies the way '
+                f"cannot install lighthouse-cli's dependencies the way "
                 f'it does for the commits it was written against. '
                 f'Scripts available: {scripts_output.decode()!r}'
             )
 
-        exit_code, output = self.container.exec_run(
-            f'npm run {install_script}',
-            workdir='/testbed',
-            stream=False,
-        )
+        install_definition = scripts.get(install_script, '')
+        if (
+            install_script == 'install-cli'
+            and 'yarn install' in install_definition
+            and 'yarn build' in install_definition
+        ):
+            # Some legacy install-cli scripts immediately build with whatever
+            # version a floating TypeScript range resolves to today. Install
+            # without lifecycle scripts first; setup pins the checkout's
+            # declared compiler below and performs the build exactly once.
+            exit_code, output = self.container.exec_run(
+                'yarn install --ignore-scripts --non-interactive',
+                workdir='/testbed/lighthouse-cli',
+                stream=False,
+            )
+        else:
+            exit_code, output = self.container.exec_run(
+                f'npm run {install_script}',
+                workdir='/testbed',
+                stream=False,
+            )
         assert isinstance(output, bytes)
 
         log.info(exit_code)
@@ -153,15 +229,31 @@ class LighthouseEvaluator(Evaluator):
                 f'{output.decode()}'
             )
 
-        # lighthouse-cli/package.json declares loose ranges
-        # (typescript@^2.0.3, @types/node@^6.0.45); npm install resolves
-        # these to the newest matching patch release, but a later
-        # @types/node 6.x patch uses reference-directive syntax this old
-        # TypeScript can't parse. Pinning @types/node alone is enough to
-        # stop that drift. Also pinning typescript@2.0.3 breaks some
-        # older cli sources that do not typecheck under that release
-        # (lighthouse-2016 failed build-cli with TS2345), so typescript
-        # is only forced if a first build fails in the @types/node way.
+        if (
+            self.container.exec_run(
+                ['test', '-f', '/testbed/chrome-launcher/package.json']
+            )[0]
+            == 0
+        ):
+            exit_code, output = self.container.exec_run(
+                'yarn install --ignore-scripts --non-interactive',
+                workdir='/testbed/chrome-launcher',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to install chrome-launcher dependencies for '
+                    f'{self.instance_id}: {output.decode()}'
+                )
+
+        # lighthouse-cli/package.json declares loose historical ranges.
+        # Installing them today selects much newer releases within those
+        # ranges, which do not necessarily compile these old checkouts.
+        # Pin @types/node to the known baseline and TypeScript to the minimum
+        # version declared by this checkout's own manifest.
         exit_code, output = self.container.exec_run(
             'npm install @types/node@6.0.45 --save-exact',
             workdir='/testbed/lighthouse-cli',
@@ -177,6 +269,31 @@ class LighthouseEvaluator(Evaluator):
                 f'Failed to pin lighthouse-cli @types/node for '
                 f'{self.instance_id}: {output.decode()}'
             )
+
+        cli_package = json.loads(
+            read_from_container(
+                self.container, '/testbed/lighthouse-cli/package.json'
+            )
+        )
+        typescript_range = cli_package.get('devDependencies', {}).get(
+            'typescript'
+        )
+        version_match = re.search(r'\d+\.\d+\.\d+', typescript_range or '')
+        if version_match:
+            typescript_version = version_match.group()
+            exit_code, output = self.container.exec_run(
+                f'npm install typescript@{typescript_version} --save-exact',
+                workdir='/testbed/lighthouse-cli',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to pin typescript@{typescript_version} for '
+                    f'{self.instance_id}: {output.decode()}'
+                )
 
         # install-cli's prepublish hook is supposed to build the CLI
         # automatically, but fails silently due to an npm lifecycle
@@ -201,10 +318,9 @@ class LighthouseEvaluator(Evaluator):
 
         if exit_code != 0:
             build_log = output.decode()
-            # Floating typescript above 2.0.x cannot parse later
-            # @types/node reference directives; pin typescript and retry
-            # once. Do not pin it up front -- see comment above.
-            needs_ts_pin = (
+            # Some manifests omit TypeScript. For those only, retain the
+            # compatibility fallback established for the oldest layout.
+            needs_ts_pin = not version_match and (
                 'reference' in build_log.lower()
                 or 'TS2304' in build_log
                 or 'Cannot find type definition' in build_log
@@ -245,6 +361,116 @@ class LighthouseEvaluator(Evaluator):
                     f'{build_log}'
                 )
 
+        if (
+            str(package_data.get('version', '')).startswith('1.')
+            and self.container.exec_run(
+                ['test', '-f', '/testbed/gulpfile.js']
+            )[0]
+            == 0
+        ):
+            exit_code, output = self.container.exec_run(
+                './node_modules/.bin/gulp',
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to generate Lighthouse test assets for '
+                    f'{self.instance_id}: {output.decode()}'
+                )
+        elif str(package_data.get('version', '')).startswith('2.'):
+            # Gulp 3 aborts inside V8 on the newer Node runtime in the
+            # benchmark image. Reproduce its two small Handlebars compilation
+            # tasks directly while preserving the generated module interface.
+            compile_templates = r"""
+const fs = require('fs');
+const path = require('path');
+const Handlebars = require('handlebars');
+function compile(source, destination, type) {
+  fs.mkdirSync(path.dirname(destination), {recursive: true});
+  const lines = [
+    "'use strict';",
+    "const Handlebars = require('handlebars/runtime');",
+    `exports.report = {${type}: {}};`,
+  ];
+  for (const file of fs.readdirSync(source).filter(f => f.endsWith('.html'))) {
+        const name = path.basename(file, '.html');
+    const input = fs.readFileSync(path.join(source, file), 'utf8');
+    const template = Handlebars.precompile(input);
+    const key = JSON.stringify(name);
+    lines.push(
+      `exports.report.${type}[${key}] = Handlebars.template(${template});`
+    );
+  }
+  fs.writeFileSync(destination, lines.join('\n') + '\n');
+}
+compile(
+  'lighthouse-core/report/templates',
+  'lighthouse-core/report/templates/report-templates.js',
+  'templates'
+);
+compile(
+  'lighthouse-core/report/partials',
+  'lighthouse-core/report/partials/templates/report-partials.js',
+  'partials'
+);
+"""
+            exit_code, output = self.container.exec_run(
+                ['node', '-e', compile_templates],
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to compile Lighthouse 2.x report templates for '
+                    f'{self.instance_id}: {output.decode()}'
+                )
+
+        # Lighthouse 2.x launches more than one Chrome target.  Its bundled
+        # Chrome rejects that pattern in old ``--headless`` mode, while these
+        # historical images do not always include a virtual display.
+        xvfb_code, xvfb_output = self.container.exec_run(
+            [
+                'bash',
+                '-lc',
+                'command -v xvfb-run || '
+                '(apt-get update -qq && apt-get install -y -qq xvfb)',
+            ],
+            workdir='/testbed',
+        )
+        assert isinstance(xvfb_output, bytes)
+        log.info(xvfb_code)
+        log.info(xvfb_output.decode())
+        if xvfb_code != 0:
+            raise Exception(
+                f'Failed to install Xvfb for {self.instance_id}: '
+                f'{xvfb_output.decode()}'
+            )
+
+        wrapper = '/tmp/sbmdt-chrome-wrapper'
+        wrapper_script = (
+            'chrome=$(command -v google-chrome-stable || '
+            'command -v google-chrome || command -v chromium); '
+            'test -n "$chrome"; '
+            f'printf \'#!/bin/sh\\nchrome="%s"\\n'
+            f'if command -v xvfb-run >/dev/null 2>&1; then '
+            f'exec xvfb-run -a "$chrome" --no-sandbox --disable-gpu "$@"; '
+            'else exec "$chrome" --no-sandbox --headless --disable-gpu '
+            '"$@"; fi\\n\' '
+            f'"$chrome" > {wrapper}; chmod +x {wrapper}'
+        )
+        wrapper_code, _ = self.container.exec_run(
+            ['bash', '-lc', wrapper_script], workdir='/testbed'
+        )
+        if wrapper_code == 0:
+            self._chrome_wrapper = wrapper
+
         # 3. Create results directory
         self.container.exec_run(f'mkdir -p {RESULTS_DIR}', workdir='/testbed')
 
@@ -253,21 +479,14 @@ class LighthouseEvaluator(Evaluator):
         # lighthouse-core/scripts/run-mocha.sh at all. Finding it directly
         # rather than assuming the path avoids repeating that mistake for
         # every future layout difference.
-        _, find_output = self.container.exec_run(
-            ['find', '/testbed', '-name', 'run-mocha.sh'],
-        )
-        assert isinstance(find_output, bytes)
-        candidates = [
-            c for c in find_output.decode().splitlines() if c.strip()
-        ]
+        candidates = mocha_scripts
         if RUN_MOCHA_SCRIPT in candidates:
             run_mocha_script = RUN_MOCHA_SCRIPT
         elif candidates:
             run_mocha_script = candidates[0]
         else:
             raise Exception(
-                f'No run-mocha.sh found under /testbed for '
-                f'{self.instance_id}'
+                f'No run-mocha.sh found under /testbed for {self.instance_id}'
             )
         if run_mocha_script != RUN_MOCHA_SCRIPT:
             log.info(
@@ -309,6 +528,9 @@ class LighthouseEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
+        if hasattr(self, '_direct_suites'):
+            return self._evaluate_direct_suites()
+
         # Run each suite independently (joined with `;`, not `&&`) so that
         # one suite's failures don't prevent the remaining suites from
         # running. ``npm run`` normally prepends node_modules/.bin to PATH;
@@ -322,6 +544,11 @@ class LighthouseEvaluator(Evaluator):
             f'bash {self._run_mocha_script} --core',
             f'bash {self._run_mocha_script} --viewer',
         ]
+        if hasattr(self, '_chrome_wrapper'):
+            commands.insert(
+                1,
+                f'export LIGHTHOUSE_CHROMIUM_PATH={self._chrome_wrapper}',
+            )
         exit_code, output = self.container.exec_run(
             ['bash', '-c', '; '.join(commands)],
             workdir='/testbed',
@@ -334,6 +561,7 @@ class LighthouseEvaluator(Evaluator):
         log.info(output.decode())
 
         results: list[TestResult] = []
+        missing_suites = []
         for suite in SUITES:
             try:
                 xml = read_from_container(
@@ -341,6 +569,7 @@ class LighthouseEvaluator(Evaluator):
                 )
             except docker.errors.NotFound:
                 log.warning(f'No results file found for suite {suite}')
+                missing_suites.append(suite)
                 continue
 
             results.extend(
@@ -353,6 +582,115 @@ class LighthouseEvaluator(Evaluator):
                 )
             )
 
+        if missing_suites:
+            raise Exception(
+                'Lighthouse test result files missing for: '
+                + ', '.join(missing_suites)
+            )
+        return results
+
+    def _evaluate_direct_suites(self) -> list[TestResult]:
+        """Run checkout-native Jest/Mocha unit scripts and parse JSON."""
+        assert self.container is not None
+        results: list[TestResult] = []
+        for suite, script in self._direct_suites.items():
+            path = f'{RESULTS_DIR}/lighthouse-{suite}.json'
+            is_jest = bool(re.search(r'(^|\s)jest(?:\s|$)', script))
+            if is_jest:
+                # Preserve Jest's worker pool. Large Lighthouse suites such as
+                # lighthouse-12067 exceed the worker command timeout when
+                # artificially serialized with --runInBand.
+                command = f'{script} --json --outputFile={path}'
+            elif hasattr(self, '_custom_mocha_runner'):
+                command = script.replace('yarn mocha', 'yarn --silent mocha')
+                command = f'{command} > {path}'
+            else:
+                command = re.sub(r'--reporter\s+\S+', '', script)
+                command = command.replace('yarn mocha', 'yarn --silent mocha')
+                command = f'{command} --reporter json > {path}'
+            exports = 'export PATH=/testbed/node_modules/.bin:$PATH'
+            if hasattr(self, '_chrome_wrapper'):
+                exports += (
+                    f'; export LIGHTHOUSE_CHROMIUM_PATH={self._chrome_wrapper}'
+                )
+            command = f'{exports}; {command}'
+            exit_code, output = self.container.exec_run(
+                ['bash', '-lc', command],
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info('%s direct unit exit code: %s', suite, exit_code)
+            log.info(output.decode())
+            try:
+                raw = read_from_container(self.container, path)
+            except docker.errors.NotFound:
+                log.warning('No direct JSON result found for %s', suite)
+                continue
+            # Test output can contain braces before or after Mocha's JSON
+            # reporter payload. Decode each possible object boundary and keep
+            # the actual test report instead of assuming the first/last brace
+            # encloses one valid JSON document.
+            reports = []
+            decoder = json.JSONDecoder()
+            for match in re.finditer(r'{', raw):
+                try:
+                    candidate, _ = decoder.raw_decode(raw[match.start() :])
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(candidate, dict) and (
+                    'testResults' in candidate
+                    or (
+                        isinstance(candidate.get('tests'), list)
+                        and isinstance(candidate.get('failures'), list)
+                    )
+                ):
+                    reports.append(candidate)
+            if not reports:
+                log.warning(
+                    'Invalid direct JSON result for %s: %r', suite, raw[:2000]
+                )
+                continue
+            if is_jest:
+                report = reports[0]
+                for file_result in report.get('testResults', []):
+                    for test in file_result.get('assertionResults', []):
+                        name = ' '.join(
+                            [*test.get('ancestorTitles', []), test['title']]
+                        )
+                        results.append(
+                            TestResult(
+                                instance_id=self.instance_id,
+                                patch_type=self.patch_type,
+                                agent_name=self.agent_name,
+                                timestamp=self.timestamp,
+                                test_name=name,
+                                passed=test.get('status') == 'passed',
+                            )
+                        )
+            else:
+                for report in reports:
+                    failed = {
+                        test.get('fullTitle') or test.get('title', '')
+                        for test in report.get('failures', [])
+                    }
+                    for test in report.get('tests', []):
+                        name = test.get('fullTitle') or test.get('title', '')
+                        results.append(
+                            TestResult(
+                                instance_id=self.instance_id,
+                                patch_type=self.patch_type,
+                                agent_name=self.agent_name,
+                                timestamp=self.timestamp,
+                                test_name=name,
+                                passed=name not in failed,
+                            )
+                        )
+        if not results:
+            raise Exception(
+                f'Direct Lighthouse unit scripts produced no results for '
+                f'{self.instance_id}'
+            )
         return results
 
     @override

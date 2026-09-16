@@ -32,6 +32,7 @@ __all__ = [
     'is_test_path',
     'split_diff',
     'drop_unappliable_binary',
+    'drop_mode_only_sections',
     'test_patch_for',
     'write_diff',
 ]
@@ -148,6 +149,35 @@ def drop_unappliable_binary(diff: str) -> tuple[str, list[str]]:
         else:
             kept.append(section)
 
+    return ''.join(kept), dropped
+
+
+def drop_mode_only_sections(diff: str) -> tuple[str, list[str]]:
+    """Remove pure executable-bit changes from a model prediction.
+
+    Some Refact outputs contain hundreds of ``old mode 100644`` / ``new
+    mode 100755`` sections. They carry no source edit and are frequently
+    incompatible with the benchmark checkout's file-mode metadata. Removing
+    such a section is safe because it cannot change repository contents.
+    Sections with a normal unified hunk are retained even when they also
+    change a mode.
+    """
+    starts = [m.start() for m in DIFF_HEADER.finditer(diff)]
+    if not starts:
+        return diff, []
+    kept: list[str] = []
+    dropped: list[str] = []
+    bounds = starts + [len(diff)]
+    for begin, end in zip(bounds[:-1], bounds[1:], strict=True):
+        section = diff[begin:end]
+        header = DIFF_HEADER.match(section)
+        assert header is not None
+        has_mode = bool(re.search(r'^old mode \d+\nnew mode \d+', section, re.M))
+        has_content = bool(re.search(r'^(--- |\+\+\+ |@@ )', section, re.M))
+        if has_mode and not has_content:
+            dropped.append(header.group(2))
+        else:
+            kept.append(section)
     return ''.join(kept), dropped
 
 

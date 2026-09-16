@@ -23,7 +23,12 @@ from docker.models.containers import Container
 from docker.models.images import Image
 
 from sbmdt.env import DOCKERFILES_BASE
-from sbmdt.patches import drop_unappliable_binary, test_patch_for
+from sbmdt.patches import (
+    drop_mode_only_sections,
+    drop_unappliable_binary,
+    split_diff,
+    test_patch_for,
+)
 from sbmdt.pred import Pred
 from sbmdt.utils import write_to_container
 
@@ -71,6 +76,47 @@ MODEL_PATCH_TYPES: Final[frozenset[str]] = frozenset(
     {PatchType.WITH_IMAGE, PatchType.WITHOUT_IMAGE}
 )
 """Patch types the gold test patch may be applied on top of."""
+
+# A small number of legacy prebuilt images were created from a checkout that
+# does not match the original GitHub PR base used by their gold patch. These
+# overrides restore the verified PR base before applying benchmark patches.
+PATCH_BASE_COMMIT_OVERRIDES: Final[dict[str, str]] = {
+    'PrismJS__prism-1585': '11695629f12925c586702453beaee5f4825d0ebd',
+    'PrismJS__prism-1602': 'da474c77e2da4103192cd29827d3c0c64f9b8801',
+    'PrismJS__prism-1895': 'f0a10669acd07ddcd88eccef2675f488068c98e9',
+    'PrismJS__prism-2195': '0bf73dc7813cdd1eadb15730d8c9f2d00f208df8',
+    'PrismJS__prism-2703': '01af04ed2be7cf18e02997428d3cc19addfc6012',
+    'PrismJS__prism-2861': 'e0ee93f138b7da294a28db50b97c22977fdfc8ed',
+    'carbon-design-system__carbon-12410': (
+        '41e692d24732a34c57861c6023536db1b74d548c'
+    ),
+    'bpmn-io__bpmn-js-1083': 'd0ff81a6e7dfa10138e773820fd2970fb22140db',
+    'bpmn-io__bpmn-js-1578': '143603a26dbcc6dec8ca37df94562fc9050e96b4',
+    'bpmn-io__bpmn-js-1584': '7baefd7bc33b2c0e2caf61322e7e950d10f737fe',
+    'bpmn-io__bpmn-js-1655': '7478388070d83e8802c873e8480dbf23ae3ace3a',
+    'openlayers__openlayers-11047': 'bfc035415edabfe297faf6d68575d8118e088fba',
+}
+
+# For reference runs, checking out the immutable official PR head is more
+# faithful than replaying an old serialized diff through legacy Git versions.
+GOLD_COMMIT_OVERRIDES: Final[dict[str, str]] = {
+    'PrismJS__prism-1585': '84f12f1e304de7cb6b72b7325506d4d47b1a9075',
+    'PrismJS__prism-1602': '75a0d1787df143523f5bb4abf0da867321af3b33',
+    'PrismJS__prism-1895': '0dc2101940e0c9d97226b71fdec5539ff9095965',
+    'PrismJS__prism-2195': 'db4af6cd0909e191dc7a582f12b123e6dbf197e5',
+    'PrismJS__prism-2703': '32251f3d81521867ecef9f4d696403e6e6aeafe5',
+    'PrismJS__prism-2861': 'b1103ebf4a0a7a7f38f25c36d7d8c653ef02c2c5',
+    'bpmn-io__bpmn-js-1083': 'de1e1be92b5319ad989481565044596536fd3ca4',
+    'bpmn-io__bpmn-js-1578': 'a09636f773fe425b204919f216850c58ab44bd03',
+    'bpmn-io__bpmn-js-1584': 'f7b846dfe50613cad265d452f54e509b86927dff',
+    'bpmn-io__bpmn-js-1655': 'bd2166a5731bbd813ffd247e9ca33ea194f17304',
+    'carbon-design-system__carbon-12410': (
+        'fe45ba2faf416bad55fb2495a2bb4aebe8411d78'
+    ),
+    'openlayers__openlayers-13212': (
+        '75f66757ef6a46be50513c40a3cc022026d8e5c2'
+    ),
+}
 
 
 def factory(items: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -472,33 +518,146 @@ class Evaluator(ABC):
                 f'{self.instance_id}: dropped {len(dropped)} binary '
                 f'section(s) without embedded data: {dropped}'
             )
-        write_to_container(self.container, PATCH_FILE, patch)
-
-        outputs = []
-        commands = (
-            f'git apply {PATCH_FILE}',
-            f'git apply --recount {PATCH_FILE}',
-            f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
-        )
-        for index, command in enumerate(commands):
-            exit_code, output = self.container.exec_run(
-                command,
-                workdir='/testbed',
-                stream=False,
+        patch, dropped_modes = drop_mode_only_sections(patch)
+        if dropped_modes:
+            log.info(
+                f'{self.instance_id}: dropped {len(dropped_modes)} pure '
+                f'file-mode section(s): {dropped_modes}'
             )
-            assert isinstance(output, bytes)
-            outputs.append(output.decode())
-            log.info(exit_code)
-            log.info(output.decode())
-            if exit_code == 0:
-                break
-            if index < len(commands) - 1:
-                log.info('Patch apply failed; trying the next safe fallback')
+        is_gold = str(getattr(self, 'patch_type', '')) == 'gold'
+        sections = split_diff(patch) if is_gold else (patch,)
+        gold_test_section = sections[1] if is_gold else ''
+        for section_number, section in enumerate(
+            filter(None, sections), start=1
+        ):
+            materialize_exact_blobs = (
+                is_gold and section == gold_test_section
+            ) or self.instance_id in globals().get(
+                'PATCH_BASE_COMMIT_OVERRIDES', {}
+            )
+            if materialize_exact_blobs:
+                # Materialize tracked files directly from Git's blob store.
+                # Legacy images may have checkout filters or line-ending
+                # conversion that make working-tree bytes differ even when
+                # HEAD has the exact old blobs named by the submitted diff.
+                paths = re.findall(r'^diff --git a/\S+ b/(\S+)', section, re.M)
+                for path in paths:
+                    _, restore_output = self.container.exec_run(
+                        [
+                            'bash',
+                            '-c',
+                            'if git cat-file -e "HEAD:$1" 2>/dev/null; '
+                            'then git cat-file blob "HEAD:$1" > "$1"; '
+                            'sed -i \'s/\\r$//\' "$1"; '
+                            'else rm -rf -- "$1"; fi',
+                            'git-materialize-gold-test',
+                            path,
+                        ],
+                        workdir='/testbed',
+                        stream=False,
+                    )
+                    assert isinstance(restore_output, bytes)
+            write_to_container(self.container, PATCH_FILE, section)
+            outputs = []
+            attempts = (
+                (f'git apply --check {PATCH_FILE}', f'git apply {PATCH_FILE}'),
+                (
+                    f'git apply --check --recount {PATCH_FILE}',
+                    f'git apply --recount {PATCH_FILE}',
+                ),
+                (
+                    'git apply --check --3way --whitespace=nowarn '
+                    f'{PATCH_FILE}',
+                    f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
+                ),
+            )
+            exit_code = 1
+            for check_command, apply_command in attempts:
+                check_code, check_output = self.container.exec_run(
+                    check_command, workdir='/testbed', stream=False
+                )
+                assert isinstance(check_output, bytes)
+                outputs.append(check_output.decode())
+                if check_code != 0:
+                    continue
+                exit_code, output = self.container.exec_run(
+                    apply_command, workdir='/testbed', stream=False
+                )
+                assert isinstance(output, bytes)
+                outputs.append(output.decode())
+                log.info(exit_code)
+                log.info(output.decode())
+                if exit_code == 0:
+                    break
+            if exit_code != 0 and self.instance_id in globals().get(
+                'PATCH_BASE_COMMIT_OVERRIDES', {}
+            ):
+                dry_code, dry_output = self.container.exec_run(
+                    f'patch --dry-run --batch --forward -p1 -i {PATCH_FILE}',
+                    workdir='/testbed',
+                    stream=False,
+                )
+                assert isinstance(dry_output, bytes)
+                outputs.append(dry_output.decode())
+                if dry_code == 0:
+                    exit_code, output = self.container.exec_run(
+                        f'patch --batch --forward -p1 -i {PATCH_FILE}',
+                        workdir='/testbed',
+                        stream=False,
+                    )
+                    assert isinstance(output, bytes)
+                    outputs.append(output.decode())
+            if exit_code != 0:
+                log.error('Failed to apply patch section %s', section_number)
+                raise Exception(
+                    f'Failed to apply patch for {self.instance_id}: '
+                    f'{outputs[-1]}'
+                )
 
+    def restore_patch_base(self) -> None:
+        """Check out a verified PR base when a legacy image is mismatched."""
+
+        target_commit = (
+            GOLD_COMMIT_OVERRIDES.get(self.instance_id)
+            if self.patch_type == PatchType.GOLD
+            else PATCH_BASE_COMMIT_OVERRIDES.get(self.instance_id)
+        )
+        if target_commit is None:
+            return
+        if self.container is None:
+            raise Exception('no container')
+        log.info(
+            'Restoring verified patch base %s for %s',
+            target_commit,
+            self.instance_id,
+        )
+        owner, _, repository_and_pr = self.instance_id.partition('__')
+        repository, _, _ = repository_and_pr.rpartition('-')
+        if not owner or not repository:
+            raise ValueError(f'Invalid instance ID: {self.instance_id}')
+        repository_url = f'https://github.com/{owner}/{repository}.git'
+        checkout_command = (
+            # Legacy images can have core.autocrlf enabled. That leaves the
+            # working tree different from the exact blobs named by a patch,
+            # even after checking out the correct commit.
+            'git config core.autocrlf false && '
+            f'git fetch --depth=1 {repository_url} {target_commit} && '
+            'git checkout --detach --force FETCH_HEAD && '
+            'git reset --hard FETCH_HEAD'
+        )
+        exit_code, output = self.container.exec_run(
+            ['bash', '-lc', checkout_command],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        log.info(exit_code)
+        log.info(output.decode())
         if exit_code != 0:
-            log.error('Failed to apply patch')
             raise Exception(
-                f'Failed to apply patch for {self.instance_id}: {outputs[-1]}'
+                'Failed to restore verified patch base for '
+                f'{self.instance_id}: '
+                f'{output.decode()}'
             )
 
     def apply_test_patch(self) -> None:
@@ -716,9 +875,21 @@ class Evaluator(ABC):
         try:
             log.info('Provisioning...')
             self.provision()
-            if self.patch_type != PatchType.BEFORE_PATCH:
+            if hasattr(self, 'restore_patch_base'):
+                self.restore_patch_base()
+            gold_is_checked_out = (
+                self.patch_type == PatchType.GOLD
+                and self.instance_id
+                in globals().get('GOLD_COMMIT_OVERRIDES', {})
+            )
+            if (
+                self.patch_type != PatchType.BEFORE_PATCH
+                and not gold_is_checked_out
+            ):
                 log.info('Applying patch...')
                 self.apply_patch()
+            elif gold_is_checked_out:
+                log.info('Official gold commit already checked out')
             else:
                 log.info('No patch to apply')
             if self.apply_test_patch_enabled:

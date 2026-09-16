@@ -4,7 +4,7 @@ from urllib.parse import unquote
 import boto3
 
 # Operational limits for the GUIRepair batch.
-MAX_WORKERS = 20
+MAX_WORKERS = 10
 EXECUTION_TIMEOUT_SECONDS = 30 * 60
 LOCK_PATH = Path('guirepair-batch.lock')
 
