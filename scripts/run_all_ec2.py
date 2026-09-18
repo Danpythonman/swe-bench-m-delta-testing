@@ -69,6 +69,7 @@ log = logging.getLogger(__name__)
 @dataclass(kw_only=True)
 class RunArgs:
     pred_keys: list[str] | None
+    pred_prefix: str | None
     n_concurrent: int
     image_id: str
     instance_type: InstanceTypeType
@@ -153,7 +154,8 @@ def make_command(
     Returns:
         The full shell command string to execute on the instance.
     """
-    stdout_s3_key = S3PredFilename.decode(pred_s3_key).encode(extension='.log')
+    pred_filename = pred_s3_key.rsplit('/', 1)[-1]
+    stdout_s3_key = S3PredFilename.decode(pred_filename).encode(extension='.log')
     args = [
         'bash',
         'aws/run_ec2.sh',
@@ -453,11 +455,13 @@ async def main(run_args: RunArgs) -> None:
                 f'{PREDS_S3_BUCKET_NAME!r}: {missing_keys}'
             )
         pred_s3_keys = pred_keys
+    if run_args.pred_prefix is not None:
+        pred_s3_keys = [k for k in pred_s3_keys if k.startswith(run_args.pred_prefix)]
 
     tasks: list[Coroutine[Any, Any, None]] = []
     sem = asyncio.Semaphore(run_args.n_concurrent)
     for key in pred_s3_keys:
-        pred_filename = S3PredFilename.decode(key)
+        pred_filename = S3PredFilename.decode(key.rsplit('/', 1)[-1])
         sbmdt_instance_id = pred_filename.instance_id
         patch_type = pred_filename.patch_type
         tasks.append(
@@ -528,6 +532,11 @@ def parse_args() -> RunArgs:
             'already exist in the bucket, or the run aborts before '
             'launching any instances.'
         ),
+    )
+    parser.add_argument(
+        '--pred-prefix',
+        default=None,
+        help='Only evaluate prediction keys beginning with this S3 prefix.',
     )
     parser.add_argument(
         '--image-id',
@@ -617,6 +626,7 @@ def parse_args() -> RunArgs:
 
     return RunArgs(
         pred_keys=args.pred_keys,
+        pred_prefix=args.pred_prefix,
         n_concurrent=args.n_concurrent,
         image_id=args.image_id,
         instance_type=args.instance_type,

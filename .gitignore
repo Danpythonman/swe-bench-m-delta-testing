@@ -30,3 +30,20 @@ s3-sync/
 
 # Analysis output (regenerate from the synced results)
 analysis/
+
+# Local repair execution state and S3 mirrors
+live-results/
+tmp/
+paired-runs/
+repair-runs/
+reference-runs/
+matrix-runs/
+matrix-batch-runs/
+repair-claims/
+canary_status.json
+coverage_audit.json
+reference_coverage_audit.json
+reference_delta_audit.json
+zero_f2p_candidates.json
+*_status.json
+*_status_*.json

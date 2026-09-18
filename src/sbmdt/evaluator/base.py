@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import re
+import time
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from enum import StrEnum
@@ -22,7 +23,12 @@ from docker.models.containers import Container
 from docker.models.images import Image
 
 from sbmdt.env import DOCKERFILES_BASE
-from sbmdt.patches import test_patch_for
+from sbmdt.patches import (
+    drop_mode_only_sections,
+    drop_unappliable_binary,
+    split_diff,
+    test_patch_for,
+)
 from sbmdt.pred import Pred
 from sbmdt.utils import write_to_container
 
@@ -65,10 +71,52 @@ class PatchType(StrEnum):
     WITHOUT_IMAGE = 'without_image'
     GOLD = 'gold'
 
+
 MODEL_PATCH_TYPES: Final[frozenset[str]] = frozenset(
     {PatchType.WITH_IMAGE, PatchType.WITHOUT_IMAGE}
 )
 """Patch types the gold test patch may be applied on top of."""
+
+# A small number of legacy prebuilt images were created from a checkout that
+# does not match the original GitHub PR base used by their gold patch. These
+# overrides restore the verified PR base before applying benchmark patches.
+PATCH_BASE_COMMIT_OVERRIDES: Final[dict[str, str]] = {
+    'PrismJS__prism-1585': '11695629f12925c586702453beaee5f4825d0ebd',
+    'PrismJS__prism-1602': 'da474c77e2da4103192cd29827d3c0c64f9b8801',
+    'PrismJS__prism-1895': 'f0a10669acd07ddcd88eccef2675f488068c98e9',
+    'PrismJS__prism-2195': '0bf73dc7813cdd1eadb15730d8c9f2d00f208df8',
+    'PrismJS__prism-2703': '01af04ed2be7cf18e02997428d3cc19addfc6012',
+    'PrismJS__prism-2861': 'e0ee93f138b7da294a28db50b97c22977fdfc8ed',
+    'carbon-design-system__carbon-12410': (
+        '41e692d24732a34c57861c6023536db1b74d548c'
+    ),
+    'bpmn-io__bpmn-js-1083': 'd0ff81a6e7dfa10138e773820fd2970fb22140db',
+    'bpmn-io__bpmn-js-1578': '143603a26dbcc6dec8ca37df94562fc9050e96b4',
+    'bpmn-io__bpmn-js-1584': '7baefd7bc33b2c0e2caf61322e7e950d10f737fe',
+    'bpmn-io__bpmn-js-1655': '7478388070d83e8802c873e8480dbf23ae3ace3a',
+    'openlayers__openlayers-11047': 'bfc035415edabfe297faf6d68575d8118e088fba',
+}
+
+# For reference runs, checking out the immutable official PR head is more
+# faithful than replaying an old serialized diff through legacy Git versions.
+GOLD_COMMIT_OVERRIDES: Final[dict[str, str]] = {
+    'PrismJS__prism-1585': '84f12f1e304de7cb6b72b7325506d4d47b1a9075',
+    'PrismJS__prism-1602': '75a0d1787df143523f5bb4abf0da867321af3b33',
+    'PrismJS__prism-1895': '0dc2101940e0c9d97226b71fdec5539ff9095965',
+    'PrismJS__prism-2195': 'db4af6cd0909e191dc7a582f12b123e6dbf197e5',
+    'PrismJS__prism-2703': '32251f3d81521867ecef9f4d696403e6e6aeafe5',
+    'PrismJS__prism-2861': 'b1103ebf4a0a7a7f38f25c36d7d8c653ef02c2c5',
+    'bpmn-io__bpmn-js-1083': 'de1e1be92b5319ad989481565044596536fd3ca4',
+    'bpmn-io__bpmn-js-1578': 'a09636f773fe425b204919f216850c58ab44bd03',
+    'bpmn-io__bpmn-js-1584': 'f7b846dfe50613cad265d452f54e509b86927dff',
+    'bpmn-io__bpmn-js-1655': 'bd2166a5731bbd813ffd247e9ca33ea194f17304',
+    'carbon-design-system__carbon-12410': (
+        'fe45ba2faf416bad55fb2495a2bb4aebe8411d78'
+    ),
+    'openlayers__openlayers-13212': (
+        '75f66757ef6a46be50513c40a3cc022026d8e5c2'
+    ),
+}
 
 
 def factory(items: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -277,6 +325,58 @@ class TestResultsFilename:
         )
 
 
+# Docker Hub throttles anonymous (unauthenticated) image pulls per source
+# IP over a rolling window. Every EC2 worker in a batch shares the same
+# NAT gateway, so pulling the base image from many workers at once can
+# exhaust that shared quota well before any one worker is individually
+# abusive -- this showed up as unrelated instances across several
+# different repositories all failing within the same few minutes, which
+# first looked like environment or resource contention until the actual
+# docker.errors.BuildError text turned out to name the real cause. The
+# quota resets on a sliding window, so a short wait and retry recovers
+# once the burst that exhausted it has passed, without needing Docker Hub
+# credentials this project does not have.
+_IMAGE_BUILD_RETRIES: Final[int] = 4
+_IMAGE_BUILD_RETRY_DELAY_SECONDS: Final[float] = 45.0
+
+
+def _build_image_with_retry(
+    client: docker.DockerClient, **build_kwargs: Any
+) -> tuple[Image, Any]:
+    """Build a Docker image, retrying on a Docker Hub rate limit.
+
+    Every other :class:`docker.errors.BuildError` (a real Dockerfile
+    problem, a missing file, etc.) is not retried and raises immediately,
+    since retrying it would only waste the same amount of time again for
+    the same guaranteed failure.
+
+    Args:
+        client: Docker client to build with.
+        **build_kwargs: Forwarded to :meth:`docker.models.images.build`.
+
+    Returns:
+        Whatever :meth:`docker.models.images.build` returns.
+
+    Raises:
+        docker.errors.BuildError: If every retry is also rate-limited, or
+            immediately for any other build failure.
+    """
+    for attempt in range(1, _IMAGE_BUILD_RETRIES + 1):
+        try:
+            return client.images.build(**build_kwargs)
+        except docker.errors.BuildError as e:
+            rate_limited = 'toomanyrequests' in str(e)
+            if not rate_limited or attempt == _IMAGE_BUILD_RETRIES:
+                raise
+            log.info(
+                f'Docker Hub rate limit hit on image build (attempt '
+                f'{attempt}/{_IMAGE_BUILD_RETRIES}), retrying in '
+                f'{_IMAGE_BUILD_RETRY_DELAY_SECONDS}s...'
+            )
+            time.sleep(_IMAGE_BUILD_RETRY_DELAY_SECONDS)
+    raise Exception('image build retries exceeded')
+
+
 class Evaluator(ABC):
     """Abstract base for Docker-based benchmark evaluators.
 
@@ -362,7 +462,8 @@ class Evaluator(ABC):
         resource_name = f'sbmdt-{self.instance_id}'.lower()
         # Note that rm=True remove intermediate containers after build
         log.info('Building image...')
-        self.image, _ = client.images.build(
+        self.image, _ = _build_image_with_retry(
+            client,
             path=str(self.dockerfile_path.parent.resolve()),
             tag=f'{resource_name}:latest',
             labels={LABEL_KEY: LABEL_VALUE},
@@ -405,22 +506,157 @@ class Evaluator(ABC):
             raise Exception('no container')
         assert self.pred is not None
 
-        write_to_container(self.container, PATCH_FILE, self.pred.model_patch)
+        # A unified diff must terminate its last line. JSON predictions can
+        # omit that transport newline, which git reports as a corrupt patch.
+        # Preserve every patch line, including explicit no-newline markers.
+        patch = self.pred.model_patch
+        if patch and not patch.endswith('\n'):
+            patch += '\n'
+        patch, dropped = drop_unappliable_binary(patch)
+        if dropped:
+            log.info(
+                f'{self.instance_id}: dropped {len(dropped)} binary '
+                f'section(s) without embedded data: {dropped}'
+            )
+        patch, dropped_modes = drop_mode_only_sections(patch)
+        if dropped_modes:
+            log.info(
+                f'{self.instance_id}: dropped {len(dropped_modes)} pure '
+                f'file-mode section(s): {dropped_modes}'
+            )
+        is_gold = str(getattr(self, 'patch_type', '')) == 'gold'
+        sections = split_diff(patch) if is_gold else (patch,)
+        gold_test_section = sections[1] if is_gold else ''
+        for section_number, section in enumerate(
+            filter(None, sections), start=1
+        ):
+            materialize_exact_blobs = (
+                is_gold and section == gold_test_section
+            ) or self.instance_id in globals().get(
+                'PATCH_BASE_COMMIT_OVERRIDES', {}
+            )
+            if materialize_exact_blobs:
+                # Materialize tracked files directly from Git's blob store.
+                # Legacy images may have checkout filters or line-ending
+                # conversion that make working-tree bytes differ even when
+                # HEAD has the exact old blobs named by the submitted diff.
+                paths = re.findall(r'^diff --git a/\S+ b/(\S+)', section, re.M)
+                for path in paths:
+                    _, restore_output = self.container.exec_run(
+                        [
+                            'bash',
+                            '-c',
+                            'if git cat-file -e "HEAD:$1" 2>/dev/null; '
+                            'then git cat-file blob "HEAD:$1" > "$1"; '
+                            'sed -i \'s/\\r$//\' "$1"; '
+                            'else rm -rf -- "$1"; fi',
+                            'git-materialize-gold-test',
+                            path,
+                        ],
+                        workdir='/testbed',
+                        stream=False,
+                    )
+                    assert isinstance(restore_output, bytes)
+            write_to_container(self.container, PATCH_FILE, section)
+            outputs = []
+            attempts = (
+                (f'git apply --check {PATCH_FILE}', f'git apply {PATCH_FILE}'),
+                (
+                    f'git apply --check --recount {PATCH_FILE}',
+                    f'git apply --recount {PATCH_FILE}',
+                ),
+                (
+                    'git apply --check --3way --whitespace=nowarn '
+                    f'{PATCH_FILE}',
+                    f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
+                ),
+            )
+            exit_code = 1
+            for check_command, apply_command in attempts:
+                check_code, check_output = self.container.exec_run(
+                    check_command, workdir='/testbed', stream=False
+                )
+                assert isinstance(check_output, bytes)
+                outputs.append(check_output.decode())
+                if check_code != 0:
+                    continue
+                exit_code, output = self.container.exec_run(
+                    apply_command, workdir='/testbed', stream=False
+                )
+                assert isinstance(output, bytes)
+                outputs.append(output.decode())
+                log.info(exit_code)
+                log.info(output.decode())
+                if exit_code == 0:
+                    break
+            if exit_code != 0 and self.instance_id in globals().get(
+                'PATCH_BASE_COMMIT_OVERRIDES', {}
+            ):
+                dry_code, dry_output = self.container.exec_run(
+                    f'patch --dry-run --batch --forward -p1 -i {PATCH_FILE}',
+                    workdir='/testbed',
+                    stream=False,
+                )
+                assert isinstance(dry_output, bytes)
+                outputs.append(dry_output.decode())
+                if dry_code == 0:
+                    exit_code, output = self.container.exec_run(
+                        f'patch --batch --forward -p1 -i {PATCH_FILE}',
+                        workdir='/testbed',
+                        stream=False,
+                    )
+                    assert isinstance(output, bytes)
+                    outputs.append(output.decode())
+            if exit_code != 0:
+                log.error('Failed to apply patch section %s', section_number)
+                raise Exception(
+                    f'Failed to apply patch for {self.instance_id}: '
+                    f'{outputs[-1]}'
+                )
 
+    def restore_patch_base(self) -> None:
+        """Check out a verified PR base when a legacy image is mismatched."""
+
+        target_commit = (
+            GOLD_COMMIT_OVERRIDES.get(self.instance_id)
+            if self.patch_type == PatchType.GOLD
+            else PATCH_BASE_COMMIT_OVERRIDES.get(self.instance_id)
+        )
+        if target_commit is None:
+            return
+        if self.container is None:
+            raise Exception('no container')
+        log.info(
+            'Restoring verified patch base %s for %s',
+            target_commit,
+            self.instance_id,
+        )
+        owner, _, repository_and_pr = self.instance_id.partition('__')
+        repository, _, _ = repository_and_pr.rpartition('-')
+        if not owner or not repository:
+            raise ValueError(f'Invalid instance ID: {self.instance_id}')
+        repository_url = f'https://github.com/{owner}/{repository}.git'
+        checkout_command = (
+            # Legacy images can have core.autocrlf enabled. That leaves the
+            # working tree different from the exact blobs named by a patch,
+            # even after checking out the correct commit.
+            'git config core.autocrlf false && '
+            f'git fetch --depth=1 {repository_url} {target_commit} && '
+            'git checkout --detach --force FETCH_HEAD && '
+            'git reset --hard FETCH_HEAD'
+        )
         exit_code, output = self.container.exec_run(
-            f'git apply {PATCH_FILE}',
+            ['bash', '-lc', checkout_command],
             workdir='/testbed',
             stream=False,
         )
         assert isinstance(output, bytes)
-
         log.info(exit_code)
         log.info(output.decode())
-
         if exit_code != 0:
-            log.error('Failed to apply patch')
             raise Exception(
-                f'Failed to apply patch for {self.instance_id}: '
+                'Failed to restore verified patch base for '
+                f'{self.instance_id}: '
                 f'{output.decode()}'
             )
 
@@ -463,41 +699,92 @@ class Evaluator(ABC):
         # Discard any model edits to the files the test patch touches, so
         # the patch applies against the state it was generated from. Paths
         # come from the post-image (b/) side of each diff header.
+        #
+        # Restore each path that exists in HEAD individually. A single
+        # `git checkout -- a b c` where b/c are newly-added test files
+        # returns non-zero; on some git builds that mixed failure mode has
+        # been observed not to reliably restore the tracked paths that
+        # *do* exist (openlayers-14066: model edited GeoTIFF.test.js, the
+        # bundled checkout reported only missing rendering fixtures, then
+        # the test patch failed against the still-dirty test file).
         paths = re.findall(r'^diff --git a/\S+ b/(\S+)', test_patch, re.M)
-        if paths:
-            quoted = ' '.join(f"'{p}'" for p in paths)
+        for path in paths:
             exit_code, output = self.container.exec_run(
-                f'git checkout -- {quoted}',
+                [
+                    'bash',
+                    '-c',
+                    'git cat-file -e "HEAD:$1" 2>/dev/null '
+                    '&& git checkout HEAD -- "$1"',
+                    'git-restore-test-path',
+                    path,
+                ],
                 workdir='/testbed',
                 stream=False,
             )
-            # Newly added test files are untracked, so checkout fails for
-            # them. That is expected and harmless: the patch creates them.
-            if exit_code != 0:
-                assert isinstance(output, bytes)
+            assert isinstance(output, bytes)
+            # Newly added test files are absent from HEAD, so cat-file
+            # fails and we skip them; the patch creates them.
+            if exit_code != 0 and output.strip():
                 log.info(
-                    'git checkout of test paths returned '
+                    f'git checkout of test path {path!r} returned '
                     f'{exit_code} (expected for newly added files): '
                     f'{output.decode()}'
                 )
 
+            # If the model (or a prior partial apply) left an untracked
+            # copy of a path the test patch wants to *add*, git apply
+            # fails with "already exists in working directory"
+            # (bpmn-js-1382, carbon-8720). Remove only paths that are
+            # not in HEAD so we do not clobber restored tracked files.
+            exit_code, output = self.container.exec_run(
+                [
+                    'bash',
+                    '-c',
+                    'if ! git cat-file -e "HEAD:$1" 2>/dev/null '
+                    '&& [ -e "$1" ]; then rm -rf -- "$1"; fi',
+                    'git-clear-untracked-test-path',
+                    path,
+                ],
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            if exit_code != 0 and output.strip():
+                log.info(
+                    f'clearing untracked test path {path!r} returned '
+                    f'{exit_code}: {output.decode()}'
+                )
+
         write_to_container(self.container, TEST_PATCH_FILE, test_patch)
 
-        exit_code, output = self.container.exec_run(
+        outputs = []
+        commands = (
             f'git apply {TEST_PATCH_FILE}',
-            workdir='/testbed',
-            stream=False,
+            f'git apply --recount {TEST_PATCH_FILE}',
+            f'git apply --3way --whitespace=nowarn {TEST_PATCH_FILE}',
         )
-        assert isinstance(output, bytes)
-
-        log.info(exit_code)
-        log.info(output.decode())
+        for index, command in enumerate(commands):
+            exit_code, output = self.container.exec_run(
+                command,
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            outputs.append(output.decode())
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code == 0:
+                break
+            if index < len(commands) - 1:
+                log.info(
+                    'Test-patch apply failed; trying the next safe fallback'
+                )
 
         if exit_code != 0:
             log.error('Failed to apply test patch')
             raise Exception(
                 f'Failed to apply test patch for {self.instance_id}: '
-                f'{output.decode()}'
+                f'{outputs[-1]}'
             )
 
     @abstractmethod
@@ -576,36 +863,49 @@ class Evaluator(ABC):
     def run(self) -> list[TestResult]:
         """Run the full evaluation lifecycle.
 
-        Stages: :meth:`provision` (build image, start container), then
-        :meth:`setup`, then :meth:`apply_patch` (only when
-        ``self.patch_type`` is not :attr:`PatchType.BEFORE_PATCH`), then
-        :meth:`evaluate`, then :meth:`cleanup`. :meth:`cleanup` runs even
-        if an earlier stage raises, so a failed run never leaves behind a
-        container/image that has to be removed manually before retrying.
+        Stages: :meth:`provision` (build image, start container), then apply
+        the requested patch and benchmark test patch, then :meth:`setup`,
+        :meth:`evaluate`, and :meth:`cleanup`. Patches intentionally precede
+        setup because dependency installation can rewrite tracked manifests
+        and lockfiles, which would make otherwise valid diffs fail to apply.
+        :meth:`cleanup` runs even if an earlier stage raises, so a failed run
+        never leaves behind a container/image that has to be removed manually
+        before retrying.
         """
         try:
             log.info('Provisioning...')
             self.provision()
-            log.info('Setting up...')
-            self.setup()
-            if self.patch_type != PatchType.BEFORE_PATCH:
+            if hasattr(self, 'restore_patch_base'):
+                self.restore_patch_base()
+            gold_is_checked_out = (
+                self.patch_type == PatchType.GOLD
+                and self.instance_id
+                in globals().get('GOLD_COMMIT_OVERRIDES', {})
+            )
+            if (
+                self.patch_type != PatchType.BEFORE_PATCH
+                and not gold_is_checked_out
+            ):
                 log.info('Applying patch...')
                 self.apply_patch()
+            elif gold_is_checked_out:
+                log.info('Official gold commit already checked out')
             else:
                 log.info('No patch to apply')
             if self.apply_test_patch_enabled:
-                if self.patch_type in MODEL_PATCH_TYPES:
+                if (
+                    self.patch_type in MODEL_PATCH_TYPES
+                    or self.patch_type == PatchType.BEFORE_PATCH
+                ):
                     log.info('Applying test patch...')
                     self.apply_test_patch()
                 else:
-                    # gold already carries the maintainer's tests in the
-                    # same diff, and before_patch must not have them at
-                    # all: injecting them into the baseline would make
-                    # the patch's new tests look pre-existing and break
-                    # the FAIL_TO_PASS split for the whole corpus.
-                    log.info(
-                        f'Not applying test patch for {self.patch_type}'
-                    )
+                    # Gold already carries the maintainer's tests in the
+                    # same diff. The baseline needs the separate test patch
+                    # so new regression tests can form FAIL_TO_PASS.
+                    log.info(f'Not applying test patch for {self.patch_type}')
+            log.info('Setting up...')
+            self.setup()
             log.info('Evaluating...')
             results = self.evaluate()
         except Exception:
