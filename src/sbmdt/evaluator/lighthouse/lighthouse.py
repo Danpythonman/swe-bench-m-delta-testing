@@ -103,9 +103,25 @@ class LighthouseEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
-        # 2. Install lighthouse-cli's own dependencies
+        # 2. Install lighthouse-cli's own dependencies. The script that
+        # does this has been named differently across Lighthouse's history
+        # ("install-cli" on some commits, "install-all" on others); try
+        # both rather than hard-coding one and failing on the other half
+        # of the instances.
+        if '"install-cli"' in package_json:
+            install_script = 'install-cli'
+        elif '"install-all"' in package_json:
+            install_script = 'install-all'
+        else:
+            raise Exception(
+                f'{self.instance_id} has neither "install-cli" nor '
+                f'"install-all" in {PACKAGE_JSON_FILE}, so this evaluator '
+                "cannot install lighthouse-cli's dependencies the way it "
+                'does for the commits it was written against.'
+            )
+
         exit_code, output = self.container.exec_run(
-            'npm run install-cli',
+            f'npm run {install_script}',
             workdir='/testbed',
             stream=False,
         )

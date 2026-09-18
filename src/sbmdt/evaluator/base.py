@@ -394,11 +394,20 @@ class Evaluator(ABC):
         """Apply ``self.pred.model_patch`` to ``/testbed`` via ``git apply``.
 
         Writes the patch to a temporary file inside the container and
-        runs ``git apply`` against it from ``/testbed``.
+        applies it from ``/testbed``. A plain ``git apply`` requires every
+        context line to match exactly, which rejects patches that are
+        semantically fine but were generated against a slightly different
+        file state (trailing whitespace, a prior hunk shifting line
+        numbers, etc.) — model-generated patches hit this far more often
+        than hand-written ones. When the strict apply fails, this retries
+        with ``git apply --3way``, which falls back to a blob-level merge
+        using the repository's own object database and succeeds on many
+        patches a strict apply rejects, without silently accepting a patch
+        that doesn't actually correspond to this file content.
 
         Raises:
-            Exception: If the container has not been started, or if
-                ``git apply`` exits non-zero.
+            Exception: If the container has not been started, or if both
+                the strict and three-way ``git apply`` exit non-zero.
         """
 
         if self.container is None:
@@ -418,11 +427,27 @@ class Evaluator(ABC):
         log.info(output.decode())
 
         if exit_code != 0:
-            log.error('Failed to apply patch')
-            raise Exception(
-                f'Failed to apply patch for {self.instance_id}: '
-                f'{output.decode()}'
+            log.warning(
+                'Strict git apply failed for %s, retrying with --3way: %s',
+                self.instance_id,
+                output.decode(),
             )
+            exit_code, output = self.container.exec_run(
+                f'git apply --3way {PATCH_FILE}',
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+
+            log.info(exit_code)
+            log.info(output.decode())
+
+            if exit_code != 0:
+                log.error('Failed to apply patch')
+                raise Exception(
+                    f'Failed to apply patch for {self.instance_id}: '
+                    f'{output.decode()}'
+                )
 
     def apply_test_patch(self) -> None:
         """Apply the instance's ``test_patch.diff`` on top of the model patch.
