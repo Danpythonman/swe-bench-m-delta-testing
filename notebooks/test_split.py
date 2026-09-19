@@ -15,6 +15,8 @@ gold/reference agent before calling `classify_tests`.
 from __future__ import annotations
 
 import logging
+import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import cast
 
@@ -63,6 +65,23 @@ MIN_PRE_RUN_COVERAGE: float = 0.95
 # above this size are reported for inspection rather than dropped. Real
 # SWE-bench reference lists are typically one to twenty tests.
 IMPLAUSIBLE_F2P_COUNT: int = 20
+
+#: A test title matching more than this many tests is generic ("renders",
+#: "should render") and cannot pin a single test on its own, so the
+#: pre/post delta is used to decide which of its matches actually changed.
+AMBIGUOUS_TITLE_MATCHES: int = 3
+
+#: Added `it`/`test`/`describe` titles in a test patch. The quote character
+#: is back-referenced so apostrophes inside a double-quoted title survive.
+TEST_TITLE_PATTERN = re.compile(
+    r"""^\+\s*(it|test|describe)(?:\.\w+)?\s*\(\s*(['"`])(.+?)\2""",
+    re.MULTILINE,
+)
+
+#: Titles shorter than this, or carrying an interpolation marker, never
+#: match a concrete reported test name.
+_MIN_TITLE_LENGTH: int = 6
+_TEMPLATE_MARKERS: tuple[str, ...] = ('${', '%s', '%d')
 
 # --- Exceptions ---
 
@@ -123,7 +142,8 @@ class TestSplit:
         flaky: Verdict disagreed across runs, so it is untrustworthy.
         incomplete: Instances whose pre-patch run covered too little of
             the post-patch suite to be trusted (see
-            `MIN_PRE_RUN_COVERAGE`). Their tests are excluded from every
+            `MIN_PRE_RUN_COVERAGE`), or whose post-patch run failed the
+            tests its own test patch adds. Their tests are excluded from every
             other set, because a truncated pre-patch run manufactures
             FAIL_TO_PASS entries out of tests it never reached. The value
             is the post-patch test list, kept for auditing.
@@ -342,12 +362,111 @@ def _to_mapping(frame: pd.DataFrame, columns: Columns) -> dict[str, list[str]]:
     }
 
 
+
+def test_patch_titles(diff: str) -> tuple[list[str], list[str]]:
+    """Split the titles a test patch adds into leaf tests and blocks.
+
+    An `it`/`test` title names one test and can be matched directly. A
+    `describe` title names a whole block, so on its own it would pull in
+    every pre-existing test under that block; it is only usable together
+    with the pre/post delta.
+
+    Args:
+        diff: Contents of the instance's test_patch.diff.
+
+    Returns:
+        A (leaf, block) pair of de-duplicated title lists.
+    """
+    leaf: list[str] = []
+    block: list[str] = []
+    seen: set[str] = set()
+    for match in TEST_TITLE_PATTERN.finditer(diff):
+        kind, title = match.group(1), match.group(3).strip()
+        if len(title) < _MIN_TITLE_LENGTH or title in seen:
+            continue
+        if any(marker in title for marker in _TEMPLATE_MARKERS):
+            continue
+        seen.add(title)
+        (block if kind == 'describe' else leaf).append(title)
+    return leaf, block
+
+
+def _anchored_fail_to_pass(
+    wide: pd.DataFrame,
+    columns: Columns,
+    pre_label: str,
+    post_label: str,
+    test_patch_diffs: Mapping[str, str],
+) -> dict[str, set[str]]:
+    """Pin FAIL_TO_PASS to the tests each instance's test patch names.
+
+    The delta rule alone cannot tell a newly added test from one the patch
+    merely renamed or reordered, which is what inflates a reference to
+    hundreds of tests. The test patch names what it added, so prefer it.
+
+    Args:
+        wide: One row per (instance, test) with boolean pre/post columns.
+        columns: The column-name mapping.
+        pre_label: Column holding the pre-patch verdict.
+        post_label: Column holding the post-patch verdict.
+        test_patch_diffs: Instance id to test_patch.diff contents.
+
+    Returns:
+        A (anchored, unsatisfied) pair. `anchored` maps instance id to the
+        anchored FAIL_TO_PASS test names. `unsatisfied` holds instances
+        whose patch named tests that the post-patch run then failed, which
+        means the reference patch does not satisfy its own tests and the
+        instance cannot be graded at all. Instances whose patch named
+        nothing recognisable appear in neither, leaving them to the delta
+        rule.
+    """
+    anchored: dict[str, set[str]] = {}
+    unsatisfied: set[str] = set()
+    post_ok = wide[post_label].astype(bool)
+    for key, all_rows in wide.groupby(columns.instance, observed=True):
+        instance = str(key)
+        diff = test_patch_diffs.get(instance)
+        if not diff:
+            continue
+        leaf, block = test_patch_titles(diff)
+        if not leaf and not block:
+            continue
+        rows = cast(pd.DataFrame, all_rows[post_ok.loc[all_rows.index]])
+        names = cast(pd.Series, rows[columns.test_name]).astype(str)
+        delta = set(names[~rows[pre_label].astype(bool)])
+        hits: set[str] = set()
+        for title in leaf:
+            matched = {name for name in names if title in name}
+            # A specific title names its test outright; a generic one needs
+            # the pre-patch run to say which match was actually failing.
+            if len(matched) <= AMBIGUOUS_TITLE_MATCHES:
+                hits |= matched
+            else:
+                hits |= matched & delta
+        if not hits and block:
+            hits = {name for name in delta
+                    if any(title in name for title in block)}
+        if hits:
+            anchored[instance] = hits
+            continue
+        # The patch named tests but none of them passed after the patch.
+        # If those tests ran at all, the reference itself is broken, so the
+        # instance is not gradeable; falling back to the delta rule here is
+        # what turns a renamed suite into hundreds of phantom entries.
+        every = cast(pd.Series, all_rows[columns.test_name]).astype(str)
+        if any(title in name
+               for name in every for title in (*leaf, *block)):
+            unsatisfied.add(instance)
+    return anchored, unsatisfied
+
+
 def classify_tests(
     frame: pd.DataFrame,
     pre_label: str,
     post_label: str,
     columns: Columns | None = None,
     min_pre_run_coverage: float = MIN_PRE_RUN_COVERAGE,
+    test_patch_diffs: Mapping[str, str] | None = None,
 ) -> TestSplit:
     """Build FAIL_TO_PASS and PASS_TO_PASS test sets per instance.
 
@@ -362,6 +481,12 @@ def classify_tests(
             pre-patch run must cover for the instance to be classified
             at all. Set to 0 to disable the guard and restore the old
             behaviour.
+        test_patch_diffs: Optional mapping of instance id to the
+            contents of that instance's test_patch.diff. When given,
+            FAIL_TO_PASS is pinned to the tests the patch names
+            instead of being inferred from the pre/post delta alone,
+            which is what keeps a renamed suite from becoming a
+            reference of hundreds of tests.
 
     Returns:
         A TestSplit holding the two headline sets plus the discarded
@@ -392,12 +517,51 @@ def classify_tests(
     pre = cast(pd.Series, wide[pre_label])
     post = cast(pd.Series, wide[post_label])
 
+    # Default to the delta rule, then let the test patch overrule it for
+    # the instances whose patch actually names the tests it adds.
+    is_f2p = ~pre & post
+    if test_patch_diffs:
+        anchored, unsatisfied = _anchored_fail_to_pass(
+            wide, columns, pre_label, post_label, test_patch_diffs
+        )
+        if unsatisfied:
+            logger.warning(
+                'quarantined %d instance(s) whose %s run failed the tests '
+                'their own test patch adds; the reference patch does not '
+                'satisfy its own tests, so nothing can be scored against '
+                'it: %s',
+                len(unsatisfied),
+                post_label,
+                ', '.join(sorted(unsatisfied)[:5]),
+            )
+            drop = cast(pd.Series, wide[columns.instance]).astype(
+                str).isin(unsatisfied)
+            incomplete_rows = pd.concat(
+                [incomplete_rows, cast(pd.DataFrame, wide[drop])]
+            )
+            wide = cast(pd.DataFrame, wide[~drop])
+            pre = cast(pd.Series, wide[pre_label])
+            post = cast(pd.Series, wide[post_label])
+            is_f2p = ~pre & post
+        if anchored:
+            instances = cast(pd.Series, wide[columns.instance]).astype(str)
+            names = cast(pd.Series, wide[columns.test_name]).astype(str)
+            picked = pd.Series(
+                [name in anchored.get(instance, ())
+                 for instance, name in zip(instances, names, strict=True)],
+                index=wide.index,
+            )
+            covered = instances.isin(anchored)
+            is_f2p = (~covered & is_f2p) | (covered & post & picked)
+            logger.info(
+                'anchored FAIL_TO_PASS to the test patch for %d instance(s)',
+                len(anchored),
+            )
+
     split = TestSplit(
-        fail_to_pass=_to_mapping(
-            cast(pd.DataFrame, wide[~pre & post]), columns
-        ),
+        fail_to_pass=_to_mapping(cast(pd.DataFrame, wide[is_f2p]), columns),
         pass_to_pass=_to_mapping(
-            cast(pd.DataFrame, wide[pre & post]), columns
+            cast(pd.DataFrame, wide[pre & post & ~is_f2p]), columns
         ),
         regressed=_to_mapping(cast(pd.DataFrame, wide[pre & ~post]), columns),
         broken=_to_mapping(cast(pd.DataFrame, wide[~pre & ~post]), columns),
