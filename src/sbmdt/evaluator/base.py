@@ -65,10 +65,14 @@ class PatchType(StrEnum):
     WITHOUT_IMAGE = 'without_image'
     GOLD = 'gold'
 
-MODEL_PATCH_TYPES: Final[frozenset[str]] = frozenset(
-    {PatchType.WITH_IMAGE, PatchType.WITHOUT_IMAGE}
-)
-"""Patch types the gold test patch may be applied on top of."""
+TEST_PATCH_EXEMPT_TYPES: Final[frozenset[str]] = frozenset({PatchType.GOLD})
+"""Patch types that must NOT have the test patch applied on top.
+
+Only gold: its diff already bundles the maintainer's tests, so applying
+them again would conflict. Every other run needs them, the baseline
+included - a FAIL_TO_PASS test has to be present in the baseline in order
+to fail there.
+"""
 
 
 def factory(items: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -330,7 +334,7 @@ class Evaluator(ABC):
             pred: The model-generated patch to apply, or ``None`` when
                 ``patch_type`` is :attr:`PatchType.BEFORE_PATCH`.
             apply_test_patch: Whether to apply the instance's
-                ``test_patch.diff`` on top of ``pred`` (see
+                ``test_patch.diff`` to the checkout (see
                 :meth:`apply_test_patch`). Off by default so existing
                 behaviour is unchanged.
         """
@@ -450,14 +454,19 @@ class Evaluator(ABC):
                 )
 
     def apply_test_patch(self) -> None:
-        """Apply the instance's ``test_patch.diff`` on top of the model patch.
+        """Apply the instance's ``test_patch.diff`` to the checkout.
 
-        SWE-bench scores a model patch against the maintainer's tests, so
-        those tests have to be present in the container no matter what the
-        model wrote. This project's ``gold_patch.diff`` bundles the code
-        fix and the new tests together, so a model run — which only ever
-        receives ``pred.model_patch`` — never sees them, and its
-        FAIL_TO_PASS tests are absent rather than failing.
+        SWE-bench scores against the maintainer's tests, so those tests
+        have to be present in the container whatever else was applied.
+        This project's ``gold_patch.diff`` bundles the code fix and the
+        new tests together, so a model run — which only ever receives
+        ``pred.model_patch`` — never sees them, and its FAIL_TO_PASS tests
+        are absent rather than failing.
+
+        The baseline needs them for the same reason: a test the fix
+        strengthens in place has to run in its patched form before the fix
+        so that it fails there. Run against the unpatched test file it
+        passes, and the instance yields no FAIL_TO_PASS at all.
 
         Applying the test half separately fixes that. The test files are
         first restored to their committed state, because a model patch may
@@ -619,18 +628,20 @@ class Evaluator(ABC):
             else:
                 log.info('No patch to apply')
             if self.apply_test_patch_enabled:
-                if self.patch_type in MODEL_PATCH_TYPES:
-                    log.info('Applying test patch...')
-                    self.apply_test_patch()
-                else:
+                if self.patch_type in TEST_PATCH_EXEMPT_TYPES:
                     # gold already carries the maintainer's tests in the
-                    # same diff, and before_patch must not have them at
-                    # all: injecting them into the baseline would make
-                    # the patch's new tests look pre-existing and break
-                    # the FAIL_TO_PASS split for the whole corpus.
+                    # same diff, so applying them again would conflict.
                     log.info(
                         f'Not applying test patch for {self.patch_type}'
                     )
+                else:
+                    # The baseline needs them too. A FAIL_TO_PASS test
+                    # has to be present before the fix in order to fail
+                    # there; without the test patch a test the fix
+                    # strengthens in place runs in its original, passing
+                    # form and cannot be told apart from PASS_TO_PASS.
+                    log.info('Applying test patch...')
+                    self.apply_test_patch()
             log.info('Evaluating...')
             results = self.evaluate()
         except Exception:
