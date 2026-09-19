@@ -125,13 +125,16 @@ def parse_args() -> Args:
     )
     parser.add_argument(
         '--apply-test-patch',
-        action='store_true',
+        action=argparse.BooleanOptionalAction,
+        default=True,
         help=(
             "Apply the instance's test_patch.diff on top of the patch, so "
             "the maintainer's FAIL_TO_PASS tests are present no matter "
             'what the model wrote. Falls back to deriving the test half '
-            'from gold_patch.diff. Off by default, which reproduces the '
-            'old behaviour.'
+            'from gold_patch.diff. On by default, because without it '
+            'every FAIL_TO_PASS test is reported as not run and the run '
+            'cannot be scored. Pass --no-apply-test-patch to reproduce '
+            'the old behaviour.'
         ),
     )
 

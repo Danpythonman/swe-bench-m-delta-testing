@@ -54,6 +54,14 @@ POST: Final[str] = 'gold'
 VARIANTS: Final[tuple[str, ...]] = ('with_image', 'without_image')
 
 # What the published reference report reports, used by --self-check.
+#
+# NOTE: these predate the incomplete-pre-run quarantine added to
+# classify_tests (see MIN_PRE_RUN_COVERAGE in notebooks/test_split.py), so
+# --self-check now fails against them. That failure is the guard working:
+# the quarantined instances were contributing FAIL_TO_PASS entries derived
+# from pre-patch runs that had died partway through the suite. Re-baseline
+# these numbers deliberately, after reviewing the quarantined list, rather
+# than to make the check go green.
 EXPECTED: Final[dict[str, int]] = {
     'instances': 176,
     'with_f2p': 78,
@@ -238,6 +246,9 @@ def reference_split(
         'REGRESSED': split.regressed,
         'BROKEN': split.broken,
         'FLAKY': split.flaky,
+        # Never scored -- see TestSplit.incomplete. Carried through so a
+        # quarantined instance is visibly excluded rather than just absent.
+        'INCOMPLETE_PRE_RUN': split.incomplete,
     }
     parts = []
     for label, mapping in categories.items():

@@ -116,7 +116,7 @@ def make_command(
     sbmdt_instance_id: str,
     patch_type: PatchType,
     pred_s3_key: str,
-    apply_test_patch: bool = False,
+    apply_test_patch: bool,
 ) -> str:
     """Build the shell command to run on the EC2 instance via SSM.
 
@@ -583,12 +583,17 @@ def parse_args() -> RunArgs:
     )
     parser.add_argument(
         '--apply-test-patch',
-        action='store_true',
+        action=argparse.BooleanOptionalAction,
+        default=True,
         help=(
             "Apply each instance's test patch on top of the model "
             "patch, so the maintainer's FAIL_TO_PASS tests are "
-            'present regardless of what the model wrote. Without '
-            'this every FAIL_TO_PASS test is reported as not run.'
+            'present regardless of what the model wrote. On by '
+            'default: without it every FAIL_TO_PASS test is reported '
+            'as not run and no patch can score, so the runs it '
+            'produces cannot be used for evaluation. Pass '
+            '--no-apply-test-patch only to reproduce that old '
+            'behaviour deliberately.'
         ),
     )
     parser.add_argument(

@@ -40,6 +40,30 @@ _ALL_PASSED: str = '_all_passed'
 _ANY_PASSED: str = '_any_passed'
 _MERGE: str = '_merge'
 
+# A test absent from the pre-patch run is treated as FAIL_TO_PASS, which is
+# correct when the patch introduced it but catastrophic when the pre-patch
+# run simply died partway through the suite: every test it never reached
+# then looks introduced. Observed in practice -- one instance's pre-patch
+# run covered 34 of 1202 tests and produced 1168 bogus FAIL_TO_PASS entries,
+# against a real reference list of one or two.
+#
+# Real test patches are tiny relative to the suite: across this corpus the
+# median patch adds 2 tests (0.14% of the suite) and the 75th percentile
+# adds 9 (0.46%). The truncated runs sit far away at 27-97%. Requiring the
+# pre-patch run to cover at least this fraction of the post-patch run
+# separates the two cleanly, with roughly an order of magnitude of slack on
+# either side.
+MIN_PRE_RUN_COVERAGE: float = 0.95
+
+# Truncation is not the only way to inflate a FAIL_TO_PASS list. Renaming a
+# suite -- an outer describe() block, say -- changes the full name of every
+# test beneath it, so all of them read as introduced even though the
+# pre-patch run completed normally. The coverage guard cannot see this, and
+# no threshold distinguishes it from a genuinely large patch, so instances
+# above this size are reported for inspection rather than dropped. Real
+# SWE-bench reference lists are typically one to twenty tests.
+IMPLAUSIBLE_F2P_COUNT: int = 20
+
 # --- Exceptions ---
 
 
@@ -97,6 +121,12 @@ class TestSplit:
             inspecting: it signals a bad patch or a dirty environment.
         broken: Failed both pre- and post-patch. Carries no signal.
         flaky: Verdict disagreed across runs, so it is untrustworthy.
+        incomplete: Instances whose pre-patch run covered too little of
+            the post-patch suite to be trusted (see
+            `MIN_PRE_RUN_COVERAGE`). Their tests are excluded from every
+            other set, because a truncated pre-patch run manufactures
+            FAIL_TO_PASS entries out of tests it never reached. The value
+            is the post-patch test list, kept for auditing.
     """
 
     fail_to_pass: dict[str, list[str]]
@@ -104,6 +134,7 @@ class TestSplit:
     regressed: dict[str, list[str]]
     broken: dict[str, list[str]]
     flaky: dict[str, list[str]]
+    incomplete: dict[str, list[str]]
 
 
 # --- Functions ---
@@ -210,6 +241,48 @@ def _split_flaky(
     return stable, flaky
 
 
+def _find_incomplete_pre_runs(
+    status: pd.DataFrame,
+    columns: Columns,
+    pre_label: str,
+    post_label: str,
+    min_coverage: float,
+) -> set[str]:
+    """Identify instances whose pre-patch run is too short to trust.
+
+    Compares how many distinct tests each side ran. A pre-patch run that
+    covered far fewer tests than the post-patch run did not observe the
+    suite, so the tests it never reached would be misread as introduced
+    by the patch.
+
+    Args:
+        status: Output of `_collapse_runs`.
+        columns: The column-name mapping.
+        pre_label: Value of the patch_type column for pre-patch runs.
+        post_label: Value of the patch_type column for post-patch runs.
+        min_coverage: Minimum pre/post test-count ratio to accept.
+
+    Returns:
+        The instance ids to quarantine. Instances missing either side
+        entirely are included, since no comparison is possible.
+    """
+    counts = (
+        status.groupby([columns.instance, columns.patch_type], observed=True)[
+            columns.test_name
+        ]
+        .nunique()
+        .unstack(columns.patch_type)
+        .reindex(columns=[pre_label, post_label])
+    )
+    pre = counts[pre_label].fillna(0)
+    post = counts[post_label].fillna(0)
+    # An instance with no post-patch run is dropped later by
+    # _pivot_patch_status anyway; guard the division rather than flag it
+    # here, so this function only reports genuine truncation.
+    coverage = pre.where(post > 0) / post.where(post > 0)
+    return set(coverage.index[coverage < min_coverage])
+
+
 def _pivot_patch_status(
     stable: pd.DataFrame,
     columns: Columns,
@@ -274,6 +347,7 @@ def classify_tests(
     pre_label: str,
     post_label: str,
     columns: Columns | None = None,
+    min_pre_run_coverage: float = MIN_PRE_RUN_COVERAGE,
 ) -> TestSplit:
     """Build FAIL_TO_PASS and PASS_TO_PASS test sets per instance.
 
@@ -284,6 +358,10 @@ def classify_tests(
         post_label: Value of the patch_type column marking post-patch
             runs (the fixed state).
         columns: Column-name mapping. Defaults to the standard schema.
+        min_pre_run_coverage: Minimum share of the post-patch suite the
+            pre-patch run must cover for the instance to be classified
+            at all. Set to 0 to disable the guard and restore the old
+            behaviour.
 
     Returns:
         A TestSplit holding the two headline sets plus the discarded
@@ -298,8 +376,18 @@ def classify_tests(
     _validate(frame, columns, pre_label, post_label)
 
     status = _collapse_runs(frame, columns)
+    incomplete_ids = _find_incomplete_pre_runs(
+        status, columns, pre_label, post_label, min_pre_run_coverage
+    )
     stable, flaky = _split_flaky(status, columns)
     wide = _pivot_patch_status(stable, columns, pre_label, post_label)
+
+    # Split the quarantined instances off before classifying, so a
+    # truncated pre-patch run cannot contribute phantom FAIL_TO_PASS
+    # entries to the reference.
+    quarantined = cast(pd.Series, wide[columns.instance]).isin(incomplete_ids)
+    incomplete_rows = cast(pd.DataFrame, wide[quarantined])
+    wide = cast(pd.DataFrame, wide[~quarantined])
 
     pre = cast(pd.Series, wide[pre_label])
     post = cast(pd.Series, wide[post_label])
@@ -314,8 +402,37 @@ def classify_tests(
         regressed=_to_mapping(cast(pd.DataFrame, wide[pre & ~post]), columns),
         broken=_to_mapping(cast(pd.DataFrame, wide[~pre & ~post]), columns),
         flaky=_to_mapping(flaky, columns),
+        incomplete=_to_mapping(incomplete_rows, columns),
     )
 
+    if split.incomplete:
+        logger.warning(
+            'quarantined %d instance(s) whose %s run covered less than '
+            '%.0f%% of the %s suite; a truncated run would otherwise '
+            'manufacture FAIL_TO_PASS entries',
+            len(split.incomplete),
+            pre_label,
+            min_pre_run_coverage * 100,
+            post_label,
+        )
+    oversized = sorted(
+        (
+            (len(tests), instance)
+            for instance, tests in split.fail_to_pass.items()
+            if len(tests) > IMPLAUSIBLE_F2P_COUNT
+        ),
+        reverse=True,
+    )
+    if oversized:
+        logger.warning(
+            'derived a FAIL_TO_PASS list larger than %d tests for %d '
+            'instance(s); the patch most likely renamed a suite rather '
+            'than adding that many tests, so these references are '
+            'unreliable: %s',
+            IMPLAUSIBLE_F2P_COUNT,
+            len(oversized),
+            ', '.join(f'{name} ({count})' for count, name in oversized[:5]),
+        )
     if split.flaky:
         logger.warning(
             'dropped flaky tests in %d instance(s)',
