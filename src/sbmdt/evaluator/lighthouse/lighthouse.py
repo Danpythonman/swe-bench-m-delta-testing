@@ -249,51 +249,74 @@ class LighthouseEvaluator(Evaluator):
                     f'{self.instance_id}: {output.decode()}'
                 )
 
-        # lighthouse-cli/package.json declares loose historical ranges.
-        # Installing them today selects much newer releases within those
-        # ranges, which do not necessarily compile these old checkouts.
-        # Pin @types/node to the known baseline and TypeScript to the minimum
-        # version declared by this checkout's own manifest.
-        exit_code, output = self.container.exec_run(
-            'npm install @types/node@6.0.45 --save-exact',
-            workdir='/testbed/lighthouse-cli',
-            stream=False,
-        )
-        assert isinstance(output, bytes)
-
-        log.info(exit_code)
-        log.info(output.decode())
-
-        if exit_code != 0:
-            raise Exception(
-                f'Failed to pin lighthouse-cli @types/node for '
-                f'{self.instance_id}: {output.decode()}'
+        # Only the multi-package layout has a lighthouse-cli manifest to
+        # pin. The older single-package checkouts still have a
+        # lighthouse-cli directory - lighthouse-4036's test patch writes
+        # into lighthouse-cli/test/fixtures - but no package.json inside
+        # it, and reading one that is not there aborted the whole run
+        # with a docker 404 before any test executed. Guard it the same
+        # way chrome-launcher above is guarded. With no manifest there is
+        # no declared TypeScript range, so version_match stays unset and
+        # the build below falls back to the compatibility pin that exists
+        # for exactly this older layout.
+        version_match = None
+        has_cli_manifest = self.container.exec_run(
+            ['test', '-f', '/testbed/lighthouse-cli/package.json']
+        )[0] == 0
+        if not has_cli_manifest:
+            log.info(
+                f'{self.instance_id} has no lighthouse-cli/package.json; '
+                f'skipping the sub-package dependency pins'
             )
-
-        cli_package = json.loads(
-            read_from_container(
-                self.container, '/testbed/lighthouse-cli/package.json'
-            )
-        )
-        typescript_range = cli_package.get('devDependencies', {}).get(
-            'typescript'
-        )
-        version_match = re.search(r'\d+\.\d+\.\d+', typescript_range or '')
-        if version_match:
-            typescript_version = version_match.group()
+        else:
+            # lighthouse-cli/package.json declares loose historical ranges.
+            # Installing them today selects much newer releases within those
+            # ranges, which do not necessarily compile these old checkouts.
+            # Pin @types/node to the known baseline and TypeScript to
+            # the minimum version this checkout's own manifest declares.
             exit_code, output = self.container.exec_run(
-                f'npm install typescript@{typescript_version} --save-exact',
+                'npm install @types/node@6.0.45 --save-exact',
                 workdir='/testbed/lighthouse-cli',
                 stream=False,
             )
             assert isinstance(output, bytes)
+
             log.info(exit_code)
             log.info(output.decode())
+
             if exit_code != 0:
                 raise Exception(
-                    f'Failed to pin typescript@{typescript_version} for '
+                    f'Failed to pin lighthouse-cli @types/node for '
                     f'{self.instance_id}: {output.decode()}'
                 )
+
+            cli_package = json.loads(
+                read_from_container(
+                    self.container, '/testbed/lighthouse-cli/package.json'
+                )
+            )
+            typescript_range = cli_package.get('devDependencies', {}).get(
+                'typescript'
+            )
+            version_match = re.search(
+                r'\d+\.\d+\.\d+', typescript_range or ''
+            )
+            if version_match:
+                typescript_version = version_match.group()
+                exit_code, output = self.container.exec_run(
+                    f'npm install typescript@{typescript_version} '
+                    f'--save-exact',
+                    workdir='/testbed/lighthouse-cli',
+                    stream=False,
+                )
+                assert isinstance(output, bytes)
+                log.info(exit_code)
+                log.info(output.decode())
+                if exit_code != 0:
+                    raise Exception(
+                        f'Failed to pin typescript@{typescript_version} for '
+                        f'{self.instance_id}: {output.decode()}'
+                    )
 
         # install-cli's prepublish hook is supposed to build the CLI
         # automatically, but fails silently due to an npm lifecycle
