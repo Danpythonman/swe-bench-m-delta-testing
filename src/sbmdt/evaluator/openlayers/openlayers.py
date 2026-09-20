@@ -469,6 +469,74 @@ class OpenlayersEvaluator(Evaluator):
                 f'on the PUPPETEER_EXECUTABLE_PATH shim for --no-sandbox'
             )
 
+        # OpenLayers' test bootstrap registers a root-level afterEach
+        # that throws 'Found extra <div> elements in the body' when a test
+        # leaves DOM behind. Mocha treats a failing hook as fatal to the
+        # suite that owns it, and the root suite owns every test, so one
+        # test that times out mid-render -- leaving its map div attached
+        # because the cleanup never ran -- cancels the whole remaining
+        # run. openlayers-13020 reported "Executed 51 of 2083" for exactly
+        # this reason, and every unexecuted test then scores as a failure,
+        # which is how one slow render becomes two thousand phantom
+        # regressions.
+        #
+        # The guard is suite hygiene, not a benchmark test: its name
+        # appears in no FAIL_TO_PASS or PASS_TO_PASS list, so it can only
+        # ever subtract signal. Doing what it asks for -- removing the
+        # leftover divs -- instead of throwing leaves the next test just
+        # as isolated while letting the run finish. `garbage` is a live
+        # HTMLCollection, so draining index 0 empties it. The guard's text
+        # is byte-identical from v5.3.0 through v10.2.1; only the file
+        # moved from test/ to test/browser/ along the way.
+        _, extensions_output = self.container.exec_run(
+            [
+                'find', '/testbed/test', '-name', 'test-extensions.js',
+                '-not', '-path', '*/node_modules/*',
+            ],
+        )
+        assert isinstance(extensions_output, bytes)
+        extensions_files = [
+            line.strip()
+            for line in extensions_output.decode().splitlines()
+            if line.strip()
+        ]
+        if not extensions_files:
+            log.warning(
+                f'no test-extensions.js under /testbed/test for '
+                f'{self.instance_id}; leaving the body-div guard alone'
+            )
+        for extensions_file in extensions_files:
+            # A commit that words the guard differently must not abort the
+            # evaluation: failing to defuse it costs only the tests the
+            # abort would have taken anyway, which is the status quo.
+            try:
+                apply_change_regex(
+                    container=self.container,
+                    file=extensions_file,
+                    find=(
+                        r'if \(garbage\.length\) \{\s*'
+                        r"throw new Error\('Found extra <div> elements in "
+                        r"the body'\);\s*\}"
+                    ),
+                    replace=(
+                        'while (garbage.length) {\n'
+                        '      garbage[0].parentNode.removeChild('
+                        'garbage[0]);\n'
+                        '    }'
+                    ),
+                    assertion='garbage[0].parentNode.removeChild(garbage[0])',
+                )
+            except Exception as exc:
+                log.warning(
+                    f'could not defuse the body-div guard in '
+                    f'{extensions_file} for {self.instance_id}: {exc}'
+                )
+            else:
+                log.info(
+                    f'defused the body-div guard in {extensions_file} for '
+                    f'{self.instance_id}'
+                )
+
         log.info('All changes applied successfully.')
 
     @override
