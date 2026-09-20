@@ -459,7 +459,8 @@ class OpenlayersEvaluator(Evaluator):
                         'customLaunchers: {\n'
                         '      ChromeNoSandbox: {\n'
                         "        base: 'Chrome',\n"
-                        "        flags: ['--no-sandbox', '--enable-webgl', "
+                        "        flags: ['--no-sandbox', "
+                        "'--disable-dev-shm-usage', '--enable-webgl', "
                         "'--ignore-gpu-blocklist', "
                         "'--use-angle=swiftshader'],\n"
                         '      },'
@@ -479,7 +480,8 @@ class OpenlayersEvaluator(Evaluator):
                         '    customLaunchers: {\n'
                         '      ChromeNoSandbox: {\n'
                         "        base: 'Chrome',\n"
-                        "        flags: ['--no-sandbox', '--enable-webgl', "
+                        "        flags: ['--no-sandbox', "
+                        "'--disable-dev-shm-usage', '--enable-webgl', "
                         "'--ignore-gpu-blocklist', "
                         "'--use-angle=swiftshader'],\n"
                         '      },\n'
@@ -641,7 +643,8 @@ class OpenlayersEvaluator(Evaluator):
             shim_path = '/tmp/chrome-no-sandbox'
             shim_script = (
                 f'#!/bin/sh\n'
-                f'exec {chrome_path[0]} --no-sandbox --disable-gpu "$@"\n'
+                f'exec {chrome_path[0]} --no-sandbox '
+                f'--disable-dev-shm-usage --disable-gpu "$@"\n'
             )
             write_to_container(self.container, shim_path, shim_script)
             self.container.exec_run(['chmod', '+x', shim_path])
