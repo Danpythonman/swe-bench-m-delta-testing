@@ -31,6 +31,7 @@ __all__ = [
     'CODE_PATCH_PRED_FILENAME',
     'is_test_path',
     'split_diff',
+    'split_diff_by_file',
     'drop_unappliable_binary',
     'drop_mode_only_sections',
     'test_patch_for',
@@ -113,6 +114,37 @@ def split_diff(diff: str) -> tuple[str, str]:
         (test_parts if is_test_path(path) else code_parts).append(section)
 
     return ''.join(code_parts), ''.join(test_parts)
+
+
+def split_diff_by_file(diff: str) -> list[tuple[str, str]]:
+    """Cut a unified diff into one section per file.
+
+    ``git apply`` is all-or-nothing: a single section it cannot place
+    rejects the whole patch, which in practice means a model's real code
+    change is thrown away because the same submission also touched a
+    lockfile the image had already regenerated. Applying file by file
+    lets the caller keep what does apply and report what does not.
+
+    Args:
+        diff: The full unified diff.
+
+    Returns:
+        ``(path, section)`` pairs in the order they appear, where ``path``
+        is the post-image (``b/``) path. Empty when the text carries no
+        ``diff --git`` header at all.
+    """
+    starts = [m.start() for m in DIFF_HEADER.finditer(diff)]
+    if not starts:
+        return []
+
+    out: list[tuple[str, str]] = []
+    bounds = starts + [len(diff)]
+    for begin, end in zip(bounds[:-1], bounds[1:], strict=True):
+        section = diff[begin:end]
+        header = DIFF_HEADER.match(section)
+        assert header is not None
+        out.append((header.group(2), section))
+    return out
 
 
 def drop_unappliable_binary(diff: str) -> tuple[str, list[str]]:

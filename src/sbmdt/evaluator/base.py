@@ -27,6 +27,7 @@ from sbmdt.patches import (
     drop_mode_only_sections,
     drop_unappliable_binary,
     split_diff,
+    split_diff_by_file,
     test_patch_for,
 )
 from sbmdt.pred import Pred
@@ -557,62 +558,117 @@ class Evaluator(ABC):
                         stream=False,
                     )
                     assert isinstance(restore_output, bytes)
-            write_to_container(self.container, PATCH_FILE, section)
-            outputs = []
-            attempts = (
-                (f'git apply --check {PATCH_FILE}', f'git apply {PATCH_FILE}'),
-                (
-                    f'git apply --check --recount {PATCH_FILE}',
-                    f'git apply --recount {PATCH_FILE}',
-                ),
-                (
-                    'git apply --check --3way --whitespace=nowarn '
-                    f'{PATCH_FILE}',
-                    f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
-                ),
-            )
-            exit_code = 1
-            for check_command, apply_command in attempts:
-                check_code, check_output = self.container.exec_run(
-                    check_command, workdir='/testbed', stream=False
-                )
-                assert isinstance(check_output, bytes)
-                outputs.append(check_output.decode())
-                if check_code != 0:
-                    continue
-                exit_code, output = self.container.exec_run(
-                    apply_command, workdir='/testbed', stream=False
-                )
-                assert isinstance(output, bytes)
-                outputs.append(output.decode())
-                log.info(exit_code)
-                log.info(output.decode())
-                if exit_code == 0:
-                    break
-            if exit_code != 0 and self.instance_id in globals().get(
-                'PATCH_BASE_COMMIT_OVERRIDES', {}
-            ):
-                dry_code, dry_output = self.container.exec_run(
-                    f'patch --dry-run --batch --forward -p1 -i {PATCH_FILE}',
-                    workdir='/testbed',
-                    stream=False,
-                )
-                assert isinstance(dry_output, bytes)
-                outputs.append(dry_output.decode())
-                if dry_code == 0:
-                    exit_code, output = self.container.exec_run(
-                        f'patch --batch --forward -p1 -i {PATCH_FILE}',
-                        workdir='/testbed',
-                        stream=False,
-                    )
-                    assert isinstance(output, bytes)
-                    outputs.append(output.decode())
+            exit_code, outputs = self.apply_diff_text(section)
+            if exit_code != 0:
+                # git apply is all-or-nothing, so one section it cannot
+                # place throws away the whole submission. Across this
+                # project's runs that cost 234 evaluations over 192
+                # instances, and the file named in the error was almost
+                # always package-lock.json, package.json or yarn.lock -
+                # manifests the image had already regenerated with its own
+                # npm install, so the model's diff of them could never
+                # match. Retrying file by file keeps the code change that
+                # the suite actually measures instead of discarding it
+                # along with the lockfile hunk.
+                #
+                # What could not be placed is named in the log rather than
+                # swallowed: a run that dropped a section is not the same
+                # as a clean one, and the reader has to be able to tell.
+                per_file = split_diff_by_file(section)
+                if len(per_file) > 1:
+                    applied: list[str] = []
+                    refused: list[str] = []
+                    for path, chunk in per_file:
+                        chunk_code, chunk_outputs = self.apply_diff_text(
+                            chunk
+                        )
+                        if chunk_code == 0:
+                            applied.append(path)
+                        else:
+                            refused.append(path)
+                            outputs.extend(chunk_outputs)
+                    if applied:
+                        log.warning(
+                            '%s: applied %d of %d file(s) in patch section '
+                            '%s; refused %s',
+                            self.instance_id, len(applied), len(per_file),
+                            section_number, refused,
+                        )
+                        continue
             if exit_code != 0:
                 log.error('Failed to apply patch section %s', section_number)
                 raise Exception(
                     f'Failed to apply patch for {self.instance_id}: '
                     f'{outputs[-1]}'
                 )
+
+    def apply_diff_text(self, section: str) -> tuple[int, list[str]]:
+        """Try hard to apply one diff to /testbed, and say what happened.
+
+        Walks the ``git apply`` ladder (plain, ``--recount``, ``--3way``)
+        and, for instances whose image is known to sit on a different base
+        commit, falls back to ``patch --forward``.
+
+        Args:
+            section: The unified diff text to apply.
+
+        Returns:
+            ``(exit_code, outputs)``, where ``exit_code`` is 0 only if the
+            diff landed and ``outputs`` holds every command's output in
+            order, for the error message.
+        """
+        assert self.container is not None
+        write_to_container(self.container, PATCH_FILE, section)
+        outputs: list[str] = []
+        attempts = (
+            (f'git apply --check {PATCH_FILE}', f'git apply {PATCH_FILE}'),
+            (
+                f'git apply --check --recount {PATCH_FILE}',
+                f'git apply --recount {PATCH_FILE}',
+            ),
+            (
+                'git apply --check --3way --whitespace=nowarn '
+                f'{PATCH_FILE}',
+                f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
+            ),
+        )
+        exit_code = 1
+        for check_command, apply_command in attempts:
+            check_code, check_output = self.container.exec_run(
+                check_command, workdir='/testbed', stream=False
+            )
+            assert isinstance(check_output, bytes)
+            outputs.append(check_output.decode())
+            if check_code != 0:
+                continue
+            exit_code, output = self.container.exec_run(
+                apply_command, workdir='/testbed', stream=False
+            )
+            assert isinstance(output, bytes)
+            outputs.append(output.decode())
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code == 0:
+                break
+        if exit_code != 0 and self.instance_id in globals().get(
+            'PATCH_BASE_COMMIT_OVERRIDES', {}
+        ):
+            dry_code, dry_output = self.container.exec_run(
+                f'patch --dry-run --batch --forward -p1 -i {PATCH_FILE}',
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(dry_output, bytes)
+            outputs.append(dry_output.decode())
+            if dry_code == 0:
+                exit_code, output = self.container.exec_run(
+                    f'patch --batch --forward -p1 -i {PATCH_FILE}',
+                    workdir='/testbed',
+                    stream=False,
+                )
+                assert isinstance(output, bytes)
+                outputs.append(output.decode())
+        return exit_code, outputs
 
     def restore_patch_base(self) -> None:
         """Check out a verified PR base when a legacy image is mismatched."""
