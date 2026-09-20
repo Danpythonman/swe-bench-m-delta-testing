@@ -33,6 +33,7 @@ from sbmdt.evaluator.bpmn.karma_junit_parser import (
 )
 from sbmdt.utils import (
     apply_change_regex,
+    node_accepts_node_option,
     read_from_container,
     write_to_container,
 )
@@ -391,13 +392,7 @@ class BpmnEvaluator(Evaluator):
         # instance dies on a misleading "results.xml not found". A version
         # comparison cannot see that; one short exec can. Observed on this
         # image: webpack 4 compiles fine without the flag.
-        probe_code, _ = self.container.exec_run(
-            ['node', '-e', ''],
-            environment={'NODE_OPTIONS': OPENSSL_LEGACY_FLAG},
-            workdir='/testbed',
-            stream=False,
-        )
-        if probe_code == 0:
+        if node_accepts_node_option(self.container, OPENSSL_LEGACY_FLAG):
             env['NODE_OPTIONS'] = OPENSSL_LEGACY_FLAG
             log.info('Setting NODE_OPTIONS=%s (accepted by node=%s)',
                      OPENSSL_LEGACY_FLAG, node_version)

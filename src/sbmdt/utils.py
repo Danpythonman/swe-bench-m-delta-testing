@@ -17,6 +17,7 @@ __all__ = [
     'apply_change_literal',
     'apply_change_regex',
     'apply_change',
+    'node_accepts_node_option',
 ]
 
 
@@ -234,3 +235,32 @@ def apply_change(
         if callable(replace):
             raise TypeError('literal mode requires a string replacement')
         apply_change_literal(container, file, find, replace, assertion)
+
+
+def node_accepts_node_option(container: Container, flag: str) -> bool:
+    """Whether this container's node accepts ``flag`` in ``NODE_OPTIONS``.
+
+    The benchmark's base images are tagged ``:latest``, so their toolchain
+    moves underneath us. ``--openssl-legacy-provider`` is the case that
+    bit: newer node builds refuse it outright,
+
+        node: --openssl-legacy-provider is not allowed in NODE_OPTIONS
+
+    and exit 9 before the test runner starts. Nothing then writes the
+    JUnit XML, so the run fails with a misleading "results file not
+    found" that says nothing about the real cause. A node major-version
+    comparison cannot predict this; running node once can.
+
+    Args:
+        container: The running container to probe.
+        flag: The flag to test, e.g. ``--openssl-legacy-provider``.
+
+    Returns:
+        True if node started cleanly with the flag set.
+    """
+    exit_code, _ = container.exec_run(
+        ['node', '-e', ''],
+        environment={'NODE_OPTIONS': flag},
+        stream=False,
+    )
+    return exit_code == 0

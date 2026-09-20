@@ -17,7 +17,11 @@ from sbmdt.evaluator.alibaba.karma_junit_parser import (
     results_xml_to_test_results,
 )
 from sbmdt.evaluator.base import Evaluator, TestResult
-from sbmdt.utils import apply_change_literal, read_from_container
+from sbmdt.utils import (
+    apply_change_literal,
+    node_accepts_node_option,
+    read_from_container,
+)
 
 __all__ = [
     'OpenlayersEvaluator',
@@ -27,6 +31,10 @@ log = logging.getLogger(__name__)
 
 KARMA_CONFIG_FILE: Final[str] = '/testbed/test/karma.config.js'
 RESULTS_FILE: Final[str] = '/testbed/test/test-results/results.xml'
+
+# Re-enables the legacy OpenSSL provider for webpack 4's MD4 hashing.
+# Probed at run time - see sbmdt.utils.node_accepts_node_option.
+OPENSSL_LEGACY_FLAG: Final[str] = '--openssl-legacy-provider'
 
 
 class OpenlayersEvaluator(Evaluator):
@@ -147,14 +155,26 @@ class OpenlayersEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
+        # webpack 4's MD4-based hashing is incompatible with the default
+        # OpenSSL 3 provider bundled with this container's Node version,
+        # so the legacy provider is re-enabled where that is still
+        # possible. It is probed rather than assumed: the base images are
+        # tagged :latest, and a newer node refuses the flag inside
+        # NODE_OPTIONS and exits before the runner starts, which is how
+        # every bpmn-js instance silently stopped producing results.
+        environment: dict[str, str] = {}
+        if node_accepts_node_option(self.container, OPENSSL_LEGACY_FLAG):
+            environment['NODE_OPTIONS'] = OPENSSL_LEGACY_FLAG
+        else:
+            log.warning(
+                'node in this image rejects %s; running %s without it',
+                OPENSSL_LEGACY_FLAG,
+                self.instance_id,
+            )
+
         exit_code, output = self.container.exec_run(
             'xvfb-run -a npm run karma -- --single-run --log-level error',
-            environment={
-                # webpack 4's MD4-based hashing is incompatible with the
-                # default OpenSSL 3 provider bundled with this container's
-                # Node version.
-                'NODE_OPTIONS': '--openssl-legacy-provider',
-            },
+            environment=environment,
             workdir='/testbed',
             stream=False,
         )
