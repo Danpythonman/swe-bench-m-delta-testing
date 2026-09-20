@@ -5,12 +5,17 @@ bpmn-js uses Karma as its test runner, configured at
 ``test/config/karma.unit.js``.  This evaluator:
 
 1. Installs ``karma-junit-reporter`` in the container.
-2. Patches the Karma config to emit JUnit XML output.
-3. Runs ``npm test``, setting ``NODE_OPTIONS=--openssl-legacy-provider``
-   when the image's Node still accepts it (the pinned webpack uses a legacy
-   OpenSSL hash that Node ≥ 17 disables by default; newer Node builds reject
-   the flag itself, so it is probed rather than assumed).
-4. Reads the resulting XML from the container and returns parsed results.
+2. Patches the Karma config to emit JUnit XML output and to make
+   ChromeHeadless reliably capture inside Docker.
+3. Ensures a real Chrome/Chromium binary is present (SWE-bench images
+   often set ``PUPPETEER_SKIP_DOWNLOAD``, and Ubuntu's ``chromium-browser``
+   package is a non-functional snap stub).
+4. Runs ``npm test`` with ``TEST_BROWSERS=ChromeHeadless`` (PhantomJS is
+   the config default but cannot parse this project's compiled bundle).
+   Also sets ``NODE_OPTIONS=--openssl-legacy-provider`` when the image's
+   Node accepts it, which is probed rather than inferred from the version:
+   newer builds reject the flag outright and abort before Karma starts.
+5. Reads the resulting XML from the container and returns parsed results.
 
 All bpmn-js instances share the same project layout and test infrastructure,
 so a single evaluator class handles every ``bpmn-io__bpmn-js-*`` instance ID.
@@ -19,6 +24,7 @@ so a single evaluator class handles every ``bpmn-io__bpmn-js-*`` instance ID.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Final, override
 
 from sbmdt.evaluator.base import Evaluator, TestResult
@@ -28,6 +34,7 @@ from sbmdt.evaluator.bpmn.karma_junit_parser import (
 from sbmdt.utils import (
     apply_change_regex,
     read_from_container,
+    write_to_container,
 )
 
 __all__ = [
@@ -36,67 +43,41 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
-# Path to the Karma unit-test config inside the container.
-# Consistent across all bpmn-js instances.
 KARMA_CONFIG_FILE: Final[str] = '/testbed/test/config/karma.unit.js'
-
-# Absolute path where karma-junit-reporter writes its output.
-# karma.unit.js sets basePath = '../../' (relative to test/config/),
-# which resolves to /testbed, so outputDir 'test-results' lands here.
 RESULTS_XML: Final[str] = '/testbed/test-results/results.xml'
 
-# Re-enables the legacy OpenSSL provider for webpack's MD4 hashing.
-# Not every Node build still accepts it in NODE_OPTIONS - see
-# BpmnEvaluator._node_environment.
+# Re-enables the legacy OpenSSL provider for webpack 4's MD4 hashing.
+# Not every node build accepts it in NODE_OPTIONS, so it is probed at run
+# time rather than inferred - see BpmnEvaluator._npm_test_environment.
 OPENSSL_LEGACY_FLAG: Final[str] = '--openssl-legacy-provider'
+
+# Flags needed for headless Chrome as root in Docker. --no-sandbox is
+# already upstream for ChromeHeadless_Linux; --disable-dev-shm-usage was
+# tried alone and was not enough for capture; --no-proxy-server and an
+# ephemeral debugging port address the remaining "launches but never
+# captures" failure mode we still see on AWS.
+_CHROME_DOCKER_FLAGS: Final[str] = (
+    "[\n"
+    "          '--no-sandbox',\n"
+    "          '--disable-setuid-sandbox',\n"
+    "          '--disable-dev-shm-usage',\n"
+    "          '--disable-gpu',\n"
+    "          '--no-proxy-server',\n"
+    "          '--remote-debugging-port=0'\n"
+    "        ]"
+)
 
 
 class BpmnEvaluator(Evaluator):
-    """Evaluator for bpmn-io/bpmn-js benchmark instances.
-
-    Builds a Docker image for the given instance, installs and configures
-    ``karma-junit-reporter`` to produce JUnit XML output, executes
-    ``npm test``, and parses the resulting XML into :class:`TestResult`
-    objects.
-
-    The ``NODE_OPTIONS=--openssl-legacy-provider`` environment variable is
-    injected at test-run time to work around the
-    ``ERR_OSSL_EVP_UNSUPPORTED`` error that arises when the webpack version
-    pinned by the repository attempts to use a legacy MD4 hash on Node ≥ 17,
-    but only where that Node build still accepts the flag - see
-    :meth:`_node_environment`.
-    """
+    """Evaluator for bpmn-io/bpmn-js benchmark instances."""
 
     @override
     def setup(self) -> None:
-        """Install the JUnit reporter and patch Karma's unit-test config.
-
-        Steps performed:
-
-        1. Install ``karma-junit-reporter`` via npm inside the container.
-        2. Add ``'junit'`` to the ``reporters`` array in
-           ``test/config/karma.unit.js``.
-        3. Insert a ``junitReporter`` config block inside the existing
-           ``karma.set({...})`` call.
-
-        The bpmn-js karma config has no explicit ``plugins`` array so we rely
-        on karma-junit-reporter's auto-discovery (it registers itself as a
-        karma plugin via its ``package.json`` ``keywords``).
-
-        Raises:
-            Exception: If the container has not been started (i.e.,
-                :meth:`Evaluator.provision` was not called first).
-            Exception: If ``karma-junit-reporter`` installation fails.
-        """
+        """Install the JUnit reporter and patch Karma for Docker Chrome."""
 
         if self.container is None:
             raise Exception('no container')
 
-        # ------------------------------------------------------------------
-        # 1. Install karma-junit-reporter.
-        #    --legacy-peer-deps is required because karma-webpack@3 declares
-        #    a peer dep on webpack 2/3 but webpack 4 is installed.
-        # ------------------------------------------------------------------
         exit_code, output = self.container.exec_run(
             'npm install karma-junit-reporter --save-dev --legacy-peer-deps',
             workdir='/testbed',
@@ -113,15 +94,9 @@ class BpmnEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
-        # ------------------------------------------------------------------
-        # 2. Add 'junit' to the reporters array.
-        #
-        # The bpmn-js karma config uses a dynamic reporters line:
-        #   reporters: [ 'progress' ].concat(coverage ? 'coverage' : []),
-        #
-        # We append to whatever array expression is already there by
-        # matching the whole reporters line and tacking on .concat('junit').
-        # ------------------------------------------------------------------
+        self._ensure_chrome_binary()
+        self._patch_chrome_bin_assignment()
+
         apply_change_regex(
             container=self.container,
             file=KARMA_CONFIG_FILE,
@@ -130,14 +105,6 @@ class BpmnEvaluator(Evaluator):
             assertion="concat('junit')",
         )
 
-        # ------------------------------------------------------------------
-        # 3. Inject junitReporter config block inside karma.set({...}).
-        #
-        # Anchor on `singleRun: true` which is present in every bpmn-js
-        # karma config. Inserting after it keeps us firmly inside the
-        # karma.set({...}) object literal, avoiding the syntax error that
-        # occurs when the block lands after the closing `});`.
-        # ------------------------------------------------------------------
         apply_change_regex(
             container=self.container,
             file=KARMA_CONFIG_FILE,
@@ -149,76 +116,311 @@ class BpmnEvaluator(Evaluator):
                 "\n      outputFile: 'results.xml',"
                 '\n      useBrowserName: false,'
                 '\n    },'
+                # Force IPv4 so Chrome does not open http://localhost:9876
+                # on ::1 while Karma listens on 127.0.0.1.
+                "\n    hostname: '127.0.0.1',"
+                "\n    listenAddress: '127.0.0.1',"
             ),
             assertion='junitReporter:',
         )
 
+        self._ensure_chrome_docker_launcher()
+
         log.info('BpmnEvaluator setup complete for %s', self.instance_id)
 
-    def _node_environment(self) -> dict[str, str]:
-        """Environment for ``npm test``, with the OpenSSL flag if usable.
+    def _ensure_chrome_binary(self) -> None:
+        """Make sure a runnable Chrome/Chromium binary exists for Karma."""
+        assert self.container is not None
 
-        The webpack version bpmn-js pins hashes with MD4, which Node >= 17
-        disables unless ``--openssl-legacy-provider`` re-enables it. That
-        flag used to be set unconditionally, but the base images are tagged
-        ``:latest`` and their Node has since moved: newer builds reject the
-        flag outright with ``--openssl-legacy-provider is not allowed in
-        NODE_OPTIONS`` and exit 9 before running a single test, so the
-        suite never writes its JUnit XML and the whole instance fails with
-        a misleading "results.xml not found".
+        check_script = (
+            "const fs=require('fs');"
+            "let p='';"
+            "try{p=require('puppeteer').executablePath()}catch(e){}"
+            "console.log(p&&fs.existsSync(p)?'ok:'+p:'missing:'+p)"
+        )
+        exit_code, output = self.container.exec_run(
+            ['node', '-e', check_script],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        status = output.decode().strip()
+        log.info('puppeteer chrome check: %s (exit_code=%s)',
+                 status, exit_code)
+        if status.startswith('ok:'):
+            return
 
-        Probing costs one short exec and keeps both worlds working: where
-        the flag is still accepted nothing changes, and where it is not the
-        suite at least runs and reports.
+        # Prefer an already-installed system Chrome (openlayers images and
+        # some bpmn images already have one).
+        exit_code, output = self.container.exec_run(
+            [
+                'bash',
+                '-lc',
+                'command -v google-chrome-stable || '
+                'command -v google-chrome || '
+                'command -v chromium || true',
+            ],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        system_chrome = output.decode().strip().splitlines()
+        if system_chrome and system_chrome[0]:
+            log.info('Found system Chrome at %s', system_chrome[0])
+            return
 
-        Returns:
-            The environment mapping to pass to ``npm test``.
+        # SWE-bench images set PUPPETEER_SKIP_DOWNLOAD — clear it.
+        for cmd in (
+            'env -u PUPPETEER_SKIP_DOWNLOAD '
+            '-u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
+            'node node_modules/puppeteer/install.js',
+            'env -u PUPPETEER_SKIP_DOWNLOAD '
+            '-u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
+            'npx --yes puppeteer browsers install chrome',
+        ):
+            log.info('Attempting Chromium download via: %s', cmd)
+            exit_code, output = self.container.exec_run(
+                ['bash', '-lc', cmd],
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info('chromium download exit_code=%s', exit_code)
+            log.info(output.decode()[-4000:])
+            exit_code, output = self.container.exec_run(
+                ['node', '-e', check_script],
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            status = output.decode().strip()
+            log.info('puppeteer chrome check after download: %s', status)
+            if status.startswith('ok:'):
+                return
+
+        # Do NOT apt-install chromium-browser: on Ubuntu 22.04 it is a snap
+        # stub that prints "requires the chromium snap" and exits.
+        log.info('Falling back to Google Chrome .deb install')
+        exit_code, output = self.container.exec_run(
+            [
+                'bash',
+                '-lc',
+                'set -euo pipefail; '
+                'export DEBIAN_FRONTEND=noninteractive; '
+                'apt-get update -qq; '
+                'apt-get install -y -qq wget ca-certificates; '
+                'wget -q -O /tmp/chrome.deb '
+                'https://dl.google.com/linux/direct/'
+                'google-chrome-stable_current_amd64.deb; '
+                'apt-get install -y -qq /tmp/chrome.deb || '
+                '(dpkg -i /tmp/chrome.deb; apt-get install -y -f -qq); '
+                'test -x /usr/bin/google-chrome-stable',
+            ],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        log.info('google-chrome install exit_code=%s', exit_code)
+        log.info(output.decode()[-2000:])
+        if exit_code != 0:
+            raise Exception(
+                'No Chrome/Chromium binary available for Karma: '
+                f'{output.decode()[-1000:]}'
+            )
+
+    def _patch_chrome_bin_assignment(self) -> None:
+        """Stop karma.unit.js from pointing CHROME_BIN at a missing path."""
+        assert self.container is not None
+        content = read_from_container(self.container, KARMA_CONFIG_FILE)
+        needle = (
+            "process.env.CHROME_BIN = require('puppeteer').executablePath();"
+        )
+        if needle not in content:
+            return
+        replacement = (
+            "(function() {"
+            "  var fs = require('fs');"
+            "  var p = null;"
+            "  try { p = require('puppeteer').executablePath(); } catch (e) {}"
+            "  if (p && fs.existsSync(p)) { process.env.CHROME_BIN = p; }"
+            "})();"
+        )
+        write_to_container(
+            self.container,
+            KARMA_CONFIG_FILE,
+            content.replace(needle, replacement, 1),
+        )
+        log.info('Patched unconditional puppeteer CHROME_BIN assignment')
+
+    def _ensure_chrome_docker_launcher(self) -> None:
+        """Install or rewrite ``ChromeHeadless_Linux``.
+
+        Gives the launcher the flags headless Chrome needs
+        to run in Docker.
         """
-        if self.container is None:
-            raise Exception('no container')
+        assert self.container is not None
 
+        content = read_from_container(self.container, KARMA_CONFIG_FILE)
+        if '--no-proxy-server' in content:
+            log.info('Chrome Docker flags already present; '
+                     'skipping launcher patch')
+            return
+
+        launcher_block = (
+            'ChromeHeadless_Linux: {\n'
+            "        base: 'ChromeHeadless',\n"
+            f'        flags: {_CHROME_DOCKER_FLAGS}\n'
+            '      }'
+        )
+
+        if 'ChromeHeadless_Linux' in content:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_CONFIG_FILE,
+                find=(
+                    r'ChromeHeadless_Linux:\s*\{'
+                    r'[\s\S]*?'
+                    r'\n\s*\}'
+                ),
+                replace=launcher_block,
+                assertion='--no-proxy-server',
+            )
+            return
+
+        custom_launchers = (
+            'customLaunchers: {\n'
+            f'      {launcher_block}\n'
+            '    },\n    '
+        )
+        if re.search(r'\bbrowsers\b\s*,', content):
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_CONFIG_FILE,
+                find=r'(\bbrowsers\b\s*,)',
+                replace=custom_launchers + r'\1',
+                assertion='--no-proxy-server',
+            )
+            return
+
+        if 'karma.set(config)' in content:
+            updated = content.replace(
+                'karma.set(config)',
+                'config.customLaunchers = {'
+                + launcher_block
+                + '};\n  karma.set(config)',
+                1,
+            )
+            write_to_container(self.container, KARMA_CONFIG_FILE, updated)
+            verify = read_from_container(self.container, KARMA_CONFIG_FILE)
+            if '--no-proxy-server' not in verify:
+                raise Exception(
+                    'Failed to inject ChromeHeadless_Linux launcher')
+            return
+
+        raise Exception(
+            f'Could not install ChromeHeadless_Linux launcher in '
+            f'{KARMA_CONFIG_FILE}'
+        )
+
+    def _npm_test_environment(self) -> dict[str, str]:
+        """Build env vars for ``npm test``."""
+        assert self.container is not None
+
+        exit_code, output = self.container.exec_run(
+            ['node', '-p', 'process.versions.node'],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        node_version = output.decode().strip()
+        log.info('container node version=%s (exit_code=%s)',
+                 node_version, exit_code)
+
+        env: dict[str, str] = {
+            # Keep local-batch-work's selection: the config maps
+            # ChromeHeadless → ChromeHeadless_Linux on Linux.
+            'TEST_BROWSERS': 'ChromeHeadless',
+            'NO_PROXY': 'localhost,127.0.0.1,::1',
+            'no_proxy': 'localhost,127.0.0.1,::1',
+        }
+
+        locate_script = (
+            "const fs=require('fs');"
+            "const candidates=[];"
+            "try{candidates.push(require('puppeteer').executablePath())}catch(e){}"
+            "candidates.push("
+            "'/usr/bin/google-chrome-stable','/usr/bin/google-chrome',"
+            "'/usr/bin/chromium');"
+            "for (const p of candidates){"
+            "  if(p&&fs.existsSync(p)){console.log(p);process.exit(0)}"
+            "}"
+            "process.exit(1)"
+        )
+        exit_code, output = self.container.exec_run(
+            ['node', '-e', locate_script],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        chrome_bin = output.decode().strip()
+        if exit_code == 0 and chrome_bin:
+            # Same pattern as openlayers: wrap so --no-sandbox is always on,
+            # including paths that launch Chrome through puppeteer itself.
+            shim = '/tmp/chrome-no-sandbox'
+            write_to_container(
+                self.container,
+                shim,
+                f'#!/bin/bash\n'
+                f'exec {chrome_bin} --no-sandbox --disable-gpu "$@"\n',
+            )
+            self.container.exec_run(['chmod', '+x', shim], stream=False)
+            env['CHROME_BIN'] = shim
+            env['PUPPETEER_EXECUTABLE_PATH'] = shim
+            log.info('Using CHROME_BIN shim -> %s', chrome_bin)
+        else:
+            log.warning('Could not locate a Chrome binary to set CHROME_BIN')
+
+        # Whether the flag is usable is decided by probing, not by reading
+        # the node major version. The base images are tagged :latest and
+        # have moved: the node in the current bpmn-js image is well past
+        # 17 and still refuses the flag inside NODE_OPTIONS -
+        #
+        #     node: --openssl-legacy-provider is not allowed in NODE_OPTIONS
+        #
+        # exiting 9 before Karma starts, so no JUnit XML is written and the
+        # instance dies on a misleading "results.xml not found". A version
+        # comparison cannot see that; one short exec can. Observed on this
+        # image: webpack 4 compiles fine without the flag.
         probe_code, _ = self.container.exec_run(
-            "node -e ''",
+            ['node', '-e', ''],
             environment={'NODE_OPTIONS': OPENSSL_LEGACY_FLAG},
             workdir='/testbed',
             stream=False,
         )
         if probe_code == 0:
-            return {'NODE_OPTIONS': OPENSSL_LEGACY_FLAG}
+            env['NODE_OPTIONS'] = OPENSSL_LEGACY_FLAG
+            log.info('Setting NODE_OPTIONS=%s (accepted by node=%s)',
+                     OPENSSL_LEGACY_FLAG, node_version)
+        else:
+            log.info(
+                'Skipping NODE_OPTIONS=%s: node=%s rejects it',
+                OPENSSL_LEGACY_FLAG, node_version,
+            )
 
-        log.warning(
-            "node in this image rejects %s in NODE_OPTIONS; running %s "
-            'without it. If webpack then fails on an unsupported MD4 '
-            'digest, the image needs a Node matching the pinned webpack.',
-            OPENSSL_LEGACY_FLAG,
-            self.instance_id,
-        )
-        return {}
+        return env
 
     @override
     def evaluate(self) -> list[TestResult]:
-        """Run ``npm test`` and retrieve the JUnit XML results.
-
-        Runs the Karma test suite, suppressing the OpenSSL incompatibility
-        between Node ≥ 17 and the webpack version pinned by bpmn-js where
-        the image's Node still supports the flag (see
-        :meth:`_node_environment`). Reads the XML written to
-        ``/testbed/test-results/results.xml`` by ``karma-junit-reporter``
-        and parses it into :class:`TestResult` objects.
-
-        Returns:
-            A list of :class:`TestResult` parsed from the JUnit XML output.
-
-        Raises:
-            Exception: If the container has not been started.
-        """
+        """Run ``npm test`` and retrieve the JUnit XML results."""
 
         if self.container is None:
             raise Exception('no container')
 
+        environment = self._npm_test_environment()
+
         exit_code, output = self.container.exec_run(
             'npm test',
-            environment=self._node_environment(),
+            environment=environment,
             workdir='/testbed',
             stream=False,
         )
