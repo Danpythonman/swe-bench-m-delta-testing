@@ -311,6 +311,31 @@ class OpenlayersEvaluator(Evaluator):
             assertion='junitReporter: {',
         )
 
+        # Every openlayers config from v5.3.0 to v10.2.1 pins mocha's
+        # per-test timeout at 2500ms, which upstream CI meets on a GPU.
+        # These workers rasterize WebGL in software through SwiftShader,
+        # where the first shader compile alone can outrun that budget: the
+        # same ol/layer/Heatmap tests passed in openlayers-10478's run and
+        # timed out in openlayers-10723's, minutes apart, on identical
+        # code. A timeout is an environment budget rather than a test
+        # assertion -- the same class of knob as the karma disconnect
+        # ceilings above -- so raising it costs nothing a real hang would
+        # not still catch, and stops the software renderer from inventing
+        # failures the reference never saw.
+        try:
+            apply_change_regex(
+                container=self.container,
+                file=self._karma_config_file,
+                find=r'mocha:\s*\{\s*timeout:\s*\d+',
+                replace='mocha: {\n        timeout: 10000',
+                assertion='timeout: 10000',
+            )
+        except Exception as exc:
+            log.warning(
+                f'could not raise the mocha timeout for '
+                f'{self.instance_id}: {exc}'
+            )
+
         # The old fixed plugin list assumed every instance's package.json
         # carries the same karma-* packages this evaluator happened to be
         # written against. It does not: different commits have different
