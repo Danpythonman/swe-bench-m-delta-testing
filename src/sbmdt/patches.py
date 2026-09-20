@@ -102,6 +102,47 @@ def split_diff(diff: str) -> tuple[str, str]:
     return ''.join(code_parts), ''.join(test_parts)
 
 
+#: A per-file section of a unified diff, starting at its ``diff --git`` line.
+_FILE_SECTION: Final[re.Pattern[str]] = re.compile(r'(?m)^(?=diff --git )')
+
+#: Marker of a binary hunk that carries its bytes, so ``git apply`` can use it.
+_BINARY_DATA: Final[str] = 'GIT binary patch'
+
+
+def strip_unappliable_binary_hunks(diff: str) -> tuple[str, list[str]]:
+    """Drop binary file sections that carry no data, which git cannot apply.
+
+    The benchmark's patches were produced without ``--binary``, so an image
+    that a patch adds or changes appears only as ``Binary files a/x and b/x
+    differ``. ``git apply`` rejects that with "cannot apply binary patch
+    without full index line", and because it applies a diff atomically, one
+    such section makes every other hunk in the same patch fail with it. The
+    bytes were never recorded, so they cannot be recovered; the only useful
+    thing is to apply the text hunks and report what was skipped.
+
+    Args:
+        diff: A unified diff.
+
+    Returns:
+        The diff without the unappliable sections, and the paths that were
+        dropped from it.
+    """
+    kept: list[str] = []
+    dropped: list[str] = []
+    for section in _FILE_SECTION.split(diff):
+        header = DIFF_HEADER.match(section)
+        is_binary = (
+            re.search(r'(?m)^Binary files .* differ$', section) is not None
+        )
+        if is_binary and _BINARY_DATA not in section:
+            dropped.append(
+                header.group(2) if header else section.splitlines()[0]
+            )
+            continue
+        kept.append(section)
+    return ''.join(kept), dropped
+
+
 def read_diff(path: Path) -> str:
     """Read a diff off disk without mangling its bytes or line endings.
 

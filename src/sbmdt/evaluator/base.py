@@ -22,7 +22,7 @@ from docker.models.containers import Container
 from docker.models.images import Image
 
 from sbmdt.env import DOCKERFILES_BASE
-from sbmdt.patches import test_patch_for
+from sbmdt.patches import strip_unappliable_binary_hunks, test_patch_for
 from sbmdt.pred import Pred
 from sbmdt.utils import write_to_container
 
@@ -489,7 +489,18 @@ class Evaluator(ABC):
         if self.container is None:
             raise Exception('no container')
 
-        test_patch = test_patch_for(self.instance_id)
+        test_patch, skipped = strip_unappliable_binary_hunks(
+            test_patch_for(self.instance_id)
+        )
+        if skipped:
+            # Reference images cannot be reconstructed from the benchmark's
+            # patches, so tests that compare against them will read the
+            # committed image rather than the maintainer's updated one.
+            log.warning(
+                'Skipping %d binary file(s) the test patch cannot apply: %s',
+                len(skipped),
+                ', '.join(skipped),
+            )
         if not test_patch.strip():
             log.info('Test patch is empty, nothing to apply')
             return
