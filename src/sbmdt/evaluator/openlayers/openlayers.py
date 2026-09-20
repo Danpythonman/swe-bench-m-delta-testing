@@ -131,7 +131,24 @@ class OpenlayersEvaluator(Evaluator):
                 '    customLaunchers: {\n'
                 '      ChromeNoSandbox: {\n'
                 "        base: 'Chrome',\n"
-                "        flags: ['--no-sandbox', '--disable-gpu'],\n"
+                '        flags: [\n'
+                "          '--no-sandbox',\n"
+                "          '--disable-gpu',\n"
+                # OpenLayers tests WebGL layers (Heatmap, WebGLPoints).
+                # With no GPU and no software fallback, WebGLHelper gets an
+                # undefined context and throws; the failed test leaves a
+                # <div> behind, the repo's own afterEach hook asserts
+                # "Found extra <div> elements in the body" and fails, and a
+                # failing afterEach makes Mocha abandon the rest of the
+                # run. On openlayers-10478 that stopped the suite at 1723
+                # of 3052 tests - and because a test that never ran counts
+                # as a failure, the 1329 unrun tests were scored as
+                # PASS_TO_PASS regressions. One missing flag, ~1300
+                # invented failures. SwiftShader gives a software WebGL
+                # context so those tests run instead of poisoning the hook.
+                "          '--use-gl=swiftshader',\n"
+                "          '--enable-unsafe-swiftshader',\n"
+                '        ],\n'
                 '      },\n'
                 '    },'
             ),
