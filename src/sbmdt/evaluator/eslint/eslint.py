@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import xml.etree.ElementTree as ET
 from typing import Final, override
 
@@ -66,6 +67,26 @@ class ESLintEvaluator(Evaluator):
         assert isinstance(output, bytes)
         assert exit_code is not None
         return exit_code, output.decode('utf-8', errors='replace')
+
+    def _mocha_major_version(self) -> int | None:
+        """Return Mocha's major version number.
+
+        Returns:
+            The major version, or ``None`` if it cannot be determined,
+            in which case the caller should assume a modern Mocha.
+        """
+        exit_code, output = self._exec('npx mocha --version 2>/dev/null')
+        if exit_code != 0:
+            log.warning(
+                'could not read the mocha version (exit %d): %s',
+                exit_code, output.strip(),
+            )
+            return None
+        match = re.search(r'([0-9]+)[.][0-9]+[.][0-9]+', output)
+        if match is None:
+            log.warning('unrecognised mocha version: %r', output.strip())
+            return None
+        return int(match.group(1))
 
     @override
     def setup(self) -> None:
@@ -143,19 +164,38 @@ class ESLintEvaluator(Evaluator):
         # Flags:
         #   --recursive  – find all .js files inside each directory
         #   -t 10000     – 10 s per-test timeout (rule tests can be slow)
-        #   --exit       – force-exit after suite finishes; some ESLint
-        #                  tests leave async handles open
         # ------------------------------------------------------------------
         dirs_str = ' '.join(test_dirs)
-        cmd = (
-            f'npx mocha'
-            f' --reporter mocha-junit-reporter'
-            f' --reporter-options mochaFile={RESULTS_FILE}'
-            f' --recursive'
-            f' -t 10000'
-            f' --exit'
-            f' {dirs_str}'
-        )
+
+        # Mocha 2.x/3.x (ESLint 3-6) understands neither --reporter-options
+        # nor --exit.  Its optimist-based parser swallows both silently and
+        # the suite then runs almost nothing: on eslint-8120 that is 16
+        # testcases from tests/bin and exit 0, against 14573 testcases once
+        # the two flags are dropped.  mocha-junit-reporter reads MOCHA_FILE
+        # from the environment in every version, so that is the portable way
+        # to name the XML, and --exit is redundant before Mocha 4 because
+        # those versions force-exit once the suite finishes.
+        mocha_major = self._mocha_major_version()
+        modern = mocha_major is None or mocha_major >= 4
+        log.info('Mocha major version %s; modern flags: %s',
+                 mocha_major, modern)
+
+        parts = [
+            f'MOCHA_FILE={RESULTS_FILE}',
+            'npx', 'mocha',
+            '--reporter', 'mocha-junit-reporter',
+        ]
+        if modern:
+            parts += ['--reporter-options', f'mochaFile={RESULTS_FILE}']
+        parts += ['--recursive', '-t', '10000']
+        if modern:
+            parts.append('--exit')
+        parts.append(dirs_str)
+        cmd = ' '.join(parts)
+
+        # Never grade a stale XML.  If this run dies before the reporter
+        # writes, a leftover file would silently be scored in its place.
+        self._exec(f'rm -f {RESULTS_FILE}')
 
         log.info('Running: %s', cmd)
         exit_code, output = self._exec(cmd)
