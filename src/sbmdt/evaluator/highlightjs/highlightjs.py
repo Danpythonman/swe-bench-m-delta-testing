@@ -55,6 +55,12 @@ log = logging.getLogger(__name__)
 
 MOCHA_OUTPUT_FILE: Final[str] = '/tmp/test-results.xml'
 TEST_CMD: Final[str] = 'npm test -- --reporter mocha-junit-reporter'
+# `npm run build` is the node target in every 10.x/11.x package.json;
+# 9.x calls the same script through `npm run node`. Try the named
+# script first and fall back to the tool it wraps.
+BUILD_CMD: Final[str] = (
+    'sh -c "npm run build || node ./tools/build.js -t node"'
+)
 
 
 class HighlightjsEvaluator(Evaluator):
@@ -106,6 +112,35 @@ class HighlightjsEvaluator(Evaluator):
 
         if self.container is None:
             raise Exception('no container')
+
+        # highlight.js does not test its sources. test/index.js opens with
+        # `const hljs = require('../build')`, so every assertion runs
+        # against the bundle in build/ that the image baked before any
+        # patch existed. Running `npm test` alone therefore grades the
+        # unpatched library no matter what landed in src/: gold runs for
+        # 2958, 3018, 3312, 3381 and 3644 each failed the one test their
+        # own fix was written for, and failed it identically to the
+        # baseline, which left every one of them with no FAIL_TO_PASS at
+        # all and dropped them out of the reference. package.json says as
+        # much -- its build_and_test script is `npm run build && npm run
+        # test`; only the second half was being run.
+        #
+        # A build that fails is logged loudly rather than raised: the run
+        # still produces the same numbers it produced before this change,
+        # and a silent stale bundle is the failure worth making visible.
+        build_code, build_output = self.container.exec_run(
+            BUILD_CMD,
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(build_output, bytes)
+        if build_code == 0:
+            log.info('rebuilt build/ from the patched sources')
+        else:
+            log.error(
+                'build failed (exit %s); the suite will grade the stale '
+                'bundle: %s', build_code, build_output.decode()[-2000:]
+            )
 
         exit_code, output = self.container.exec_run(
             TEST_CMD,
