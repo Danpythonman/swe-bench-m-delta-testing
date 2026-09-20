@@ -38,6 +38,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.package-data]
+"sbmdt.evaluator.openlayers" = ["*.js"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

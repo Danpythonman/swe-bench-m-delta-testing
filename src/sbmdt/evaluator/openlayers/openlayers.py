@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import re
+from pathlib import Path
 from typing import Final, override
 
 from sbmdt.evaluator.alibaba.karma_junit_parser import (
@@ -27,6 +28,13 @@ from sbmdt.utils import (
 __all__ = [
     'OpenlayersEvaluator',
 ]
+
+# Appended to test-extensions.js so it lands in the test bundle ahead of
+# karma-mocha's call to mocha.run(). See the file itself for why.
+_ABORT_SHIM: Final[str] = (
+    Path(__file__).with_name('mocha_abort_shim.js').read_text(
+        encoding='utf-8')
+)
 
 log = logging.getLogger(__name__)
 
@@ -562,6 +570,34 @@ class OpenlayersEvaluator(Evaluator):
                 log.info(
                     f'defused the body-div guard in {extensions_file} for '
                     f'{self.instance_id}'
+                )
+
+        # Defusing the body-div guard above removes one way for the
+        # suite to cancel itself; this removes the other. Mocha 9 aborts
+        # every remaining suite when an assertion fires after its test has
+        # already passed, which cost openlayers-13020 1690 of 2083 tests
+        # even with the guard defused.
+        for extensions_file in extensions_files:
+            try:
+                current = read_from_container(
+                    self.container, extensions_file
+                )
+                if '__abortDefused' in current:
+                    continue
+                write_to_container(
+                    container=self.container,
+                    file=extensions_file,
+                    content=current + '\n' + _ABORT_SHIM,
+                )
+            except Exception as exc:
+                log.warning(
+                    f'could not install the mocha abort shim in '
+                    f'{extensions_file} for {self.instance_id}: {exc}'
+                )
+            else:
+                log.info(
+                    f'installed the mocha abort shim in {extensions_file} '
+                    f'for {self.instance_id}'
                 )
 
         log.info('All changes applied successfully.')
