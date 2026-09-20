@@ -17,6 +17,7 @@ __all__ = [
     'apply_change_literal',
     'apply_change_regex',
     'apply_change',
+    'node_accepts_node_option',
 ]
 
 
@@ -234,3 +235,29 @@ def apply_change(
         if callable(replace):
             raise TypeError('literal mode requires a string replacement')
         apply_change_literal(container, file, find, replace, assertion)
+
+
+def node_accepts_node_option(container: Container, flag: str) -> bool:
+    """Report whether this image's node will start with ``flag`` set.
+
+    ``--openssl-legacy-provider`` re-enables the MD4 hashing that webpack 4
+    relies on, and the usual test is whether node is 17 or newer. That test
+    is wrong here. The SWE-bench base images are tagged ``:latest``, so the
+    node inside them moves; recent builds refuse the flag *inside*
+    ``NODE_OPTIONS`` ("--openssl-legacy-provider is not allowed in
+    NODE_OPTIONS") and exit before the test runner starts. Node 21 satisfies
+    ">= 17" and still refuses, which is how every bpmn-js run began exiting
+    9 with no results file. Asking node directly costs one exec and cannot
+    go stale.
+
+    Args:
+        container: Running container to probe.
+        flag: A single node CLI flag, e.g. ``--openssl-legacy-provider``.
+
+    Returns:
+        True if node starts cleanly with ``NODE_OPTIONS=<flag>``.
+    """
+    exit_code, _ = container.exec_run(
+        ['node', '-e', ''], environment={'NODE_OPTIONS': flag}, stream=False
+    )
+    return exit_code == 0

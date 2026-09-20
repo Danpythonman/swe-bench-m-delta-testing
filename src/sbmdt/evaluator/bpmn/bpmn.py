@@ -12,9 +12,10 @@ bpmn-js uses Karma as its test runner, configured at
    package is a non-functional snap stub).
 4. Runs ``npm test`` with ``TEST_BROWSERS=ChromeHeadless`` (PhantomJS is
    the config default but cannot parse this project's compiled bundle).
-   On Node ≥ 17 also sets ``NODE_OPTIONS=--openssl-legacy-provider``;
-   on Node < 17 that flag is omitted because it is rejected by
-   ``NODE_OPTIONS`` and aborts before Karma starts.
+   Also sets ``NODE_OPTIONS=--openssl-legacy-provider`` when this
+   image's node actually accepts it, which is probed rather than
+   inferred from the version (see
+   :func:`sbmdt.utils.node_accepts_node_option`).
 5. Reads the resulting XML from the container and returns parsed results.
 
 All bpmn-js instances share the same project layout and test infrastructure,
@@ -33,6 +34,7 @@ from sbmdt.evaluator.bpmn.karma_junit_parser import (
 )
 from sbmdt.utils import (
     apply_change_regex,
+    node_accepts_node_option,
     read_from_container,
     write_to_container,
 )
@@ -45,6 +47,10 @@ log = logging.getLogger(__name__)
 
 KARMA_CONFIG_FILE: Final[str] = '/testbed/test/config/karma.unit.js'
 RESULTS_XML: Final[str] = '/testbed/test-results/results.xml'
+
+# Re-enables the legacy OpenSSL provider webpack 4's MD4 hashing
+# needs. Probed per image - see node_accepts_node_option.
+OPENSSL_LEGACY_FLAG: Final[str] = '--openssl-legacy-provider'
 
 # Flags needed for headless Chrome as root in Docker. --no-sandbox is
 # already upstream for ChromeHeadless_Linux; --disable-dev-shm-usage was
@@ -364,19 +370,20 @@ class BpmnEvaluator(Evaluator):
         else:
             log.warning('Could not locate a Chrome binary to set CHROME_BIN')
 
-        try:
-            major = int(node_version.split('.', 1)[0])
-        except ValueError:
-            major = 0
-            log.warning('Could not parse node version %r', node_version)
-
-        if major >= 17:
-            env['NODE_OPTIONS'] = '--openssl-legacy-provider'
-            log.info('Setting NODE_OPTIONS=--openssl-legacy-provider (node>=17)')
+        # A node-version gate is the usual way to decide this, and it is
+        # wrong for these images. They are tagged :latest, so node moves
+        # under the benchmark, and current builds refuse the flag inside
+        # NODE_OPTIONS and exit 9 before Karma starts - no results file,
+        # which is how every bpmn-js run stopped producing data. Node 21
+        # passes ">= 17" and still refuses. Ask node instead.
+        if node_accepts_node_option(self.container, OPENSSL_LEGACY_FLAG):
+            env['NODE_OPTIONS'] = OPENSSL_LEGACY_FLAG
+            log.info('Setting NODE_OPTIONS=%s', OPENSSL_LEGACY_FLAG)
         else:
-            log.info(
-                'Skipping NODE_OPTIONS=--openssl-legacy-provider (node=%s)',
+            log.warning(
+                'node %s in this image rejects %s; running without it',
                 node_version,
+                OPENSSL_LEGACY_FLAG,
             )
 
         return env
