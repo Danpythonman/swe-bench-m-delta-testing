@@ -278,7 +278,18 @@ class OpenlayersEvaluator(Evaluator):
                 'require.resolve("source-map/package.json"))\'); '
                 'find node_modules -path "*/source-map/package.json" '
                 '-print0 | while IFS= read -r -d "" p; do '
-                '  ver=$(node -p "require(process.argv[1]).version" "$p"); '
+                # `find node_modules ...` prints "node_modules/x/...", with
+                # no leading "./", and require() reads a specifier that
+                # starts with a bare word as a *package name*, not a path.
+                # So this threw "Cannot find module
+                # 'node_modules/@jridgewell/source-map/package.json'",
+                # $ver came back empty, the case below never matched, and
+                # the nested source-map@0.7 it exists to replace was left
+                # in place -- which is what later killed the suite. Six
+                # openlayers instances died this way. "./$p" makes it a
+                # relative path again.
+                '  ver=$(node -p "require(process.argv[1]).version" '
+                '"./$p"); '
                 '  case "$ver" in 0.7*|0.8*|0.9*|1.*) '
                 '    d=$(dirname "$p"); rm -rf "$d"; cp -a "$root" "$d";; '
                 '  esac; '

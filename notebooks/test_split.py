@@ -112,6 +112,12 @@ class Columns:
     patch_type: str = 'patch_type'
     test_name: str = 'test_name'
     passed: str = 'passed'
+    # Which column separates one execution of the suite from another.
+    # Without it a test name that occurs twice *inside a single run* is
+    # indistinguishable from one test that answered differently on two
+    # different days, and the first gets thrown away as flaky. Optional
+    # so existing callers keep their current behaviour.
+    run: str | None = None
 
     @property
     def required(self) -> list[str]:
@@ -209,10 +215,36 @@ def _collapse_runs(frame: pd.DataFrame, columns: Columns) -> pd.DataFrame:
     """
     keys = [columns.instance, columns.patch_type, columns.test_name]
     passed = cast(pd.Series, frame[columns.passed]).astype(bool)
+    frame = cast(pd.DataFrame, frame.assign(**{columns.passed: passed}))
+
+    # A test name is not a unique test. jest and mocha both report the
+    # bare title, so the same title in two files arrives as two rows of
+    # one run -- prettier-8536 reports 'snippet: #0 format' five times,
+    # carbon-10214 reports 'Public API should only change with a semver
+    # change' twice. When one of those rows fails and the others pass,
+    # the all/any disagreement that is meant to detect a flaky test
+    # fires on a name collision instead, and the name is dropped from
+    # the reference entirely. That cost 17 instances their whole
+    # FAIL_TO_PASS list and pulled 144 tests out of 91 instances.
+    #
+    # Collapsing within a run first fixes it: duplicates of a name in
+    # one run become a single verdict under the same all-must-pass rule
+    # applied everywhere else, so disagreement can then only mean what
+    # it is supposed to mean -- two runs that answered differently.
+    if columns.run is not None and columns.run in frame.columns:
+        frame = cast(
+            pd.DataFrame,
+            frame.groupby(keys + [columns.run], dropna=False, observed=True)[
+                columns.passed
+            ]
+            .all()
+            .reset_index(),
+        )
+
     return cast(
         pd.DataFrame,
         (
-            frame.assign(**{columns.passed: passed})
+            frame
             .groupby(keys, dropna=False, observed=True)[columns.passed]
             .agg(**{_ALL_PASSED: 'all', _ANY_PASSED: 'any'})
             .reset_index()
