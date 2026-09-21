@@ -32,6 +32,7 @@ RESULTS_FILE: Final[str] = 'results.xml'
 SERVER_PATH: Final[str] = '/testbed/sbmdt-aat-server.js'
 SERVER_LOG: Final[str] = '/tmp/sbmdt-aat-server.log'
 NEWLINE: Final[str] = chr(10)
+HEAP_FLAG: Final[str] = '--max-old-space-size=4096'
 
 
 class CarbonEvaluator(Evaluator):
@@ -233,6 +234,21 @@ class CarbonEvaluator(Evaluator):
                 'JEST_JUNIT_OUTPUT_DIR': RESULTS_DIR,
                 'JEST_JUNIT_OUTPUT_NAME': RESULTS_FILE,
                 'BABEL_ENV': 'test',
+                # carbon-5156 died with "Ineffective mark-compacts near
+                # heap limit" partway through the suite, after roughly
+                # forty files had already passed, and so wrote no
+                # results.xml at all -- the same symptom as the AAT
+                # failures but a different cause. The GC trace names the
+                # ceiling: 1339 MB used of 1456 MB, which is the old
+                # node in these images defaulting to a ~1.5 GB old
+                # space. Carbon is a monorepo and its jest run simply
+                # needs more than that.
+                #
+                # 4 GB is a cap, not a reservation: nothing else in the
+                # suite comes near it, so this cannot cost the other
+                # instances anything, and it stays well under the
+                # worker's 8 GB even with jest's two processes.
+                'NODE_OPTIONS': HEAP_FLAG,
             },
             workdir='/testbed',
             stream=False,

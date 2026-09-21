@@ -606,8 +606,9 @@ class Evaluator(ABC):
         """Try hard to apply one diff to /testbed, and say what happened.
 
         Walks the ``git apply`` ladder (plain, ``--recount``, ``--3way``)
-        and, for instances whose image is known to sit on a different base
-        commit, falls back to ``patch --forward``.
+        and, when all three refuse, falls back to ``patch --forward``,
+        which matches on context and so does not need the pre-image blob
+        that ``--3way`` demands.
 
         Args:
             section: The unified diff text to apply.
@@ -650,9 +651,21 @@ class Evaluator(ABC):
             log.info(output.decode())
             if exit_code == 0:
                 break
-        if exit_code != 0 and self.instance_id in globals().get(
-            'PATCH_BASE_COMMIT_OVERRIDES', {}
-        ):
+        # Last rung, for every instance rather than only the ones on the
+        # override list. `git apply --3way` needs the diff's pre-image
+        # blob to be in the object store, and for a test patch written
+        # against a commit the image does not contain it is not: git
+        # refuses with "does not match index" and the whole instance is
+        # lost with no result at all. GNU patch does not need the blob --
+        # it matches on context -- so it lands these cleanly. Seven tasks
+        # in the 2026-09-21 round died here (openlayers-13155, -13226,
+        # -11088, -14659 and three bpmn-js), none of them on the override
+        # list, which is why the gate had to go rather than grow.
+        #
+        # Widening it is safe because this only runs once all three git
+        # attempts have already failed, and --dry-run still has to pass
+        # first, so a patch that does not really fit is still refused.
+        if exit_code != 0:
             dry_code, dry_output = self.container.exec_run(
                 f'patch --dry-run --batch --forward -p1 -i {PATCH_FILE}',
                 workdir='/testbed',
