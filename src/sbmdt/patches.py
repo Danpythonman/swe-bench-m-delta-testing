@@ -46,11 +46,33 @@ CODE_PATCH_PRED_FILENAME: Final[str] = 'code_patch.pred'
 # A path is a test path if it sits in a test directory or carries a test
 # suffix. Kept deliberately broad: misfiling a test file as code would
 # silently reintroduce the very problem this module exists to solve.
+#
+# `__snapshots__/` and the `.snap` suffix are here because leaving them
+# out misfiled 13 files across 12 carbon instances. A jest snapshot is
+# the recorded half of an assertion, so withholding it while applying
+# the test that reads it leaves the suite checking new output against a
+# stale expectation. Four of those instances -- carbon-3610, -4260,
+# -4999 and -15197 -- had a snapshot as the *only* test-side file in
+# their gold patch, so the split produced a 0-byte `test_patch.diff`
+# and there was no test half at all.
+#
+# Note the suffix rules below all anchor on the end of the path, which
+# is why `Dropdown-test.js.snap` slipped through every one of them: it
+# ends in `.snap`, not in `-test.js`. Matching on the directory alone
+# would not have caught it either, since these snapshots sit beside the
+# component in `__snapshots__/` rather than under `__tests__/`.
+#
+# All 12 currently report `f2p_total = 0` -- a snapshot-only change
+# gives delta testing no FAIL->PASS transition to find, because both
+# the pre-patch and the gold run are internally consistent -- so this
+# corrects the routing without moving any score.
 TEST_PATH: Final[re.Pattern[str]] = re.compile(
     r"""
     (^|/)(test|tests|spec|specs|__tests__|__test__|e2e|cypress)/
+    | (^|/)__snapshots__/
     | [-_.](test|spec)\.[cm]?[jt]sx?$
     | \.(test|spec)\.[cm]?[jt]sx?$
+    | \.snap$
     | (^|/)conftest\.py$
     | (^|/)test_[^/]*\.py$
     | [^/]*_test\.py$
@@ -204,7 +226,9 @@ def drop_mode_only_sections(diff: str) -> tuple[str, list[str]]:
         section = diff[begin:end]
         header = DIFF_HEADER.match(section)
         assert header is not None
-        has_mode = bool(re.search(r'^old mode \d+\nnew mode \d+', section, re.M))
+        has_mode = bool(
+            re.search(r'^old mode \d+\nnew mode \d+', section, re.M)
+        )
         has_content = bool(re.search(r'^(--- |\+\+\+ |@@ )', section, re.M))
         if has_mode and not has_content:
             dropped.append(header.group(2))
@@ -275,8 +299,23 @@ def test_patch_for(instance_id: str, base: Path = DOCKERFILES_BASE) -> str:
     """
     instance_dir = base / instance_id
 
+    # An empty materialised split is treated as absent rather than as an
+    # answer. `test_patch.diff` is a cache of `split_diff(gold)`, and a
+    # cache must never be able to be more wrong than what it caches --
+    # but `is_file()` is true for a zero-byte file, so a stale one wins
+    # silently and the run gets no tests at all.
+    #
+    # That is not hypothetical: the four carbon instances whose only
+    # test-side file was a `.snap` were split before the snapshot rule
+    # existed, so they have a committed 0-byte `test_patch.diff`. Fixing
+    # `TEST_PATH` alone left them exactly as broken, because this branch
+    # never reached the gold patch to re-derive anything.
+    #
+    # Falling through costs nothing when the empty half is genuine: the
+    # derivation returns the same empty string, just computed rather
+    # than remembered.
     written = instance_dir / TEST_PATCH_DIFF_FILENAME
-    if written.is_file():
+    if written.is_file() and written.stat().st_size > 0:
         test_diff = read_diff(written)
     else:
         gold = instance_dir / GOLD_PATCH_DIFF_FILENAME

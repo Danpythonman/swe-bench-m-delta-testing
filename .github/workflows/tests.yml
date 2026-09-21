@@ -1,0 +1,72 @@
+# The repository had no CI, and the cost of that was not theoretical:
+# `scripts/test_patch_transport.py` raised NameError on every one of its
+# tests for six commits after `b04a517` refactored the method it covers,
+# and nothing noticed, because an unrun test and a passing test look
+# identical when no one runs them.
+#
+# GNU patch matters here. It is the last rung of the apply ladder in
+# `Evaluator.apply_diff_text`, and the tests that cover it skip
+# themselves when `patch` is missing rather than failing. A silent skip
+# on the rung that rescues instances `git apply --3way` refuses would
+# put us back where we started, so the workflow asserts it is installed
+# instead of hoping.
+
+name: tests
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out the dockerfiles corpus
+        # The corpus tests in test_patch_split.py run the real path
+        # rules over all 510 gold patches. They skip without this tree,
+        # and skipping is how the snapshot misrouting survived.
+        run: |
+          test -d dockerfiles || {
+            echo 'dockerfiles/ missing; corpus tests would skip'
+            exit 1
+          }
+          echo "instances: $(ls dockerfiles | wc -l)"
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --all-extras --dev
+
+      - name: Assert GNU patch is available
+        run: patch --version | head -1
+
+      - name: Run tests
+        run: uv run python scripts/run_tests.py
+
+  lint:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv sync --all-extras --dev
+
+      # Advisory, not a gate. `ruff check .` reports 42 findings that
+      # predate this workflow, nearly all E501 and E702 in the one-off
+      # batch scripts under `scripts/`. Turning that into a required
+      # check would mean either failing every build from day one or
+      # reformatting a dozen files no one asked me to touch, and a
+      # required check that is red on arrival teaches people to ignore
+      # required checks. So it reports and does not block; make it
+      # blocking once the backlog is cleared.
+      - name: Ruff (advisory)
+        run: uv run ruff check . --output-format=concise
