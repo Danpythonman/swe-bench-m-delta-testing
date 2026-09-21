@@ -9,6 +9,7 @@ the results.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Final, override
 
 from sbmdt.evaluator.alibaba.karma_junit_parser import (
@@ -115,51 +116,146 @@ class AlibabaEvaluator(Evaluator):
             )
 
         # 2. Add junit to reporters
-        apply_change_literal(
-            container=self.container,
-            file=KARMA_FILE,
-            find="reporters: ['spec', 'coverage']",
-            replace="reporters: ['spec', 'coverage', 'junit']",
-            assertion="reporters: ['spec', 'coverage', 'junit']",
-        )
+        #
+        # This used to match the literal "reporters: ['spec', 'coverage']",
+        # which is one commit's exact formatting rather than anything
+        # stable: the members of that array, their order and the
+        # whitespace around them all vary across the checkouts. next-4806
+        # and next-4859 both aborted their whole run on
+        #
+        #     Could not find target string: "reporters: ['spec', 'coverage']"
+        #
+        # having evaluated nothing. A failure of ours that is recorded as
+        # the instance failing is worse than a crash, because it reads as
+        # evidence about the agent. Match the array and append to whatever
+        # it holds; a config that declares no reporters at all gets the
+        # key inserted at its config.set({ instead.
+        karma_source = read_from_container(self.container, KARMA_FILE)
+        if "'junit'" in karma_source:
+            log.info('junit reporter already present; skipping')
+        elif re.search(r'reporters:\s*\[', karma_source):
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'reporters:\s*\[([^\]]*)\]',
+                replace=lambda m: 'reporters: [{}{}]'.format(
+                    m.group(1).strip() + ', '
+                    if m.group(1).strip() else '',
+                    "'junit'",
+                ),
+                assertion="'junit'",
+            )
+        else:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'(?:config|karma)\.set\(\s*\{',
+                replace=lambda m: m.group(0) + "\n    reporters: ['junit'],",
+                assertion="reporters: ['junit'],",
+            )
 
         # 3. Add junitReporter config
-        apply_change_literal(
-            container=self.container,
-            file=KARMA_FILE,
-            find="hostname: 'localhost'",
-            replace="""junitReporter: {
-                    outputDir: 'test-results',
-                    outputFile: 'results.xml',
-                    useBrowserName: false,
-                },
-                hostname: 'localhost'""",
-            assertion='junitReporter:',
+        #
+        # Anchored on hostname: 'localhost' only because most configs
+        # happen to have it. The block just has to land inside the object
+        # config.set() is given, so fall back to the opening brace when
+        # the anchor is missing rather than failing the instance.
+        junit_block = (
+            'junitReporter: {\n'
+            "                    outputDir: 'test-results',\n"
+            "                    outputFile: 'results.xml',\n"
+            '                    useBrowserName: false,\n'
+            '                },'
         )
+        karma_source = read_from_container(self.container, KARMA_FILE)
+        if 'junitReporter:' in karma_source:
+            log.info('junitReporter config already present; skipping')
+        elif "hostname: 'localhost'" in karma_source:
+            apply_change_literal(
+                container=self.container,
+                file=KARMA_FILE,
+                find="hostname: 'localhost'",
+                replace=(
+                    junit_block
+                    + "\n                hostname: 'localhost'"
+                ),
+                assertion='junitReporter:',
+            )
+        else:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'(?:config|karma)\.set\(\s*\{',
+                replace=lambda m: f'{m.group(0)}\n    {junit_block}',
+                assertion='junitReporter:',
+            )
 
         # 4. Add plugin
-        apply_change_regex(
-            container=self.container,
-            file=KARMA_FILE,
-            find=r"'karma-coverage',?",
-            replace=lambda m: (
-                "'karma-coverage',\n            'karma-junit-reporter',"
-            ),
-            assertion="'karma-junit-reporter',",
-        )
+        #
+        # Same anchoring problem as step 2: 'karma-coverage' is not in
+        # every config's plugins list, and a config that lists no plugins
+        # at all relies on karma's autoloading, which does not find a
+        # reporter installed after the fact. Append to the list when there
+        # is one and create it when there is not.
+        karma_source = read_from_container(self.container, KARMA_FILE)
+        if "'karma-junit-reporter'" in karma_source:
+            log.info('karma-junit-reporter plugin already present; skipping')
+        elif "'karma-coverage'" in karma_source:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r"'karma-coverage',?",
+                replace=lambda m: (
+                    "'karma-coverage',\n            'karma-junit-reporter',"
+                ),
+                assertion="'karma-junit-reporter',",
+            )
+        elif re.search(r'plugins:\s*\[', karma_source):
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'plugins:\s*\[',
+                replace=lambda m: (
+                    m.group(0)
+                    + "\n            'karma-junit-reporter',"
+                ),
+                assertion="'karma-junit-reporter',",
+            )
+        else:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'(?:config|karma)\.set\(\s*\{',
+                replace=lambda m: (
+                    f"{m.group(0)}\n    plugins: ['karma-junit-reporter'],"
+                ),
+                assertion="'karma-junit-reporter'",
+            )
 
         # 5. Under CI=true, karma.js forces browsers: ['ChromeHeadless']
         # with no --no-sandbox (next-3454/4182). ChromeTravis is already
         # defined with the flag; point CI at it. Also stop puppeteer's
         # executablePath() from clobbering the CHROME_BIN shim evaluate()
         # installs.
-        apply_change_literal(
-            container=self.container,
-            file=KARMA_FILE,
-            find="options.browsers = ['ChromeHeadless']",
-            replace="options.browsers = ['ChromeTravis']",
-            assertion="options.browsers = ['ChromeTravis']",
-        )
+        # Best-effort for the same reason as the CHROME_BIN edit below: a
+        # config that never forces ChromeHeadless under CI has nothing
+        # here to redirect, and aborting the instance over a substitution
+        # that was not needed is the failure mode this evaluator keeps
+        # producing.
+        try:
+            apply_change_literal(
+                container=self.container,
+                file=KARMA_FILE,
+                find="options.browsers = ['ChromeHeadless']",
+                replace="options.browsers = ['ChromeTravis']",
+                assertion="options.browsers = ['ChromeTravis']",
+            )
+        except Exception as exc:
+            log.info(
+                'no CI ChromeHeadless override to redirect for %s (%s)',
+                self.instance_id,
+                exc,
+            )
         # Optional: some commits assign CHROME_BIN from puppeteer with
         # slightly different formatting; ChromeTravis already supplies
         # --no-sandbox, so failing this edit must not abort setup.

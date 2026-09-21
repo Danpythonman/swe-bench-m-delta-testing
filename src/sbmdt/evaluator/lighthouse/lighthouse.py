@@ -318,6 +318,35 @@ class LighthouseEvaluator(Evaluator):
                         f'{self.instance_id}: {output.decode()}'
                     )
 
+            # The two pins above are npm operations inside a tree yarn
+            # built. npm does not edit a tree in place: it re-resolves the
+            # whole thing from package.json and prunes whatever its own
+            # resolution does not reach, which here means it deletes most
+            # of what yarn installed -- "removed 186 packages" in the
+            # lighthouse-3442 log. yargs-parser is one of the casualties,
+            # so the run reaches the test suite and dies on
+            #
+            #     Error: Cannot find module 'yargs-parser'
+            #
+            # from lighthouse-cli/run.js, after both installs reported
+            # success. Re-running yarn restores the tree it knows how to
+            # build, and because --save-exact wrote the pins into
+            # package.json first, yarn installs those exact versions
+            # rather than undoing them.
+            exit_code, output = self.container.exec_run(
+                'yarn install --ignore-scripts --non-interactive',
+                workdir='/testbed/lighthouse-cli',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to restore lighthouse-cli dependencies after '
+                    f'pinning for {self.instance_id}: {output.decode()}'
+                )
+
         # install-cli's prepublish hook is supposed to build the CLI
         # automatically, but fails silently due to an npm lifecycle
         # working-directory quirk on this old npm version, so the build is
