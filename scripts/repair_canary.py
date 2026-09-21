@@ -21,14 +21,36 @@ from botocore.exceptions import (
     ReadTimeoutError,
 )
 
-session = boto3.Session(profile_name='default', region_name='us-east-1')
 config = Config(
     connect_timeout=5,
     read_timeout=15,
     retries={'mode': 'standard', 'max_attempts': 3},
 )
-ec2 = session.client('ec2', config=config)
-ssm = session.client('ssm', config=config)
+
+_session = None
+_clients = {}
+
+
+def _client(service):
+    """Build an AWS client on first use rather than on import.
+
+    These were module-level, and the session named a profile, so
+    importing this file called into the AWS config before any caller
+    asked for anything. On a machine without `~/.aws/credentials` that
+    raises `ProfileNotFound` at import, which took `test_repair_canary`
+    -- three tests that only exercise `minimal_dockerfile` and
+    `aws_retry`, neither of which touches AWS -- out of the suite. It
+    ran locally and nowhere else, which is the same failure mode as not
+    having the test at all.
+    """
+    global _session
+    if _session is None:
+        _session = boto3.Session(
+            profile_name='default', region_name='us-east-1'
+        )
+    if service not in _clients:
+        _clients[service] = _session.client(service, config=config)
+    return _clients[service]
 key = (
     'alibaba-fusion%5F%5Fnext-1063_without%5Fimage_'
     'llm.claude4_2026-06-17_20-40-31Z.pred'
@@ -97,7 +119,7 @@ def main():
     instance = None
     run_id = uuid4().hex
     asset_key = 'repair-assets/newline-' + run_id + '.tar.gz'
-    s3 = session.client('s3', config=config)
+    s3 = _client('s3')
     try:
         pred_identity = prediction_identity(key)
         if pred_identity is None:
@@ -154,7 +176,7 @@ def main():
         )
         state['asset_key'] = asset_key
         response = aws_retry(
-            lambda: ec2.run_instances(
+            lambda: _client('ec2').run_instances(
                 ClientToken=run_id,
                 ImageId='ami-070ff54484e26f9bb',
                 InstanceType='t3a.large',
@@ -200,7 +222,7 @@ def main():
         deadline = time.monotonic() + 360
         while time.monotonic() < deadline:
             try:
-                registered = ssm.describe_instance_information(
+                registered = _client('ssm').describe_instance_information(
                     Filters=[{'Key': 'InstanceIds', 'Values': [instance]}]
                 )
             except TRANSIENT_AWS_ERRORS as error:
@@ -253,7 +275,7 @@ def main():
             'without_image',
         ):
             command += ' --apply-test-patch'
-        sent = ssm.send_command(
+        sent = _client('ssm').send_command(
             InstanceIds=[instance],
             DocumentName='AWS-RunShellScript',
             Parameters={
@@ -268,7 +290,7 @@ def main():
         while time.monotonic() < deadline:
             time.sleep(15)
             try:
-                result = ssm.get_command_invocation(
+                result = _client('ssm').get_command_invocation(
                     CommandId=command_id, InstanceId=instance
                 )
             except TRANSIENT_AWS_ERRORS as error:
@@ -296,7 +318,11 @@ def main():
         raise
     finally:
         if instance:
-            aws_retry(lambda: ec2.terminate_instances(InstanceIds=[instance]))
+            aws_retry(
+                lambda: _client('ec2').terminate_instances(
+                    InstanceIds=[instance]
+                )
+            )
             state['termination_requested'] = True
             save()
         aws_retry(

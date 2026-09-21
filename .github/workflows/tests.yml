@@ -51,7 +51,6 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -68,5 +67,13 @@ jobs:
       # required check that is red on arrival teaches people to ignore
       # required checks. So it reports and does not block; make it
       # blocking once the backlog is cleared.
+      #
+      # `continue-on-error` belongs on the step, not the job. On the job
+      # it spares the workflow run but still paints the job red, so the
+      # first thing this repository ever showed was a failing check that
+      # was meant to be a note. On the step, the findings are printed
+      # and the job is green, which is what "advisory" was supposed to
+      # mean.
       - name: Ruff (advisory)
+        continue-on-error: true
         run: uv run ruff check . --output-format=concise
