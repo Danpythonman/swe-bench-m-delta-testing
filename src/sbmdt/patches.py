@@ -62,10 +62,22 @@ CODE_PATCH_PRED_FILENAME: Final[str] = 'code_patch.pred'
 # would not have caught it either, since these snapshots sit beside the
 # component in `__snapshots__/` rather than under `__tests__/`.
 #
-# All 12 currently report `f2p_total = 0` -- a snapshot-only change
-# gives delta testing no FAIL->PASS transition to find, because both
-# the pre-patch and the gold run are internally consistent -- so this
-# corrects the routing without moving any score.
+# All 12 reported `f2p_total = 0` before this fix, and the first version
+# of this comment concluded from that the routing was cosmetic. That was
+# wrong, and the reason it was wrong is worth keeping.
+#
+# The zero was not evidence that a snapshot-only change is unmeasurable;
+# it was an artefact of the bug. A `before_patch` run applies the test
+# patch, so with the snapshot misfiled as source BOTH runs saw the stale
+# snapshot and both passed -- no transition for delta testing to find.
+# Withhold nothing and the pre-patch run checks new component output
+# against the recorded old output, which is exactly what a snapshot test
+# is for.
+#
+# Re-running the references settles it. carbon-3610, -4260 and -15197 go
+# from `f2p_total = 0` to 3, and the three tests are the Dropdown cases
+# that read the snapshot. So this moves score, and any instance in the
+# list of 12 whose reference predates the fix is stale until re-run.
 TEST_PATH: Final[re.Pattern[str]] = re.compile(
     r"""
     (^|/)(test|tests|spec|specs|__tests__|__test__|e2e|cypress)/
