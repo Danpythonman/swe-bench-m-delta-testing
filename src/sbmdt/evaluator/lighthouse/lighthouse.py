@@ -272,10 +272,43 @@ class LighthouseEvaluator(Evaluator):
             # lighthouse-cli/package.json declares loose historical ranges.
             # Installing them today selects much newer releases within those
             # ranges, which do not necessarily compile these old checkouts.
-            # Pin @types/node to the known baseline and TypeScript to
-            # the minimum version this checkout's own manifest declares.
+            # Pin @types/node and TypeScript to the minimum version this
+            # checkout's own manifest declares.
+            #
+            # The manifest has to be read *before* the pin, not after:
+            # `npm install --save-exact` rewrites the very field we are
+            # trying to read, so reading afterwards only ever reports back
+            # whatever we just wrote.
+            cli_package = json.loads(
+                read_from_container(
+                    self.container, '/testbed/lighthouse-cli/package.json'
+                )
+            )
+            dependencies = {
+                **cli_package.get('dependencies', {}),
+                **cli_package.get('devDependencies', {}),
+            }
+
+            # @types/node used to be pinned flat at 6.0.45 for every
+            # instance. Ten of these manifests ask for "^6.0.45", where
+            # taking the floor is exactly right -- the caret is what
+            # resolves to something far newer today. But six ask for
+            # "6.0.66" *exactly*, and forcing those backwards is not a
+            # conservative choice, it is a wrong one: 6.0.66 is the release
+            # that added `isTTY` to WritableStream, and lighthouse-3692's
+            # sentry-prompt.ts opens with `if (!process.stdout.isTTY ...)`.
+            # Under 6.0.45 that is TS2339, tsc exits 2, and the instance
+            # produced no results at all. Same floor rule as TypeScript
+            # below, so a declared exact version is honoured and only a
+            # manifest that declares nothing falls back to the baseline.
+            types_node_match = re.search(
+                r'\d+\.\d+\.\d+', dependencies.get('@types/node') or ''
+            )
+            types_node_version = (
+                types_node_match.group() if types_node_match else '6.0.45'
+            )
             exit_code, output = self.container.exec_run(
-                'npm install @types/node@6.0.45 --save-exact',
+                f'npm install @types/node@{types_node_version} --save-exact',
                 workdir='/testbed/lighthouse-cli',
                 stream=False,
             )
@@ -286,18 +319,12 @@ class LighthouseEvaluator(Evaluator):
 
             if exit_code != 0:
                 raise Exception(
-                    f'Failed to pin lighthouse-cli @types/node for '
+                    f'Failed to pin lighthouse-cli @types/node@'
+                    f'{types_node_version} for '
                     f'{self.instance_id}: {output.decode()}'
                 )
 
-            cli_package = json.loads(
-                read_from_container(
-                    self.container, '/testbed/lighthouse-cli/package.json'
-                )
-            )
-            typescript_range = cli_package.get('devDependencies', {}).get(
-                'typescript'
-            )
+            typescript_range = dependencies.get('typescript')
             version_match = re.search(
                 r'\d+\.\d+\.\d+', typescript_range or ''
             )
@@ -546,16 +573,50 @@ compile(
                 f'{run_mocha_script!r}, not the default {RUN_MOCHA_SCRIPT!r}'
             )
         self._run_mocha_script = run_mocha_script
+        mocha_source = read_from_container(
+            self.container, self._run_mocha_script
+        )
 
-        # 4. Add the JUnit reporter to each Mocha invocation
+        # 4. Add the JUnit reporter to each Mocha invocation.
+        #
+        # The anchor is the file-list expansion, not '--timeout 60000;'.
+        # The timeout is one revision's spelling of this line rather than
+        # anything the script guarantees: across the 18 lighthouse
+        # instances that ship a run-mocha.sh, _runmocha is written three
+        # different ways, and lighthouse-4301 predates the timeout
+        # entirely --
+        #
+        #     mocha --reporter dot $2 $(find $1/test -name '*-test.js');
+        #
+        # so the literal was absent, setup raised "Could not find target
+        # string", and the instance produced no results at all. The find
+        # expression is in all 18 and exactly once in each, so it anchors
+        # every spelling without becoming ambiguous.
+        #
+        # Appending after it keeps mocha's own argument order intact: the
+        # reporter flags land between the file list and whatever trailed
+        # it, which is where they already sat for the 17 instances this
+        # step used to handle.
+        mocha_files = "$(find $1/test -name '*-test.js')"
+        reporter = (
+            ' --reporter mocha-junit-reporter'
+            f' --reporter-options mochaFile={RESULTS_DIR}/$1.xml'
+        )
+
+        # 4301 is also the one revision with no --timeout, which leaves
+        # mocha on its 2s default. The other 17 raised it to 60s because
+        # these suites launch a real Chrome and do not finish in two
+        # seconds; a timeout that short would report failures that are
+        # purely a clock. Both sides of the comparison get the same
+        # value, so supplying it where the checkout omits it removes
+        # noise rather than adding bias.
+        timeout = '' if '--timeout' in mocha_source else ' --timeout 60000'
+
         apply_change_literal(
             container=self.container,
             file=self._run_mocha_script,
-            find='--timeout 60000;',
-            replace=(
-                '--timeout 60000 --reporter mocha-junit-reporter'
-                f' --reporter-options mochaFile={RESULTS_DIR}/$1.xml;'
-            ),
+            find=mocha_files,
+            replace=mocha_files + reporter + timeout,
             assertion=(
                 'mocha-junit-reporter --reporter-options'
                 f' mochaFile={RESULTS_DIR}/$1.xml'
