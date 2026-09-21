@@ -29,6 +29,9 @@ log = logging.getLogger(__name__)
 
 RESULTS_DIR: Final[str] = 'test-results'
 RESULTS_FILE: Final[str] = 'results.xml'
+SERVER_PATH: Final[str] = '/testbed/sbmdt-aat-server.js'
+SERVER_LOG: Final[str] = '/tmp/sbmdt-aat-server.log'
+NEWLINE: Final[str] = chr(10)
 
 
 class CarbonEvaluator(Evaluator):
@@ -69,48 +72,107 @@ class CarbonEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
-        if self.instance_id == 'carbon-design-system__carbon-5156':
-            # This legacy suite uses @ibma/aat 2.0.6. Its configured IBM
-            # archive endpoint now returns HTML, which crashes JSON parsing
-            # after Jest has run but before jest-junit flushes. The package
-            # ships the same awe-node rule engine in node_modules; use AAT's
-            # documented customRuleServer/rulePack path and serve that pinned
-            # engine locally instead of disabling accessibility assertions.
-            apply_change_literal(
-                container=self.container,
-                file='/testbed/aat/aat.js',
-                find='module.exports = {',
-                replace=(
-                    'module.exports = {\n'
-                    '  customRuleServer: true,\n'
-                    "  rulePack: 'http://127.0.0.1:18123/',"
-                ),
-                assertion='customRuleServer: true',
-            )
-            write_to_container(
-                self.container,
-                '/testbed/aat.js',
-                ("module.exports = require('./aat/aat.js');\n"),
-            )
-            write_to_container(
-                self.container,
-                '/tmp/sbmdt-aat-server.js',
-                (
-                    "const http = require('http');\n"
-                    "const fs = require('fs');\n"
-                    'const engine = require.resolve(\n'
-                    "  '@ibma/aat/lib/engine/awe-node.js'\n"
-                    ');\n'
-                    'http.createServer((req, res) => {\n'
-                    "  if (req.url !== '/awe-node.js') {\n"
-                    '    res.statusCode = 404; res.end(); return;\n'
-                    '  }\n'
-                    "  res.setHeader('Content-Type', "
-                    "'application/javascript');\n"
-                    '  fs.createReadStream(engine).pipe(res);\n'
-                    "}).listen(18123, '127.0.0.1');\n"
-                ),
-            )
+        self._aat_configs = self._find_aat_configs()
+        if self._aat_configs:
+            self._install_local_rule_server()
+
+    def _find_aat_configs(self) -> list[str]:
+        """Config files that point AAT at a rule archive, if any.
+
+        Located rather than hardcoded: the path differs between carbon
+        versions, and which instances run the accessibility suite at all
+        is not something an instance id predicts.
+        """
+
+        if self.container is None:
+            return []
+        _, out = self.container.exec_run(
+            [
+                'bash',
+                '-c',
+                "{ find /testbed -maxdepth 3 -name 'aat.js'; "
+                "  find /testbed -maxdepth 3 -name '.aat.js'; } "
+                "2>/dev/null | grep -v node_modules || true",
+            ],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(out, bytes)
+        return [p for p in out.decode().splitlines() if p.strip()]
+
+    def _install_local_rule_server(self) -> None:
+        """Serve AAT's own bundled rule engine over loopback.
+
+        AAT's configured IBM archive endpoint now returns HTML, which
+        crashes JSON parsing after jest has run but before jest-junit
+        flushes, losing the whole run. The package ships the same
+        awe-node engine in node_modules, so point AAT's documented
+        customRuleServer/rulePack at a local copy instead of disabling
+        the accessibility assertions.
+        """
+
+        if self.container is None:
+            return
+
+        for cfg in self._aat_configs:
+            try:
+                apply_change_literal(
+                    container=self.container,
+                    file=cfg,
+                    find='module.exports = {',
+                    replace=(
+                        'module.exports = {'
+                        + NEWLINE
+                        + '  customRuleServer: true,'
+                        + NEWLINE
+                        + "  rulePack: 'http://127.0.0.1:18123/',"
+                    ),
+                    assertion='customRuleServer: true',
+                )
+            except Exception as exc:
+                # A config whose shape we do not recognise is left alone;
+                # the run then fails the way it did before rather than in
+                # some new way caused by a half-applied edit.
+                log.warning(f'could not point {cfg!r} at the local rule '
+                            f'server: {exc}')
+
+        # require.resolve() searches upward from the *script's* directory.
+        # A server living in /tmp therefore looks in /tmp/node_modules and
+        # /node_modules, never /testbed/node_modules, and exits before it
+        # listens. Resolve from /testbed explicitly.
+        write_to_container(
+            self.container,
+            SERVER_PATH,
+            (
+                "const http = require('http');"
+                + NEWLINE
+                + "const fs = require('fs');"
+                + NEWLINE
+                + 'const engine = require.resolve('
+                + NEWLINE
+                + "  '@ibma/aat/lib/engine/awe-node.js',"
+                + NEWLINE
+                + "  { paths: ['/testbed/node_modules', '/testbed'] }"
+                + NEWLINE
+                + ');'
+                + NEWLINE
+                + 'http.createServer((req, res) => {'
+                + NEWLINE
+                + "  if (req.url !== '/awe-node.js') {"
+                + NEWLINE
+                + '    res.statusCode = 404; res.end(); return;'
+                + NEWLINE
+                + '  }'
+                + NEWLINE
+                + "  res.setHeader('Content-Type', "
+                + "'application/javascript');"
+                + NEWLINE
+                + '  fs.createReadStream(engine).pipe(res);'
+                + NEWLINE
+                + "}).listen(18123, '127.0.0.1');"
+                + NEWLINE
+            ),
+        )
 
     @override
     def evaluate(self) -> list[TestResult]:
@@ -132,12 +194,20 @@ class CarbonEvaluator(Evaluator):
             raise Exception('no container')
 
         test_command = 'npm test'
-        if self.instance_id == 'carbon-design-system__carbon-5156':
+        if getattr(self, '_aat_configs', None):
+            # Start the rule server in the same shell as the tests, so
+            # it outlives them and dies with them, and wait for the
+            # port instead of racing jest to it.
             test_command = (
-                'node /tmp/sbmdt-aat-server.js '
-                '>/tmp/sbmdt-aat-server.log 2>&1 & '
-                'aat_pid=$!; trap \'kill "$aat_pid" 2>/dev/null || true\' '
-                'EXIT; npm test'
+                'node ' + SERVER_PATH +
+                ' >' + SERVER_LOG + ' 2>&1 & '
+                'aat_pid=$!; '
+                'trap \'kill "$aat_pid" 2>/dev/null || true\' EXIT; '
+                'for _ in $(seq 1 50); do '
+                '  (exec 3<>/dev/tcp/127.0.0.1/18123) 2>/dev/null '
+                '  && break; sleep 0.2; '
+                'done; '
+                'npm test'
             )
 
         # carbon-9136 and carbon-8912 both failed npm test with
