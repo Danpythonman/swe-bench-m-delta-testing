@@ -545,10 +545,18 @@ class OpenlayersEvaluator(Evaluator):
             # and pointing PUPPETEER_EXECUTABLE_PATH at the shim instead of
             # the binary itself, reaches both launch paths without needing
             # to know which one a given commit uses.
+            # --disable-gpu alone breaks the WebGL-backed rendering tests
+            # this suite depends on (see the sibling karma-chrome-launcher
+            # branch above, which uses software rendering instead of
+            # disabling the GPU outright for exactly that reason). Keep
+            # both shim and launcher on the same flags so which resolution
+            # path a given commit's config happens to use doesn't change
+            # whether WebGL is available.
             shim_path = '/tmp/chrome-no-sandbox'
             shim_script = (
                 f'#!/bin/sh\n'
-                f'exec {chrome_path[0]} --no-sandbox --disable-gpu "$@"\n'
+                f'exec {chrome_path[0]} --no-sandbox --enable-webgl '
+                f'--ignore-gpu-blocklist --use-angle=swiftshader "$@"\n'
             )
             write_to_container(self.container, shim_path, shim_script)
             self.container.exec_run(['chmod', '+x', shim_path])
