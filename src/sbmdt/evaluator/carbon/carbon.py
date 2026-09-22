@@ -97,12 +97,25 @@ class CarbonEvaluator(Evaluator):
         """
         if self.container is None:
             return False
-        exit_code, _ = self.container.exec_run(
-            ['test', '-d', '/testbed/node_modules/@ibma/aat'],
+        # Through bash, not a bare `test`: exec_run does not use a
+        # shell, so a bare builtin name can come back 126/127 and
+        # read as "not installed" on a container that has it. The
+        # search covers the monorepo's per-package node_modules as
+        # well as the hoisted root.
+        _, out = self.container.exec_run(
+            [
+                'bash',
+                '-c',
+                "find /testbed -maxdepth 4 -type d "
+                "-path '*/node_modules/@ibma/aat' -print -quit",
+            ],
             workdir='/testbed',
             stream=False,
         )
-        return exit_code == 0
+        assert isinstance(out, bytes)
+        found = bool(out.decode().strip())
+        log.info('@ibma/aat installed: %s', found)
+        return found
 
     def _write_default_aat_config(self) -> str | None:
         """Create the config AAT would otherwise do without.
