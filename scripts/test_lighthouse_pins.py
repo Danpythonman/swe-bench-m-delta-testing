@@ -10,7 +10,6 @@ The fixtures here are the real files, quoted from the commits named in
 each docstring, not invented shapes.
 """
 
-import io
 import re
 import unittest
 
@@ -38,9 +37,19 @@ def pin(declared):
 
 # The three spellings of the mocha line across the 18 lighthouse
 # instances that ship a run-mocha.sh, with how many use each.
-CURRENT = "  mocha --reporter dot $2 $(find $1/test -name '*-test.js') --timeout 60000;"   # 13
-NO_DOT = "  mocha $2 $(find $1/test -name '*-test.js') --timeout 60000;"                   # 4
-NO_TIMEOUT = "  mocha --reporter dot $2 $(find $1/test -name '*-test.js');"                # 1, lighthouse-4301
+# 13 of the 18 use this spelling.
+CURRENT = (
+    "  mocha --reporter dot $2 $(find $1/test -name '*-test.js')"
+    " --timeout 60000;"
+)
+# 4 more drop the dot reporter.
+NO_DOT = (
+    "  mocha $2 $(find $1/test -name '*-test.js') --timeout 60000;"
+)
+# 1, lighthouse-4301, carries no timeout at all.
+NO_TIMEOUT = (
+    "  mocha --reporter dot $2 $(find $1/test -name '*-test.js');"
+)
 
 
 class RunMochaRewriteTests(unittest.TestCase):
@@ -69,7 +78,10 @@ class RunMochaRewriteTests(unittest.TestCase):
         """mocha takes the specs as positional args; order must survive."""
         for source in (CURRENT, NO_DOT, NO_TIMEOUT):
             got = rewrite(source)
-            self.assertLess(got.index(MOCHA_FILES), got.index('--reporter-options'))
+            self.assertLess(
+                got.index(MOCHA_FILES),
+                got.index('--reporter-options'),
+            )
 
     def test_the_trailing_semicolon_survives(self):
         for source in (CURRENT, NO_DOT, NO_TIMEOUT):
@@ -114,10 +126,13 @@ class SourceStaysInSyncTests(unittest.TestCase):
         here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         path = os.path.join(here, 'src', 'sbmdt', 'evaluator',
                             'lighthouse', 'lighthouse.py')
-        return io.open(path, encoding='utf-8').read()
+        return open(path, encoding='utf-8').read()
 
     def test_the_mocha_anchor_matches(self):
-        self.assertIn('mocha_files = "%s"' % MOCHA_FILES, self.source())
+        self.assertIn(
+            f'mocha_files = "{MOCHA_FILES}"',
+            self.source(),
+        )
 
     def test_the_types_node_fallback_matches(self):
         text = self.source()

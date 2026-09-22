@@ -155,7 +155,9 @@ def make_command(
         The full shell command string to execute on the instance.
     """
     pred_filename = pred_s3_key.rsplit('/', 1)[-1]
-    stdout_s3_key = S3PredFilename.decode(pred_filename).encode(extension='.log')
+    stdout_s3_key = S3PredFilename.decode(
+        pred_filename
+    ).encode(extension='.log')
     args = [
         'bash',
         'aws/run_ec2.sh',
@@ -456,7 +458,10 @@ async def main(run_args: RunArgs) -> None:
             )
         pred_s3_keys = pred_keys
     if run_args.pred_prefix is not None:
-        pred_s3_keys = [k for k in pred_s3_keys if k.startswith(run_args.pred_prefix)]
+        pred_s3_keys = [
+            k for k in pred_s3_keys
+            if k.startswith(run_args.pred_prefix)
+        ]
 
     tasks: list[Coroutine[Any, Any, None]] = []
     sem = asyncio.Semaphore(run_args.n_concurrent)

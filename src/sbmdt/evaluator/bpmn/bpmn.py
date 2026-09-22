@@ -146,7 +146,10 @@ class BpmnEvaluator(Evaluator):
         )
         assert isinstance(output, bytes)
         status = output.decode().strip()
-        log.info('puppeteer chrome check: %s (exit_code=%s)', status, exit_code)
+        log.info(
+            'puppeteer chrome check: %s (exit_code=%s)',
+            status, exit_code,
+        )
         if status.startswith('ok:'):
             return
 
@@ -171,9 +174,11 @@ class BpmnEvaluator(Evaluator):
 
         # SWE-bench images set PUPPETEER_SKIP_DOWNLOAD — clear it.
         for cmd in (
-            'env -u PUPPETEER_SKIP_DOWNLOAD -u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
+            'env -u PUPPETEER_SKIP_DOWNLOAD '
+            '-u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
             'node node_modules/puppeteer/install.js',
-            'env -u PUPPETEER_SKIP_DOWNLOAD -u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
+            'env -u PUPPETEER_SKIP_DOWNLOAD '
+            '-u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
             'npx --yes puppeteer browsers install chrome',
         ):
             log.info('Attempting Chromium download via: %s', cmd)
@@ -251,12 +256,16 @@ class BpmnEvaluator(Evaluator):
         log.info('Patched unconditional puppeteer CHROME_BIN assignment')
 
     def _ensure_chrome_docker_launcher(self) -> None:
-        """Install or rewrite ``ChromeHeadless_Linux`` with Docker-safe flags."""
+        """Install or rewrite ``ChromeHeadless_Linux`` with Docker-safe flags.
+        """
         assert self.container is not None
 
         content = read_from_container(self.container, KARMA_CONFIG_FILE)
         if '--no-proxy-server' in content:
-            log.info('Chrome Docker flags already present; skipping launcher patch')
+            log.info(
+                'Chrome Docker flags already present; skipping'
+                ' launcher patch'
+            )
             return
 
         launcher_block = (
@@ -306,7 +315,9 @@ class BpmnEvaluator(Evaluator):
             write_to_container(self.container, KARMA_CONFIG_FILE, updated)
             verify = read_from_container(self.container, KARMA_CONFIG_FILE)
             if '--no-proxy-server' not in verify:
-                raise Exception('Failed to inject ChromeHeadless_Linux launcher')
+                raise Exception(
+                    'Failed to inject ChromeHeadless_Linux launcher'
+                )
             return
 
         raise Exception(
@@ -325,7 +336,10 @@ class BpmnEvaluator(Evaluator):
         )
         assert isinstance(output, bytes)
         node_version = output.decode().strip()
-        log.info('container node version=%s (exit_code=%s)', node_version, exit_code)
+        log.info(
+            'container node version=%s (exit_code=%s)',
+            node_version, exit_code,
+        )
 
         env: dict[str, str] = {
             # Keep local-batch-work's selection: the config maps
@@ -361,7 +375,8 @@ class BpmnEvaluator(Evaluator):
             write_to_container(
                 self.container,
                 shim,
-                f'#!/bin/bash\nexec {chrome_bin} --no-sandbox --disable-gpu "$@"\n',
+                f'#!/bin/bash\n'
+                f'exec {chrome_bin} --no-sandbox --disable-gpu "$@"\n',
             )
             self.container.exec_run(['chmod', '+x', shim], stream=False)
             env['CHROME_BIN'] = shim

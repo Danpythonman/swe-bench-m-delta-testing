@@ -23,7 +23,7 @@ jobs:
   unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Check out the dockerfiles corpus
         # The corpus tests in test_patch_split.py run the real path
@@ -36,7 +36,7 @@ jobs:
           }
           echo "instances: $(ls dockerfiles | wc -l)"
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
@@ -52,28 +52,19 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
       - name: Install
         run: uv sync --all-extras --dev
 
-      # Advisory, not a gate. `ruff check .` reports 42 findings that
-      # predate this workflow, nearly all E501 and E702 in the one-off
-      # batch scripts under `scripts/`. Turning that into a required
-      # check would mean either failing every build from day one or
-      # reformatting a dozen files no one asked me to touch, and a
-      # required check that is red on arrival teaches people to ignore
-      # required checks. So it reports and does not block; make it
-      # blocking once the backlog is cleared.
-      #
-      # `continue-on-error` belongs on the step, not the job. On the job
-      # it spares the workflow run but still paints the job red, so the
-      # first thing this repository ever showed was a failing check that
-      # was meant to be a note. On the step, the findings are printed
-      # and the job is green, which is what "advisory" was supposed to
-      # mean.
-      - name: Ruff (advisory)
-        continue-on-error: true
+      # This was advisory while 33 findings predating the workflow
+      # were outstanding: a required check that is red on arrival
+      # teaches people to ignore required checks. The backlog is now
+      # clear - all of it was line length, stray semicolons and one
+      # unsorted import block, none of it behavioural - so the step
+      # blocks, which is what it was always meant to do. The suite
+      # still reports 62 tests OK after the reflow.
+      - name: Ruff
         run: uv run ruff check . --output-format=concise
