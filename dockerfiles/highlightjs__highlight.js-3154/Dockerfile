@@ -1,5 +1,5 @@
 
-FROM swebench/sweb.eval.x86_64.highlightjs_1776_highlight.js-3154:latest
+FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.highlightjs_1776_highlight.js-3154:latest
 
 WORKDIR /install
 # Install docker cli

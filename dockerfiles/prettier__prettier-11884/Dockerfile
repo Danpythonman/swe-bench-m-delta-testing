@@ -1,5 +1,5 @@
 
-FROM swebench/sweb.eval.x86_64.prettier_1776_prettier-11884:latest
+FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.prettier_1776_prettier-11884:latest
 
 WORKDIR /install
 # Install docker cli

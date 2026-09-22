@@ -1,5 +1,5 @@
 
-FROM swebench/sweb.eval.x86_64.openlayers_1776_openlayers-9307:latest
+FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.openlayers_1776_openlayers-9307:latest
 
 WORKDIR /install
 # Install docker cli
