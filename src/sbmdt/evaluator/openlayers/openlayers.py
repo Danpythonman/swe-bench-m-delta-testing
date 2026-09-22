@@ -218,6 +218,35 @@ class OpenlayersEvaluator(Evaluator):
                 init_require + karma_text,
             )
 
+        # karma-chrome-launcher reads CHROME_BIN. Several configs
+        # set it themselves from puppeteer's bundled binary, which
+        # overwrites whatever evaluate() exports and sends the
+        # launcher back to a binary with no --no-sandbox wrapper.
+        # Make the assignment conditional so an exported value
+        # wins and the original stays as the fallback.
+        # apply_change_regex raises when nothing matches, and plenty
+        # of configs never mention CHROME_BIN, so look first.
+        _chrome_bin_assign = re.compile(
+            r'process\.env\.CHROME_BIN\s*=\s*'
+            r'require\([^)]*\)\.executablePath\(\);'
+        )
+        if _chrome_bin_assign.search(karma_text):
+            apply_change_regex(
+                container=self.container,
+                file=self._karma_config_file,
+                find=_chrome_bin_assign.pattern,
+                replace=(
+                    'if (!process.env.CHROME_BIN) { '
+                    "process.env.CHROME_BIN = "
+                    "require('puppeteer').executablePath(); }"
+                ),
+                assertion='if (!process.env.CHROME_BIN)',
+            )
+            log.info(
+                'made the CHROME_BIN assignment conditional for %s',
+                self.instance_id,
+            )
+
         # Requiring the runtime above fixes the Node-side Karma process, but
         # Babel-generated async helpers execute in Chrome. Include the same
         # module as the first browser file so it defines regeneratorRuntime
@@ -696,6 +725,26 @@ class OpenlayersEvaluator(Evaluator):
             write_to_container(self.container, shim_path, shim_script)
             self.container.exec_run(['chmod', '+x', shim_path])
             environment['PUPPETEER_EXECUTABLE_PATH'] = shim_path
+
+            # karma-chrome-launcher does not read
+            # PUPPETEER_EXECUTABLE_PATH, so the browsers: patch's
+            # --no-sandbox never reached Chrome on configs that
+            # launch it through the launcher. This shim carries
+            # only what is needed to run as root; --disable-gpu is
+            # deliberately absent, because ChromeNoSandbox passes
+            # --use-angle=swiftshader for the WebGL tests and
+            # disabling the GPU here would undo it.
+            launcher_shim = '/tmp/chrome-no-sandbox-launcher'
+            write_to_container(
+                self.container,
+                launcher_shim,
+                f'#!/bin/sh\n'
+                f'exec {chrome_path[0]} --no-sandbox '
+                f'--disable-dev-shm-usage "$@"\n',
+            )
+            self.container.exec_run(['chmod', '+x', launcher_shim])
+            environment['CHROME_BIN'] = launcher_shim
+            log.info('CHROME_BIN -> %s', launcher_shim)
         else:
             log.info(
                 f'no system Chrome found for {self.instance_id}; leaving '
