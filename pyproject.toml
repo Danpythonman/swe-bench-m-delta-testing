@@ -76,5 +76,19 @@ extend-exclude = [
 select = ["E", "F", "I", "UP", "B"]
 ignore = []
 
+[tool.ruff.lint.per-file-ignores]
+# The scoring scripts were written against the result set rather
+# than as library code, and they print a great deal: UP031 alone
+# accounts for 30 findings, all of them percent-formatted report
+# lines. Rewriting those by hand risks typos in the output text and
+# buys nothing. E402 and F402 are the same story - a deliberate
+# import after a path fixup, and a groupby loop variable that
+# shadows a module.
+#
+# Everything else stays on, which is the point: the F rules caught a
+# genuine NameError in the campaign-pinning report, on a path that
+# only runs behind a flag and so had never raised in anger.
+"scripts/scoring/*.py" = ["UP031", "B905", "E402", "F402", "E501"]
+
 [tool.ruff.format]
 quote-style = "single"
