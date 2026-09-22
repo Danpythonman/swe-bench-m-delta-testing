@@ -74,8 +74,61 @@ class CarbonEvaluator(Evaluator):
             )
 
         self._aat_configs = self._find_aat_configs()
+        if not self._aat_configs and self._aat_is_installed():
+            # AAT does not need a config file to run: without one it
+            # uses its built-in archive endpoint, which is the one
+            # that now answers with HTML. carbon-5156 fails exactly
+            # this way - every test passes, then the JSON parse
+            # throws and jest-junit never writes results.xml, so a
+            # complete run is thrown away. Writing the config gives
+            # the redirect below something to edit.
+            created = self._write_default_aat_config()
+            if created:
+                self._aat_configs = [created]
         if self._aat_configs:
             self._install_local_rule_server()
+
+    def _aat_is_installed(self) -> bool:
+        """Is the accessibility checker actually present?
+
+        Only instances that have it can be brought down by it, and
+        writing a config for a package that is not installed would
+        leave a stray file in every other carbon checkout.
+        """
+        if self.container is None:
+            return False
+        exit_code, _ = self.container.exec_run(
+            ['test', '-d', '/testbed/node_modules/@ibma/aat'],
+            workdir='/testbed',
+            stream=False,
+        )
+        return exit_code == 0
+
+    def _write_default_aat_config(self) -> str | None:
+        """Create the config AAT would otherwise do without.
+
+        Returns the path written, or None when it could not be
+        written - in which case the run fails the way it did before
+        rather than in a new way.
+        """
+        if self.container is None:
+            return None
+        path = '/testbed/.aat.js'
+        try:
+            write_to_container(
+                self.container,
+                path,
+                'module.exports = {' + NEWLINE + '};' + NEWLINE,
+            )
+        except Exception as exc:
+            log.warning(f'could not write {path!r}: {exc}')
+            return None
+        log.info(
+            'wrote %s: AAT is installed but this checkout ships no '
+            'config, so it would have used the broken endpoint',
+            path,
+        )
+        return path
 
     def _find_aat_configs(self) -> list[str]:
         """Config files that point AAT at a rule archive, if any.
