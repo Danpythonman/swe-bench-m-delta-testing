@@ -109,6 +109,13 @@ class GrommetEvaluator(Evaluator):
             environment={
                 'JEST_JUNIT_OUTPUT_DIR': RESULTS_DIR,
                 'JEST_JUNIT_OUTPUT_NAME': RESULTS_FILE,
+                # `npm test` can call jest more than once - grommet
+                # re-runs Calendar and DateInput under three
+                # timezones after the full suite - and jest-junit
+                # writes to one path, so the last and smallest run
+                # overwrites the full one. A unique name per
+                # invocation keeps them all.
+                'JEST_JUNIT_UNIQUE_OUTPUT_NAME': 'true',
             },
             workdir='/testbed',
             stream=False,
@@ -118,17 +125,53 @@ class GrommetEvaluator(Evaluator):
 
         log.info(exit_code)
         log.info(output.decode())
-        results = read_from_container(
-            self.container, f'/testbed/{RESULTS_DIR}/{RESULTS_FILE}'
-        )
+        tests: list[TestResult] = []
+        for name in self._results_files():
+            results = read_from_container(
+                self.container, f'/testbed/{RESULTS_DIR}/{name}'
+            )
+            tests.extend(
+                results_xml_to_test_results(
+                    self.instance_id,
+                    self.patch_type,
+                    self.agent_name,
+                    results,
+                    self.timestamp,
+                )
+            )
+        return tests
 
-        return results_xml_to_test_results(
-            self.instance_id,
-            self.patch_type,
-            self.agent_name,
-            results,
-            self.timestamp,
+    def _results_files(self) -> list[str]:
+        """Every JUnit file this run produced.
+
+        With a unique name per invocation there is no longer one
+        known path to read, and a run that called jest once still
+        has to work, so the directory is listed rather than named.
+
+        Returns:
+            The file names, without their directory.
+
+        Raises:
+            Exception: If the run produced no XML at all.
+        """
+        assert self.container is not None
+        _, out = self.container.exec_run(
+            ['bash', '-c',
+             f'ls -1 /testbed/{RESULTS_DIR}/*.xml 2>/dev/null'],
+            workdir='/testbed',
+            stream=False,
         )
+        assert isinstance(out, bytes)
+        names = [line.rsplit('/', 1)[-1]
+                 for line in out.decode().splitlines() if line.strip()]
+        if not names:
+            raise Exception(
+                f'jest-junit wrote no results.xml for {self.instance_id}; '
+                f"expected it at '/testbed/{RESULTS_DIR}/'"
+            )
+        log.info('reading %d JUnit file(s): %s', len(names),
+                 ', '.join(sorted(names)))
+        return sorted(names)
 
     @override
     def pre_cleanup(self) -> None:
