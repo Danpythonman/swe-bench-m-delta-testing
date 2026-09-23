@@ -716,11 +716,19 @@ class OpenlayersEvaluator(Evaluator):
             # and pointing PUPPETEER_EXECUTABLE_PATH at the shim instead of
             # the binary itself, reaches both launch paths without needing
             # to know which one a given commit uses.
+            # --disable-gpu alone breaks the WebGL-backed rendering tests
+            # this suite depends on (see the sibling karma-chrome-launcher
+            # branch above, which uses software rendering instead of
+            # disabling the GPU outright for exactly that reason). Keep
+            # both shim and launcher on the same flags so which resolution
+            # path a given commit's config happens to use doesn't change
+            # whether WebGL is available.
             shim_path = '/tmp/chrome-no-sandbox'
             shim_script = (
                 f'#!/bin/sh\n'
                 f'exec {chrome_path[0]} --no-sandbox '
-                f'--disable-dev-shm-usage --disable-gpu "$@"\n'
+                f'--disable-dev-shm-usage --enable-webgl '
+                f'--ignore-gpu-blocklist --use-angle=swiftshader "$@"\n'
             )
             write_to_container(self.container, shim_path, shim_script)
             self.container.exec_run(['chmod', '+x', shim_path])
@@ -729,22 +737,15 @@ class OpenlayersEvaluator(Evaluator):
             # karma-chrome-launcher does not read
             # PUPPETEER_EXECUTABLE_PATH, so the browsers: patch's
             # --no-sandbox never reached Chrome on configs that
-            # launch it through the launcher. This shim carries
-            # only what is needed to run as root; --disable-gpu is
-            # deliberately absent, because ChromeNoSandbox passes
-            # --use-angle=swiftshader for the WebGL tests and
-            # disabling the GPU here would undo it.
-            launcher_shim = '/tmp/chrome-no-sandbox-launcher'
-            write_to_container(
-                self.container,
-                launcher_shim,
-                f'#!/bin/sh\n'
-                f'exec {chrome_path[0]} --no-sandbox '
-                f'--disable-dev-shm-usage "$@"\n',
-            )
-            self.container.exec_run(['chmod', '+x', launcher_shim])
-            environment['CHROME_BIN'] = launcher_shim
-            log.info('CHROME_BIN -> %s', launcher_shim)
+            # launch it through the launcher -- it reads CHROME_BIN.
+            # That used to need a second shim, because the one above
+            # forced --disable-gpu and routing the launcher through
+            # it would have undone the SwiftShader context the WebGL
+            # tests need. Both carry the same flags now, so one shim
+            # serves both variables, which is what bpmn already did.
+            environment['CHROME_BIN'] = shim_path
+            log.info('CHROME_BIN and PUPPETEER_EXECUTABLE_PATH -> %s',
+                     shim_path)
         else:
             log.info(
                 f'no system Chrome found for {self.instance_id}; leaving '
