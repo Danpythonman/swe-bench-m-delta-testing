@@ -25,11 +25,26 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
+QUARTO_ROOT: Final[str] = '/testbed'
 TESTS_DIR: Final[str] = '/testbed/tests'
-DENO_BIN: Final[str] = '/testbed/package/dist/bin/tools/deno'
 QUARTO_SHARE_PATH: Final[str] = '/testbed/src/resources'
 QUARTO_BIN_PATH: Final[str] = '/testbed/package/dist/bin'
-IMPORT_MAP: Final[str] = '/testbed/src/import_map.json'
+# Where tests/run-tests.sh finds deno has moved with quarto's packaging:
+# bin/deno until spring 2022, bin/tools/deno after, and bin/tools/<arch>/
+# deno once the arch-specific layout arrived. Hard-coding the middle one
+# made every run of quarto-cli-475 exit 127 before a single test, leaving
+# an empty result instead of a failure. First existing path wins.
+DENO_CANDIDATES: Final[tuple[str, ...]] = (
+    f'{QUARTO_BIN_PATH}/tools/x86_64/deno',
+    f'{QUARTO_BIN_PATH}/tools/deno',
+    f'{QUARTO_BIN_PATH}/deno',
+)
+# run-tests.sh switched its --importmap to dev_import_map.json when that
+# file appeared; older checkouts only have import_map.json.
+IMPORT_MAP_CANDIDATES: Final[tuple[str, ...]] = (
+    '/testbed/src/dev_import_map.json',
+    '/testbed/src/import_map.json',
+)
 DENO_TEST_FLAGS: Final[str] = (
     '--unstable --allow-read --allow-write --allow-run --allow-env --allow-net'
 )
@@ -156,15 +171,25 @@ class QuartoEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
+        deno_bin = self._first_existing(DENO_CANDIDATES)
+        import_map = self._first_existing(IMPORT_MAP_CANDIDATES)
+        log.info('deno: %s  import map: %s', deno_bin, import_map)
         command = (
-            f'{TIMEOUT_CMD} {DENO_BIN} test {DENO_TEST_FLAGS}'
-            f' --importmap={IMPORT_MAP}'
+            f'{TIMEOUT_CMD} {deno_bin} test {DENO_TEST_FLAGS}'
+            f' --importmap={import_map}'
         )
         exit_code, output = self.container.exec_run(
             command,
             workdir=TESTS_DIR,
             environment={
                 'NO_COLOR': '1',
+                # run-tests.sh exports QUARTO_ROOT alongside QUARTO_DEBUG.
+                # With debug on and no root, quarto() looks for its dev
+                # `configuration` file under src/, fails to read it, and
+                # every smoke test dies there before rendering anything:
+                # ~190 of 224 tests in both base and gold on quarto-cli
+                # 2689, 2756, 3853, 4064 and 4184.
+                'QUARTO_ROOT': QUARTO_ROOT,
                 'QUARTO_BIN_PATH': QUARTO_BIN_PATH,
                 'QUARTO_SHARE_PATH': QUARTO_SHARE_PATH,
                 'QUARTO_DEBUG': 'true',
@@ -185,6 +210,20 @@ class QuartoEvaluator(Evaluator):
             decoded,
             self.timestamp,
         )
+
+    def _first_existing(self, paths: tuple[str, ...]) -> str:
+        """The first of `paths` present in the container, else the last.
+
+        Falling back to the last candidate keeps the old behaviour of a
+        clear "No such file" in the log when none exist.
+        """
+        assert self.container is not None
+        probe = ' '.join(f'[ -e {p} ] && echo {p} && exit 0;' for p in paths)
+        _, output = self.container.exec_run(
+            ['sh', '-c', probe + ' exit 1'], stream=False)
+        assert isinstance(output, bytes)
+        found = output.decode().strip().splitlines()
+        return found[0] if found else paths[-1]
 
     @override
     def pre_cleanup(self) -> None:
