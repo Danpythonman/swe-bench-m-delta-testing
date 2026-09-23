@@ -203,6 +203,22 @@ split = ts.classify_tests(
     test_patch_diffs=diffs,
 )
 
+# Tests seen to give different verdicts on byte-identical code
+# (flaky_tests.py). A FAIL_TO_PASS or PASS_TO_PASS entry that can flip with
+# no change to the code is not a requirement a patch can be held to, so it
+# is dropped for every agent alike. Absent file, nothing is dropped.
+try:
+    _flaky = pd.read_csv('flaky_tests.csv')
+    FLAKY = {(r.repo, r.test) for r in _flaky.itertuples()}
+except (OSError, pd.errors.EmptyDataError):
+    FLAKY = set()
+
+
+def unflaky(inst, tests):
+    repo = inst.split('__')[0]
+    return [t for t in tests if (repo, t) not in FLAKY]
+
+
 def tier_of(inst):
     """How the instance's FAIL_TO_PASS list was arrived at."""
     leaf, block = ts.test_patch_titles(diffs.get(inst, ''))
@@ -220,12 +236,16 @@ def tier_of(inst):
 _gold_ts = pd.Series({i: t for i, pt, t in chosen if pt == 'gold'})
 campaign_of = dict(zip(_gold_ts.index, _generation_of(_gold_ts)))
 ref = {
-    inst: {'f2p': f2p,
-           'p2p': split.pass_to_pass.get(inst, []),
+    inst: {'f2p': unflaky(inst, f2p),
+           'p2p': unflaky(inst, split.pass_to_pass.get(inst, [])),
            'tier': tier_of(inst),
            'campaign': campaign_of.get(inst)}
     for inst, f2p in split.fail_to_pass.items()
+    if unflaky(inst, f2p)
 }
+emptied = sorted(i for i, f in split.fail_to_pass.items() if not unflaky(i, f))
+print('flaky tests dropped from references: %d test name(s); %d instance(s) '
+      'left with no FAIL_TO_PASS and so ungradeable' % (len(FLAKY), len(emptied)))
 
 sizes = sorted((len(v['f2p']) for v in ref.values()), reverse=True)
 print('gradeable instances : %d' % len(ref))
@@ -239,6 +259,7 @@ print('flaky tests dropped : %d instance(s)' % len(split.flaky))
 
 with open('reference_final.json', 'w') as f:
     json.dump({'ref': ref,
+               'flaky_emptied': emptied,
                'quarantined': [{'instance_id': i, 'dropped_tests': len(t)}
                                for i, t in sorted(split.incomplete.items())],
                'flaky': {i: len(t) for i, t in split.flaky.items()}}, f)
@@ -282,9 +303,11 @@ for _g in sorted(set(_gen_all.dropna())):
                                post_label='gold', columns=COLUMNS,
                                test_patch_diffs=diffs)
     for _inst, _f2p in _split.fail_to_pass.items():
+        if not unflaky(_inst, _f2p):
+            continue
         by_gen[f'{_inst}|{_g}'] = {
-            'f2p': _f2p,
-            'p2p': _split.pass_to_pass.get(_inst, []),
+            'f2p': unflaky(_inst, _f2p),
+            'p2p': unflaky(_inst, _split.pass_to_pass.get(_inst, [])),
             'tier': tier_of(_inst),
             'campaign': _g}
 

@@ -17,7 +17,8 @@ Run them in this order; each reads what the previous one wrote.
 | Script | Reads | Writes |
 | --- | --- | --- |
 | `image_generation.py` | — | imported by the others; labels each run with its campaign |
-| `score_final.py` | `all_test_results.parquet`, `$SBMDT_REPO/dockerfiles/*/test_patch.diff` | `reference_final.json`, `reference_by_generation.json` |
+| `flaky_tests.py` | `all_test_results.parquet`, `identical_arms.json` | `flaky_tests.csv` - tests that flip on byte-identical code |
+| `score_final.py` | `all_test_results.parquet`, `$SBMDT_REPO/dockerfiles/*/test_patch.diff`, `flaky_tests.csv` | `reference_final.json`, `reference_by_generation.json` |
 | `score_agents.py` | the reference | `scored_final.csv` |
 | `agent_instance_detail.py` | the reference, `scored_final.csv` | `agent_instance_detail.csv` |
 | `mk_agent_xlsx.py` | `agent_instance_detail.csv` | `agent_instances_all.xlsx`, one workbook per agent |
@@ -62,3 +63,19 @@ contaminated shortfalls start at 75 — and the clean alternative,
 refusing pre-absent tests for instances the test patch does not anchor,
 would zero out FAIL_TO_PASS for instances whose patch adds tests whose
 titles do not parse.
+
+## Flaky tests
+
+GUIRepair's two conditions carry byte-identical patches, and so do 152 of
+OpenHands'. Run in the same campaign on the same harness, each such pair is
+one piece of code measured twice, so a test that passes in one run and fails
+in the other is flaky by observation. `flaky_tests.py` lists every test that
+does this on at least two instances (one instance could be a single agent's
+racy patch), and `score_final.py` drops them from every reference for every
+agent alike.
+
+Measured on 23 September: 49 tests, 46 of them openlayers, led by the
+`ol/View #animate()` and `#cancelAnimations()` timing tests at 18-26
+instances each. 23 openlayers instances had a FAIL_TO_PASS list made only
+of such tests - their verdicts were whichever way a timing test fell - and
+are no longer gradeable.
