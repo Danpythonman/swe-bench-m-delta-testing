@@ -128,6 +128,67 @@ def in_reference_campaign(frame, ref):
     return frame[keep]
 
 
+def run_verdicts(frame):
+    """(instance, patch_type, timestamp) -> {test_name: passed}.
+
+    A title can appear more than once in one run -- carbon reports
+    'Public API should only change with a semver change' twice, prettier
+    'snippet: #0 format' five times -- so a test passes only if every
+    copy of it passed, the rule classify_tests applies to the same rows.
+    Keeping whichever copy came last instead hid the one failing copy
+    that is the whole reproduction for 17 carbon and 4 prettier
+    instances, and choose_run then dropped them as non-reproducing.
+    """
+    book = {}
+    verdict = frame.groupby(['instance_id', 'patch_type', 'timestamp',
+                             'test_name'], sort=False).passed.all()
+    for key, grp in verdict.groupby(level=[0, 1, 2], sort=False):
+        book[key] = dict(zip(grp.index.get_level_values(3),
+                             grp.to_numpy().tolist(), strict=True))
+    return book
+
+
+# An agent run is a verdict only if it reported at least this share of
+# the tests its reference expects - the same 90% bar score_final applies
+# before a before_patch or gold run may define a reference. alibaba-4182
+# stops at test 117 of ~1,550 on patched and unpatched code alike; grading
+# such a run marks every test it never reached as failed and calls the
+# agent unresolved for the harness stopping.
+COMPLETE = 0.90
+
+
+def drop_incomplete_runs(frame, ref, verbose=True):
+    """Drop agent runs that reported too few of their reference's tests.
+
+    Returns the filtered frame and the set of (instance, patch_type,
+    agent_name) cells left with no run at all, which have to be reported
+    as unmeasured rather than silently disappearing.
+    """
+    want = {i: set(e['f2p']) | set(e['p2p']) for i, e in ref.items()}
+    agent = (~frame.patch_type.isin(REFERENCE_TYPES)
+             & frame.instance_id.isin(want))
+    keys = ['instance_id', 'patch_type', 'agent_name', 'timestamp']
+    short = set()
+    for key, grp in frame[agent].groupby(keys, sort=False):
+        expected = want[key[0]]
+        if len(expected & set(grp.test_name)) < COMPLETE * len(expected):
+            short.add(key)
+    if not short:
+        return frame, set()
+    hit = pd.Series([k in short for k in zip(
+        *(frame[c] for c in keys), strict=True)], index=frame.index)
+    kept = frame[~hit]
+    cells = {k[:3] for k in short}
+    left = set(zip(kept.instance_id, kept.patch_type, kept.agent_name,
+                   strict=True))
+    cut = cells - left
+    if verbose:
+        print('set aside %d agent run(s) that reported under %d%% of their '
+              "reference's tests; %d cell(s) are left with no complete run"
+              % (len(short), COMPLETE * 100, len(cut)))
+    return kept, cut
+
+
 def pin_to_one_generation(frame, verbose=True):
     """Drop runs that do not belong to each instance's chosen generation."""
     # Every scorer passes its freshly loaded results through here, so

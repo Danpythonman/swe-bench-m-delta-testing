@@ -113,9 +113,10 @@ def predictions():
 def verdicts(ref):
     """(agent, condition, instance) -> {test_name: passed}, latest run.
 
-    Only runs from the campaign the instance's reference was measured in
-    are candidates. Returns the verdicts and the set of cells that do have
-    a run, but only in some other campaign.
+    Only complete runs from the campaign the instance's reference was
+    measured in are candidates. Returns the verdicts, the cells that do
+    have a run but only in some other campaign, and the cells whose only
+    runs there stopped part-way.
     """
     big = pd.read_parquet('all_test_results.parquet')
     big, _ = ig.pin_to_one_generation(big)
@@ -126,6 +127,10 @@ def verdicts(ref):
         if a in AGENTS and c in CONDS
         and not (a.startswith('GUIRepair') and not a.endswith(c))}
     big = ig.in_reference_campaign(big, ref)
+    big, cut = ig.drop_incomplete_runs(big, ref, verbose=False)
+    stopped = {(AGENTS[a], c, i) for i, c, a in cut
+               if a in AGENTS and c in CONDS
+               and not (a.startswith('GUIRepair') and not a.endswith(c))}
     latest = big.groupby(['instance_id', 'patch_type',
                           'agent_name'])['timestamp'].transform('max')
     big = big[(big.timestamp == latest)
@@ -138,7 +143,7 @@ def verdicts(ref):
             continue
         out[(AGENTS[agent], cond, inst)] = (
             sub.groupby('test_name')['passed'].all().to_dict())
-    return out, anywhere - set(out)
+    return out, anywhere - set(out) - stopped, stopped
 
 
 def failures():
@@ -188,6 +193,11 @@ def reason(row):
                 'contains no tests at all, so there is nothing to score.')
     if row['run'] == 'failed':
         return ('The evaluation ran and failed: {}.'.format(FAIL_TEXT.get(row['failure'], row['failure'])))
+    if row['run'] == 'stopped part-way':
+        return ('Ran, but every run in the campaign this instance was '
+                'graded in stopped before reaching %d%% of the reference '
+                "tests, so it is not a verdict on the agent's patch."
+                % (ig.COMPLETE * 100))
     if row['run'] == 'other campaign':
         return ('Ran, but only in a campaign other than the one this '
                 "instance's reference was measured in, so there is no "
@@ -234,7 +244,7 @@ def build():
     quar = {q['instance_id'] for q in R['quarantined']}
 
     pred = predictions()
-    ver, elsewhere = verdicts(ref)
+    ver, elsewhere, stopped = verdicts(ref)
     fail = failures()
     empty = empty_runs()
 
@@ -295,6 +305,8 @@ def build():
                         row['prediction'] = 'submitted'
                 elif fk:
                     row['run'] = 'failed'
+                elif (agent, cond, inst) in stopped:
+                    row['run'] = 'stopped part-way'
                 elif (agent, cond, inst) in elsewhere:
                     row['run'] = 'other campaign'
                 elif row['prediction'] == 'none':

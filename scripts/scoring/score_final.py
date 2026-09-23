@@ -13,6 +13,7 @@ before_patch run was truncated or whose gold run fails its own tests.
 import importlib.util
 import json
 import os
+import re
 import sys
 
 import pandas as pd
@@ -77,13 +78,9 @@ frame = big[big.patch_type.isin(['before_patch', 'gold'])]
 TRUNCATED = 0.90
 
 
-def run_tests(frame):
-    """(instance, patch_type, timestamp) -> {test_name: passed}."""
-    book = {}
-    for key, grp in frame.groupby(['instance_id', 'patch_type',
-                                   'timestamp'], sort=False):
-        book[key] = dict(zip(grp.test_name, grp.passed, strict=False))
-    return book
+# (instance, patch_type, timestamp) -> {test_name: passed}; a title
+# repeated within one run passes only if every copy did.
+run_tests = ig.run_verdicts
 
 
 def reproduces(book, inst, base_ts, gold_ts):
@@ -189,6 +186,24 @@ print('  %d instance(s) dropped: no before_patch/gold pair from one '
 
 diffs = read_test_patches()
 
+# Test suites the harness never executes. The openlayers evaluator runs
+# only the karma suite; test/rendering/ is a separate pixel-diff runner
+# whose expected PNGs the released diffs do not even carry. When an
+# instance's test patch touches nothing else, the bug's own tests never
+# run, and whatever flips in the unit suite between base and gold is
+# unrelated -- openlayers-13013's gold patch changes only WebGL tile
+# textures, yet its delta was 'ol/View fit animates when duration is
+# defined'. Such an instance has no reference to grade against.
+UNRUN_TEST_PATHS = {'openlayers': ('test/rendering/', 'rendering/')}
+
+
+def tests_never_run(inst):
+    prefixes = UNRUN_TEST_PATHS.get(inst.split('__')[0])
+    if not prefixes:
+        return False
+    files = re.findall(r'^diff --git a/(\S+)', diffs.get(inst, ''), re.M)
+    return bool(files) and all(f.startswith(prefixes) for f in files)
+
 # `timestamp` tells the classifier which rows came from the same run.
 # Without it a test title that appears more than once in one suite --
 # prettier reports 'snippet: #0 format' five times -- looks like one
@@ -241,8 +256,11 @@ ref = {
            'tier': tier_of(inst),
            'campaign': campaign_of.get(inst)}
     for inst, f2p in split.fail_to_pass.items()
-    if unflaky(inst, f2p)
+    if unflaky(inst, f2p) and not tests_never_run(inst)
 }
+unrun = sorted(i for i in split.fail_to_pass if tests_never_run(i))
+print('instances whose only tests are in a suite the harness never runs: '
+      '%d (%s)' % (len(unrun), ', '.join(unrun) or 'none'))
 emptied = sorted(i for i, f in split.fail_to_pass.items() if not unflaky(i, f))
 print('flaky tests dropped from references: %d test name(s); %d instance(s) '
       'left with no FAIL_TO_PASS and so ungradeable' % (len(FLAKY), len(emptied)))
@@ -260,6 +278,7 @@ print('flaky tests dropped : %d instance(s)' % len(split.flaky))
 with open('reference_final.json', 'w') as f:
     json.dump({'ref': ref,
                'flaky_emptied': emptied,
+               'tests_never_run': unrun,
                'quarantined': [{'instance_id': i, 'dropped_tests': len(t)}
                                for i, t in sorted(split.incomplete.items())],
                'flaky': {i: len(t) for i, t in split.flaky.items()}}, f)
@@ -303,7 +322,7 @@ for _g in sorted(set(_gen_all.dropna())):
                                post_label='gold', columns=COLUMNS,
                                test_patch_diffs=diffs)
     for _inst, _f2p in _split.fail_to_pass.items():
-        if not unflaky(_inst, _f2p):
+        if not unflaky(_inst, _f2p) or tests_never_run(_inst):
             continue
         by_gen[f'{_inst}|{_g}'] = {
             'f2p': unflaky(_inst, _f2p),

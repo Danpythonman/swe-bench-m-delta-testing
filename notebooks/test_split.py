@@ -478,6 +478,18 @@ def _anchored_fail_to_pass(
         if not hits and block:
             hits = {name for name in delta
                     if any(title in name for title in block)}
+        if hits and not hits & delta:
+            # Every test the patch names already passes without the fix,
+            # so on its own the anchored list is satisfied by an empty
+            # patch. The patch did name them, but what it actually made
+            # fail is elsewhere -- carbon-12420's new TimePicker test
+            # passes unpatched, and only its Public API snapshot moves.
+            # Leave the instance to the delta rule, which yields exactly
+            # the tests that do fail before the fix, or none at all.
+            logger.info(
+                '%s: every test its patch names passes before the fix; '
+                'using the pre/post delta instead', instance)
+            continue
         if hits:
             anchored[instance] = hits
             continue

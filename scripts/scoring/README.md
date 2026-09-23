@@ -79,3 +79,32 @@ Measured on 23 September: 49 tests, 46 of them openlayers, led by the
 instances each. 23 openlayers instances had a FAIL_TO_PASS list made only
 of such tests - their verdicts were whichever way a timing test fell - and
 are no longer gradeable.
+
+## Three more ways a verdict could rest on something other than the patch
+
+Found by a second pass on 23 September; each has a case in
+`scripts/test_reference_rules.py`.
+
+- **A title repeated within one run.** carbon reports its Public API
+  snapshot test twice per run and prettier reports `snippet: #0 format`
+  five times. Pairing a before_patch run with a gold run kept whichever
+  copy came last, so a failing copy could vanish and the pair looked like
+  it reproduced nothing. `image_generation.run_verdicts` fails a test if
+  any copy fails, the rule `classify_tests` already applied. 21 instances
+  (17 carbon, 4 prettier) regained a reference.
+- **Named tests that already pass.** FAIL_TO_PASS is anchored to the
+  tests the test patch names. When every one of those passes before the
+  fix, the anchored list is satisfied by an empty patch; the classifier
+  now falls back to the tests that do fail before the fix (carbon-12420:
+  the Public API snapshot, not the new TimePicker test).
+- **Tests the harness never runs.** The openlayers evaluator runs karma
+  only. An instance whose test patch touches nothing outside
+  `test/rendering/` gets no reference: whatever flips in the unit suite is
+  unrelated to the fix (openlayers-13013 and -15685 were graded on a View
+  animation test and a font-loading test).
+
+And one on the agent side: an agent run that reports under 90% of its
+reference's tests is not graded - the same bar `score_final.py` applies to
+reference runs. A complete run from the same campaign is used instead;
+with none, the cell is reported as stopped part-way, not unresolved.
+alibaba-4182 stops at test 117 of ~1,550 patched and unpatched alike.

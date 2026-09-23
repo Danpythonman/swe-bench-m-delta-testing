@@ -88,6 +88,9 @@ big, _generation = ig.pin_to_one_generation(big)
 # A run is graded only against the reference from its own campaign; the
 # latest run is chosen among those, never across campaigns.
 big = ig.in_reference_campaign(big, ref)
+# A run that stopped part-way is no verdict; a later complete run in the
+# same campaign is used instead, and a cell with none is not graded.
+big, _incomplete = ig.drop_incomplete_runs(big, ref)
 latest = big.groupby(
     ['instance_id', 'patch_type', 'agent_name'])['timestamp'].transform('max')
 L = big[big.timestamp == latest]
