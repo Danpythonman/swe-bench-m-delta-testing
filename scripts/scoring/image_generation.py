@@ -30,6 +30,17 @@ GAP_DAYS = 2
 BOUNDARY_FILE = 'generation_boundaries.json'
 _BOUNDS = None
 
+# Campaigns a gap cannot see. The September campaign ran from 17 to 22
+# September while twenty evaluator fixes landed underneath it, so "same
+# campaign" stopped meaning "same harness": 129 scored rows were graded
+# against a before_patch/gold pair made on the other side of a fix to
+# their own repo's evaluator. The 23 September round re-ran base, gold
+# and every arm for those instances on one commit, the day after the
+# last September run - too close for GAP_DAYS to split it off - so it
+# is declared a campaign of its own here rather than silently pooled
+# with the runs it exists to replace.
+EXTRA_BOUNDARIES = ['2026-09-23 00:00:00+00:00']
+
 
 def _boundaries(source='all_test_results.parquet'):
     """Campaign start days, derived once from the whole result set.
@@ -42,9 +53,11 @@ def _boundaries(source='all_test_results.parquet'):
     global _BOUNDS
     if _BOUNDS is not None:
         return _BOUNDS
+    extra = [pd.Timestamp(t) for t in EXTRA_BOUNDARIES]
     if os.path.exists(BOUNDARY_FILE):
         with open(BOUNDARY_FILE) as fh:
-            _BOUNDS = [pd.Timestamp(t) for t in json.load(fh)]
+            cached = [pd.Timestamp(t) for t in json.load(fh)]
+            _BOUNDS = sorted(set(cached) | set(extra))
             return _BOUNDS
     days = pd.Index(sorted(set(
         pd.read_parquet(source, columns=['timestamp'])
@@ -56,7 +69,7 @@ def _boundaries(source='all_test_results.parquet'):
         prev = d
     with open(BOUNDARY_FILE, 'w') as fh:
         json.dump([str(t) for t in bounds], fh)
-    _BOUNDS = bounds
+    _BOUNDS = sorted(set(bounds) | set(extra))
     return _BOUNDS
 
 
