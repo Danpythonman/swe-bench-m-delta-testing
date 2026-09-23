@@ -360,19 +360,37 @@ class LighthouseEvaluator(Evaluator):
             # build, and because --save-exact wrote the pins into
             # package.json first, yarn installs those exact versions
             # rather than undoing them.
-            exit_code, output = self.container.exec_run(
-                'yarn install --ignore-scripts --non-interactive',
-                workdir='/testbed/lighthouse-cli',
-                stream=False,
-            )
-            assert isinstance(output, bytes)
-            log.info(exit_code)
-            log.info(output.decode())
-            if exit_code != 0:
-                raise Exception(
-                    f'Failed to restore lighthouse-cli dependencies after '
-                    f'pinning for {self.instance_id}: {output.decode()}'
+            #
+            # Only a tree yarn built needs this, and only there does yarn
+            # exist. The oldest checkouts install the CLI with plain npm
+            # ("install-cli": "cd ./lighthouse-cli && npm install" in
+            # lighthouse 1.6.0), so npm's pins edit npm's own tree and
+            # nothing is pruned - but the unconditional `yarn install`
+            # died with "exec: yarn: executable file not found", failing
+            # setup for every run of lighthouse-1895, -2016 and -2610 from
+            # the moment this step landed.
+            if 'yarn' not in install_definition:
+                log.info(
+                    '%s: lighthouse-cli was installed by npm (%r); no yarn '
+                    'tree to restore after pinning',
+                    self.instance_id,
+                    install_definition,
                 )
+            else:
+                exit_code, output = self.container.exec_run(
+                    'yarn install --ignore-scripts --non-interactive',
+                    workdir='/testbed/lighthouse-cli',
+                    stream=False,
+                )
+                assert isinstance(output, bytes)
+                log.info(exit_code)
+                log.info(output.decode())
+                if exit_code != 0:
+                    raise Exception(
+                        f'Failed to restore lighthouse-cli dependencies '
+                        f'after pinning for {self.instance_id}: '
+                        f'{output.decode()}'
+                    )
 
         # install-cli's prepublish hook is supposed to build the CLI
         # automatically, but fails silently due to an npm lifecycle
