@@ -12,12 +12,15 @@ plain-text results.
 from __future__ import annotations
 
 import logging
+import re
+import shlex
 from typing import Final, override
 
 from sbmdt.evaluator.base import Evaluator, TestResult
 from sbmdt.evaluator.quarto.deno_test_parser import (
     results_text_to_test_results,
 )
+from sbmdt.patches import test_patch_for
 
 __all__ = [
     'QuartoEvaluator',
@@ -55,6 +58,35 @@ DENO_TEST_FLAGS: Final[str] = (
 # which xelatex has been observed to do.
 TEST_TIMEOUT_SECONDS: Final[int] = 1800
 TIMEOUT_CMD: Final[str] = f'timeout --kill-after=30 {TEST_TIMEOUT_SECONDS}'
+
+SMOKE_ALL: Final[str] = 'smoke/smoke-all.test.ts'
+
+
+def tests_for_patch(test_patch: str) -> tuple[list[str], str | None]:
+    """The test files a test patch touches, and a smoke-all document glob.
+
+    Paths are relative to tests/. A document under docs/smoke-all/ is
+    not a test file itself: smoke-all.test.ts renders whatever its
+    first argument globs (every document, without one), so those
+    documents become that argument and smoke-all joins the file list.
+    Other documents are read by a test file the patch also touches.
+    """
+    files, docs = [], []
+    for path in re.findall(r'^diff --git a/\S+ b/(\S+)', test_patch, re.M):
+        if not path.startswith('tests/'):
+            continue
+        rel = path[len('tests/'):]
+        if rel.endswith('.test.ts'):
+            files.append(rel)
+        elif rel.startswith('docs/smoke-all/') and rel.endswith(
+                ('.qmd', '.ipynb')):
+            docs.append(rel)
+    glob = None
+    if docs:
+        if SMOKE_ALL not in files:
+            files.append(SMOKE_ALL)
+        glob = docs[0] if len(docs) == 1 else '{' + ','.join(docs) + '}'
+    return sorted(set(files)), glob
 
 
 class QuartoEvaluator(Evaluator):
@@ -174,10 +206,23 @@ class QuartoEvaluator(Evaluator):
         deno_bin = self._first_existing(DENO_CANDIDATES)
         import_map = self._first_existing(IMPORT_MAP_CANDIDATES)
         log.info('deno: %s  import map: %s', deno_bin, import_map)
+        # Only the tests this instance's test patch touches, as the
+        # benchmark's own harness does. The whole suite no longer fits
+        # the time cap once the smoke tests actually render (they died
+        # on start-up before QUARTO_ROOT was set): quarto-cli-4064 hit
+        # the 1800s timeout 159 tests in, never reaching its own
+        # smoke-all document. With nothing selectable, run everything.
+        files, smoke_glob = tests_for_patch(test_patch_for(self.instance_id))
+        log.info('quarto tests: %s  smoke-all glob: %s',
+                 files or 'whole suite', smoke_glob)
         command = (
             f'{TIMEOUT_CMD} {deno_bin} test {DENO_TEST_FLAGS}'
             f' --importmap={import_map}'
         )
+        if files:
+            command += ' ' + ' '.join(shlex.quote(f) for f in files)
+        if smoke_glob:
+            command += ' -- ' + shlex.quote(smoke_glob)
         exit_code, output = self.container.exec_run(
             command,
             workdir=TESTS_DIR,
