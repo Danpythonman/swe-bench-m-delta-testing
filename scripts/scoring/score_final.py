@@ -111,7 +111,12 @@ def choose_run(frame):
             .agg(n_tests=('test_name', 'nunique'),
                  n_failed=('passed', lambda s: int((~s).sum())))
             .reset_index())
-    widest = stat.groupby('instance_id').n_tests.transform('max')
+    # Truncated means shorter than its own campaign's longest run. What
+    # a harness runs changes between campaigns - quarto runs only the
+    # instance's own test files from 23 September, a few dozen tests
+    # where the whole suite was 224-401 - so measuring against another
+    # campaign's longest run would call every current run truncated.
+    widest = stat.groupby(['instance_id', '_gen']).n_tests.transform('max')
     stat['full'] = stat.n_tests >= TRUNCATED * widest
     stat['reproduced'] = (stat.patch_type != 'before_patch') |         (stat.n_failed > 0)
 

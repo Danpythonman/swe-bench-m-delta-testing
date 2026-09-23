@@ -54,6 +54,12 @@ EXCLUDED_RUNS = [
     # (instance prefix, patch types, from, until) - until is exclusive
     ('openlayers__', ('before_patch', 'gold'),
      '2026-09-22 19:00:00+00:00', '2026-09-23 03:30:00+00:00'),
+    # The four-run check of 319bf5a's quarto fix (4064 and 475), which
+    # still ran the whole deno suite. 50c98bb then restricted quarto to
+    # each instance's own test files and every quarto run was repeated
+    # on it, so these are a superseded harness, not evaluations.
+    ('quarto-dev__', ('before_patch', 'gold'),
+     '2026-09-23 15:30:00+00:00', '2026-09-23 15:45:00+00:00'),
 ]
 
 
