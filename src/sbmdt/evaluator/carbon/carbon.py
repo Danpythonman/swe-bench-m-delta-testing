@@ -87,6 +87,59 @@ class CarbonEvaluator(Evaluator):
                 self._aat_configs = [created]
         if self._aat_configs:
             self._install_local_rule_server()
+        loadable = self._write_loadable_aat_config()
+        if loadable:
+            if not self._aat_configs:
+                self._install_local_rule_server()
+            self._aat_configs.append(loadable)
+
+    def _write_loadable_aat_config(self) -> str | None:
+        """Give AAT a config it will actually load, if it has none.
+
+        @ibma/aat 2.x reads its config from the working directory only,
+        as `.aat.yml`, `.aat.yaml`, or whatever `require('./aat')`
+        resolves to (plus the same names under `.config/`). carbon keeps
+        its file at `aat/aat.js`, a directory with no index.js, so AAT
+        never loads it and falls back to its defaults - the remote
+        archive whose endpoint now answers with HTML. Editing that file,
+        as `_install_local_rule_server` does, therefore changes nothing,
+        and carbon-5156 kept dying in `AATConfigLoader` after it. Only
+        when no loadable config exists is a `.aat.yml` written, holding
+        nothing but the local rule server, so every other setting stays
+        at the defaults the upstream run used.
+
+        Returns the path written, or None.
+        """
+        if self.container is None or not self._aat_is_installed():
+            return None
+        loadable = ' '.join(
+            f'/testbed/{name}' for name in (
+                '.aat.yml', '.aat.yaml', 'aat.js', 'aat.json',
+                'aat/index.js', 'aat/package.json',
+                '.config/.aat.yml', '.config/.aat.yaml', '.config/aat.js',
+                '.config/aat/index.js'))
+        exit_code, _ = self.container.exec_run(
+            ['bash', '-c', f'for f in {loadable}; do [ -e "$f" ] && exit 0; '
+             'done; exit 1'],
+            workdir='/testbed',
+            stream=False,
+        )
+        if exit_code == 0:
+            return None
+        path = '/testbed/.aat.yml'
+        try:
+            write_to_container(
+                self.container,
+                path,
+                'customRuleServer: true' + NEWLINE
+                + "rulePack: 'http://127.0.0.1:18123/'" + NEWLINE,
+            )
+        except Exception as exc:
+            log.warning(f'could not write {path!r}: {exc}')
+            return None
+        log.info('wrote %s: no config AAT would load, so it would have '
+                 'used the broken remote archive', path)
+        return path
 
     def _aat_is_installed(self) -> bool:
         """Is the accessibility checker actually present?
