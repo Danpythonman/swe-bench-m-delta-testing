@@ -110,10 +110,22 @@ def predictions():
     return out
 
 
-def verdicts():
-    """(agent, condition, instance) -> {test_name: passed}, latest run."""
+def verdicts(ref):
+    """(agent, condition, instance) -> {test_name: passed}, latest run.
+
+    Only runs from the campaign the instance's reference was measured in
+    are candidates. Returns the verdicts and the set of cells that do have
+    a run, but only in some other campaign.
+    """
     big = pd.read_parquet('all_test_results.parquet')
     big, _ = ig.pin_to_one_generation(big)
+    anywhere = {
+        (AGENTS[a], c, i)
+        for i, c, a in big[['instance_id', 'patch_type', 'agent_name']]
+        .drop_duplicates().itertuples(index=False)
+        if a in AGENTS and c in CONDS
+        and not (a.startswith('GUIRepair') and not a.endswith(c))}
+    big = ig.in_reference_campaign(big, ref)
     latest = big.groupby(['instance_id', 'patch_type',
                           'agent_name'])['timestamp'].transform('max')
     big = big[(big.timestamp == latest)
@@ -126,7 +138,7 @@ def verdicts():
             continue
         out[(AGENTS[agent], cond, inst)] = (
             sub.groupby('test_name')['passed'].all().to_dict())
-    return out
+    return out, anywhere - set(out)
 
 
 def failures():
@@ -176,6 +188,10 @@ def reason(row):
                 'contains no tests at all, so there is nothing to score.')
     if row['run'] == 'failed':
         return ('The evaluation ran and failed: {}.'.format(FAIL_TEXT.get(row['failure'], row['failure'])))
+    if row['run'] == 'other campaign':
+        return ('Ran, but only in a campaign other than the one this '
+                "instance's reference was measured in, so there is no "
+                'reference from the same environment to grade it against.')
     if row['run'] == 'no result':
         return ('A patch exists but no evaluation result was ever '
                 'uploaded, and no worker log explains why.')
@@ -218,7 +234,7 @@ def build():
     quar = {q['instance_id'] for q in R['quarantined']}
 
     pred = predictions()
-    ver = verdicts()
+    ver, elsewhere = verdicts(ref)
     fail = failures()
     empty = empty_runs()
 
@@ -259,7 +275,7 @@ def build():
                 v = ver.get((agent, cond, inst))
                 if inst in pred[(agent, cond)]:
                     row['prediction'] = 'submitted'
-                elif v is not None:
+                elif v is not None or (agent, cond, inst) in elsewhere:
                     # A patch that was recovered locally and evaluated,
                     # but whose .pred was never written back to S3 - the
                     # upload is blocked, not missing. Calling this "no
@@ -279,6 +295,8 @@ def build():
                         row['prediction'] = 'submitted'
                 elif fk:
                     row['run'] = 'failed'
+                elif (agent, cond, inst) in elsewhere:
+                    row['run'] = 'other campaign'
                 elif row['prediction'] == 'none':
                     row['run'] = 'not run'
                 else:

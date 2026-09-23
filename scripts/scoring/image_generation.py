@@ -111,6 +111,23 @@ def generation_of(timestamps):
     return pd.Series(['gen%d' % i for i in idx], index=day.index)
 
 
+def in_reference_campaign(frame, ref):
+    """Keep, for each instance, only runs from its reference's campaign.
+
+    The reference records which campaign its before_patch/gold pair came
+    from. An agent run from any other campaign was measured in a
+    different environment - a rebuilt image, or a harness fix that landed
+    in between - and grading it against this reference charges the agent
+    for whatever changed. Instances with no reference are left alone, so
+    they can still be reported as ungradeable.
+    """
+    want = frame.instance_id.map(
+        {i: e.get('campaign') for i, e in ref.items()})
+    gen = generation_of(frame.timestamp)
+    keep = want.isna().to_numpy() | (gen.to_numpy() == want.to_numpy())
+    return frame[keep]
+
+
 def pin_to_one_generation(frame, verbose=True):
     """Drop runs that do not belong to each instance's chosen generation."""
     # Every scorer passes its freshly loaded results through here, so

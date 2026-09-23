@@ -215,10 +215,15 @@ def tier_of(inst):
 
 # An instance is only gradeable when it has at least one FAIL_TO_PASS test:
 # with none, every patch trivially "passes" and the score is meaningless.
+# Which campaign each reference's pair came from, so a run can be graded
+# only against a reference measured in its own environment.
+_gold_ts = pd.Series({i: t for i, pt, t in chosen if pt == 'gold'})
+campaign_of = dict(zip(_gold_ts.index, _generation_of(_gold_ts)))
 ref = {
     inst: {'f2p': f2p,
            'p2p': split.pass_to_pass.get(inst, []),
-           'tier': tier_of(inst)}
+           'tier': tier_of(inst),
+           'campaign': campaign_of.get(inst)}
     for inst, f2p in split.fail_to_pass.items()
 }
 
@@ -268,6 +273,11 @@ for _g in sorted(set(_gen_all.dropna())):
     _chosen, _, _ = choose_run(_fr)
     _fr = _fr[[(a, b, c) in _chosen for a, b, c in
                zip(_fr.instance_id, _fr.patch_type, _fr.timestamp, strict=False)]]
+    # Requiring each pair to reproduce the bug can leave a campaign
+    # with before_patch runs and no gold at all (gen3 and gen4: every
+    # gold there matches its base). Nothing in it can be a reference.
+    if set(_fr.patch_type.unique()) != {'before_patch', 'gold'}:
+        continue
     _split = ts.classify_tests(_fr, pre_label='before_patch',
                                post_label='gold', columns=COLUMNS,
                                test_patch_diffs=diffs)
@@ -275,7 +285,8 @@ for _g in sorted(set(_gen_all.dropna())):
         by_gen[f'{_inst}|{_g}'] = {
             'f2p': _f2p,
             'p2p': _split.pass_to_pass.get(_inst, []),
-            'tier': tier_of(_inst)}
+            'tier': tier_of(_inst),
+            'campaign': _g}
 
 with open('reference_by_generation.json', 'w') as f:
     json.dump(by_gen, f)

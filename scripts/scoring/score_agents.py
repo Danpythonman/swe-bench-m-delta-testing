@@ -85,6 +85,9 @@ import image_generation as ig
 
 big = pd.read_parquet('all_test_results.parquet')
 big, _generation = ig.pin_to_one_generation(big)
+# A run is graded only against the reference from its own campaign; the
+# latest run is chosen among those, never across campaigns.
+big = ig.in_reference_campaign(big, ref)
 latest = big.groupby(
     ['instance_id', 'patch_type', 'agent_name'])['timestamp'].transform('max')
 L = big[big.timestamp == latest]
