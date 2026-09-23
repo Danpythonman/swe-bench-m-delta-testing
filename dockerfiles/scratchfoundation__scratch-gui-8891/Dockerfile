@@ -1,5 +1,5 @@
 
-FROM swebench/sweb.eval.x86_64.scratchfoundation_1776_scratch-gui-8891:latest
+FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.scratchfoundation_1776_scratch-gui-8891:latest
 
 WORKDIR /install
 # Install docker cli

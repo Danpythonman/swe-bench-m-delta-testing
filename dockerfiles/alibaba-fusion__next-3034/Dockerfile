@@ -1,5 +1,5 @@
 
-FROM swebench/sweb.eval.x86_64.alibaba-fusion_1776_next-3034:latest
+FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.alibaba-fusion_1776_next-3034:latest
 
 WORKDIR /install
 # Install docker cli

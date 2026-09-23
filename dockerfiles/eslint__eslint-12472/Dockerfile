@@ -1,5 +1,5 @@
 
-FROM swebench/sweb.eval.x86_64.eslint_1776_eslint-12472:latest
+FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.eslint_1776_eslint-12472:latest
 
 WORKDIR /install
 # Install docker cli

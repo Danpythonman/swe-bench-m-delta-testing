@@ -97,6 +97,21 @@ for name in "${required_args[@]}"; do
     fi
 done
 
+# Log the Docker daemon into the ECR pull-through cache for Docker Hub
+# (registry "docker-hub", account 607869540801, region us-east-1) using the
+# instance's own IAM role. Dockerfiles that pull through that cache instead
+# of docker.io directly avoid Docker Hub's anonymous rate limit; the token
+# is short-lived (12h) so this is done fresh on every run rather than baked
+# into the AMI. Best-effort: a login failure shouldn't fail an instance
+# whose Dockerfile doesn't use the cache.
+ECR_REGISTRY='607869540801.dkr.ecr.us-east-1.amazonaws.com'
+if aws ecr get-login-password --region us-east-1 \
+    | docker login --username AWS --password-stdin "${ECR_REGISTRY}"; then
+    echo "Logged into ${ECR_REGISTRY}"
+else
+    echo "run_ec2.sh: ECR login failed; falling back to direct Docker Hub pulls" >&2
+fi
+
 # Local path that run_instance.py writes its own log output to.
 LOG_FILENAME='run.log'
 

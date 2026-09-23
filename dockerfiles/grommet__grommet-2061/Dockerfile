@@ -1,5 +1,5 @@
 
-FROM swebench/sweb.eval.x86_64.grommet_1776_grommet-2061:latest
+FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.grommet_1776_grommet-2061:latest
 
 WORKDIR /install
 # Install docker cli
