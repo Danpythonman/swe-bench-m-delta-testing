@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import re
+from pathlib import Path
 from typing import Final, override
 
 from sbmdt.evaluator.alibaba.karma_junit_parser import (
@@ -31,6 +32,45 @@ log = logging.getLogger(__name__)
 
 KARMA_FILE: Final[str] = '/testbed/scripts/test/karma.js'
 PATCH_FILE: Final[str] = '/tmp/model.patch'
+
+# The OpenLayers evaluator's Mocha abort shim, served to the browser as
+# the first file karma loads. See add_abort_shim for why.
+ABORT_SHIM_FILE: Final[str] = '/testbed/scripts/test/sbmdt-mocha-abort-shim.js'
+_ABORT_SHIM: Final[str] = (
+    Path(__file__).parent.parent.joinpath('openlayers', 'mocha_abort_shim.js')
+    .read_text(encoding='utf-8')
+)
+_FILES_LIST: Final[re.Pattern[str]] = re.compile(r'files:\s*\[')
+
+
+def add_abort_shim(karma_source: str) -> str:
+    """Put the abort shim first in karma's ``files`` list.
+
+    One late async error was ending whole alibaba runs. In next-4182 a
+    component that had already unmounted threw ``Cannot read properties
+    of null (reading 'focusInput')`` after its test passed, and the run
+    stopped at 117 of 1565 tests; next-2984 stopped at 42 of 1484 the
+    same way. It happened to before_patch runs too, so it is not the
+    patch: it is Mocha aborting every remaining suite when a test that
+    already passed fails asynchronously, the same abort the OpenLayers
+    evaluator defuses. The offending test is still recorded as failed.
+
+    karma's mocha framework serves mocha.js and its adapter before any
+    file in this list, so the shim finds ``window.mocha`` already defined
+    and wraps ``run`` before the adapter calls it.
+
+    Raises:
+        ValueError: If the config has no ``files`` list to extend.
+    """
+    entry = f"'{ABORT_SHIM_FILE}',"
+    if entry in karma_source:
+        return karma_source
+    updated, n = _FILES_LIST.subn(
+        lambda m: f'{m.group(0)}\n            {entry}', karma_source, count=1
+    )
+    if n == 0:
+        raise ValueError('karma config has no files list')
+    return updated
 
 # next-2984/3454/4182 ship node via nvm (or a one-off path under
 # ~/.nvm/versions) that is not on the image ENV PATH. `bash -lc` alone is
@@ -280,6 +320,23 @@ class AlibabaEvaluator(Evaluator):
             log.info(
                 f'Skipping CHROME_BIN puppeteer preserve for '
                 f'{self.instance_id}: {exc}'
+            )
+
+        # 6. Keep one late async error from cancelling the whole run.
+        # Best-effort like the edits above: a config without a files list
+        # has nowhere to put the shim, and that must not cost the run.
+        write_to_container(self.container, ABORT_SHIM_FILE, _ABORT_SHIM)
+        try:
+            karma_source = read_from_container(self.container, KARMA_FILE)
+            write_to_container(
+                self.container, KARMA_FILE, add_abort_shim(karma_source)
+            )
+            log.info('mocha abort shim added to %s', KARMA_FILE)
+        except ValueError as exc:
+            log.info(
+                'no files list for the abort shim in %s (%s)',
+                self.instance_id,
+                exc,
             )
 
         log.info('All changes applied successfully.')
