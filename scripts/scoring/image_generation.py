@@ -41,6 +41,36 @@ _BOUNDS = None
 # with the runs it exists to replace.
 EXTRA_BOUNDARIES = ['2026-09-23 00:00:00+00:00']
 
+# Runs that are not evaluations. From 19:00 on 22 September to 03:00 on
+# 23 September (UTC) the openlayers before_patch regression was bisected
+# across harness commits: 557 before_patch and gold runs over all 59
+# openlayers instances, about five of each per instance, in four waves.
+# Each wave answers "does this commit reproduce it", so a reference cut
+# from one of them is built on whichever commit that wave happened to
+# test - and being the newest runs, they would otherwise displace every
+# openlayers reference. They stay in S3; they are only kept out of
+# grading. None of them is an agent run.
+EXCLUDED_RUNS = [
+    # (instance prefix, patch types, from, until) - until is exclusive
+    ('openlayers__', ('before_patch', 'gold'),
+     '2026-09-22 19:00:00+00:00', '2026-09-23 03:30:00+00:00'),
+]
+
+
+def drop_excluded(frame, verbose=True):
+    """Remove the runs EXCLUDED_RUNS lists; see there for why."""
+    keep = pd.Series(True, index=frame.index)
+    for prefix, types, start, end in EXCLUDED_RUNS:
+        hit = (frame.instance_id.str.startswith(prefix)
+               & frame.patch_type.isin(types)
+               & (frame.timestamp >= pd.Timestamp(start))
+               & (frame.timestamp < pd.Timestamp(end)))
+        keep &= ~hit
+    if verbose and (~keep).any():
+        print('excluded %d row(s) from runs that are not evaluations'
+              % int((~keep).sum()))
+    return frame[keep]
+
 
 def _boundaries(source='all_test_results.parquet'):
     """Campaign start days, derived once from the whole result set.
@@ -83,6 +113,10 @@ def generation_of(timestamps):
 
 def pin_to_one_generation(frame, verbose=True):
     """Drop runs that do not belong to each instance's chosen generation."""
+    # Every scorer passes its freshly loaded results through here, so
+    # this is the one place that keeps non-evaluation runs out of all
+    # of them, whether or not pinning is switched on.
+    frame = drop_excluded(frame, verbose=verbose)
     # Off by default. Discarding a whole campaign was the first
     # answer to cross-campaign contamination; grading each run
     # against its own campaign's reference is the better one, and it

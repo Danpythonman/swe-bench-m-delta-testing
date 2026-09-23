@@ -46,7 +46,7 @@ import image_generation as ig
 
 _generation_of = ig.generation_of
 
-raw_big = pd.read_parquet('all_test_results.parquet')
+raw_big = ig.drop_excluded(pd.read_parquet('all_test_results.parquet'))
 big, _generation = ig.pin_to_one_generation(raw_big)
 frame = big[big.patch_type.isin(['before_patch', 'gold'])]
 
