@@ -373,7 +373,11 @@ AGENT_FAULT = frozenset({
 # mentions empty-pool; Refact's patch is what adds the require. Being
 # under test/spec does not make a missing file ours, so the extension
 # carve-out and the webpack-internal lookahead are both gone.
-DANGLING_IMPORT = re.compile(r"Cannot find module '(\.[^']*)'")
+# webpack words the same failure "Module not found: Error: Can't resolve
+# './X'"; bpmn-js-1337's Refact spec requires a .bpmn fixture that
+# neither its patch nor the test patch creates, and only that wording
+# reached the log.
+DANGLING_IMPORT = re.compile(r"(?:Cannot find module|Can't resolve) '(\.[^']*)'")
 
 
 def _is_agent_fault(failure, evidence):
