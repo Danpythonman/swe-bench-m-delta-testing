@@ -51,6 +51,7 @@ class EvaluatorLifecycleTests(unittest.TestCase):
             provision=stage('provision'),
             apply_patch=stage('apply_patch'),
             apply_test_patch=stage('apply_test_patch'),
+            _restore_test_assets=stage('restore_test_assets'),
             setup=stage('setup'),
             evaluate=stage('evaluate', ['ok']),
             cleanup=stage('cleanup'),
@@ -76,9 +77,11 @@ class EvaluatorLifecycleTests(unittest.TestCase):
         )
 
     def test_gold_patch_precedes_setup_without_separate_test_patch(self):
+        # Only the binary test files the gold diff cannot carry are added.
         self.assertEqual(
             self.run_lifecycle(PatchType.GOLD),
-            ['provision', 'apply_patch', 'setup', 'evaluate', 'cleanup'],
+            ['provision', 'apply_patch', 'restore_test_assets', 'setup',
+             'evaluate', 'cleanup'],
         )
 
     def test_before_patch_applies_only_test_patch(self):

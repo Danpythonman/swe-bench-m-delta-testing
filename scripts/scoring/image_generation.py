@@ -39,7 +39,13 @@ _BOUNDS = None
 # last September run - too close for GAP_DAYS to split it off - so it
 # is declared a campaign of its own here rather than silently pooled
 # with the runs it exists to replace.
-EXTRA_BOUNDARIES = ['2026-09-23 00:00:00+00:00']
+#
+# The 24 September round is the first whose openlayers runs execute the
+# rendering cases (and whose prism gold runs keep CRLF test bytes), so
+# its references carry tests no earlier run reported. Grading an older
+# run against one would count those tests as missing.
+EXTRA_BOUNDARIES = ['2026-09-23 00:00:00+00:00',
+                    '2026-09-24 00:00:00+00:00']
 
 # Runs that are not evaluations. From 19:00 on 22 September to 03:00 on
 # 23 September (UTC) the openlayers before_patch regression was bisected
@@ -60,6 +66,12 @@ EXCLUDED_RUNS = [
     # on it, so these are a superseded harness, not evaluations.
     ('quarto-dev__', ('before_patch', 'gold'),
      '2026-09-23 15:30:00+00:00', '2026-09-23 15:45:00+00:00'),
+    # The first rendering canary (a4ba17e: openlayers-13333, -13974,
+    # -14332). Every case died at the runner's 60 s page timeout while
+    # webpack was still bundling -- the bug 4e35ec4 fixes -- so these
+    # measure that timeout, not the cases.
+    ('openlayers__', ('before_patch', 'gold'),
+     '2026-09-24 12:00:00+00:00', '2026-09-24 13:15:00+00:00'),
 ]
 
 

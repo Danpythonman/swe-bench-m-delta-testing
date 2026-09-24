@@ -1030,6 +1030,10 @@ class Evaluator(ABC):
                     # same diff. The baseline needs the separate test patch
                     # so new regression tests can form FAIL_TO_PASS.
                     log.info(f'Not applying test patch for {self.patch_type}')
+                    # Except for the binary files that diff cannot carry:
+                    # without them a gold run has no expected.png to
+                    # compare against (openlayers-13974, 2026-09-24 canary).
+                    self._restore_test_assets()
             log.info('Setting up...')
             self.setup()
             log.info('Evaluating...')
