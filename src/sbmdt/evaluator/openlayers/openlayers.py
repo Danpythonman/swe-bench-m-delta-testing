@@ -45,7 +45,12 @@ RENDERING_RUNNER: Final[str] = 'test/rendering/test.js'
 # One case per runner invocation: the runner compiles every case, then
 # waits for the page to call render(), which a case that throws (the
 # usual state before the fix) never does -- so a hang is a failure.
-RENDERING_CASE_TIMEOUT_S: Final[int] = 480
+RENDERING_CASE_TIMEOUT_S: Final[int] = 900
+# The first page load waits for webpack to bundle all ~300 cases, which
+# a 2-vCPU worker does not finish inside the runner's 60 s default: the
+# 2026-09-24 canary lost openlayers-14332's case to "Navigation timeout
+# of 60000 ms exceeded" while the bundle was still building.
+RENDERING_PAGE_TIMEOUT_MS: Final[int] = 600_000
 _RENDERING_CASE = re.compile(r'test/rendering/cases/([^/\s]+)/')
 
 
@@ -871,6 +876,7 @@ class OpenlayersEvaluator(Evaluator):
                     'timeout', str(RENDERING_CASE_TIMEOUT_S),
                     'xvfb-run', '-a', 'node', RENDERING_RUNNER,
                     '--force', '--log-level', 'info',
+                    '--timeout', str(RENDERING_PAGE_TIMEOUT_MS),
                     '--match', pattern,
                 ],
                 environment=env,
