@@ -72,6 +72,12 @@ EXCLUDED_RUNS = [
     # measure that timeout, not the cases.
     ('openlayers__', ('before_patch', 'gold'),
      '2026-09-24 12:00:00+00:00', '2026-09-24 13:15:00+00:00'),
+    # A second prism-1500 gold run on the same commit as the 13:21
+    # canary's. The launcher lost its connection and gave the task up,
+    # but the worker finished and uploaded anyway. Kept out so the one
+    # reference stays the pair made together at 13:21.
+    ('PrismJS__prism-1500', ('gold',),
+     '2026-09-24 16:00:00+00:00', '2026-09-24 18:00:00+00:00'),
 ]
 
 
