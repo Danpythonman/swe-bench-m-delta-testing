@@ -44,8 +44,15 @@ _BOUNDS = None
 # rendering cases (and whose prism gold runs keep CRLF test bytes), so
 # its references carry tests no earlier run reported. Grading an older
 # run against one would count those tests as missing.
+#
+# It starts at noon, not midnight: the 23 September round's last wave
+# of openlayers before_patch/gold runs (121 of them, no rendering cases)
+# ran until 01:30 UTC on the 24th. With the boundary at midnight they
+# fell into the new campaign, and choose_run paired old-harness bases
+# with new-harness golds - 48 "truncated base" quarantines and a gold
+# that failed its own tests. Nothing ran between 02:00 and 12:00.
 EXTRA_BOUNDARIES = ['2026-09-23 00:00:00+00:00',
-                    '2026-09-24 00:00:00+00:00']
+                    '2026-09-24 12:00:00+00:00']
 
 # Runs that are not evaluations. From 19:00 on 22 September to 03:00 on
 # 23 September (UTC) the openlayers before_patch regression was bisected
@@ -128,11 +135,17 @@ def _boundaries(source='all_test_results.parquet'):
 
 
 def generation_of(timestamps):
-    """Label each timestamp with the campaign it belongs to."""
+    """Label each timestamp with the campaign it belongs to.
+
+    Compared at full resolution, not by day. The gap-derived boundaries
+    are midnights, where the two agree; EXTRA_BOUNDARIES can fall
+    mid-day, where only this does (a noon boundary compared by day
+    would put the whole day on its far side).
+    """
     bounds = pd.DatetimeIndex(_boundaries()).tz_convert('UTC')
-    day = pd.to_datetime(timestamps).dt.tz_convert('UTC').dt.normalize()
-    idx = bounds.searchsorted(pd.DatetimeIndex(day), side='right') - 1
-    return pd.Series(['gen%d' % i for i in idx], index=day.index)
+    ts = pd.to_datetime(timestamps).dt.tz_convert('UTC')
+    idx = bounds.searchsorted(pd.DatetimeIndex(ts), side='right') - 1
+    return pd.Series(['gen%d' % i for i in idx], index=ts.index)
 
 
 def in_reference_campaign(frame, ref):
