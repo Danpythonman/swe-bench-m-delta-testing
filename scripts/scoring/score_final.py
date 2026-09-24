@@ -51,6 +51,19 @@ raw_big = ig.drop_excluded(pd.read_parquet('all_test_results.parquet'))
 big, _generation = ig.pin_to_one_generation(raw_big)
 frame = big[big.patch_type.isin(['before_patch', 'gold'])]
 
+# The campaigns in which each instance has agent runs. score_agents
+# grades a run only against a reference from its own campaign, so a
+# reference cut from a campaign with no agent runs grades nothing: on
+# 24 Sept a base/gold-only openlayers wave (23 Sept 20:00 - 24 Sept 01:30
+# UTC, ~3 repeats per instance) became the newest pair for 14 instances
+# of the paper's 178 and every one of their agent runs, all from the 17-22
+# Sept campaign, silently dropped out of the grading.
+_agent_runs = big.loc[~big.patch_type.isin(['before_patch', 'gold']),
+                      ['instance_id', 'timestamp']].drop_duplicates()
+AGENT_CAMPAIGNS = (_agent_runs
+                   .assign(_g=_generation_of(_agent_runs.timestamp).to_numpy())
+                   .groupby('instance_id')._g.agg(set).to_dict())
+
 # classify_tests deliberately ignores `timestamp` and treats every row for
 # an (instance, patch_type, test) as a repeat of one measurement, so it is
 # the caller's job to pick which run counts. Pooling a July gold run with a
@@ -127,17 +140,19 @@ def choose_run(frame):
     def newest(pool):
         return pool.loc[pool.timestamp.idxmax()]
 
-    for inst, ig in stat.groupby('instance_id'):
+    def pick(inst, ig):
+        """The instance's runs, or None when no pair survives."""
+        count = dict.fromkeys(dropped, 0)
         picked = {}
         for pt, grp in ig.groupby('patch_type'):
             pool = grp[grp.full]
             if pool.empty:
                 pool = grp
             elif len(pool) < len(grp):
-                dropped['truncated'] += len(grp) - len(pool)
+                count['truncated'] += len(grp) - len(pool)
             alive = pool[pool.reproduced]
             if not alive.empty:
-                dropped['non_reproducing'] += len(pool) - len(alive)
+                count['non_reproducing'] += len(pool) - len(alive)
                 pool = alive
             picked[pt] = (newest(pool).timestamp, pool)
 
@@ -163,13 +178,29 @@ def choose_run(frame):
                     cand.sort(reverse=True)
                     picked['before_patch'] = (cand[0][2], b_pool)
                     picked['gold'] = (cand[0][3], g_pool)
-                    dropped['repaired'] += 1
+                    count['repaired'] += 1
                 else:
                     # Nothing gradeable: drop the instance rather
                     # than keep a pair that spans the rebuild.
-                    dropped['cross_campaign'] += 1
-                    continue
+                    count['cross_campaign'] += 1
+                    return None, count
+        return picked, count
 
+    for inst, ig in stat.groupby('instance_id'):
+        # Prefer a pair from a campaign that also holds agent runs (see
+        # AGENT_CAMPAIGNS); fall back to every campaign only when none
+        # of those yields one. A frame holding a single campaign - the
+        # per-campaign references below - is unaffected.
+        picked = None
+        pref = ig[ig._gen.isin(AGENT_CAMPAIGNS.get(inst, ()))]
+        if {'before_patch', 'gold'} <= set(pref.patch_type):
+            picked, count = pick(inst, pref)
+        if picked is None:
+            picked, count = pick(inst, ig)
+        for k, v in count.items():
+            dropped[k] += v
+        if picked is None:
+            continue
         for pt, (ts, _) in picked.items():
             keep.append((inst, pt, ts))
     return set(keep), dropped, stat
