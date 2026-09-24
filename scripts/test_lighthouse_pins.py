@@ -150,5 +150,20 @@ class SourceStaysInSyncTests(unittest.TestCase):
         self.assertNotIn("find='--timeout 60000;'", self.source())
 
 
+class ReportSuiteTests(unittest.TestCase):
+    """unit-report is run only where the test patch has tests in report/."""
+
+    def wants_report(self, instance_id):
+        from sbmdt.evaluator.lighthouse.lighthouse import _REPORT_TESTS
+        from sbmdt.patches import test_patch_for
+        return bool(_REPORT_TESTS.search(test_patch_for(instance_id)))
+
+    def test_14587s_renderer_test_is_run(self):
+        self.assertTrue(self.wants_report('GoogleChrome__lighthouse-14587'))
+
+    def test_a_core_only_instance_keeps_its_suite(self):
+        self.assertFalse(self.wants_report('GoogleChrome__lighthouse-12067'))
+
+
 if __name__ == '__main__':
     unittest.main()

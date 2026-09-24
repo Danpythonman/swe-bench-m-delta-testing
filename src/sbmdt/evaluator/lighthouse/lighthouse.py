@@ -20,6 +20,7 @@ from sbmdt.evaluator.base import Evaluator, TestResult
 from sbmdt.evaluator.lighthouse.mocha_junit_parser import (
     results_xml_to_test_results,
 )
+from sbmdt.patches import test_patch_for
 from sbmdt.utils import apply_change_literal, read_from_container
 
 __all__ = [
@@ -31,6 +32,11 @@ log = logging.getLogger(__name__)
 PACKAGE_JSON_FILE: Final[str] = '/testbed/package.json'
 RUN_MOCHA_SCRIPT: Final[str] = '/testbed/lighthouse-core/scripts/run-mocha.sh'
 RESULTS_DIR: Final[str] = '/testbed/test-results'
+# unit-report runs the report renderer's own tests, which none of the
+# three default suites reach. It is added only for an instance whose test
+# patch has tests under report/ (lighthouse-14587): anywhere else it would
+# change the suite, and so the reference, for no gain.
+_REPORT_TESTS = re.compile(r'^diff --git a/\S+ b/report/', re.M)
 # Each suite is run independently (rather than via run-mocha.sh's default
 # ``&&``-chained invocation) so that one suite's test failures don't prevent
 # the remaining suites from running.
@@ -89,9 +95,12 @@ class LighthouseEvaluator(Evaluator):
         mocha_scripts = [
             item for item in find_output.decode().splitlines() if item.strip()
         ]
+        wanted = ['core', 'cli', 'viewer']
+        if _REPORT_TESTS.search(test_patch_for(self.instance_id)):
+            wanted.append('report')
         direct_suites = {
             suite: scripts.get(f'unit-{suite}')
-            for suite in ('core', 'cli', 'viewer')
+            for suite in wanted
             if scripts.get(f'unit-{suite}')
         }
         modern_layout = (

@@ -529,14 +529,39 @@ class Evaluator(ABC):
         is_gold = str(getattr(self, 'patch_type', '')) == 'gold'
         sections = split_diff(patch) if is_gold else (patch,)
         gold_test_section = sections[1] if is_gold else ''
+        overrides = globals().get('PATCH_BASE_COMMIT_OVERRIDES', {})
+        # The released gold predictions lost their CR bytes in transport,
+        # so a test file committed with CRLF comes back LF-only when it is
+        # rebuilt from one (the strip below). Most suites never notice.
+        # Prism's do: an expected token can hold a literal CRLF, as
+        # prism-1500's multi-line SQL string does, and the gold patch then
+        # fails its own test in every run. When the instance's test patch
+        # is that same diff with its CRs intact, apply it instead, to the
+        # working tree, exactly as a base run does -- so base and gold also
+        # test against byte-identical files.
+        exact_test = (
+            test_patch_for(self.instance_id)
+            if is_gold and gold_test_section
+            and self.instance_id not in overrides
+            else ''
+        )
+        if '\r' in exact_test and exact_test.replace(
+            '\r', ''
+        ) == gold_test_section.replace('\r', ''):
+            log.info(
+                f'{self.instance_id}: gold test files keep the CRLF bytes '
+                f'of the test patch'
+            )
+            sections = (sections[0], exact_test)
+            gold_test_section = exact_test
+        else:
+            exact_test = ''
         for section_number, section in enumerate(
             filter(None, sections), start=1
         ):
             materialize_exact_blobs = (
-                is_gold and section == gold_test_section
-            ) or self.instance_id in globals().get(
-                'PATCH_BASE_COMMIT_OVERRIDES', {}
-            )
+                is_gold and section == gold_test_section and not exact_test
+            ) or self.instance_id in overrides
             if materialize_exact_blobs:
                 # Materialize tracked files directly from Git's blob store.
                 # Legacy images may have checkout filters or line-ending

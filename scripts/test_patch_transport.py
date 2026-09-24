@@ -60,6 +60,9 @@ class FakeContainer:
         # the gold path silently stops being covered.
         argv = command if isinstance(command, list) else command.split()
         self.commands.append(' '.join(argv))
+        # Resolve through PATH as a shell would. On Windows a bare 'bash'
+        # otherwise finds System32's WSL stub before Git's bash.
+        argv = [shutil.which(argv[0]) or argv[0], *argv[1:]]
         done = subprocess.run(argv, cwd=self.root, capture_output=True)
         return done.returncode, done.stdout + done.stderr
 
@@ -313,6 +316,40 @@ class AlreadyAppliedTests(unittest.TestCase):
         with Harness({'example.txt': b'new\n'}) as h:
             with self.assertRaisesRegex(Exception, 'Failed to apply patch'):
                 h.apply(section('example.txt', 'old', 'new'))
+
+
+CR = chr(13)
+CODE = 'components/prism-sql.js'
+TEST = 'tests/languages/sql/string_feature.test'
+# A CRLF test file whose case holds a string spanning two lines, so the
+# CR is part of what the test expects.
+TEST_FILE = f"'foo{CR}\nbar'{CR}\n".encode()
+TEST_PATCH = (
+    f'diff --git a/{TEST} b/{TEST}\n--- a/{TEST}\n+++ b/{TEST}\n'
+    f"@@ -1,2 +1,3 @@\n 'foo{CR}\n bar'{CR}\n+'foo''s bar'{CR}\n"
+)
+
+
+class GoldKeepsTheTestPatchBytes(unittest.TestCase):
+    """prism-1500: the gold pred reached us with every CR removed."""
+
+    def gold(self, test_patch):
+        files = {CODE: b'old\n', TEST: TEST_FILE}
+        pred = section(CODE, 'old', 'new') + TEST_PATCH.replace(CR, '')
+        with Harness(files, patch_type='gold') as h, mock.patch.object(
+                base, 'test_patch_for', lambda _: test_patch):
+            h.apply(pred)
+            return h.read(CODE), h.read(TEST)
+
+    def test_the_test_file_keeps_its_crlf_bytes(self):
+        code, test = self.gold(TEST_PATCH)
+        self.assertEqual(code, b'new\n')
+        self.assertEqual(test, TEST_FILE + f"'foo''s bar'{CR}\n".encode())
+
+    def test_a_test_patch_that_is_not_the_same_diff_is_not_used(self):
+        other = TEST_PATCH.replace("'foo''s bar'", "'something else'")
+        _, test = self.gold(other)
+        self.assertEqual(test, b"'foo\nbar'\n'foo''s bar'\n")
 
 
 if __name__ == '__main__':
