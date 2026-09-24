@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/webgl-layer-extent/expected.png": {
+  "action": "add",
+  "blob": "45fd3d2163b0910f9dbae0e9eb41db8cf9e62a4d"
+ },
+ "test/rendering/cases/webgl-source-extent/expected.png": {
+  "action": "add",
+  "blob": "3fb5db8f80a6b27edfee10e4538bdc5010a23c40"
+ }
+}

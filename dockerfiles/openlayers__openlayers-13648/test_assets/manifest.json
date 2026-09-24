@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/webgl-tile-aspect-ratio/expected.png": {
+  "action": "add",
+  "blob": "10f0cbda6dabbbaf469f58eb2ba164f639fe4399"
+ },
+ "test/rendering/data/raster/non-square-pixels.tif": {
+  "action": "add",
+  "blob": "363409260f2572a53b7b5828a4aa95b681a43610"
+ }
+}

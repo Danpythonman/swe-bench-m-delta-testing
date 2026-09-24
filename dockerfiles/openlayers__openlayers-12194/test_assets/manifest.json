@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/immediate-pixel-ratio/expected.png": {
+  "action": "add",
+  "blob": "e669542746ec4637916b5995c749b5ba349fdea6"
+ }
+}

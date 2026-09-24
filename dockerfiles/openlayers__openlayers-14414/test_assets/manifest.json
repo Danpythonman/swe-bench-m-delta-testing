@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/source-raster-webgl-alpha/expected.png": {
+  "action": "add",
+  "blob": "893b5410bae27b699ad6d4328266fc6fe0d18979"
+ }
+}

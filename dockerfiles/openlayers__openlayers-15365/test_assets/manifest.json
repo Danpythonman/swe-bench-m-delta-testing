@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/layer-vectortile-opacity-layergroup-rendermode-vector/expected.png": {
+  "action": "add",
+  "blob": "c789f9ff83fdcd872f600205c69a88bf62dd4b1a"
+ },
+ "test/rendering/cases/layer-vectortile-opacity-layergroup/expected.png": {
+  "action": "add",
+  "blob": "982d749712b8ab334a9bc253b5fb37b276da2d97"
+ }
+}

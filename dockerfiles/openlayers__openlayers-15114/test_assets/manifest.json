@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/webgl-holes/expected.png": {
+  "action": "add",
+  "blob": "241eb8653b6fc8fe6fb7522e39043e9aa5c4adef"
+ }
+}

@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/layer-vectortile-overlap-declutter/expected.png": {
+  "action": "add",
+  "blob": "59114c7f874340d2772fdbaeeee43884885c40ff"
+ },
+ "test/rendering/cases/layer-vectortile-overlap-no-declutter/expected.png": {
+  "action": "add",
+  "blob": "8d724dce03e19d5b89ef4058fa73cd2494980b25"
+ }
+}

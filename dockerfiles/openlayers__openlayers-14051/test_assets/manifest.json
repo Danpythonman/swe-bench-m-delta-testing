@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/webgl-tile-preload/expected.png": {
+  "action": "add",
+  "blob": "fc0d58549364794f0e0e54300f140e1579fe8237"
+ }
+}

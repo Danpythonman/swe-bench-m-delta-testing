@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/text-style-linestring-nice/expected.png": {
+  "action": "modify",
+  "blob": "4da6df98f5f08cc7da3db8ce31e80561978fd639"
+ }
+}

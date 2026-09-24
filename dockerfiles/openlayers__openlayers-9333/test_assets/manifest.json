@@ -1,0 +1,134 @@
+{
+ "test/rendering/ol/expected/pan-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/expected/render-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/source/expected/0_1.canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/source/expected/0_1.webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/source/expected/0_2.canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/source/expected/0_2.webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/source/expected/20_1.canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/source/expected/20_1.webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/source/expected/20_2.canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/source/expected/20_2.webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/source/expected/raster-1.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/circle-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/circle-webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/linestring-strokes-canvas-hidpi.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/linestring-strokes-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/linestring-strokes-webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/regularshape-canvas-default-style.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/regularshape-canvas-linedash.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/regularshape-canvas-linedashoffset.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/regularshape-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/regularshape-webgl-default-style.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/regularshape-webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-align-offset-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-background.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-canvas-hidpi.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-canvas-scale.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-auto.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-center.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-left-nice-rotated.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-left-nice.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-left.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-nice-baseline.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-nice-multi-font.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-nice-rotated.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-nice-scale.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-nice.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-linestring-omit.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-multilinestring.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-multipolygon.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-polygon.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-rotated-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-rotated-webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/style/expected/text-webgl.png": {
+  "action": "delete"
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "test/rendering/cases/layer-vector-decluttering-extended/expected.png": {
+  "action": "modify",
+  "blob": "b1f800f5f037179d714a8761bfa573ccd3c53aea"
+ },
+ "test/rendering/cases/layer-vector-decluttermode-image/expected.png": {
+  "action": "add",
+  "blob": "0dde85eb0d0e47fdbac3e442e77eb2a9210ec4ef"
+ },
+ "test/rendering/cases/layer-vector-decluttermode-text/expected.png": {
+  "action": "add",
+  "blob": "35f9a8ae6f13e109b03f14ba413488df4498c875"
+ },
+ "test/rendering/cases/layer-vectortile-no-renderbuffer/expected.png": {
+  "action": "add",
+  "blob": "1b305e81e6fdc71ae630de26cc28b92714df06c2"
+ },
+ "test/rendering/cases/layer-vectortile-renderbuffer/expected.png": {
+  "action": "modify",
+  "blob": "1b305e81e6fdc71ae630de26cc28b92714df06c2"
+ },
+ "test/rendering/cases/layer-vectortile-rotate-hidpi/expected.png": {
+  "action": "modify",
+  "blob": "906cb39921add92c7b2e49569b18c0eeed43accd"
+ }
+}

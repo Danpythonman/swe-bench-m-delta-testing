@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/cog-rgb-auto/expected.png": {
+  "action": "add",
+  "blob": "9d9f82a22a8041b32f8c02ea5046b280de5aada6"
+ },
+ "test/rendering/cases/cog-rgb-no-auto/expected.png": {
+  "action": "add",
+  "blob": "4c3063e97887a30aeca13ae183fb3b2b45913480"
+ }
+}

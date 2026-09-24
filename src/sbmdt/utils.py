@@ -61,17 +61,22 @@ def read_from_container(container: Container, file: str) -> str:
         return raw_bytes.decode()
 
 
-def write_to_container(container: Container, file: str, content: str) -> None:
+def write_to_container(
+    container: Container, file: str, content: str | bytes
+) -> None:
     """
-    Write a string to a file inside a Docker container.
+    Write a string (or raw bytes) to a file inside a Docker container.
 
     Args:
         container: The running Docker container to write to.
         file: Absolute path to the file inside the container.
-        content: The string content to write to the file.
+        content: The content to write; a string is UTF-8 encoded,
+            bytes (e.g. an image) are written as they are.
     """
     # Convert the string to bytes since tar works with raw bytes
-    encoded: bytes = content.encode()
+    encoded: bytes = (
+        content.encode() if isinstance(content, str) else content
+    )
 
     # Create an in-memory buffer to build the tar archive into
     buf = io.BytesIO()

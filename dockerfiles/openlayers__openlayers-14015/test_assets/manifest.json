@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/webgl-data-tile-reset-source/expected.png": {
+  "action": "add",
+  "blob": "890747aca61e0af1ee22501af086ff89c2c3adb6"
+ },
+ "test/rendering/cases/webgl-tile-reset-projection/expected.png": {
+  "action": "add",
+  "blob": "732e9096b14fc522e5f15b27068377c63779aba5"
+ }
+}

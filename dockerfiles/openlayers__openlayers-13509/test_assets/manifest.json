@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/webgl-invisible-group/expected.png": {
+  "action": "add",
+  "blob": "fe20a535dcc763635cf6d7d5f6129b5442b25df5"
+ }
+}

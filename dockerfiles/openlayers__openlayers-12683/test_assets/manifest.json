@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/icon-sprite/expected.png": {
+  "action": "add",
+  "blob": "a1aa18b3b8c5329cea70ae6a0e5e34e013c52ced"
+ },
+ "test/rendering/data/sprites/gis_symbols.png": {
+  "action": "add",
+  "blob": "af31fa96b3d558d3881d34b33a57c134fb004b14"
+ }
+}

@@ -1,0 +1,22 @@
+{
+ "test/rendering/cases/cog-f32-nodata-explicit-nan/expected.png": {
+  "action": "add",
+  "blob": "5da98cb39e1166326dc60518c4a876f97858838b"
+ },
+ "test/rendering/cases/cog-f32-nodata/expected.png": {
+  "action": "add",
+  "blob": "064d844abde800705592bb5675656c40544f7e81"
+ },
+ "test/rendering/cases/cog-i16-nodata/expected.png": {
+  "action": "add",
+  "blob": "064d844abde800705592bb5675656c40544f7e81"
+ },
+ "test/rendering/data/raster/elevation-f32.tif": {
+  "action": "add",
+  "blob": "0099adc9e5cd1e5ace0706249a0c2c2fee3e8769"
+ },
+ "test/rendering/data/raster/elevation-i16.tif": {
+  "action": "add",
+  "blob": "b2ed2944ab2bafb2364a21b421f967bef95c3837"
+ }
+}

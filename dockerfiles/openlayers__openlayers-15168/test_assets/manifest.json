@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/reproj-image-stretched-interpolate-false/expected.png": {
+  "action": "modify",
+  "blob": "f5f5995061ece762a1714fdedc7d3af50cc5d20b"
+ },
+ "test/rendering/cases/reproj-image-svg/expected.png": {
+  "action": "add",
+  "blob": "65175ddc067e68e6d1856afb9bc5ab1124ac46e2"
+ }
+}

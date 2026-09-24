@@ -78,6 +78,14 @@ TEST_TITLE_PATTERN = re.compile(
     re.MULTILINE,
 )
 
+#: Prefix of the test name the evaluator reports a rendering case under.
+RENDERING_TITLE_PREFIX = 'rendering '
+
+#: A rendering case the test patch adds or changes (openlayers).
+RENDERING_CASE_PATTERN = re.compile(
+    r'^diff --git a/\S+ b/test/rendering/cases/([^/\s]+)/', re.MULTILINE
+)
+
 #: Titles shorter than this, or carrying an interpolation marker, never
 #: match a concrete reported test name.
 _MIN_TITLE_LENGTH: int = 6
@@ -420,6 +428,13 @@ def test_patch_titles(diff: str) -> tuple[list[str], list[str]]:
             continue
         seen.add(title)
         (block if kind == 'describe' else leaf).append(title)
+    # An openlayers rendering case is a directory, not an it() title;
+    # the evaluator reports it as 'rendering <case>'.
+    for case in RENDERING_CASE_PATTERN.findall(diff):
+        title = f'{RENDERING_TITLE_PREFIX}{case}'
+        if title not in seen:
+            seen.add(title)
+            leaf.append(title)
     return leaf, block
 
 
@@ -497,9 +512,13 @@ def _anchored_fail_to_pass(
         # If those tests ran at all, the reference itself is broken, so the
         # instance is not gradeable; falling back to the delta rule here is
         # what turns a renamed suite into hundreds of phantom entries.
+        # A rendering case is exempt: it is a pixel comparison, and a
+        # gold image that differs from this environment's software
+        # renderer says nothing about the patch's unit tests.
         every = cast(pd.Series, all_rows[columns.test_name]).astype(str)
-        if any(title in name
-               for name in every for title in (*leaf, *block)):
+        named = [t for t in (*leaf, *block)
+                 if not t.startswith(RENDERING_TITLE_PREFIX)]
+        if any(title in name for name in every for title in named):
             unsatisfied.add(instance)
     return anchored, unsatisfied
 

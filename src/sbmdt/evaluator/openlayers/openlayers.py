@@ -19,6 +19,7 @@ from sbmdt.evaluator.alibaba.karma_junit_parser import (
     results_xml_to_test_results,
 )
 from sbmdt.evaluator.base import Evaluator, TestResult
+from sbmdt.patches import test_assets_for, test_patch_for
 from sbmdt.utils import (
     apply_change_regex,
     read_from_container,
@@ -39,6 +40,19 @@ _ABORT_SHIM: Final[str] = (
 log = logging.getLogger(__name__)
 
 DEFAULT_KARMA_CONFIG_FILE: Final[str] = '/testbed/test/karma.config.js'
+
+RENDERING_RUNNER: Final[str] = 'test/rendering/test.js'
+# One case per runner invocation: the runner compiles every case, then
+# waits for the page to call render(), which a case that throws (the
+# usual state before the fix) never does -- so a hang is a failure.
+RENDERING_CASE_TIMEOUT_S: Final[int] = 480
+_RENDERING_CASE = re.compile(r'test/rendering/cases/([^/\s]+)/')
+
+
+def rendering_cases(paths: list[str]) -> list[str]:
+    """Names of the rendering cases among ``paths``."""
+    return sorted({m.group(1) for p in paths
+                   if (m := _RENDERING_CASE.match(p))})
 
 
 class OpenlayersEvaluator(Evaluator):
@@ -805,7 +819,87 @@ class OpenlayersEvaluator(Evaluator):
             self.agent_name,
             results,
             self.timestamp,
+        ) + self._rendering_results(environment)
+
+    def _rendering_results(
+        self, environment: dict[str, str]
+    ) -> list[TestResult]:
+        """Run the rendering cases the test patch adds or changes.
+
+        ``npm test`` runs karma, the node suite and ``test-rendering``,
+        a pixel comparison of each ``test/rendering/cases/<case>`` against
+        its ``expected.png``. When a fix changes what the library draws,
+        that comparison is its test, and 32 instances have no other.
+        Only the cases the test patch touches are run -- the rest of the
+        suite would add minutes per case and says nothing about the fix.
+        Each is reported as ``rendering <case>`` and passes only when
+        the runner prints its ``ok`` line.
+        """
+        assert self.container is not None
+        paths = re.findall(
+            r'^diff --git a/\S+ b/(\S+)',
+            test_patch_for(self.instance_id),
+            re.M,
+        ) + [path for path, _ in test_assets_for(self.instance_id)]
+        cases = rendering_cases(paths)
+        if not cases:
+            return []
+        code, _ = self.container.exec_run(
+            ['test', '-f', f'/testbed/{RENDERING_RUNNER}']
         )
+        if code != 0:
+            log.info(
+                f'{self.instance_id}: no {RENDERING_RUNNER} at this '
+                f'commit; {len(cases)} rendering case(s) not run'
+            )
+            return []
+
+        # CI turns on the runner's headless mode and its no-sandbox
+        # arguments; the Chrome shim from evaluate() supplies WebGL.
+        env = dict(environment, CI='1')
+        out: list[TestResult] = []
+        for case in cases:
+            code, _ = self.container.exec_run(
+                ['test', '-f',
+                 f'/testbed/test/rendering/cases/{case}/main.js']
+            )
+            if code != 0:
+                continue  # the test patch removes this case
+            pattern = '/cases/' + re.escape(case) + r'/main\.js$'
+            code, output = self.container.exec_run(
+                [
+                    'timeout', str(RENDERING_CASE_TIMEOUT_S),
+                    'xvfb-run', '-a', 'node', RENDERING_RUNNER,
+                    '--force', '--log-level', 'info',
+                    '--match', pattern,
+                ],
+                environment=env,
+                workdir='/testbed',
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            text = output.decode(errors='replace')
+            ok = re.search(
+                r'case \./cases/' + re.escape(case)
+                + r"/main\.js(?: \(.*?\))?': ok",
+                text,
+            )
+            log.info(
+                f'rendering case {case}: '
+                f'{"ok" if ok else "FAIL"} (exit {code})'
+            )
+            log.info(text[-4000:])
+            out.append(
+                TestResult(
+                    instance_id=self.instance_id,
+                    patch_type=self.patch_type,
+                    agent_name=self.agent_name,
+                    timestamp=self.timestamp,
+                    test_name=f'rendering {case}',
+                    passed=bool(ok),
+                )
+            )
+        return out
 
     @override
     def pre_cleanup(self) -> None:

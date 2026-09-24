@@ -1,0 +1,18 @@
+{
+ "test/browser/spec/ol/data/blank.png": {
+  "action": "add",
+  "blob": "ca160d00c4b368adafb9f132c925a202d9b4547a"
+ },
+ "test/rendering/cases/image-stretched-interpolate-false/expected.png": {
+  "action": "modify",
+  "blob": "029172628a61e2a91cbf8f6a2e9b857e928143e3"
+ },
+ "test/rendering/cases/reproj-image-stretched-interpolate-false/expected.png": {
+  "action": "modify",
+  "blob": "208d518e88d3bdc09a1290ee060b24278abea61d"
+ },
+ "test/rendering/cases/source-image-wms-blurry/expected.png": {
+  "action": "add",
+  "blob": "4cca549b5f2a24ec46049d931d6aac4dc58b0479"
+ }
+}

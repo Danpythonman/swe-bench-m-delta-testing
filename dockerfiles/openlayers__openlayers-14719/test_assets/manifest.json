@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/source-imagewms-blurry/expected.png": {
+  "action": "add",
+  "blob": "4cca549b5f2a24ec46049d931d6aac4dc58b0479"
+ },
+ "test/rendering/data/tiles/wms/epsg2056.png": {
+  "action": "add",
+  "blob": "635111bd870a7c4ee10a8352786d35e166942d3e"
+ }
+}

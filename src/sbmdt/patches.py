@@ -15,6 +15,8 @@ preserved within each half, so both remain applicable with ``git apply``.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import re
 from pathlib import Path
@@ -35,6 +37,8 @@ __all__ = [
     'drop_unappliable_binary',
     'drop_mode_only_sections',
     'test_patch_for',
+    'test_assets_for',
+    'git_blob_id',
     'write_diff',
 ]
 
@@ -42,6 +46,10 @@ GOLD_PATCH_DIFF_FILENAME: Final[str] = 'gold_patch.diff'
 CODE_PATCH_DIFF_FILENAME: Final[str] = 'code_patch.diff'
 TEST_PATCH_DIFF_FILENAME: Final[str] = 'test_patch.diff'
 CODE_PATCH_PRED_FILENAME: Final[str] = 'code_patch.pred'
+# Binary files a test patch names but does not carry, recovered by
+# scripts/fetch_test_assets.py.
+TEST_ASSETS_DIR: Final[str] = 'test_assets'
+TEST_ASSETS_MANIFEST: Final[str] = 'manifest.json'
 
 # A path is a test path if it sits in a test directory or carries a test
 # suffix. Kept deliberately broad: misfiling a test file as code would
@@ -345,3 +353,53 @@ def test_patch_for(instance_id: str, base: Path = DOCKERFILES_BASE) -> str:
             f'patch names but does not carry: {dropped}'
         )
     return test_diff
+
+
+def git_blob_id(data: bytes) -> str:
+    """The id git gives ``data`` as a blob (what a diff's index line names)."""
+    return hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()
+
+
+def test_assets_for(
+    instance_id: str, base: Path = DOCKERFILES_BASE
+) -> list[tuple[str, bytes | None]]:
+    """Binary files the test patch changes but ``git apply`` cannot write.
+
+    ``drop_unappliable_binary`` removes a ``Binary files ... differ`` stub
+    from the test patch because the bytes are not in it. For openlayers
+    those stubs are the ``expected.png`` of every rendering case a fix
+    adds or updates, so dropping them silently leaves the rendering test
+    comparing against a stale image or none at all.
+    ``scripts/fetch_test_assets.py`` recovers the exact blobs from the
+    upstream pull request; this returns them for the evaluator to write
+    after the text half of the test patch applies.
+
+    A file is returned only when its bytes still hash to the blob id the
+    manifest recorded, so a corrupted or hand-edited asset is never used.
+
+    Args:
+        instance_id: The benchmark instance to look up.
+        base: Directory of per-instance folders.
+
+    Returns:
+        ``(repo path, bytes)`` pairs; ``bytes`` is ``None`` for a file the
+        test patch deletes. Empty when the instance has no assets.
+    """
+    assets = base / instance_id / TEST_ASSETS_DIR
+    manifest_file = assets / TEST_ASSETS_MANIFEST
+    if not manifest_file.is_file():
+        return []
+    out: list[tuple[str, bytes | None]] = []
+    for path, entry in sorted(json.loads(manifest_file.read_text()).items()):
+        if entry['action'] == 'delete':
+            out.append((path, None))
+            continue
+        data = (assets / entry['blob']).read_bytes()
+        if git_blob_id(data) != entry['blob']:
+            log.warning(
+                f'{instance_id}: test asset {path} does not match blob '
+                f'{entry["blob"]}; not restoring it'
+            )
+            continue
+        out.append((path, data))
+    return out

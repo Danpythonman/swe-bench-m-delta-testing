@@ -1,0 +1,14 @@
+{
+ "test/rendering/cases/webgl-reproj-float/expected.png": {
+  "action": "add",
+  "blob": "6b2712dfadb3fa520380b6ee56f919c39e77e735"
+ },
+ "test/rendering/cases/webgl-reproj-non-parallel/expected.png": {
+  "action": "add",
+  "blob": "e4a1808ee074694d11d46eb531728284c2ba053a"
+ },
+ "test/rendering/cases/webgl-reproj/expected.png": {
+  "action": "add",
+  "blob": "6b2712dfadb3fa520380b6ee56f919c39e77e735"
+ }
+}

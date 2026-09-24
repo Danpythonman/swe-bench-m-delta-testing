@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/webgl-points-geographic/expected.png": {
+  "action": "add",
+  "blob": "e1cd65322426dab9479fff720830c4ccf28c2702"
+ }
+}

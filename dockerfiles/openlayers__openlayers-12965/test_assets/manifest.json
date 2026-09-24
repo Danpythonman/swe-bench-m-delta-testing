@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/webgl-mixed-layers/expected.png": {
+  "action": "add",
+  "blob": "f058d9106224eb96ef0593c3d2905c56cb9ca908"
+ },
+ "test/rendering/cases/webgl-multiple-layers/expected.png": {
+  "action": "add",
+  "blob": "675e3d666d840aba820d919538d7ae501a050a3a"
+ }
+}

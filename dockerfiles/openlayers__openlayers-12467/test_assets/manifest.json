@@ -1,0 +1,18 @@
+{
+ "test/rendering/cases/layer-vectortile-rendermode-vector/expected.png": {
+  "action": "modify",
+  "blob": "f1bfb9afe4137d070c040f5d1ca16ac41d745cbf"
+ },
+ "test/rendering/cases/layer-vectortile-rotate-vector/expected.png": {
+  "action": "modify",
+  "blob": "e6d13a5c427647d53b3aa4dcb24d7818d1272db0"
+ },
+ "test/rendering/cases/layer-vectortile-rotate/expected.png": {
+  "action": "modify",
+  "blob": "1c534146af696b2cb0a10930c2d590f9578d0fd4"
+ },
+ "test/rendering/cases/layer-vectortile-simple/expected.png": {
+  "action": "modify",
+  "blob": "570ca73bdc74b26c3d1bc7f3b8e901026b90b8bc"
+ }
+}

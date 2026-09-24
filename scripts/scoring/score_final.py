@@ -199,15 +199,33 @@ diffs = read_test_patches()
 # unrelated -- openlayers-13013's gold patch changes only WebGL tile
 # textures, yet its delta was 'ol/View fit animates when duration is
 # defined'. Such an instance has no reference to grade against.
+#
+# Since the evaluator restores those PNGs and runs the rendering cases
+# a test patch touches (as tests named 'rendering <case>'), a run from
+# that harness does carry the bug's own tests. The instance is then
+# graded on those alone; a reference built before, from unit-suite
+# noise only, still has nothing to grade against.
 UNRUN_TEST_PATHS = {'openlayers': ('test/rendering/', 'rendering/')}
+RENDERING_TEST_PREFIX = 'rendering '
 
 
-def tests_never_run(inst):
+def only_unrun_suite(inst):
     prefixes = UNRUN_TEST_PATHS.get(inst.split('__')[0])
     if not prefixes:
         return False
     files = re.findall(r'^diff --git a/(\S+)', diffs.get(inst, ''), re.M)
     return bool(files) and all(f.startswith(prefixes) for f in files)
+
+
+def suite_f2p(inst, f2p):
+    """FAIL_TO_PASS limited to the suite the test patch touches."""
+    if not only_unrun_suite(inst):
+        return f2p
+    return [t for t in f2p if t.startswith(RENDERING_TEST_PREFIX)]
+
+
+def tests_never_run(inst, f2p):
+    return only_unrun_suite(inst) and not suite_f2p(inst, f2p)
 
 # `timestamp` tells the classifier which rows came from the same run.
 # Without it a test title that appears more than once in one suite --
@@ -239,9 +257,12 @@ def unflaky(inst, tests):
     return [t for t in tests if (repo, t) not in FLAKY]
 
 
-def tier_of(inst):
+def tier_of(inst, f2p=()):
     """How the instance's FAIL_TO_PASS list was arrived at."""
     leaf, block = ts.test_patch_titles(diffs.get(inst, ''))
+    # A rendering case anchors only once a run has reported it.
+    leaf = [t for t in leaf
+            if not t.startswith(RENDERING_TEST_PREFIX) or t in f2p]
     if leaf:
         return 'anchored'
     if block:
@@ -256,14 +277,15 @@ def tier_of(inst):
 _gold_ts = pd.Series({i: t for i, pt, t in chosen if pt == 'gold'})
 campaign_of = dict(zip(_gold_ts.index, _generation_of(_gold_ts)))
 ref = {
-    inst: {'f2p': unflaky(inst, f2p),
+    inst: {'f2p': unflaky(inst, suite_f2p(inst, f2p)),
            'p2p': unflaky(inst, split.pass_to_pass.get(inst, [])),
-           'tier': tier_of(inst),
+           'tier': tier_of(inst, suite_f2p(inst, f2p)),
            'campaign': campaign_of.get(inst)}
     for inst, f2p in split.fail_to_pass.items()
-    if unflaky(inst, f2p) and not tests_never_run(inst)
+    if unflaky(inst, suite_f2p(inst, f2p))
 }
-unrun = sorted(i for i in split.fail_to_pass if tests_never_run(i))
+unrun = sorted(i for i, f in split.fail_to_pass.items()
+               if tests_never_run(i, f))
 print('instances whose only tests are in a suite the harness never runs: '
       '%d (%s)' % (len(unrun), ', '.join(unrun) or 'none'))
 emptied = sorted(i for i, f in split.fail_to_pass.items() if not unflaky(i, f))
@@ -327,12 +349,12 @@ for _g in sorted(set(_gen_all.dropna())):
                                post_label='gold', columns=COLUMNS,
                                test_patch_diffs=diffs)
     for _inst, _f2p in _split.fail_to_pass.items():
-        if not unflaky(_inst, _f2p) or tests_never_run(_inst):
+        if not unflaky(_inst, suite_f2p(_inst, _f2p)):
             continue
         by_gen[f'{_inst}|{_g}'] = {
-            'f2p': unflaky(_inst, _f2p),
+            'f2p': unflaky(_inst, suite_f2p(_inst, _f2p)),
             'p2p': unflaky(_inst, _split.pass_to_pass.get(_inst, [])),
-            'tier': tier_of(_inst),
+            'tier': tier_of(_inst, suite_f2p(_inst, _f2p)),
             'campaign': _g}
 
 with open('reference_by_generation.json', 'w') as f:

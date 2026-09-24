@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/cog-palette-add-remove/expected.png": {
+  "action": "add",
+  "blob": "aac90ad3b714d48118d38f4c24e382e177f78eb6"
+ }
+}

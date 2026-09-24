@@ -28,6 +28,7 @@ from sbmdt.patches import (
     drop_unappliable_binary,
     split_diff,
     split_diff_by_file,
+    test_assets_for,
     test_patch_for,
 )
 from sbmdt.pred import Pred
@@ -763,6 +764,7 @@ class Evaluator(ABC):
         test_patch = test_patch_for(self.instance_id)
         if not test_patch.strip():
             log.info('Test patch is empty, nothing to apply')
+            self._restore_test_assets()
             return
 
         # Discard any model edits to the files the test patch touches, so
@@ -854,6 +856,36 @@ class Evaluator(ABC):
             raise Exception(
                 f'Failed to apply test patch for {self.instance_id}: '
                 f'{outputs[-1]}'
+            )
+
+        self._restore_test_assets()
+
+    def _restore_test_assets(self) -> None:
+        """Write the binary files the test patch names but cannot carry.
+
+        ``test_patch_for`` drops ``Binary files ... differ`` stubs because
+        ``git apply`` has no bytes to write. For openlayers those are the
+        ``expected.png`` images its rendering tests compare against, so
+        without this step a new rendering case has no oracle and an
+        updated one compares against the stale image. The bytes come
+        from ``scripts/fetch_test_assets.py`` and are checked against the
+        stub's blob id before use (``patches.test_assets_for``).
+        """
+        assert self.container is not None
+        assets = test_assets_for(self.instance_id)
+        for path, data in assets:
+            target = f'/testbed/{path}'
+            if data is None:
+                self.container.exec_run(['rm', '-f', target])
+                continue
+            self.container.exec_run(
+                ['mkdir', '-p', target.rsplit('/', 1)[0]]
+            )
+            write_to_container(self.container, target, data)
+        if assets:
+            log.info(
+                f'{self.instance_id}: restored {len(assets)} binary test '
+                f'file(s) the test patch names but does not carry'
             )
 
     @abstractmethod
