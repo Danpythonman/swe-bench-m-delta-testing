@@ -88,11 +88,41 @@ EXCLUDED_RUNS = [
 ]
 
 
+# The 25 September repeat round: a fresh before_patch, gold and both
+# image arms, twice over, for each MM>Text pair of the paper's stability
+# table (OpenHands-Versa and Refact.ai). It is a repeat of verdicts that
+# are already scored, so it must not become the newest run of any cell
+# and silently replace them. newpaper3/repeat_round.py grades it on its
+# own, with SBMDT_REPEAT_ROUND=1 to lift this exclusion.
+REPEAT_ROUND_WINDOW = ('2026-09-25 19:40:00+00:00',
+                       '2026-09-26 19:40:00+00:00')
+REPEAT_ROUND_INSTANCES = [
+    'eslint__eslint-15243', 'prettier__prettier-14262',
+    'alibaba-fusion__next-1063', 'bpmn-io__bpmn-js-1557',
+    'highlightjs__highlight.js-3018', 'openlayers__openlayers-11226',
+    'openlayers__openlayers-12962', 'openlayers__openlayers-15365',
+    'quarto-dev__quarto-cli-475']
+
+
+def _rules():
+    if os.environ.get('SBMDT_REPEAT_ROUND'):
+        return EXCLUDED_RUNS
+    types = ('before_patch', 'gold', 'with_image', 'without_image')
+    # Matched whole, not as a prefix: openlayers-11226 would otherwise
+    # also catch any openlayers-11226x.
+    return EXCLUDED_RUNS + [(i, types) + REPEAT_ROUND_WINDOW + (True,)
+                            for i in REPEAT_ROUND_INSTANCES]
+
+
 def drop_excluded(frame, verbose=True):
     """Remove the runs EXCLUDED_RUNS lists; see there for why."""
     keep = pd.Series(True, index=frame.index)
-    for prefix, types, start, end in EXCLUDED_RUNS:
-        hit = (frame.instance_id.str.startswith(prefix)
+    for rule in _rules():
+        prefix, types, start, end = rule[:4]
+        exact = len(rule) > 4 and rule[4]
+        name = (frame.instance_id == prefix if exact
+                else frame.instance_id.str.startswith(prefix))
+        hit = (name
                & frame.patch_type.isin(types)
                & (frame.timestamp >= pd.Timestamp(start))
                & (frame.timestamp < pd.Timestamp(end)))
