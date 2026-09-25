@@ -103,6 +103,34 @@ REPEAT_ROUND_INSTANCES = [
     'openlayers__openlayers-12962', 'openlayers__openlayers-15365',
     'quarto-dev__quarto-cli-475']
 
+# The 25 September OCR round: OpenHands-Versa's OCR-condition patches
+# (agent llm.claude4-ocr) for the paper's 30 issues lost without images,
+# each with a fresh before_patch and gold run because 27 of their
+# references are from gen7/gen8. Its before_patch/gold runs would
+# otherwise become these instances' newest references and move the main
+# tables, so it is kept out the same way and graded on its own by
+# newpaper3/ocr_round.py (SBMDT_REPEAT_ROUND=1 lifts this too).
+OCR_ROUND_WINDOW = ('2026-09-25 20:30:00+00:00',
+                    '2026-09-27 00:00:00+00:00')
+OCR_ROUND_INSTANCES = [
+    'PrismJS__prism-2195', 'PrismJS__prism-2861', 'PrismJS__prism-3438',
+    'alibaba-fusion__next-1067', 'alibaba-fusion__next-2984',
+    'alibaba-fusion__next-717', 'alibaba-fusion__next-877',
+    'bpmn-io__bpmn-js-1083', 'bpmn-io__bpmn-js-1179',
+    'bpmn-io__bpmn-js-1196', 'bpmn-io__bpmn-js-1198',
+    'bpmn-io__bpmn-js-1659', 'bpmn-io__bpmn-js-1679',
+    'carbon-design-system__carbon-12329',
+    'carbon-design-system__carbon-12398',
+    'carbon-design-system__carbon-13364',
+    'carbon-design-system__carbon-7350',
+    'carbon-design-system__carbon-8720',
+    'carbon-design-system__carbon-9402', 'eslint__eslint-17618',
+    'highlightjs__highlight.js-3018', 'openlayers__openlayers-14414',
+    'openlayers__openlayers-14619', 'openlayers__openlayers-15825',
+    'prettier__prettier-16347', 'prettier__prettier-8536',
+    'quarto-dev__quarto-cli-2689', 'quarto-dev__quarto-cli-2756',
+    'quarto-dev__quarto-cli-4064', 'quarto-dev__quarto-cli-4184']
+
 
 def _rules():
     if os.environ.get('SBMDT_REPEAT_ROUND'):
@@ -110,8 +138,11 @@ def _rules():
     types = ('before_patch', 'gold', 'with_image', 'without_image')
     # Matched whole, not as a prefix: openlayers-11226 would otherwise
     # also catch any openlayers-11226x.
-    return EXCLUDED_RUNS + [(i, types) + REPEAT_ROUND_WINDOW + (True,)
-                            for i in REPEAT_ROUND_INSTANCES]
+    return (EXCLUDED_RUNS
+            + [(i, types) + REPEAT_ROUND_WINDOW + (True,)
+               for i in REPEAT_ROUND_INSTANCES]
+            + [(i, types) + OCR_ROUND_WINDOW + (True,)
+               for i in OCR_ROUND_INSTANCES])
 
 
 def drop_excluded(frame, verbose=True):
