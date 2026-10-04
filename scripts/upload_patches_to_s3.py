@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import logging
 from pathlib import Path
@@ -7,6 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from sbmdt.aws.s3 import PREDS_S3_BUCKET_NAME, S3PredFilename, file_to_s3
+from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.evaluator.base import PatchType
 from sbmdt.log import setup_logging
@@ -86,12 +88,41 @@ def upload_preds_to_s3(
         )
 
 
+def upload_verified_preds_to_s3() -> None:
+    """Upload every SWE-bench Verified gold pred as ``gold`` and
+    ``before_patch``.
+
+    As for SWE-bench M, the ``before_patch`` key reuses the gold pred only
+    to name the run; ``aws/run_ec2.sh`` never passes a pred file to a
+    ``before_patch`` evaluation. SWE-bench M instances are left alone.
+    """
+    for instance_dir in sorted(DOCKERFILES_BASE.iterdir()):
+        if benchmark_of(instance_dir.name) != Benchmark.SWE_BENCH_VERIFIED:
+            continue
+        pred_filepath = instance_dir / 'gold_patch.pred'
+        upload_single_pred_to_s3(pred_filepath, PatchType.GOLD)
+        upload_single_pred_to_s3(pred_filepath, PatchType.BEFORE_PATCH)
+
+
 def main():
     """Upload the three known prediction sets (with-images, without-images,
-    and gold) to S3.
+    and gold) to S3, or only the SWE-bench Verified gold preds with
+    ``--verified``.
     """
+    parser = argparse.ArgumentParser(description='Upload .pred files to S3.')
+    parser.add_argument(
+        '--verified',
+        action='store_true',
+        help='Only upload SWE-bench Verified gold and before_patch preds.',
+    )
+    args = parser.parse_args()
+
     setup_logging(level=logging.INFO)
     load_dotenv()
+
+    if args.verified:
+        upload_verified_preds_to_s3()
+        return
 
     with_images_dir = Path(
         '/home/daniel/York/Masters/EECS6444/Project/preds/with-images'
