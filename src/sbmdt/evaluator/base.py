@@ -571,6 +571,7 @@ class Evaluator(ABC):
                     f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
                 ),
             )
+            self._refresh_index()
             exit_code = 1
             for check_command, apply_command in attempts:
                 check_code, check_output = self.container.exec_run(
@@ -613,6 +614,20 @@ class Evaluator(ABC):
                     f'Failed to apply patch for {self.instance_id}: '
                     f'{outputs[-1]}'
                 )
+
+    def _refresh_index(self) -> None:
+        """Refresh the stat information Git caches for ``/testbed``.
+
+        Extracting an image's layers rewrites file timestamps, so tracked
+        files whose contents equal the index can still look modified to
+        Git. ``git apply --3way`` refuses such files ("does not match
+        index"), which made the three-way fallback fail on every image.
+        Refreshing changes no file contents.
+        """
+        assert self.container is not None
+        self.container.exec_run(
+            'git update-index -q --refresh', workdir='/testbed', stream=False
+        )
 
     def restore_patch_base(self) -> None:
         """Check out a verified PR base when a legacy image is mismatched."""
@@ -757,6 +772,7 @@ class Evaluator(ABC):
 
         write_to_container(self.container, TEST_PATCH_FILE, test_patch)
 
+        self._refresh_index()
         outputs = []
         commands = (
             f'git apply {TEST_PATCH_FILE}',

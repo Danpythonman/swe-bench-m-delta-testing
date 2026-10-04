@@ -15,6 +15,7 @@ import random
 import shlex
 import signal
 from collections.abc import Coroutine
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any, get_args
 
@@ -442,6 +443,15 @@ async def main(run_args: RunArgs) -> None:
     """
     loop = asyncio.get_running_loop()
     _register_signal_handlers(loop)
+    # Every blocking boto3 call (including the instance_running and
+    # instance_terminated waiters, which hold a thread for a minute or
+    # more) runs in the loop's default executor. Its default size,
+    # min(32, cpu_count + 4), is below a large --n-concurrent, so waiters
+    # would queue every other worker's SSM polling behind them. Size it to
+    # the batch: one waiter plus one short call per worker at most.
+    loop.set_default_executor(
+        ThreadPoolExecutor(max_workers=2 * run_args.n_concurrent + 4)
+    )
 
     pred_keys = run_args.pred_keys
     all_pred_s3_keys = get_all_keys_in_s3_bucket(PREDS_S3_BUCKET_NAME)
