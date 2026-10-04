@@ -46,6 +46,16 @@ _INJECTED_SOURCES: Final[Path] = Path(__file__).parent / 'injected'
 
 _ACTIVATE: Final[str] = 'source /opt/miniconda3/bin/activate testbed'
 
+# The images set no locale, so Python 3.6 falls back to ASCII for stdio
+# and file names, and a runner that prints a non-ASCII character (Django's
+# migrate prints an ellipsis while creating test tables) dies before any
+# test runs. C.UTF-8 ships with every image's base distribution.
+_LOCALE_ENV: Final[dict[str, str]] = {
+    'LANG': 'C.UTF-8',
+    'LC_ALL': 'C.UTF-8',
+    'PYTHONIOENCODING': 'utf-8',
+}
+
 # A hung test (a deadlocked subprocess, a network call with no timeout)
 # would otherwise block the run indefinitely. Results are written as they
 # happen, so whatever finished before the deadline is still collected.
@@ -221,6 +231,7 @@ class PythonEvaluator(Evaluator):
         exit_code, output = self._exec(
             f'{_TIMEOUT} {command}',
             env={
+                **_LOCALE_ENV,
                 'PYTHONPATH': INJECTED_DIR,
                 'SBMDT_RESULTS_FILE': RESULTS_FILE,
             },

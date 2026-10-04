@@ -249,7 +249,10 @@ def matching_keys(
     - Django labels come from unittest's verbose output, which prints a
       documented test's first docstring line next to its name, and the
       labels use one or the other inconsistently. A documented Django
-      test is matched by either.
+      test is matched by either. Python 3.11 also changed the name
+      unittest prints to ``method (module.Class.method)``, which the
+      labels of instances on newer Pythons use, so a Django test is
+      matched by that spelling too.
 
     Args:
         instance_id: The instance the test belongs to.
@@ -262,9 +265,13 @@ def matching_keys(
     if instance_id.startswith('sympy__sympy'):
         return (test.rpartition('::')[2],)
     if instance_id.startswith('django__django'):
+        keys = (test,)
+        if match := DJANGO_ID.match(test):
+            method, module, cls = match.group('method', 'module', 'cls')
+            keys += (f'{method} ({module}.{cls}.{method})',)
         if test in descriptions:
-            return (test, descriptions[test])
-        return (test,)
+            keys += (descriptions[test],)
+        return keys
     return (test.split(' ', 1)[0],)
 
 
