@@ -22,8 +22,9 @@ observed for it:
     failed to import, or its name is spelled differently.
 ``ambiguous``
     Several harness tests match the official name (SymPy labels are bare
-    function names; pytest labels are truncated at the first space) and
-    the harness classified them differently.
+    function names, pytest labels are truncated at the first space,
+    Django labels can be docstring lines) and the harness classified
+    them differently.
 
 Usage:
     uv run scripts/compare_official_split.py               # synced parquet
@@ -33,18 +34,23 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import logging
+import re
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Final
 
 import pandas as pd
 
 from sbmdt.benchmark import Benchmark, benchmark_of
-from sbmdt.env import PROJECT_BASE
-from sbmdt.instance import ReferenceSplit
+from sbmdt.env import DOCKERFILES_BASE, PROJECT_BASE
+from sbmdt.instance import InstanceMetadata, ReferenceSplit
 from sbmdt.log import setup_logging
+from sbmdt.patches import TEST_PATCH_DIFF_FILENAME
 
 sys.path.insert(0, str(Path(__file__).parent))
 from analyze_results import (  # noqa: E402
@@ -58,6 +64,7 @@ from analyze_results import (  # noqa: E402
     render,
     repo_of,
 )
+from audit_gold_apply import ensure_clone, ensure_commit, git  # noqa: E402
 
 log = logging.getLogger(__name__)
 
@@ -105,11 +112,133 @@ def load_verified_results(data_dir: Path) -> pd.DataFrame:
     return frame
 
 
-def matching_key(instance_id: str, test: str) -> str:
-    """Return the name a harness test is matched to official labels by.
+# A Django test id as the harness records it: ``method (module.Class)``.
+DJANGO_ID: Final[re.Pattern[str]] = re.compile(
+    r'^(?P<method>\w+) \((?P<module>[\w.]+)\.(?P<cls>\w+)\)$'
+)
+
+
+def post_patch_sources(instance_id: str, paths: set[str]) -> dict[str, str]:
+    """Return test files as they stand after the instance's test patch.
+
+    Uses the blobless clone from ``audit_gold_apply.py``: the base commit
+    is read into a throwaway index, the test patch applied to it, and the
+    requested files read back, so only blobs those files need are fetched.
+
+    Args:
+        instance_id: The instance whose base commit and test patch to use.
+        paths: Repository-relative files to read.
+
+    Returns:
+        File contents keyed by path; files that do not exist are omitted.
+    """
+    metadata = InstanceMetadata.load(instance_id)
+    clone = ensure_clone(metadata.repo)
+    ensure_commit(clone, metadata.base_commit)
+    patch = DOCKERFILES_BASE / instance_id / TEST_PATCH_DIFF_FILENAME
+    sources: dict[str, str] = {}
+    with tempfile.TemporaryDirectory() as tmp:
+        env = {'GIT_INDEX_FILE': str(Path(tmp) / 'index')}
+        git(clone, 'read-tree', metadata.base_commit, env=env)
+        try:
+            git(clone, 'apply', '--cached', str(patch.resolve()), env=env)
+        except subprocess.CalledProcessError:
+            log.warning(f'{instance_id}: test patch did not apply to index')
+        for path in sorted(paths):
+            try:
+                sources[path] = git(clone, 'show', f':{path}', env=env)
+            except subprocess.CalledProcessError:
+                continue
+    return sources
+
+
+def short_descriptions(source: str) -> dict[tuple[str, str], str]:
+    """Return unittest's short description for each documented test.
+
+    This is the first line of the method's docstring, which unittest's
+    verbose output prints in place of the test's name, and which is how
+    SWE-bench's Django labels spell such tests. Methods inherited from
+    classes in the same module are resolved through the class's bases.
+
+    Args:
+        source: A test module's source.
+
+    Returns:
+        ``(class, method) -> description`` for documented test methods.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return {}
+    classes = {
+        node.name: node for node in tree.body if isinstance(node, ast.ClassDef)
+    }
+
+    def methods(name: str, seen: frozenset[str]) -> dict[str, str]:
+        node = classes.get(name)
+        if node is None or name in seen:
+            return {}
+        found: dict[str, str] = {}
+        for base in node.bases:
+            if isinstance(base, ast.Name):
+                found.update(methods(base.id, seen | {name}))
+        for item in node.body:
+            if not isinstance(item, ast.FunctionDef | ast.AsyncFunctionDef):
+                continue
+            doc = ast.get_docstring(item)
+            if doc and doc.strip():
+                found[item.name] = doc.strip().split('\n')[0].strip()
+            else:
+                found.pop(item.name, None)
+        return found
+
+    return {
+        (cls, method): description
+        for cls in classes
+        for method, description in methods(cls, frozenset()).items()
+    }
+
+
+def django_descriptions(instance_id: str, tests: list[str]) -> dict[str, str]:
+    """Map the instance's documented Django test ids to descriptions.
+
+    Args:
+        instance_id: A Django instance.
+        tests: Harness test ids for the instance.
+
+    Returns:
+        ``test id -> description`` for tests with a docstring.
+    """
+    parsed = {t: m for t in tests if (m := DJANGO_ID.match(t))}
+    candidates: dict[str, list[str]] = {}
+    for match in parsed.values():
+        stem = 'tests/' + match['module'].replace('.', '/')
+        candidates[match['module']] = [f'{stem}.py', f'{stem}/__init__.py']
+    sources = post_patch_sources(
+        instance_id, {p for paths in candidates.values() for p in paths}
+    )
+    tables: dict[str, dict[tuple[str, str], str]] = {}
+    for module, paths in candidates.items():
+        source = next((sources[p] for p in paths if p in sources), '')
+        tables[module] = short_descriptions(source)
+    return {
+        test: description
+        for test, match in parsed.items()
+        if (
+            description := tables[match['module']].get(
+                (match['cls'], match['method'])
+            )
+        )
+    }
+
+
+def matching_keys(
+    instance_id: str, test: str, descriptions: dict[str, str]
+) -> tuple[str, ...]:
+    """Return the names a harness test is matched to official labels by.
 
     The harness names every test unambiguously; the official labels do
-    not, in two ways this undoes for matching only:
+    not, in three ways this undoes for matching only:
 
     - SymPy labels are bare function names, so a SymPy ``path::function``
       id is matched by its function name.
@@ -117,38 +246,49 @@ def matching_key(instance_id: str, test: str) -> str:
       contains one), so a parametrized id such as
       ``test_x[a: str = None-str]`` is published as ``test_x[a:``. A
       pytest node id is matched by its text up to the first space.
-
-    Django labels keep their spaces (``method (module.Class)``) and are
-    matched as recorded.
+    - Django labels come from unittest's verbose output, which prints a
+      documented test's first docstring line next to its name, and the
+      labels use one or the other inconsistently. A documented Django
+      test is matched by either.
 
     Args:
         instance_id: The instance the test belongs to.
         test: The harness test name.
+        descriptions: Django test id -> docstring first line.
 
     Returns:
-        The key to look the test up by in the official lists.
+        The keys to look the test up by in the official lists.
     """
     if instance_id.startswith('sympy__sympy'):
-        return test.rpartition('::')[2]
+        return (test.rpartition('::')[2],)
     if instance_id.startswith('django__django'):
-        return test
-    return test.split(' ', 1)[0]
+        if test in descriptions:
+            return (test, descriptions[test])
+        return (test,)
+    return (test.split(' ', 1)[0],)
 
 
 def with_keys(tests: pd.DataFrame) -> pd.DataFrame:
-    """Add each harness test's :func:`matching_key` as a ``key`` column.
+    """Add each harness test's :func:`matching_keys` as a ``keys`` column.
 
     Args:
         tests: The per-test frame from ``reference_split``.
 
     Returns:
-        A copy of ``tests`` with a ``key`` column.
+        A copy of ``tests`` with a ``keys`` column of tuples.
     """
+    descriptions: dict[str, dict[str, str]] = {}
+    for instance_id in sorted(tests[INSTANCE].unique()):
+        if instance_id.startswith('django__django'):
+            names = tests.loc[tests[INSTANCE] == instance_id, TEST]
+            descriptions[instance_id] = django_descriptions(
+                instance_id, names.tolist()
+            )
     keys = [
-        matching_key(instance_id, test)
+        matching_keys(instance_id, test, descriptions.get(instance_id, {}))
         for instance_id, test in zip(tests[INSTANCE], tests[TEST], strict=True)
     ]
-    return tests.assign(key=keys)
+    return tests.assign(keys=keys)
 
 
 def compare(tests: pd.DataFrame) -> pd.DataFrame:
@@ -164,13 +304,14 @@ def compare(tests: pd.DataFrame) -> pd.DataFrame:
         matches, ``ambiguous`` when several do and they disagree.
     """
     observed: dict[tuple[str, str], str] = {}
-    for instance_id, key, category in zip(
-        tests[INSTANCE], tests['key'], tests['category'], strict=True
+    for instance_id, keys, category in zip(
+        tests[INSTANCE], tests['keys'], tests['category'], strict=True
     ):
         category = str(category).lower()
-        previous = observed.setdefault((instance_id, key), category)
-        if previous != category:
-            observed[(instance_id, key)] = 'ambiguous'
+        for key in keys:
+            previous = observed.setdefault((instance_id, key), category)
+            if previous != category:
+                observed[(instance_id, key)] = 'ambiguous'
     rows: list[dict[str, str]] = []
     for instance_id in sorted(tests[INSTANCE].unique()):
         reference = ReferenceSplit.load(instance_id)
@@ -202,14 +343,20 @@ def extra_fail_to_pass(
     Returns:
         The harness's F2P rows absent from the official F2P list.
     """
-    ours = tests[tests['category'] == 'FAIL_TO_PASS'][[INSTANCE, TEST, 'key']]
-    theirs = official[official['label'] == 'FAIL_TO_PASS'][[INSTANCE, TEST]]
-    merged = ours.merge(
-        theirs.rename(columns={TEST: 'key'}), how='left', indicator=True
-    )
-    extra = merged[merged['_merge'] == 'left_only'].drop(
-        columns=['_merge', 'key']
-    )
+    theirs = {
+        (instance_id, test)
+        for instance_id, test in zip(
+            official.loc[official['label'] == 'FAIL_TO_PASS', INSTANCE],
+            official.loc[official['label'] == 'FAIL_TO_PASS', TEST],
+            strict=True,
+        )
+    }
+    ours = tests[tests['category'] == 'FAIL_TO_PASS']
+    unmatched = [
+        not any((instance_id, key) in theirs for key in keys)
+        for instance_id, keys in zip(ours[INSTANCE], ours['keys'], strict=True)
+    ]
+    extra = ours.loc[unmatched, [INSTANCE, TEST]]
     return extra.assign(**{REPO: extra[INSTANCE].map(repo_of)})
 
 

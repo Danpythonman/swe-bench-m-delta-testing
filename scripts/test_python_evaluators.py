@@ -24,7 +24,10 @@ from sbmdt.evaluator.python.selection import (
 from sbmdt.patches import is_test_path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from compare_official_split import matching_key  # noqa: E402
+from compare_official_split import (  # noqa: E402
+    matching_keys,
+    short_descriptions,
+)
 
 INJECTED = Path(__file__).parents[1] / 'src/sbmdt/evaluator/python/injected'
 
@@ -153,20 +156,55 @@ class MatchingKeyTests(unittest.TestCase):
     def test_official_spellings(self):
         # pytest labels are published cut at the first space.
         self.assertEqual(
-            matching_key(
+            matching_keys(
                 'pylint-dev__pylint-4551',
                 "t.py::test_x[a: str = 'a'-str]",
+                {},
             ),
-            't.py::test_x[a:',
+            ('t.py::test_x[a:',),
         )
         # SymPy labels are bare function names.
         self.assertEqual(
-            matching_key('sympy__sympy-24562', 'a/test_n.py::test_issue'),
-            'test_issue',
+            matching_keys('sympy__sympy-24562', 'a/test_n.py::test_issue', {}),
+            ('test_issue',),
         )
         # Django labels keep their spaces.
         name = 'test_v (auth_tests.test_validators.T)'
-        self.assertEqual(matching_key('django__django-11099', name), name)
+        self.assertEqual(
+            matching_keys('django__django-11099', name, {}), (name,)
+        )
+        # A documented Django test is published under either spelling.
+        self.assertEqual(
+            matching_keys('django__django-1', name, {name: 'Checks v.'}),
+            (name, 'Checks v.'),
+        )
+
+    def test_short_descriptions(self):
+        source = textwrap.dedent(
+            """\
+            class Base:
+                def test_inherited(self):
+                    \"\"\"
+                    Inherited docs.
+
+                    More text.
+                    \"\"\"
+
+            class T(Base):
+                def test_doc(self):
+                    "One line."
+                def test_plain(self):
+                    pass
+            """
+        )
+        self.assertEqual(
+            short_descriptions(source),
+            {
+                ('Base', 'test_inherited'): 'Inherited docs.',
+                ('T', 'test_inherited'): 'Inherited docs.',
+                ('T', 'test_doc'): 'One line.',
+            },
+        )
 
 
 class BenchmarkTests(unittest.TestCase):
