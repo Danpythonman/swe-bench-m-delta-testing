@@ -13,7 +13,6 @@ much friendlier authenticated rate limit.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import os
 
@@ -23,6 +22,7 @@ from aiolimiter import AsyncLimiter
 
 from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.gold import (
+    GITHUB_DIFF_MEDIA_TYPE,
     GOLD_PATCH_DIFF_FILENAME,
     MAX_AUTHENTICATED_GITHUB_REQUESTS_PER_HOUR,
     MAX_CONCURRENCY,
@@ -49,26 +49,30 @@ async def process(
     matching the layout the rest of the pipeline expects.
     """
     log.info(f'Processing {instance.to_instance_id()}')
-    log.debug(f'{instance.to_instance_id()}: Getting PR metadata')
-    pr_info = await fetch(
-        session, instance.to_github_pr_url(), github_token, sem, limiter
+    patch = await fetch(
+        session,
+        instance.to_github_pr_url(),
+        github_token,
+        sem,
+        limiter,
+        accept=GITHUB_DIFF_MEDIA_TYPE,
     )
-    pr_info_json = json.loads(pr_info)
-    diff_url = pr_info_json.get('diff_url')
-    if diff_url:
-        log.debug(f'{instance.to_instance_id()}: Getting PR patch')
-        patch = await fetch(session, str(diff_url), github_token, sem, limiter)
-        gold_pred_filepath = (
-            DOCKERFILES_BASE
-            / instance.to_instance_id()
-            / GOLD_PATCH_DIFF_FILENAME
+    # Never write something that is not a diff (an error page, an empty
+    # body): a corrupt gold_patch.diff fails much later and less clearly.
+    if not patch.startswith('diff --git'):
+        log.warning(
+            f'{instance.to_instance_id()}: response is not a diff, '
+            f'skipped: {patch[:80]!r}'
         )
-        log.debug(f'{instance.to_instance_id()} Writing patch to file')
-        async with aiofiles.open(gold_pred_filepath, 'w') as f:
-            await f.write(patch)
-        log.info(f'Processing successful for {instance.to_instance_id()}')
-    else:
-        log.warning(f'{instance.to_instance_id()} has no diff')
+        return
+    gold_pred_filepath = (
+        DOCKERFILES_BASE / instance.to_instance_id() / GOLD_PATCH_DIFF_FILENAME
+    )
+    log.debug(f'{instance.to_instance_id()} Writing patch to file')
+    # newline='' keeps CRLF context lines intact (see patches.read_diff).
+    async with aiofiles.open(gold_pred_filepath, 'w', newline='') as f:
+        await f.write(patch)
+    log.info(f'Processing successful for {instance.to_instance_id()}')
 
 
 async def main():
