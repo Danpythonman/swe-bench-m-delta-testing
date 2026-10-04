@@ -1,6 +1,6 @@
 # swe-bench-m-delta-testing
 
-Delta testing on [SWE-bench Multimodal](https://www.swebench.com/multimodal.html) instances against agent-generated patches.
+Delta testing on [SWE-bench Multimodal](https://www.swebench.com/multimodal.html) instances against agent-generated patches, extended to [SWE-bench Verified](https://www.swebench.com/verified.html) (see [SWE-bench Verified](#swe-bench-verified)).
 
 For a given benchmark instance, this project builds a Docker image from the instance's reference Dockerfile, runs the instance's test suite inside a container, and collects per-test pass/fail results. The goal is to compare test outcomes across different patch states (e.g. before a patch, with a patch applied) to see which tests change behavior.
 
@@ -21,6 +21,8 @@ For a given benchmark instance, this project builds a Docker image from the inst
 dockerfiles/<instance_id>/Dockerfile   # one Dockerfile per benchmark instance
 src/sbmdt/
   interface.py                         # evaluation entrypoint
+  benchmark.py                         # SWE-bench M vs Verified, by instance ID prefix
+  instance.py                          # Verified instance.json / reference.json
   env.py                               # path constants (project base, dockerfiles dir)
   log.py                               # logging setup
   pred.py                              # Pred: a model-generated patch prediction
@@ -30,7 +32,67 @@ src/sbmdt/
     alibaba/
       alibaba.py                       # AlibabaEvaluator (Karma-based test runner)
       karma_junit_parser.py            # JUnit XML -> TestResult parsing
+    python/                            # shared base for SWE-bench Verified evaluators
+      python.py                        # PythonEvaluator, JSON-lines -> TestResult
+      pytest_evaluator.py              # PytestEvaluator (10 pytest repositories)
+      selection.py                     # touched-scope test selection
+      injected/                        # modules copied into containers (Python 3.6+)
+    django/django.py                   # DjangoEvaluator (tests/runtests.py)
+    sympy/sympy.py                     # SympyEvaluator (bin/test)
 ```
+
+## SWE-bench Verified
+
+The harness also evaluates the 500 SWE-bench Verified instances (12 Python
+repositories). Everything except the prebuilt `sweb.eval` Docker images is
+this project's own: no SWE-bench harness code is used. Verified's published
+FAIL_TO_PASS / PASS_TO_PASS lists are public, which makes them a check on
+the delta-testing method: the harness derives its own split from
+`before_patch` and `gold` runs and only then compares.
+
+**Instance data** (`dockerfiles/<instance_id>/`, same flat layout as M):
+
+| File | Source |
+|---|---|
+| `Dockerfile` | `FROM` the prebuilt image via the ECR cache, nothing else |
+| `instance.json` | repository, version, base commit (read by the evaluator) |
+| `reference.json` | official F2P / P2P lists, **held out**: only `scripts/compare_official_split.py` reads it |
+| `gold_patch.diff` | scraped from the GitHub PR (not the dataset's `patch`) |
+| `code_patch.diff`, `test_patch.diff` | path-based split of the gold patch |
+
+**Evaluators** (`src/sbmdt/evaluator/python/`, `django/`, `sympy/`):
+
+- Tests run in *touched* scope: only the test files `test_patch.diff`
+  changes, not the whole suite.
+- Results are never scraped from console output. A small module of this
+  project's own (`evaluator/python/injected/`) is copied into the container
+  and hooks the runner, writing one JSON line per outcome:
+  a pytest plugin for pytest repositories, a `unittest.TestResult` hook
+  around Django's `tests/runtests.py`, and a `PyTestReporter` hook around
+  SymPy's `bin/test` (SymPy images ship no pytest). The injected modules
+  run under the repository's interpreter, as old as Python 3.6.
+- Test names are pytest node IDs, `method (module.Class)` for Django, and
+  `path::function` for SymPy.
+
+**Pipeline:**
+
+```bash
+uv run scripts/import_swebench.py                  # Dockerfile, instance.json, reference.json
+GITHUB_TOKEN=$(gh auth token) uv run scripts/get_gold_patches.py
+uv run scripts/split_gold_patch.py
+uv run scripts/format_gold_diff_into_pred.py
+uv run scripts/audit_gold_apply.py                 # every gold patch applies at its base commit?
+
+# Reference runs (Docker must be logged into the ECR cache, see aws/run_ec2.sh)
+uv run scripts/run_instance.py django__django-11099 before_patch --apply-test-patch --json --file
+uv run scripts/run_instance.py django__django-11099 gold \
+    --pred-file dockerfiles/django__django-11099/gold_patch.pred --json --file
+
+uv run scripts/compare_official_split.py --data results
+```
+
+`scripts/analyze_results.py` reads only SWE-bench M rows, so Verified
+results can share the S3 bucket without changing M figures.
 
 ## Requirements
 
