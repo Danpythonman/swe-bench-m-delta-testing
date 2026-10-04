@@ -47,3 +47,6 @@ reference_delta_audit.json
 zero_f2p_candidates.json
 *_status.json
 *_status_*.json
+
+# Blobless repository clones used by scripts/audit_gold_apply.py
+.cache/

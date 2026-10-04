@@ -38,6 +38,7 @@ from typing import Any, Final
 
 import pandas as pd
 
+from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.env import PROJECT_BASE
 from sbmdt.log import setup_logging
 
@@ -115,6 +116,11 @@ def load_results(data_dir: Path) -> pd.DataFrame:
     Args:
         data_dir: Directory of synced Parquet objects.
 
+    Only SWE-bench M rows are kept. SWE-bench Verified results can share
+    the bucket, but they have their own reference labels and comparison
+    (``scripts/compare_official_split.py``), and mixing them in would
+    change every figure here, including the ``--self-check`` counts.
+
     Returns:
         A long-format frame with a ``repo`` column added.
 
@@ -127,6 +133,8 @@ def load_results(data_dir: Path) -> pd.DataFrame:
             'Run aws/sync-s3-with-local.sh first.'
         )
     frame = pd.read_parquet(data_dir)
+    is_m = frame[INSTANCE].map(benchmark_of) == Benchmark.SWE_BENCH_M
+    frame = frame[is_m].copy()
     frame[PASSED] = frame[PASSED].astype(bool)
     frame[REPO] = frame[INSTANCE].map(repo_of)
     return frame
