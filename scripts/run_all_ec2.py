@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from typing import Any, get_args
 
 import boto3
+from aiolimiter import AsyncLimiter
+from botocore.config import Config
 from mypy_boto3_ec2 import EC2Client
 from mypy_boto3_ec2.literals import InstanceTypeType
 
@@ -100,6 +102,14 @@ GIT_BRANCH: str | None = None
 """If set, checked out on the instance (via ``make_git_checkout_command``)
 before the evaluation command is run.
 """
+
+# EC2 throttles RunInstances per account with a small burst allowance, so
+# launching a whole --n-concurrent batch at once fails with
+# RequestLimitExceeded (seen at 62). Launches are spaced out, and every
+# EC2 and SSM call (62 workers poll SSM) gets more patient, jittered
+# retries than botocore's default.
+_launch_limiter = AsyncLimiter(1, 1.0)
+_AWS_CLIENT_CONFIG = Config(retries={'mode': 'standard', 'max_attempts': 10})
 
 _cleanup_state: list[tuple[EC2Client, str]] = []
 """(ec2 client, instance_id) pairs for instances that have been created.
@@ -233,7 +243,9 @@ async def run_instance(
 
     log.info('Starting session')
     session = boto3.Session(profile_name=run_args.aws_profile)
-    ec2 = session.client('ec2', region_name=run_args.region)
+    ec2 = session.client(
+        'ec2', region_name=run_args.region, config=_AWS_CLIENT_CONFIG
+    )
 
     # Once the instance exists, always terminate it on the way out, even if
     # waiting for SSM, sending the command, or anything else below raises.
@@ -248,24 +260,27 @@ async def run_instance(
             f'block_device_name={run_args.block_device_name} '
             f'block_volume_size_gb={run_args.block_volume_size_gb}'
         )
-        instance_id = await create_instance(
-            ec2,
-            instance_name,
-            image_id=run_args.image_id,
-            instance_type=run_args.instance_type,
-            subnet_id=run_args.subnet_id,
-            security_group_ids=[run_args.security_group_id],
-            instance_profile_arn=run_args.instance_profile_arn,
-            block_device_name=run_args.block_device_name,
-            block_volume_size_gb=run_args.block_volume_size_gb,
-        )
+        async with _launch_limiter:
+            instance_id = await create_instance(
+                ec2,
+                instance_name,
+                image_id=run_args.image_id,
+                instance_type=run_args.instance_type,
+                subnet_id=run_args.subnet_id,
+                security_group_ids=[run_args.security_group_id],
+                instance_profile_arn=run_args.instance_profile_arn,
+                block_device_name=run_args.block_device_name,
+                block_volume_size_gb=run_args.block_volume_size_gb,
+            )
         log.info(f'Created instance: {instance_id}')
         _cleanup_state.append((ec2, instance_id))
 
         log.info('Waiting for instance to become ready')
         await wait_for_instance(ec2, instance_id)
 
-        ssm = session.client('ssm', region_name=run_args.region)
+        ssm = session.client(
+            'ssm', region_name=run_args.region, config=_AWS_CLIENT_CONFIG
+        )
 
         log.info('Waiting for SSM')
         await wait_for_ssm(ssm, instance_id)
