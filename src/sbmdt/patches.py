@@ -45,9 +45,10 @@ CODE_PATCH_PRED_FILENAME: Final[str] = 'code_patch.pred'
 # A path is a test path if it sits in a test directory or carries a test
 # suffix. Kept deliberately broad: misfiling a test file as code would
 # silently reintroduce the very problem this module exists to solve.
+# ``testing/`` is where pytest-dev/pytest keeps its own suite.
 TEST_PATH: Final[re.Pattern[str]] = re.compile(
     r"""
-    (^|/)(test|tests|spec|specs|__tests__|__test__|e2e|cypress)/
+    (^|/)(test|tests|testing|spec|specs|__tests__|__test__|e2e|cypress)/
     | [-_.](test|spec)\.[cm]?[jt]sx?$
     | \.(test|spec)\.[cm]?[jt]sx?$
     | (^|/)conftest\.py$
@@ -172,7 +173,9 @@ def drop_mode_only_sections(diff: str) -> tuple[str, list[str]]:
         section = diff[begin:end]
         header = DIFF_HEADER.match(section)
         assert header is not None
-        has_mode = bool(re.search(r'^old mode \d+\nnew mode \d+', section, re.M))
+        has_mode = bool(
+            re.search(r'^old mode \d+\nnew mode \d+', section, re.M)
+        )
         has_content = bool(re.search(r'^(--- |\+\+\+ |@@ )', section, re.M))
         if has_mode and not has_content:
             dropped.append(header.group(2))
