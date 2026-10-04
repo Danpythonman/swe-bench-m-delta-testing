@@ -34,7 +34,9 @@ from sbmdt.log import setup_logging
 log = logging.getLogger(__name__)
 
 THROTTLED_DELAY_SECONDS: Final[float] = 300.0
-MAX_ATTEMPTS: Final[int] = 12
+# Docker Hub's per-account window can stay closed for hours, so waiting
+# is the only way through; give up on an image only after a full day.
+MAX_ATTEMPTS: Final[int] = 24 * 3600 // int(THROTTLED_DELAY_SECONDS)
 
 
 def base_image(instance_id: str) -> str:
