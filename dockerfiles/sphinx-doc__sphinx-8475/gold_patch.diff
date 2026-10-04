@@ -1,0 +1,71 @@
+diff --git a/CHANGES b/CHANGES
+index b17c7b20235..0ab7ca4621f 100644
+--- a/CHANGES
++++ b/CHANGES
+@@ -54,6 +54,8 @@ Bugs fixed
+   set to "description"
+ * #8419: html search: Do not load ``language_data.js`` in non-search pages
+ * #8454: graphviz: The layout option for graph and digraph directives don't work
++* #8131: linkcheck: Use GET when HEAD requests cause Too Many Redirects, to
++  accommodate infinite redirect loops on HEAD
+ * #8437: Makefile: ``make clean`` with empty BUILDDIR is dangerous
+ 
+ Testing
+diff --git a/sphinx/builders/linkcheck.py b/sphinx/builders/linkcheck.py
+index 1dc0337c3b1..4104fe6584c 100644
+--- a/sphinx/builders/linkcheck.py
++++ b/sphinx/builders/linkcheck.py
+@@ -20,7 +20,7 @@
+ 
+ from docutils import nodes
+ from docutils.nodes import Node
+-from requests.exceptions import HTTPError
++from requests.exceptions import HTTPError, TooManyRedirects
+ 
+ from sphinx.application import Sphinx
+ from sphinx.builders import Builder
+@@ -172,7 +172,7 @@ def check_uri() -> Tuple[str, str, int]:
+                                                  config=self.app.config, auth=auth_info,
+                                                  **kwargs)
+                         response.raise_for_status()
+-                    except HTTPError:
++                    except (HTTPError, TooManyRedirects):
+                         # retry with GET request if that fails, some servers
+                         # don't like HEAD requests.
+                         response = requests.get(req_url, stream=True, config=self.app.config,
+diff --git a/tests/test_build_linkcheck.py b/tests/test_build_linkcheck.py
+index c09c81fe08c..e6102e2a3c4 100644
+--- a/tests/test_build_linkcheck.py
++++ b/tests/test_build_linkcheck.py
+@@ -382,3 +382,31 @@ def test_connect_to_selfsigned_nonexistent_cert_file(app):
+         "uri": "https://localhost:7777/",
+         "info": "Could not find a suitable TLS CA certificate bundle, invalid path: does/not/exist",
+     }
++
++
++@pytest.mark.sphinx('linkcheck', testroot='linkcheck-localserver', freshenv=True)
++def test_TooManyRedirects_on_HEAD(app):
++    class InfiniteRedirectOnHeadHandler(http.server.BaseHTTPRequestHandler):
++        def do_HEAD(self):
++            self.send_response(302, "Found")
++            self.send_header("Location", "http://localhost:7777/")
++            self.end_headers()
++
++        def do_GET(self):
++            self.send_response(200, "OK")
++            self.end_headers()
++            self.wfile.write(b"ok\n")
++
++    with http_server(InfiniteRedirectOnHeadHandler):
++        app.builder.build_all()
++
++    with open(app.outdir / 'output.json') as fp:
++        content = json.load(fp)
++    assert content == {
++        "code": 0,
++        "status": "working",
++        "filename": "index.rst",
++        "lineno": 1,
++        "uri": "http://localhost:7777/",
++        "info": "",
++    }

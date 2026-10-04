@@ -1,0 +1,47 @@
+diff --git a/.mailmap b/.mailmap
+index 893b628871d1..c6078b779cc3 100644
+--- a/.mailmap
++++ b/.mailmap
+@@ -589,6 +589,8 @@ Gilbert Gede <gilbertgede@gmail.com> <ggede@ucdavis.edu>
+ Gilles Schintgen <gschintgen@hambier.lu>
+ Gina <Dr-G@users.noreply.github.com>
+ Gleb Siroki <g.shiroki@gmail.com>
++Glenn Horton-Smith <glenn.hortonsmith@gmail.com>
++Glenn Horton-Smith <glenn.hortonsmith@gmail.com> Glenn Horton-Smith <gahs@phys.ksu.edu>
+ GolimarOurHero <metalera94@hotmail.com>
+ Goutham Lakshminarayan <dl.goutham@gmail.com> Goutham <devnull@localhost>
+ Govind Sahai <gsiitbhu@gmail.com>
+diff --git a/sympy/physics/hep/gamma_matrices.py b/sympy/physics/hep/gamma_matrices.py
+index 23284e4a9297..c8374424d451 100644
+--- a/sympy/physics/hep/gamma_matrices.py
++++ b/sympy/physics/hep/gamma_matrices.py
+@@ -694,8 +694,7 @@ def kahane_simplify(expression):
+ 
+     # If `first_dum_pos` is not zero, it means that there are trailing free gamma
+     # matrices in front of `expression`, so multiply by them:
+-    for i in range(0, first_dum_pos):
+-        [ri.insert(0, free_pos[i]) for ri in resulting_indices]
++    resulting_indices = list( free_pos[0:first_dum_pos] + ri for ri in resulting_indices )
+ 
+     resulting_expr = S.Zero
+     for i in resulting_indices:
+diff --git a/sympy/physics/hep/tests/test_gamma_matrices.py b/sympy/physics/hep/tests/test_gamma_matrices.py
+index 27509803f24f..d3562771854f 100644
+--- a/sympy/physics/hep/tests/test_gamma_matrices.py
++++ b/sympy/physics/hep/tests/test_gamma_matrices.py
+@@ -257,10 +257,12 @@ def test_kahane_simplify1():
+     t = (G(mu)*G(nu)*G(rho)*G(sigma)*G(-mu))
+     r = kahane_simplify(t)
+     assert r.equals(-2*G(sigma)*G(rho)*G(nu))
+-    t = (G(mu)*G(nu)*G(rho)*G(sigma)*G(-mu))
++    t = (G(mu)*G(-mu)*G(rho)*G(sigma))
+     r = kahane_simplify(t)
+-    assert r.equals(-2*G(sigma)*G(rho)*G(nu))
+-
++    assert r.equals(4*G(rho)*G(sigma))
++    t = (G(rho)*G(sigma)*G(mu)*G(-mu))
++    r = kahane_simplify(t)
++    assert r.equals(4*G(rho)*G(sigma))
+ 
+ def test_gamma_matrix_class():
+     i, j, k = tensor_indices('i,j,k', LorentzIndex)

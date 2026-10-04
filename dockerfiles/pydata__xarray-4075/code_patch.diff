@@ -1,0 +1,42 @@
+diff --git a/doc/whats-new.rst b/doc/whats-new.rst
+index 447aaf5b0bf..a4602c1edad 100644
+--- a/doc/whats-new.rst
++++ b/doc/whats-new.rst
+@@ -119,6 +119,8 @@ Bug fixes
+ - Fix bug in time parsing failing to fall back to cftime. This was causing time
+   variables with a time unit of `'msecs'` to fail to parse. (:pull:`3998`)
+   By `Ryan May <https://github.com/dopplershift>`_.
++- Fix weighted mean when passing boolean weights (:issue:`4074`).
++  By `Mathias Hauser <https://github.com/mathause>`_.
+ - Fix html repr in untrusted notebooks: fallback to plain text repr. (:pull:`4053`)
+   By `Benoit Bovy <https://github.com/benbovy>`_.
+ 
+@@ -186,7 +188,7 @@ New Features
+ 
+ - Weighted array reductions are now supported via the new :py:meth:`DataArray.weighted`
+   and :py:meth:`Dataset.weighted` methods. See :ref:`comput.weighted`. (:issue:`422`, :pull:`2922`).
+-  By `Mathias Hauser <https://github.com/mathause>`_
++  By `Mathias Hauser <https://github.com/mathause>`_.
+ - The new jupyter notebook repr (``Dataset._repr_html_`` and
+   ``DataArray._repr_html_``) (introduced in 0.14.1) is now on by default. To
+   disable, use ``xarray.set_options(display_style="text")``.
+diff --git a/xarray/core/weighted.py b/xarray/core/weighted.py
+index 996d2e4c43e..21ed06ea85f 100644
+--- a/xarray/core/weighted.py
++++ b/xarray/core/weighted.py
+@@ -142,7 +142,14 @@ def _sum_of_weights(
+         # we need to mask data values that are nan; else the weights are wrong
+         mask = da.notnull()
+ 
+-        sum_of_weights = self._reduce(mask, self.weights, dim=dim, skipna=False)
++        # bool -> int, because ``xr.dot([True, True], [True, True])`` -> True
++        # (and not 2); GH4074
++        if self.weights.dtype == bool:
++            sum_of_weights = self._reduce(
++                mask, self.weights.astype(int), dim=dim, skipna=False
++            )
++        else:
++            sum_of_weights = self._reduce(mask, self.weights, dim=dim, skipna=False)
+ 
+         # 0-weights are not valid
+         valid_weights = sum_of_weights != 0.0

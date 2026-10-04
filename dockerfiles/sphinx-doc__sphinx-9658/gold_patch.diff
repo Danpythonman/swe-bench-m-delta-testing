@@ -1,0 +1,76 @@
+diff --git a/CHANGES b/CHANGES
+index b94531b73ff..701eff9d5fe 100644
+--- a/CHANGES
++++ b/CHANGES
+@@ -30,6 +30,7 @@ Bugs fixed
+ * #9651: autodoc: return type field is not generated even if
+   :confval:`autodoc_typehints_description_target` is set to "documented" when
+   its info-field-list contains ``:returns:`` field
++* #9657: autodoc: The base class for a subclass of mocked object is incorrect
+ * #9630: autosummary: Failed to build summary table if :confval:`primary_domain`
+   is not 'py'
+ * #9670: html: Fix download file with special characters
+diff --git a/sphinx/ext/autodoc/mock.py b/sphinx/ext/autodoc/mock.py
+index b562f47fd71..62f36da7956 100644
+--- a/sphinx/ext/autodoc/mock.py
++++ b/sphinx/ext/autodoc/mock.py
+@@ -26,6 +26,7 @@ class _MockObject:
+     """Used by autodoc_mock_imports."""
+ 
+     __display_name__ = '_MockObject'
++    __name__ = ''
+     __sphinx_mock__ = True
+     __sphinx_decorator_args__: Tuple[Any, ...] = ()
+ 
+@@ -40,7 +41,7 @@ def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+         return super().__new__(cls)
+ 
+     def __init__(self, *args: Any, **kwargs: Any) -> None:
+-        self.__qualname__ = ''
++        self.__qualname__ = self.__name__
+ 
+     def __len__(self) -> int:
+         return 0
+@@ -73,6 +74,7 @@ def _make_subclass(name: str, module: str, superclass: Any = _MockObject,
+                    attributes: Any = None, decorator_args: Tuple = ()) -> Any:
+     attrs = {'__module__': module,
+              '__display_name__': module + '.' + name,
++             '__name__': name,
+              '__sphinx_decorator_args__': decorator_args}
+     attrs.update(attributes or {})
+ 
+diff --git a/tests/test_util_typing.py b/tests/test_util_typing.py
+index d493a004035..c34c4bebc8d 100644
+--- a/tests/test_util_typing.py
++++ b/tests/test_util_typing.py
+@@ -17,6 +17,7 @@
+ 
+ import pytest
+ 
++from sphinx.ext.autodoc import mock
+ from sphinx.util.typing import restify, stringify
+ 
+ 
+@@ -170,6 +171,12 @@ def test_restify_broken_type_hints():
+     assert restify(BrokenType) == ':py:class:`tests.test_util_typing.BrokenType`'
+ 
+ 
++def test_restify_mock():
++    with mock(['unknown']):
++        import unknown
++        assert restify(unknown.secret.Class) == ':py:class:`unknown.secret.Class`'
++
++
+ def test_stringify():
+     assert stringify(int) == "int"
+     assert stringify(str) == "str"
+@@ -294,3 +301,9 @@ def test_stringify_type_union_operator():
+ 
+ def test_stringify_broken_type_hints():
+     assert stringify(BrokenType) == 'tests.test_util_typing.BrokenType'
++
++
++def test_stringify_mock():
++    with mock(['unknown']):
++        import unknown
++        assert stringify(unknown.secret.Class) == 'unknown.secret.Class'

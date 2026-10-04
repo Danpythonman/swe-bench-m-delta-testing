@@ -1,0 +1,24 @@
+diff --git a/AUTHORS b/AUTHORS
+index 2148c64322a4..40df3589c024 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -747,6 +747,7 @@ answer newbie questions, and generally made Django that much better:
+     Nicolas Lara <nicolaslara@gmail.com>
+     Nicolas Noé <nicolas@niconoe.eu>
+     Nikita Marchant <nikita.marchant@gmail.com>
++    Nikita Sobolev <mail@sobolevn.me>
+     Niran Babalola <niran@niran.org>
+     Nis Jørgensen <nis@superlativ.dk>
+     Nowell Strite <https://nowell.strite.org/>
+diff --git a/django/apps/registry.py b/django/apps/registry.py
+index 0683f3ad3ccb..92de6075fc90 100644
+--- a/django/apps/registry.py
++++ b/django/apps/registry.py
+@@ -373,6 +373,7 @@ def clear_cache(self):
+ 
+         This is mostly used in tests.
+         """
++        self.get_swappable_settings_name.cache_clear()
+         # Call expire cache on each model. This will purge
+         # the relation tree and the fields cache.
+         self.get_models.cache_clear()

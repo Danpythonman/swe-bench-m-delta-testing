@@ -1,0 +1,6 @@
+{
+  "instance_id": "pylint-dev__pylint-4551",
+  "repo": "pylint-dev/pylint",
+  "version": "2.9",
+  "base_commit": "99589b08de8c5a2c6cc61e13a37420a868c80599"
+}

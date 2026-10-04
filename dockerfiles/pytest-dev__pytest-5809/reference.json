@@ -1,0 +1,11 @@
+{
+  "instance_id": "pytest-dev__pytest-5809",
+  "fail_to_pass": [
+    "testing/test_pastebin.py::TestPaste::test_create_new_paste"
+  ],
+  "pass_to_pass": [
+    "testing/test_pastebin.py::TestPasteCapture::test_failed",
+    "testing/test_pastebin.py::TestPasteCapture::test_all",
+    "testing/test_pastebin.py::TestPasteCapture::test_non_ascii_paste_text"
+  ]
+}

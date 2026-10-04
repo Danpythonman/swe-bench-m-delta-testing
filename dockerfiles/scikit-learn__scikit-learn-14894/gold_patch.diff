@@ -1,0 +1,62 @@
+diff --git a/doc/whats_new/v0.22.rst b/doc/whats_new/v0.22.rst
+index 0b60f1a05dcc2..5a6f7d2663e61 100644
+--- a/doc/whats_new/v0.22.rst
++++ b/doc/whats_new/v0.22.rst
+@@ -572,6 +572,9 @@ Changelog
+   :class:`svm.OneClassSVM` was previously non-initialized, and had size 2. It
+   has now size 1 with the correct value. :pr:`15099` by `Nicolas Hug`_.
+ 
++- |Fix| fixed a bug in :class:`BaseLibSVM._sparse_fit` where n_SV=0 raised a
++  ZeroDivisionError. :pr:`14894` by :user:`Danna Naser <danna-naser>`.
++
+ :mod:`sklearn.tree`
+ ...................
+ 
+diff --git a/sklearn/svm/base.py b/sklearn/svm/base.py
+index 64cebe837514a..fb2b734c0f7f2 100644
+--- a/sklearn/svm/base.py
++++ b/sklearn/svm/base.py
+@@ -287,11 +287,14 @@ def _sparse_fit(self, X, y, sample_weight, solver_type, kernel,
+         n_SV = self.support_vectors_.shape[0]
+ 
+         dual_coef_indices = np.tile(np.arange(n_SV), n_class)
+-        dual_coef_indptr = np.arange(0, dual_coef_indices.size + 1,
+-                                     dual_coef_indices.size / n_class)
+-        self.dual_coef_ = sp.csr_matrix(
+-            (dual_coef_data, dual_coef_indices, dual_coef_indptr),
+-            (n_class, n_SV))
++        if not n_SV:
++            self.dual_coef_ = sp.csr_matrix([])
++        else:
++            dual_coef_indptr = np.arange(0, dual_coef_indices.size + 1,
++                                         dual_coef_indices.size / n_class)
++            self.dual_coef_ = sp.csr_matrix(
++                (dual_coef_data, dual_coef_indices, dual_coef_indptr),
++                (n_class, n_SV))
+ 
+     def predict(self, X):
+         """Perform regression on samples in X.
+diff --git a/sklearn/svm/tests/test_svm.py b/sklearn/svm/tests/test_svm.py
+index 6ba141811e39d..c82092dd93e1d 100644
+--- a/sklearn/svm/tests/test_svm.py
++++ b/sklearn/svm/tests/test_svm.py
+@@ -690,6 +690,19 @@ def test_sparse_precomputed():
+         assert "Sparse precomputed" in str(e)
+ 
+ 
++def test_sparse_fit_support_vectors_empty():
++    # Regression test for #14893
++    X_train = sparse.csr_matrix([[0, 1, 0, 0],
++                                 [0, 0, 0, 1],
++                                 [0, 0, 1, 0],
++                                 [0, 0, 0, 1]])
++    y_train = np.array([0.04, 0.04, 0.10, 0.16])
++    model = svm.SVR(kernel='linear')
++    model.fit(X_train, y_train)
++    assert not model.support_vectors_.data.size
++    assert not model.dual_coef_.data.size
++
++
+ def test_linearsvc_parameters():
+     # Test possible parameter combinations in LinearSVC
+     # Generate list of possible parameter combinations

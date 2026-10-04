@@ -1,0 +1,11 @@
+diff --git a/sklearn/tests/test_pipeline.py b/sklearn/tests/test_pipeline.py
+index 8d6fe8f70374e..ed81db747e20c 100644
+--- a/sklearn/tests/test_pipeline.py
++++ b/sklearn/tests/test_pipeline.py
+@@ -1069,5 +1069,6 @@ def test_make_pipeline_memory():
+     assert pipeline.memory is memory
+     pipeline = make_pipeline(DummyTransf(), SVC())
+     assert pipeline.memory is None
++    assert len(pipeline) == 2
+ 
+     shutil.rmtree(cachedir)

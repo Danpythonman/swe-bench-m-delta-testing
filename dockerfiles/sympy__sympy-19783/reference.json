@@ -1,0 +1,18 @@
+{
+  "instance_id": "sympy__sympy-19783",
+  "fail_to_pass": [
+    "test_dagger_mul",
+    "test_identity"
+  ],
+  "pass_to_pass": [
+    "test_scalars",
+    "test_matrix",
+    "test_eval_adjoint",
+    "test_operator",
+    "test_operator_inv",
+    "test_hermitian",
+    "test_unitary",
+    "test_outer_product",
+    "test_operator_dagger"
+  ]
+}

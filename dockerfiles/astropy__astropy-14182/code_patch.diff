@@ -1,0 +1,94 @@
+diff --git a/astropy/io/ascii/rst.py b/astropy/io/ascii/rst.py
+index abdeba8efb7f..d765e369e38d 100644
+--- a/astropy/io/ascii/rst.py
++++ b/astropy/io/ascii/rst.py
+@@ -27,7 +27,6 @@ def get_fixedwidth_params(self, line):
+ 
+ 
+ class SimpleRSTData(FixedWidthData):
+-    start_line = 3
+     end_line = -1
+     splitter_class = FixedWidthTwoLineDataSplitter
+ 
+@@ -39,12 +38,29 @@ class RST(FixedWidth):
+ 
+     Example::
+ 
+-        ==== ===== ======
+-        Col1  Col2  Col3
+-        ==== ===== ======
+-          1    2.3  Hello
+-          2    4.5  Worlds
+-        ==== ===== ======
++      >>> from astropy.table import QTable
++      >>> import astropy.units as u
++      >>> import sys
++      >>> tbl = QTable({"wave": [350, 950] * u.nm, "response": [0.7, 1.2] * u.count})
++      >>> tbl.write(sys.stdout,  format="ascii.rst")
++      ===== ========
++       wave response
++      ===== ========
++      350.0      0.7
++      950.0      1.2
++      ===== ========
++
++    Like other fixed-width formats, when writing a table you can provide ``header_rows``
++    to specify a list of table rows to output as the header.  For example::
++
++      >>> tbl.write(sys.stdout,  format="ascii.rst", header_rows=['name', 'unit'])
++      ===== ========
++       wave response
++         nm       ct
++      ===== ========
++      350.0      0.7
++      950.0      1.2
++      ===== ========
+ 
+     Currently there is no support for reading tables which utilize continuation lines,
+     or for ones which define column spans through the use of an additional
+@@ -57,10 +73,15 @@ class RST(FixedWidth):
+     data_class = SimpleRSTData
+     header_class = SimpleRSTHeader
+ 
+-    def __init__(self):
+-        super().__init__(delimiter_pad=None, bookend=False)
++    def __init__(self, header_rows=None):
++        super().__init__(delimiter_pad=None, bookend=False, header_rows=header_rows)
+ 
+     def write(self, lines):
+         lines = super().write(lines)
+-        lines = [lines[1]] + lines + [lines[1]]
++        idx = len(self.header.header_rows)
++        lines = [lines[idx]] + lines + [lines[idx]]
+         return lines
++
++    def read(self, table):
++        self.data.start_line = 2 + len(self.header.header_rows)
++        return super().read(table)
+diff --git a/docs/changes/io.ascii/14182.feature.rst b/docs/changes/io.ascii/14182.feature.rst
+new file mode 100644
+index 000000000000..35c0d12ed075
+--- /dev/null
++++ b/docs/changes/io.ascii/14182.feature.rst
+@@ -0,0 +1,4 @@
++Add ability to read and write an RST (reStructuredText) ASCII table that
++includes additional header rows specifying any or all of the column dtype, unit,
++format, and description. This is available via the new ``header_rows`` keyword
++argument.
+diff --git a/docs/io/ascii/fixed_width_gallery.rst b/docs/io/ascii/fixed_width_gallery.rst
+index b0e266cddec0..c6b3375bd7b7 100644
+--- a/docs/io/ascii/fixed_width_gallery.rst
++++ b/docs/io/ascii/fixed_width_gallery.rst
+@@ -463,9 +463,9 @@ Fixed Width Two Line
+ Custom Header Rows
+ ==================
+ 
+-The ``fixed_width`` and ``fixed_width_two_line`` formats normally include a
+-single initial row with the column names in the header.  However, it is possible
+-to customize the column attributes which appear as header rows. The available
++The ``fixed_width``, ``fixed_width_two_line``, and ``rst`` formats normally include a
++single row with the column names in the header.  However, for these formats you can
++customize the column attributes which appear as header rows. The available
+ column attributes are ``name``, ``dtype``, ``format``, ``description`` and
+ ``unit``.  This is done by listing the desired the header rows using the
+ ``header_rows`` keyword argument.

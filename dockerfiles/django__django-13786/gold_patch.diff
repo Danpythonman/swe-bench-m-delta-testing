@@ -1,0 +1,68 @@
+diff --git a/django/db/migrations/operations/models.py b/django/db/migrations/operations/models.py
+index dddf7c679c12..7e8becb10095 100644
+--- a/django/db/migrations/operations/models.py
++++ b/django/db/migrations/operations/models.py
+@@ -137,11 +137,15 @@ def reduce(self, operation, app_label):
+                 ),
+             ]
+         elif isinstance(operation, AlterModelOptions) and self.name_lower == operation.name_lower:
++            options = {**self.options, **operation.options}
++            for key in operation.ALTER_OPTION_KEYS:
++                if key not in operation.options:
++                    options.pop(key, None)
+             return [
+                 CreateModel(
+                     self.name,
+                     fields=self.fields,
+-                    options={**self.options, **operation.options},
++                    options=options,
+                     bases=self.bases,
+                     managers=self.managers,
+                 ),
+diff --git a/tests/migrations/test_optimizer.py b/tests/migrations/test_optimizer.py
+index 29506355141c..9bb1aafebd4a 100644
+--- a/tests/migrations/test_optimizer.py
++++ b/tests/migrations/test_optimizer.py
+@@ -119,6 +119,42 @@ def test_create_alter_model_options(self):
+             ]
+         )
+ 
++    def test_create_model_and_remove_model_options(self):
++        self.assertOptimizesTo(
++            [
++                migrations.CreateModel(
++                    'MyModel',
++                    fields=[],
++                    options={'verbose_name': 'My Model'},
++                ),
++                migrations.AlterModelOptions('MyModel', options={}),
++            ],
++            [migrations.CreateModel('MyModel', fields=[])],
++        )
++        self.assertOptimizesTo(
++            [
++                migrations.CreateModel(
++                    'MyModel',
++                    fields=[],
++                    options={
++                        'verbose_name': 'My Model',
++                        'verbose_name_plural': 'My Model plural',
++                    },
++                ),
++                migrations.AlterModelOptions(
++                    'MyModel',
++                    options={'verbose_name': 'My Model'},
++                ),
++            ],
++            [
++                migrations.CreateModel(
++                    'MyModel',
++                    fields=[],
++                    options={'verbose_name': 'My Model'},
++                ),
++            ],
++        )
++
+     def _test_create_alter_foo_delete_model(self, alter_foo):
+         """
+         CreateModel, AlterModelTable, AlterUniqueTogether/AlterIndexTogether/

@@ -1,0 +1,43 @@
+diff --git a/doc/whats_new/v0.21.rst b/doc/whats_new/v0.21.rst
+index 8787b07d5347e..cd4daebf9632b 100644
+--- a/doc/whats_new/v0.21.rst
++++ b/doc/whats_new/v0.21.rst
+@@ -413,6 +413,10 @@ Support for Python 3.4 and below has been officially dropped.
+ - |API| :class:`pipeline.Pipeline` now supports using ``'passthrough'`` as a
+   transformer. :issue:`11144` by :user:`Thomas Fan <thomasjpfan>`.
+ 
++- |Enhancement| :class:`pipeline.Pipeline`  implements ``__len__`` and
++  therefore ``len(pipeline)`` returns the number of steps in the pipeline.
++  :issue:`13439` by :user:`Lakshya KD <LakshKD>`.
++
+ :mod:`sklearn.preprocessing`
+ ............................
+ 
+diff --git a/sklearn/pipeline.py b/sklearn/pipeline.py
+index 7eaf9a46f09e9..d1d03656d2a62 100644
+--- a/sklearn/pipeline.py
++++ b/sklearn/pipeline.py
+@@ -199,6 +199,12 @@ def _iter(self, with_final=True):
+             if trans is not None and trans != 'passthrough':
+                 yield idx, name, trans
+ 
++    def __len__(self):
++        """
++        Returns the length of the Pipeline
++        """
++        return len(self.steps)
++
+     def __getitem__(self, ind):
+         """Returns a sub-pipeline or a single esimtator in the pipeline
+ 
+diff --git a/sklearn/tests/test_pipeline.py b/sklearn/tests/test_pipeline.py
+index 8d6fe8f70374e..ed81db747e20c 100644
+--- a/sklearn/tests/test_pipeline.py
++++ b/sklearn/tests/test_pipeline.py
+@@ -1069,5 +1069,6 @@ def test_make_pipeline_memory():
+     assert pipeline.memory is memory
+     pipeline = make_pipeline(DummyTransf(), SVC())
+     assert pipeline.memory is None
++    assert len(pipeline) == 2
+ 
+     shutil.rmtree(cachedir)

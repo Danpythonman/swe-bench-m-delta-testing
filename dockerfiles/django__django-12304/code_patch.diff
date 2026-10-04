@@ -1,0 +1,23 @@
+diff --git a/django/db/models/enums.py b/django/db/models/enums.py
+index f48143ddaf52..51821a2b458f 100644
+--- a/django/db/models/enums.py
++++ b/django/db/models/enums.py
+@@ -31,6 +31,7 @@ def __new__(metacls, classname, bases, classdict):
+         # that is passed in as "self" as the value to use when looking up the
+         # label in the choices.
+         cls.label = property(lambda self: cls._value2label_map_.get(self.value))
++        cls.do_not_call_in_templates = True
+         return enum.unique(cls)
+ 
+     def __contains__(cls, member):
+diff --git a/docs/releases/3.0.3.txt b/docs/releases/3.0.3.txt
+index 27ace475d155..ab5a2fd84bfc 100644
+--- a/docs/releases/3.0.3.txt
++++ b/docs/releases/3.0.3.txt
+@@ -20,3 +20,6 @@ Bugfixes
+ * Relaxed the system check added in Django 3.0 to reallow use of a sublanguage
+   in the :setting:`LANGUAGE_CODE` setting, when a base language is available in
+   Django but the sublanguage is not (:ticket:`31141`).
++
++* Added support for using enumeration types ``TextChoices``,
++  ``IntegerChoices``, and ``Choices`` in templates (:ticket:`31154`).

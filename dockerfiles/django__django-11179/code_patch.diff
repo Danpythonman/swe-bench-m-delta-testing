@@ -1,0 +1,23 @@
+diff --git a/django/db/models/deletion.py b/django/db/models/deletion.py
+index 92fe4affb9b6..3a462f1c4c46 100644
+--- a/django/db/models/deletion.py
++++ b/django/db/models/deletion.py
+@@ -277,6 +277,7 @@ def delete(self):
+             if self.can_fast_delete(instance):
+                 with transaction.mark_for_rollback_on_error():
+                     count = sql.DeleteQuery(model).delete_batch([instance.pk], self.using)
++                setattr(instance, model._meta.pk.attname, None)
+                 return count, {model._meta.label: count}
+ 
+         with transaction.atomic(using=self.using, savepoint=False):
+diff --git a/docs/releases/2.2.1.txt b/docs/releases/2.2.1.txt
+index f7ac012fb7f9..2b82a33d292e 100644
+--- a/docs/releases/2.2.1.txt
++++ b/docs/releases/2.2.1.txt
+@@ -22,3 +22,6 @@ Bugfixes
+   :class:`~django.contrib.postgres.aggregates.ArrayAgg` and
+   :class:`~django.contrib.postgres.aggregates.StringAgg` when it contains an
+   expression with params (:ticket:`30332`).
++
++* Fixed a regression in Django 2.2 that caused a single instance fast-delete
++  to not set the primary key to ``None`` (:ticket:`30330`).

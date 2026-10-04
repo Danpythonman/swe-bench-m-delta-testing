@@ -1,0 +1,27 @@
+diff --git a/django/utils/translation/trans_real.py b/django/utils/translation/trans_real.py
+index 7dcc77b46cdd..f4e35eabbcb5 100644
+--- a/django/utils/translation/trans_real.py
++++ b/django/utils/translation/trans_real.py
+@@ -43,7 +43,7 @@
+     re.IGNORECASE
+ )
+ 
+-language_code_prefix_re = _lazy_re_compile(r'^/(\w+([@-]\w+)?)(/|$)')
++language_code_prefix_re = _lazy_re_compile(r'^/(\w+([@-]\w+){0,2})(/|$)')
+ 
+ 
+ @receiver(setting_changed)
+diff --git a/docs/releases/4.1.txt b/docs/releases/4.1.txt
+index cc412bebfaef..543c9caf6ed0 100644
+--- a/docs/releases/4.1.txt
++++ b/docs/releases/4.1.txt
+@@ -183,7 +183,8 @@ Generic Views
+ Internationalization
+ ~~~~~~~~~~~~~~~~~~~~
+ 
+-* ...
++* The :func:`~django.conf.urls.i18n.i18n_patterns` function now supports
++  languages with both scripts and regions.
+ 
+ Logging
+ ~~~~~~~

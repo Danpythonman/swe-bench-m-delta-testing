@@ -1,0 +1,20 @@
+diff --git a/astropy/io/fits/diff.py b/astropy/io/fits/diff.py
+index 100cdf1b8c44..d3608ef01dec 100644
+--- a/astropy/io/fits/diff.py
++++ b/astropy/io/fits/diff.py
+@@ -1449,7 +1449,7 @@ def _diff(self):
+                 arrb.dtype, np.floating
+             ):
+                 diffs = where_not_allclose(arra, arrb, rtol=self.rtol, atol=self.atol)
+-            elif "P" in col.format:
++            elif "P" in col.format or "Q" in col.format:
+                 diffs = (
+                     [
+                         idx
+diff --git a/docs/changes/io.fits/14539.bugfix.rst b/docs/changes/io.fits/14539.bugfix.rst
+new file mode 100644
+index 000000000000..0b74a2a81358
+--- /dev/null
++++ b/docs/changes/io.fits/14539.bugfix.rst
+@@ -0,0 +1 @@
++Fix ``FITSDiff`` when table contains a VLA column with the Q type.
