@@ -540,6 +540,8 @@ class Evaluator(ABC):
                 # Legacy images may have checkout filters or line-ending
                 # conversion that make working-tree bytes differ even when
                 # HEAD has the exact old blobs named by the submitted diff.
+                # The blobs are written byte for byte: a file committed with
+                # CRLF endings keeps them, matching the gold diff's context.
                 paths = re.findall(r'^diff --git a/\S+ b/(\S+)', section, re.M)
                 for path in paths:
                     _, restore_output = self.container.exec_run(
@@ -548,7 +550,6 @@ class Evaluator(ABC):
                             '-c',
                             'if git cat-file -e "HEAD:$1" 2>/dev/null; '
                             'then git cat-file blob "HEAD:$1" > "$1"; '
-                            'sed -i \'s/\\r$//\' "$1"; '
                             'else rm -rf -- "$1"; fi',
                             'git-materialize-gold-test',
                             path,
