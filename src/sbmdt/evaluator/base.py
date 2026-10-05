@@ -597,8 +597,12 @@ class Evaluator(ABC):
                 # makes git apply and --3way refuse a correct gold patch
                 # (alibaba-fusion next-101); fuzzy matching still places
                 # the hunks, and only a dry run that succeeds is applied.
+                # -l ignores whitespace: a PR diff can carry a hunk that
+                # only strips trailing spaces the checkout no longer has
+                # (lighthouse-1446), which patch otherwise reads as
+                # already applied and git apply rejects outright.
                 dry_code, dry_output = self.container.exec_run(
-                    'patch --dry-run --batch --forward --fuzz=5 -p1 '
+                    'patch --dry-run --batch --forward --fuzz=5 -l -p1 '
                     f'-i {PATCH_FILE}',
                     workdir='/testbed',
                     stream=False,
@@ -607,7 +611,7 @@ class Evaluator(ABC):
                 outputs.append(dry_output.decode())
                 if dry_code == 0:
                     exit_code, output = self.container.exec_run(
-                        'patch --batch --forward --fuzz=5 -p1 '
+                        'patch --batch --forward --fuzz=5 -l -p1 '
                         f'-i {PATCH_FILE}',
                         workdir='/testbed',
                         stream=False,
