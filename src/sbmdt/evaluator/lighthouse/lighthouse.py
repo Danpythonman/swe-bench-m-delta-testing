@@ -31,8 +31,14 @@ log = logging.getLogger(__name__)
 # These checkouts target Node 10/12, where an unhandled promise rejection
 # only warned. The images run Node 15+, where it kills the process: before
 # lighthouse-10505's fix, a rejected NO_FCP promise took down the whole
-# core Jest run, leaving 58 of ~1,900 tests. Restore the old behaviour.
-NODE_OPTIONS: Final[str] = '--unhandled-rejections=warn'
+# core Jest run, leaving 58 of ~1,900 tests. Restore the old behaviour,
+# but only on Node 15+: older Node rejects the flag in NODE_OPTIONS and
+# then refuses to start at all.
+EXPORT_NODE_OPTIONS: Final[str] = (
+    'if node -e "process.exit(+process.versions.node.split(\\".\\")[0] '
+    '>= 15 ? 0 : 1)"; then '
+    'export NODE_OPTIONS=--unhandled-rejections=warn; fi'
+)
 
 PACKAGE_JSON_FILE: Final[str] = '/testbed/package.json'
 RUN_MOCHA_SCRIPT: Final[str] = '/testbed/lighthouse-core/scripts/run-mocha.sh'
@@ -549,7 +555,7 @@ compile(
         # non-standard) so ``mocha`` resolves.
         commands = [
             'export PATH="/testbed/node_modules/.bin:$PATH"',
-            f'export NODE_OPTIONS={NODE_OPTIONS}',
+            EXPORT_NODE_OPTIONS,
             f'bash {self._run_mocha_script} --cli',
             f'bash {self._run_mocha_script} --core',
             f'bash {self._run_mocha_script} --viewer',
@@ -620,7 +626,7 @@ compile(
                 command = f'{command} --reporter json > {path}'
             exports = (
                 'export PATH=/testbed/node_modules/.bin:$PATH; '
-                f'export NODE_OPTIONS={NODE_OPTIONS}'
+                f'{EXPORT_NODE_OPTIONS}'
             )
             if hasattr(self, '_chrome_wrapper'):
                 exports += (
