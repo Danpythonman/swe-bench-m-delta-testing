@@ -483,6 +483,12 @@ async def main(run_args: RunArgs) -> None:
     if run_args.pred_prefix is not None:
         pred_s3_keys = [k for k in pred_s3_keys if k.startswith(run_args.pred_prefix)]
 
+    # Shuffle the keys, not the tasks: _report_results pairs gather()'s
+    # results with this list by position, and shuffling the coroutines
+    # alone labelled every failure with some other run's key.
+    pred_s3_keys = list(pred_s3_keys)
+    random.shuffle(pred_s3_keys)
+
     tasks: list[Coroutine[Any, Any, None]] = []
     sem = asyncio.Semaphore(run_args.n_concurrent)
     for key in pred_s3_keys:
@@ -494,8 +500,6 @@ async def main(run_args: RunArgs) -> None:
                 sbmdt_instance_id, patch_type, key, run_args, sem
             )
         )
-
-    random.shuffle(tasks)
 
     work_tasks = asyncio.gather(*tasks, return_exceptions=True)
     shutdown_wait = asyncio.create_task(_shutdown.wait())
