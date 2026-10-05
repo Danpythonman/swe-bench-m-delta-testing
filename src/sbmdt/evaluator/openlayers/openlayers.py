@@ -573,6 +573,11 @@ class OpenlayersEvaluator(Evaluator):
             write_to_container(self.container, shim_path, shim_script)
             self.container.exec_run(['chmod', '+x', shim_path])
             environment['PUPPETEER_EXECUTABLE_PATH'] = shim_path
+            # karma-chrome-launcher reads CHROME_BIN instead. Configs whose
+            # browsers: list falls back to plain 'Chrome' outside CircleCI
+            # (openlayers-9083) otherwise launch it as root without the
+            # flag, and Chrome refuses to start.
+            environment['CHROME_BIN'] = shim_path
         else:
             log.info(
                 f'no system Chrome found for {self.instance_id}; leaving '
