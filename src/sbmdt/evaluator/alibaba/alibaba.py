@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import replace
 from typing import Final, override
 
 from sbmdt.evaluator.alibaba.karma_junit_parser import (
@@ -326,15 +327,22 @@ class AlibabaEvaluator(Evaluator):
             assert isinstance(output, bytes)
             log.info(exit_code)
             log.info(output.decode())
-            results.extend(
-                results_xml_to_test_results(
-                    self.instance_id,
-                    self.patch_type,
-                    self.agent_name,
-                    self._read_results(),
-                    self.timestamp,
-                )
+            component_results = results_xml_to_test_results(
+                self.instance_id,
+                self.patch_type,
+                self.agent_name,
+                self._read_results(),
+                self.timestamp,
             )
+            # Karma's JUnit output names no spec file, but a one-component
+            # run comes from test/<component>/ alone, which keeps tests of
+            # two components that share a name apart.
+            if component:
+                component_results = [
+                    replace(result, test_file=f'test/{component}')
+                    for result in component_results
+                ]
+            results.extend(component_results)
         return results
 
     def _read_results(self) -> str:
