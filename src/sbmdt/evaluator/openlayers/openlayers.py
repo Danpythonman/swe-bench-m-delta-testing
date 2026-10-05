@@ -10,16 +10,18 @@ retrieves the results.
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import shlex
-from typing import Final, override
+from typing import Any, Final, cast, override
 
 from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.evaluator.alibaba.karma_junit_parser import (
     results_xml_to_test_results,
 )
 from sbmdt.evaluator.base import Evaluator, TestResult
+from sbmdt.evaluator.paths import repo_relative
 from sbmdt.patches import TEST_PATCH_DIFF_FILENAME, read_diff
 from sbmdt.utils import (
     apply_change_regex,
@@ -37,6 +39,7 @@ DEFAULT_KARMA_CONFIG_FILE: Final[str] = '/testbed/test/karma.config.js'
 
 
 RENDERING_CASES_DIR: Final[str] = 'test/rendering/cases/'
+NODE_RESULTS_FILE: Final[str] = '/tmp/sbmdt-node-results.json'
 
 # Older checkouts keep the cases under rendering/cases/ at the top level.
 _RENDERING_CASE_PATH: Final[re.Pattern[str]] = re.compile(
@@ -708,7 +711,79 @@ class OpenlayersEvaluator(Evaluator):
                 results,
                 self.timestamp,
             ),
+            *self._run_node_tests(environment),
             *self._run_rendering_cases(environment),
+        ]
+
+    def _run_node_tests(self, environment: dict[str, str]) -> list[TestResult]:
+        """Run the Node-side Mocha suite when the checkout has one.
+
+        Newer checkouts split pure-function specs (ol/coordinate.js,
+        ol/extent.js, ...) out of Karma into ``test/node``, run by
+        ``npm run test-node``. Without it those tests never ran
+        (openlayers-13893's FAIL_TO_PASS tests live there).
+
+        Args:
+            environment: The environment the Karma run used.
+
+        Returns:
+            One result per Node test, or nothing when there is no
+            ``test-node`` script or its report cannot be read.
+        """
+        assert self.container is not None
+        _, scripts = self.container.exec_run(
+            [
+                'node',
+                '-e',
+                "process.stdout.write(require('./package.json').scripts"
+                "['test-node'] || '')",
+            ],
+            workdir='/testbed',
+        )
+        assert isinstance(scripts, bytes)
+        if not scripts.strip():
+            return []
+        exit_code, _ = self.container.exec_run(
+            [
+                'bash',
+                '-c',
+                'npm run --silent test-node -- --reporter json '
+                f'> {NODE_RESULTS_FILE}',
+            ],
+            environment=environment,
+            workdir='/testbed',
+            stream=False,
+        )
+        log.info(f'test-node exit code: {exit_code}')
+        try:
+            raw = read_from_container(self.container, NODE_RESULTS_FILE)
+        except Exception as exc:
+            log.warning(f'No test-node report for {self.instance_id}: {exc}')
+            return []
+        # Tests may print to stdout around the reporter's JSON document.
+        start = raw.find('{\n  "stats"')
+        try:
+            report = json.loads(raw[start:]) if start >= 0 else None
+        except json.JSONDecodeError:
+            report = None
+        if not isinstance(report, dict):
+            log.warning(f'Unreadable test-node report for {self.instance_id}')
+            return []
+        tests = cast(list[dict[str, Any]], report.get('tests', []))
+        failures = cast(list[dict[str, Any]], report.get('failures', []))
+        failed = {(t.get('file'), t.get('fullTitle')) for t in failures}
+        return [
+            TestResult(
+                instance_id=self.instance_id,
+                patch_type=self.patch_type,
+                agent_name=self.agent_name,
+                timestamp=self.timestamp,
+                test_name=test['fullTitle'],
+                passed=(test.get('file'), test['fullTitle']) not in failed,
+                test_file=repo_relative(test.get('file')),
+            )
+            for test in tests
+            if test.get('fullTitle')
         ]
 
     def _run_rendering_cases(
