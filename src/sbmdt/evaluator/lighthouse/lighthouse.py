@@ -20,6 +20,7 @@ from sbmdt.evaluator.base import Evaluator, TestResult
 from sbmdt.evaluator.lighthouse.mocha_junit_parser import (
     results_xml_to_test_results,
 )
+from sbmdt.evaluator.paths import repo_relative
 from sbmdt.utils import apply_change_literal, read_from_container
 
 __all__ = [
@@ -685,6 +686,9 @@ compile(
                                 timestamp=self.timestamp,
                                 test_name=name,
                                 passed=test.get('status') == 'passed',
+                                test_file=repo_relative(
+                                    file_result.get('name')
+                                ),
                             )
                         )
             else:
@@ -703,6 +707,7 @@ compile(
                                 timestamp=self.timestamp,
                                 test_name=name,
                                 passed=name not in failed,
+                                test_file=repo_relative(test.get('file')),
                             )
                         )
         if not results:

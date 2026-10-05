@@ -150,6 +150,10 @@ class TestResult:
         agent_name: The agent that produced that patch.
         test_name: Name of the individual test case.
         passed: Whether the test case passed.
+        test_file: Repository-relative path of the file that defines the
+            test, when the runner reports it. Names alone collide across
+            files (two suites can define the same test), and benchmarks
+            such as SWE-bench Multimodal grade some instances per file.
     """
 
     instance_id: str
@@ -158,6 +162,7 @@ class TestResult:
     timestamp: dt.datetime
     test_name: str
     passed: bool
+    test_file: str | None = None
 
     @staticmethod
     def from_dict(obj: dict[str, Any]) -> TestResult:
@@ -165,7 +170,8 @@ class TestResult:
 
         Args:
             obj: Mapping containing ``instance_id``, ``patch_type``,
-                ``agent_name``, ``test_name``, and ``passed`` keys.
+                ``agent_name``, ``test_name``, and ``passed`` keys, and
+                optionally ``test_file``.
 
         Returns:
             The constructed :class:`TestResult`.
@@ -210,6 +216,10 @@ class TestResult:
         if not isinstance(passed, bool):
             raise Exception('passed not bool')
 
+        test_file = obj.get('test_file', None)
+        if test_file is not None and not isinstance(test_file, str):
+            raise Exception('test_file not str')
+
         return TestResult(
             instance_id=instance_id,
             patch_type=PatchType(patch_type),
@@ -217,6 +227,7 @@ class TestResult:
             timestamp=dt.datetime.fromisoformat(timestamp),
             test_name=test_name,
             passed=passed,
+            test_file=test_file,
         )
 
     def to_dict(self, json_safe: bool = False) -> dict[str, Any]:

@@ -41,12 +41,14 @@ import pandas as pd
 from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.env import PROJECT_BASE
 from sbmdt.log import setup_logging
+from sbmdt.parquet import read_test_results
 
 log = logging.getLogger(__name__)
 
 INSTANCE: Final[str] = 'instance_id'
 PATCH: Final[str] = 'patch_type'
 TEST: Final[str] = 'test_name'
+FILE: Final[str] = 'test_file'
 PASSED: Final[str] = 'passed'
 REPO: Final[str] = 'repo'
 
@@ -132,11 +134,50 @@ def load_results(data_dir: Path) -> pd.DataFrame:
             f'no such directory: {data_dir}. '
             'Run aws/sync-s3-with-local.sh first.'
         )
-    frame = pd.read_parquet(data_dir)
+    frame = read_test_results(data_dir)
     is_m = frame[INSTANCE].map(benchmark_of) == Benchmark.SWE_BENCH_M
     frame = frame[is_m].copy()
     frame[PASSED] = frame[PASSED].astype(bool)
     frame[REPO] = frame[INSTANCE].map(repo_of)
+    return disambiguate_test_names(frame)
+
+
+def disambiguate_test_names(frame: pd.DataFrame) -> pd.DataFrame:
+    """Qualify test names that more than one file defines.
+
+    Runners name tests by their suite path alone, so two files can define
+    the same name (carbon has a "Public API should only change with a
+    semver change" test in several packages). Merged under one name, a
+    failing and a passing test read as a single flaky test and are
+    quarantined. Where results carry ``test_file``, a name that occurs in
+    more than one file within an instance becomes ``file::name``. Every
+    other name is left alone, so results without file information (older
+    runs, agent runs) still line up with it.
+
+    Args:
+        frame: The results frame, with an optional ``test_file`` column.
+
+    Returns:
+        The frame with colliding test names qualified.
+    """
+    if FILE not in frame or frame[FILE].isna().all():
+        return frame
+    known = frame[frame[FILE].notna()]
+    files_per_name = known.groupby([INSTANCE, TEST], observed=True)[
+        FILE
+    ].nunique()
+    colliding = files_per_name[files_per_name > 1].index
+    if colliding.empty:
+        return frame
+    keys = pd.MultiIndex.from_arrays([frame[INSTANCE], frame[TEST]])
+    qualify = keys.isin(colliding) & frame[FILE].notna().to_numpy()
+    frame = frame.copy()
+    frame.loc[qualify, TEST] = (
+        frame.loc[qualify, FILE] + '::' + frame.loc[qualify, TEST]
+    )
+    log.info(
+        f'qualified {len(colliding)} test name(s) defined in several files'
+    )
     return frame
 
 

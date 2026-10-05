@@ -119,6 +119,9 @@ class GrommetEvaluator(Evaluator):
             environment={
                 'JEST_JUNIT_OUTPUT_DIR': RESULTS_DIR,
                 'JEST_JUNIT_UNIQUE_OUTPUT_NAME': 'true',
+                # Report each test's file (see jest_junit_parser).
+                'JEST_JUNIT_ADD_FILE_ATTRIBUTE': 'true',
+                'JEST_JUNIT_SUITE_NAME': '{filepath}',
             },
             workdir='/testbed',
             stream=False,

@@ -10,6 +10,7 @@ import logging
 import xml.etree.ElementTree as ET
 
 from sbmdt.evaluator.base import PatchType, TestResult
+from sbmdt.evaluator.paths import repo_relative
 
 __all__ = [
     'results_xml_to_test_results',
@@ -46,6 +47,12 @@ def results_xml_to_test_results(
 
     root = ET.fromstring(xml_string)
 
+    # mocha-junit-reporter records the spec file on each <testsuite>.
+    files = {
+        id(tc): repo_relative(suite.get('file'))
+        for suite in root.iter('testsuite')
+        for tc in suite.findall('testcase')
+    }
     results: list[TestResult] = []
     for tc in root.findall('.//testcase'):
         test_name = tc.get('name')
@@ -60,6 +67,7 @@ def results_xml_to_test_results(
                 timestamp=timestamp,
                 test_name=test_name,
                 passed=(tc.find('failure') is None),
+                test_file=files.get(id(tc)),
             )
         )
 
