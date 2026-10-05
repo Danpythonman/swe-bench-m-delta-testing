@@ -25,7 +25,6 @@ log = logging.getLogger(__name__)
 
 PACKAGE_JSON_FILE: Final[str] = '/testbed/package.json'
 RESULTS_DIR: Final[str] = 'test-results'
-RESULTS_FILE: Final[str] = 'results.xml'
 
 
 class GrommetEvaluator(Evaluator):
@@ -93,22 +92,33 @@ class GrommetEvaluator(Evaluator):
     def evaluate(self) -> list[TestResult]:
         """Run ``npm test`` and retrieve the JUnit XML results.
 
+        Some grommet versions define ``test`` as ``jest --runInBand && yarn
+        test-timezones``, which re-runs the Calendar and DateInput suites
+        under three time zones. With a single output name each of those
+        runs overwrote the main run's XML, so a passing main run (the gold
+        patch) kept only the last 81 timezone tests. Every Jest run now
+        writes its own file, and the files are folded together: a test
+        fails if it failed in any run.
+
         Returns:
             A list of :class:`TestResult` parsed from the JUnit XML output.
 
         Raises:
             Exception: If the container has not been started (i.e., ``setup``
-                was not called first).
+                was not called first), or if Jest wrote no XML.
         """
 
         if self.container is None:
             raise Exception('no container')
 
+        self.container.exec_run(
+            f'rm -rf {RESULTS_DIR}', workdir='/testbed', stream=False
+        )
         exit_code, output = self.container.exec_run(
             'npm test',
             environment={
                 'JEST_JUNIT_OUTPUT_DIR': RESULTS_DIR,
-                'JEST_JUNIT_OUTPUT_NAME': RESULTS_FILE,
+                'JEST_JUNIT_UNIQUE_OUTPUT_NAME': 'true',
             },
             workdir='/testbed',
             stream=False,
@@ -118,17 +128,32 @@ class GrommetEvaluator(Evaluator):
 
         log.info(exit_code)
         log.info(output.decode())
-        results = read_from_container(
-            self.container, f'/testbed/{RESULTS_DIR}/{RESULTS_FILE}'
-        )
 
-        return results_xml_to_test_results(
-            self.instance_id,
-            self.patch_type,
-            self.agent_name,
-            results,
-            self.timestamp,
+        _, listing = self.container.exec_run(
+            f'find {RESULTS_DIR} -name "*.xml"',
+            workdir='/testbed',
+            stream=False,
         )
+        assert isinstance(listing, bytes)
+        xml_files = sorted(listing.decode().split())
+        if not xml_files:
+            raise Exception(f'jest-junit wrote no XML for {self.instance_id}')
+        log.info(f'jest-junit wrote {len(xml_files)} file(s): {xml_files}')
+
+        merged: dict[str, TestResult] = {}
+        for xml_file in xml_files:
+            results = results_xml_to_test_results(
+                self.instance_id,
+                self.patch_type,
+                self.agent_name,
+                read_from_container(self.container, f'/testbed/{xml_file}'),
+                self.timestamp,
+            )
+            for result in results:
+                previous = merged.get(result.test_name)
+                if previous is None or previous.passed:
+                    merged[result.test_name] = result
+        return list(merged.values())
 
     @override
     def pre_cleanup(self) -> None:

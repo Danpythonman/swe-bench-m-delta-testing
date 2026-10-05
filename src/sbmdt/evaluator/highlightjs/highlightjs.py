@@ -54,7 +54,13 @@ __all__ = [
 log = logging.getLogger(__name__)
 
 MOCHA_OUTPUT_FILE: Final[str] = '/tmp/test-results.xml'
-TEST_CMD: Final[str] = 'npm test -- --reporter mocha-junit-reporter'
+# The "special cases tests" before-all hook highlights a whole fixture page
+# with language auto-detection. On the 2-vCPU EC2 workers it overran
+# Mocha's default 2s timeout, failing the hook and dropping all 26 special
+# case tests from the results, so give hooks and tests more room.
+TEST_CMD: Final[str] = (
+    'npm test -- --reporter mocha-junit-reporter --timeout 60000'
+)
 
 
 class HighlightjsEvaluator(Evaluator):
