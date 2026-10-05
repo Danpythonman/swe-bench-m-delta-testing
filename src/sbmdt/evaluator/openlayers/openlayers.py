@@ -229,6 +229,26 @@ class OpenlayersEvaluator(Evaluator):
             assertion="require.resolve('regenerator-runtime/runtime.js')",
         )
 
+        # The checkout's Mocha timeout (2500ms) is tuned for a developer
+        # machine. On the 2-vCPU EC2 workers some specs overran it and left
+        # map <div>s behind; test-extensions.js then throws "Found extra
+        # <div> elements in the body" from a global hook, which ends the
+        # Karma run early (openlayers-12172 stopped at 2,609 of 3,276 and
+        # never reached the ol.style.Icon specs the patch is about).
+        try:
+            apply_change_regex(
+                container=self.container,
+                file=self._karma_config_file,
+                find=r'(mocha\s*:\s*\{[^}]*?)timeout\s*:\s*\d+',
+                replace=r'\1timeout: 60000',
+                assertion='timeout: 60000',
+            )
+        except Exception as exc:
+            log.info(
+                f'Skipping Mocha timeout increase for '
+                f'{self.instance_id}: {exc}'
+            )
+
         # Force webpack off source maps. Nested source-map@0.7+ still wins
         # over the 0.6.1 pin / initialize shim (openlayers-11545), and karma
         # then dies on mappings.wasm before junit can flush.

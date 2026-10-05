@@ -9,12 +9,15 @@ the results.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Final, override
 
 from sbmdt.evaluator.alibaba.karma_junit_parser import (
     results_xml_to_test_results,
 )
 from sbmdt.evaluator.base import Evaluator, TestResult
+from sbmdt.evaluator.python.selection import changed_paths
+from sbmdt.patches import test_patch_for
 from sbmdt.utils import (
     apply_change_literal,
     apply_change_regex,
@@ -30,6 +33,31 @@ log = logging.getLogger(__name__)
 
 KARMA_FILE: Final[str] = '/testbed/scripts/test/karma.js'
 PATCH_FILE: Final[str] = '/tmp/model.patch'
+DEFAULT_RESULTS_FILE: Final[str] = (
+    '/testbed/scripts/test/test-results/results.xml'
+)
+
+# A component's specs live under test/<component>/. ``core`` is run by a
+# plain Mocha runner that writes no JUnit XML, so it is not selectable.
+_COMPONENT_PATH: Final[re.Pattern[str]] = re.compile(r'^test/([^/]+)/')
+
+
+def touched_components(test_patch: str) -> list[str]:
+    """Return the Karma components whose specs a test patch changes.
+
+    Args:
+        test_patch: The instance's test patch.
+
+    Returns:
+        Component names in diff order, without duplicates or ``core``.
+    """
+    components: list[str] = []
+    for path in changed_paths(test_patch):
+        match = _COMPONENT_PATH.match(path)
+        if match and match[1] != 'core' and match[1] not in components:
+            components.append(match[1])
+    return components
+
 
 # next-2984/3454/4182 ship node via nvm (or a one-off path under
 # ~/.nvm/versions) that is not on the image ENV PATH. `bash -lc` alone is
@@ -168,15 +196,15 @@ class AlibabaEvaluator(Evaluator):
                 container=self.container,
                 file=KARMA_FILE,
                 find=(
-                    r"process\.env\.CHROME_BIN\s*=\s*\n?\s*"
+                    r'process\.env\.CHROME_BIN\s*=\s*\n?\s*'
                     r"require\(['\"]puppeteer['\"]\)\.executablePath\(\);"
                 ),
                 replace=(
-                    "process.env.CHROME_BIN = process.env.CHROME_BIN || "
+                    'process.env.CHROME_BIN = process.env.CHROME_BIN || '
                     "require('puppeteer').executablePath();"
                 ),
                 assertion=(
-                    "process.env.CHROME_BIN = process.env.CHROME_BIN || "
+                    'process.env.CHROME_BIN = process.env.CHROME_BIN || '
                     "require('puppeteer').executablePath();"
                 ),
             )
@@ -186,11 +214,25 @@ class AlibabaEvaluator(Evaluator):
                 f'{self.instance_id}: {exc}'
             )
 
+        # karma.js only sets singleRun for the all-components run; testing
+        # one component (see evaluate) would otherwise leave Karma watching
+        # for changes and never exit.
+        try:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'singleRun\s*:\s*singleRun\s*,',
+                replace='singleRun: true,',
+                assertion='singleRun: true,',
+            )
+        except Exception as exc:
+            log.info(f'Leaving singleRun as is for {self.instance_id}: {exc}')
+
         log.info('All changes applied successfully.')
 
     @override
     def evaluate(self) -> list[TestResult]:
-        """Run ``npm test`` and retrieve the JUnit XML results.
+        """Run ``npm test`` per touched component and retrieve the results.
 
         Returns:
             A list of :class:`TestResult` parsed from the JUnit XML output.
@@ -243,34 +285,74 @@ class AlibabaEvaluator(Evaluator):
                 f'leaving CHROME_BIN unset'
             )
 
-        exit_code, output = self.container.exec_run(
-            [
-                'bash',
-                '-lc',
-                # Inline CI/TRAVIS as well as the docker environment= map:
-                # bash -lc can drop unset-looking env on some images, and
-                # the test runner only skips inquirer when CI is visible.
-                f'export CI=true TRAVIS=true; {_NPM_PREFIX}npm test',
-            ],
-            environment=environment,
-            workdir='/testbed',
-            stream=False,
-        )
-        log.info('done running')
-        assert isinstance(output, bytes)
+        # Run each component the test patch touches on its own, as the
+        # repository's runner allows (``npm test <component>``). The
+        # all-in-one run aborts at the first suite whose hook throws: in
+        # next-1720 a broken Rating hook stopped Karma at 754 of 1,337
+        # tests, so the Search tests the patch is about never ran.
+        components = touched_components(test_patch_for(self.instance_id))
+        log.info(f'Components to test: {components or "all"}')
+        results: list[TestResult] = []
+        for component in components or ['']:
+            self.container.exec_run(
+                [
+                    'find',
+                    '/testbed',
+                    '-name',
+                    'results.xml',
+                    '-not',
+                    '-path',
+                    '*/node_modules/*',
+                    '-delete',
+                ],
+                workdir='/testbed',
+            )
+            exit_code, output = self.container.exec_run(
+                [
+                    'bash',
+                    '-lc',
+                    # Inline CI/TRAVIS as well as the docker environment=
+                    # map: bash -lc can drop unset-looking env on some
+                    # images, and the test runner only skips inquirer when
+                    # CI is visible.
+                    f'export CI=true TRAVIS=true; {_NPM_PREFIX}npm test '
+                    f'{component}',
+                ],
+                environment=environment,
+                workdir='/testbed',
+                stream=False,
+            )
+            log.info(f'done running {component or "all components"}')
+            assert isinstance(output, bytes)
+            log.info(exit_code)
+            log.info(output.decode())
+            results.extend(
+                results_xml_to_test_results(
+                    self.instance_id,
+                    self.patch_type,
+                    self.agent_name,
+                    self._read_results(),
+                    self.timestamp,
+                )
+            )
+        return results
 
-        log.info(exit_code)
-        log.info(output.decode())
+    def _read_results(self) -> str:
+        """Read the results.xml the last Karma run wrote.
 
+        Returns:
+            The JUnit XML.
+
+        Raises:
+            Exception: If Karma wrote no results.xml.
+        """
+        assert self.container is not None
         # junitReporter's outputDir is relative to karma's basePath, which
         # is not guaranteed to put results.xml next to karma.js -- two
         # instances (next-4182, next-3454) failed with the results file
         # missing at exactly that assumed path. Finding whatever karma
         # actually wrote, the same way openlayers' evaluator does, instead
         # of assuming a fixed location.
-        default_results_file = (
-            '/testbed/scripts/test/test-results/results.xml'
-        )
         _, results_find = self.container.exec_run(
             [
                 'find',
@@ -285,33 +367,22 @@ class AlibabaEvaluator(Evaluator):
             stream=False,
         )
         assert isinstance(results_find, bytes)
-        written = [
-            p for p in results_find.decode().splitlines() if p.strip()
-        ]
-        if default_results_file in written:
-            results_file = default_results_file
+        written = [p for p in results_find.decode().splitlines() if p.strip()]
+        if DEFAULT_RESULTS_FILE in written:
+            results_file = DEFAULT_RESULTS_FILE
         elif written:
             results_file = written[0]
             log.info(
                 f'results.xml for {self.instance_id} is at '
                 f'{results_file!r}, not the expected '
-                f'{default_results_file!r}'
+                f'{DEFAULT_RESULTS_FILE!r}'
             )
         else:
             raise Exception(
                 f'karma wrote no results.xml for {self.instance_id}; '
-                f'expected it at {default_results_file!r}'
+                f'expected it at {DEFAULT_RESULTS_FILE!r}'
             )
-
-        results = read_from_container(self.container, results_file)
-
-        return results_xml_to_test_results(
-            self.instance_id,
-            self.patch_type,
-            self.agent_name,
-            results,
-            self.timestamp,
-        )
+        return read_from_container(self.container, results_file)
 
     @override
     def pre_cleanup(self) -> None:
