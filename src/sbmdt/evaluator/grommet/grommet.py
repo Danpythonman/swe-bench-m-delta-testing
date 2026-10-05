@@ -71,13 +71,17 @@ class GrommetEvaluator(Evaluator):
 
         # 2. Add jest-junit to reporters, anchoring only on the opening of
         # Jest's config block since the fields that follow it vary between
-        # instances.
+        # instances. Also lift the 5s test timeout: user-event searches in
+        # SelectMultiple and DataFilter(s) overran it on the 2-vCPU workers
+        # and failed even with the gold patch. A checkout's own testTimeout,
+        # later in the block, still wins.
         apply_change_regex(
             container=self.container,
             file=PACKAGE_JSON_FILE,
             find=r'"jest":\s*\{',
             replace=(
                 '"jest": {\n'
+                '    "testTimeout": 60000,\n'
                 '    "reporters": [\n'
                 '      "default",\n'
                 '      "jest-junit"\n'
