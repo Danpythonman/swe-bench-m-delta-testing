@@ -28,6 +28,12 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
+# These checkouts target Node 10/12, where an unhandled promise rejection
+# only warned. The images run Node 15+, where it kills the process: before
+# lighthouse-10505's fix, a rejected NO_FCP promise took down the whole
+# core Jest run, leaving 58 of ~1,900 tests. Restore the old behaviour.
+NODE_OPTIONS: Final[str] = '--unhandled-rejections=warn'
+
 PACKAGE_JSON_FILE: Final[str] = '/testbed/package.json'
 RUN_MOCHA_SCRIPT: Final[str] = '/testbed/lighthouse-core/scripts/run-mocha.sh'
 RESULTS_DIR: Final[str] = '/testbed/test-results'
@@ -89,9 +95,12 @@ class LighthouseEvaluator(Evaluator):
         mocha_scripts = [
             item for item in find_output.decode().splitlines() if item.strip()
         ]
+        # Newer checkouts (lighthouse-12970 on) also split the report,
+        # treemap and flow-report unit tests into their own scripts; leaving
+        # them out dropped those suites' FAIL_TO_PASS tests entirely.
         direct_suites = {
             suite: scripts.get(f'unit-{suite}')
-            for suite in ('core', 'cli', 'viewer')
+            for suite in ('core', 'cli', 'viewer', 'report', 'treemap', 'flow')
             if scripts.get(f'unit-{suite}')
         }
         modern_layout = (
@@ -540,6 +549,7 @@ compile(
         # non-standard) so ``mocha`` resolves.
         commands = [
             'export PATH="/testbed/node_modules/.bin:$PATH"',
+            f'export NODE_OPTIONS={NODE_OPTIONS}',
             f'bash {self._run_mocha_script} --cli',
             f'bash {self._run_mocha_script} --core',
             f'bash {self._run_mocha_script} --viewer',
@@ -608,7 +618,10 @@ compile(
                 command = re.sub(r'--reporter\s+\S+', '', script)
                 command = command.replace('yarn mocha', 'yarn --silent mocha')
                 command = f'{command} --reporter json > {path}'
-            exports = 'export PATH=/testbed/node_modules/.bin:$PATH'
+            exports = (
+                'export PATH=/testbed/node_modules/.bin:$PATH; '
+                f'export NODE_OPTIONS={NODE_OPTIONS}'
+            )
             if hasattr(self, '_chrome_wrapper'):
                 exports += (
                     f'; export LIGHTHOUSE_CHROMIUM_PATH={self._chrome_wrapper}'
