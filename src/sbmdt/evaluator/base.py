@@ -80,6 +80,9 @@ MODEL_PATCH_TYPES: Final[frozenset[str]] = frozenset(
 # A small number of legacy prebuilt images were created from a checkout that
 # does not match the original GitHub PR base used by their gold patch. These
 # overrides restore the verified PR base before applying benchmark patches.
+# Where SWE-bench Multimodal images keep the binary files of the test patch.
+TEST_PATCH_ASSETS_DIR: Final[str] = '/swebench/image_assets/test_patch'
+
 PATCH_BASE_COMMIT_OVERRIDES: Final[dict[str, str]] = {
     'PrismJS__prism-1585': '11695629f12925c586702453beaee5f4825d0ebd',
     'PrismJS__prism-1602': 'da474c77e2da4103192cd29827d3c0c64f9b8801',
@@ -636,6 +639,38 @@ class Evaluator(ABC):
                     f'{outputs[-1]}'
                 )
 
+    def _copy_test_patch_assets(self) -> None:
+        """Copy the test patch's binary files the image ships into /testbed.
+
+        A PR's diff names binary files (rendering expected.png images,
+        fixtures) without carrying them, so those sections are dropped when
+        the test patch is applied. SWE-bench Multimodal images bake the
+        files in under ``TEST_PATCH_ASSETS_DIR``; without them an
+        openlayers rendering case keeps its old expected image and the
+        test that pins the fix cannot change outcome. Does nothing on
+        images without the directory.
+        """
+        assert self.container is not None
+        exit_code, output = self.container.exec_run(
+            [
+                'bash',
+                '-c',
+                f'test -d {TEST_PATCH_ASSETS_DIR} || exit 0; '
+                f'cp -a {TEST_PATCH_ASSETS_DIR}/. /testbed/ && '
+                f'find {TEST_PATCH_ASSETS_DIR} -type f | wc -l',
+            ],
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        copied = output.decode().strip()
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to copy test patch assets for {self.instance_id}: '
+                f'{copied}'
+            )
+        if copied:
+            log.info(f'Copied {copied} test patch asset file(s) into /testbed')
+
     def _refresh_index(self) -> None:
         """Refresh the stat information Git caches for ``/testbed``.
 
@@ -941,6 +976,11 @@ class Evaluator(ABC):
                     # same diff. The baseline needs the separate test patch
                     # so new regression tests can form FAIL_TO_PASS.
                     log.info(f'Not applying test patch for {self.patch_type}')
+            if (
+                self.apply_test_patch_enabled
+                or self.patch_type == PatchType.GOLD
+            ):
+                self._copy_test_patch_assets()
             log.info('Setting up...')
             self.setup()
             log.info('Evaluating...')
