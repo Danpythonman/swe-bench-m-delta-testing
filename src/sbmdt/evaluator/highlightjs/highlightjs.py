@@ -113,6 +113,20 @@ class HighlightjsEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
+        # The tests load the built library under build/, not src/. Without
+        # a rebuild every patch was tested against the image's prebuilt,
+        # unpatched build, so no FAIL_TO_PASS test could ever pass.
+        exit_code, output = self.container.exec_run(
+            'npm run build', workdir='/testbed', stream=False
+        )
+        assert isinstance(output, bytes)
+        log.info(f'npm run build exit code: {exit_code}')
+        if exit_code != 0:
+            raise Exception(
+                f'npm run build failed for {self.instance_id}: '
+                f'{output.decode()[-2000:]}'
+            )
+
         exit_code, output = self.container.exec_run(
             TEST_CMD,
             environment={'MOCHA_FILE': MOCHA_OUTPUT_FILE},
