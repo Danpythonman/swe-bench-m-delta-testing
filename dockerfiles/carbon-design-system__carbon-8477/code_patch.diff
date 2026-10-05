@@ -232,34 +232,6 @@ index fe0ed52f354a..f45c2299c035 100644
  };
  
  export default Button;
-diff --git a/packages/react/src/components/ModalWrapper/__snapshots__/ModalWrapper-test.js.snap b/packages/react/src/components/ModalWrapper/__snapshots__/ModalWrapper-test.js.snap
-index 4d473e35903a..4d504e9133ad 100644
---- a/packages/react/src/components/ModalWrapper/__snapshots__/ModalWrapper-test.js.snap
-+++ b/packages/react/src/components/ModalWrapper/__snapshots__/ModalWrapper-test.js.snap
-@@ -28,6 +28,7 @@ exports[`ModalWrapper should render 1`] = `
-       dangerDescription="danger"
-       disabled={false}
-       iconDescription="Provide icon description if icon is used"
-+      isExpressive={false}
-       kind="primary"
-       onClick={[Function]}
-       size="default"
-@@ -170,6 +171,7 @@ exports[`ModalWrapper should render 1`] = `
-                 <Button
-                   dangerDescription="danger"
-                   disabled={false}
-+                  isExpressive={false}
-                   kind="secondary"
-                   onClick={[Function]}
-                   size="default"
-@@ -198,6 +200,7 @@ exports[`ModalWrapper should render 1`] = `
-               <Button
-                 dangerDescription="danger"
-                 disabled={false}
-+                isExpressive={false}
-                 kind="primary"
-                 onClick={[Function]}
-                 size="default"
 diff --git a/packages/react/src/components/OrderedList/OrderedList-story.js b/packages/react/src/components/OrderedList/OrderedList-story.js
 index ceeba92ad7fc..8142bede00be 100644
 --- a/packages/react/src/components/OrderedList/OrderedList-story.js

@@ -188,6 +188,34 @@ index cc1bf27cd986..1cdad3ec5f8b 100644
            kind="primary"
            onClick={[MockFunction]}
            size="default"
+diff --git a/packages/react/src/components/ModalWrapper/__snapshots__/ModalWrapper-test.js.snap b/packages/react/src/components/ModalWrapper/__snapshots__/ModalWrapper-test.js.snap
+index 4d473e35903a..4d504e9133ad 100644
+--- a/packages/react/src/components/ModalWrapper/__snapshots__/ModalWrapper-test.js.snap
++++ b/packages/react/src/components/ModalWrapper/__snapshots__/ModalWrapper-test.js.snap
+@@ -28,6 +28,7 @@ exports[`ModalWrapper should render 1`] = `
+       dangerDescription="danger"
+       disabled={false}
+       iconDescription="Provide icon description if icon is used"
++      isExpressive={false}
+       kind="primary"
+       onClick={[Function]}
+       size="default"
+@@ -170,6 +171,7 @@ exports[`ModalWrapper should render 1`] = `
+                 <Button
+                   dangerDescription="danger"
+                   disabled={false}
++                  isExpressive={false}
+                   kind="secondary"
+                   onClick={[Function]}
+                   size="default"
+@@ -198,6 +200,7 @@ exports[`ModalWrapper should render 1`] = `
+               <Button
+                 dangerDescription="danger"
+                 disabled={false}
++                isExpressive={false}
+                 kind="primary"
+                 onClick={[Function]}
+                 size="default"
 diff --git a/packages/react/src/components/UIShell/__tests__/__snapshots__/HeaderGlobalAction-test.js.snap b/packages/react/src/components/UIShell/__tests__/__snapshots__/HeaderGlobalAction-test.js.snap
 index 9b2aa65c7854..d4094cf7925e 100644
 --- a/packages/react/src/components/UIShell/__tests__/__snapshots__/HeaderGlobalAction-test.js.snap

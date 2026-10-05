@@ -45,10 +45,15 @@ CODE_PATCH_PRED_FILENAME: Final[str] = 'code_patch.pred'
 # A path is a test path if it sits in a test directory or carries a test
 # suffix. Kept deliberately broad: misfiling a test file as code would
 # silently reintroduce the very problem this module exists to solve.
-# ``testing/`` is where pytest-dev/pytest keeps its own suite.
+# ``testing/`` is where pytest-dev/pytest keeps its own suite. Jest snapshots
+# and shared test helpers count too: a snapshot update belongs with the tests
+# it pins, so the pre-patch run checks the new expectation.
 TEST_PATH: Final[re.Pattern[str]] = re.compile(
     r"""
     (^|/)(test|tests|testing|spec|specs|__tests__|__test__|e2e|cypress)/
+    | (^|/)(__snapshots__|tests_config)/
+    | \.snap$
+    | (^|/)test[-_]helpers?\.[cm]?[jt]sx?$
     | [-_.](test|spec)\.[cm]?[jt]sx?$
     | \.(test|spec)\.[cm]?[jt]sx?$
     | (^|/)conftest\.py$
