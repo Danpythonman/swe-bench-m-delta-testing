@@ -591,11 +591,15 @@ class Evaluator(ABC):
                 log.info(output.decode())
                 if exit_code == 0:
                     break
-            if exit_code != 0 and self.instance_id in globals().get(
-                'PATCH_BASE_COMMIT_OVERRIDES', {}
-            ):
+            if exit_code != 0:
+                # Last resort: GNU patch with fuzz. An image's setup can
+                # rewrite tracked files (package.json for installs), which
+                # makes git apply and --3way refuse a correct gold patch
+                # (alibaba-fusion next-101); fuzzy matching still places
+                # the hunks, and only a dry run that succeeds is applied.
                 dry_code, dry_output = self.container.exec_run(
-                    f'patch --dry-run --batch --forward -p1 -i {PATCH_FILE}',
+                    'patch --dry-run --batch --forward --fuzz=5 -p1 '
+                    f'-i {PATCH_FILE}',
                     workdir='/testbed',
                     stream=False,
                 )
@@ -603,7 +607,8 @@ class Evaluator(ABC):
                 outputs.append(dry_output.decode())
                 if dry_code == 0:
                     exit_code, output = self.container.exec_run(
-                        f'patch --batch --forward -p1 -i {PATCH_FILE}',
+                        'patch --batch --forward --fuzz=5 -p1 '
+                        f'-i {PATCH_FILE}',
                         workdir='/testbed',
                         stream=False,
                     )
