@@ -745,7 +745,11 @@ class OpenlayersEvaluator(Evaluator):
         pattern = '|'.join(f'/{re.escape(case)}/' for case in cases)
         command = (
             # --log-level info: passing cases are logged at info level only.
+            # --timeout: the first page waits for webpack to bundle the
+            # cases, which overran the 60s default on the 2-vCPU workers
+            # (openlayers-13823 reported no case at all).
             'xvfb-run -a npm run test-rendering -- --force --log-level info '
+            '--timeout 300000 '
             f'--match {shlex.quote(pattern)}'
         )
         log.info(f'Running rendering cases {cases}: {command}')
