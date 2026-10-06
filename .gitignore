@@ -28,8 +28,9 @@ s3-sync/
 .env
 *.pem
 
-# Analysis output (regenerate from the synced results)
-analysis/
+# Analysis output (regenerate from the synced results). Anchored to the
+# root so the sbmdt.analysis package is not ignored too.
+/analysis/
 
 # Local repair execution state and S3 mirrors
 live-results/

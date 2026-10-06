@@ -10,6 +10,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
+from sbmdt.analysis.verified import matching_keys, short_descriptions
 from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.evaluator.base import PatchType
 from sbmdt.evaluator.django.django import django_labels
@@ -22,12 +23,6 @@ from sbmdt.evaluator.python.selection import (
     python_files_patterns,
 )
 from sbmdt.patches import is_test_path
-
-sys.path.insert(0, str(Path(__file__).parent))
-from compare_official_split import (  # noqa: E402
-    matching_keys,
-    short_descriptions,
-)
 
 INJECTED = Path(__file__).parents[1] / 'src/sbmdt/evaluator/python/injected'
 

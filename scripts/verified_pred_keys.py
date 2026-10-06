@@ -21,6 +21,7 @@ from typing import Any
 
 import boto3
 
+from sbmdt.aws.ecr import base_image, is_cached
 from sbmdt.aws.env import AWS_PROFILE, REGION
 from sbmdt.aws.s3 import (
     PREDS_S3_BUCKET_NAME,
@@ -29,9 +30,6 @@ from sbmdt.aws.s3 import (
 )
 from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.evaluator.base import PatchType, TestResultsFilename
-
-sys.path.insert(0, __file__.rsplit('/', 1)[0])
-from warm_ecr_cache import base_image, is_cached  # noqa: E402
 
 PATCH_TYPES = (PatchType.GOLD, PatchType.BEFORE_PATCH)
 

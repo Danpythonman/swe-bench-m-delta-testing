@@ -27,6 +27,13 @@ src/sbmdt/
   log.py                               # logging setup
   pred.py                              # Pred: a model-generated patch prediction
   utils.py                             # docker container file read/write/patch helpers
+  parquet.py                           # TestResult <-> Parquet, read_test_results
+  git_repos.py                         # blobless repository clones under .cache/repos
+  aws/ecr.py                           # ECR pull-through cache: base images, login
+  analysis/                            # importable analysis (scripts/ are thin CLIs)
+    test_split.py                      # classify_tests: F2P/P2P/flaky from runs
+    reference.py                       # reference split, model scoring (analyze_results)
+    verified.py                        # Verified label matching (compare_official_split)
   evaluator/
     base.py                            # Evaluator ABC, PatchType, TestResult
     alibaba/
@@ -39,7 +46,14 @@ src/sbmdt/
       injected/                        # modules copied into containers (Python 3.6+)
     django/django.py                   # DjangoEvaluator (tests/runtests.py)
     sympy/sympy.py                     # SympyEvaluator (bin/test)
+scripts/                               # command-line entry points (uv run scripts/...)
+notebooks/                             # exploratory analysis
 ```
+
+Code shared between scripts and notebooks lives in the `sbmdt` package, so
+it is imported normally (`from sbmdt.analysis.reference import
+reference_split`) instead of by path; a script only parses arguments and
+calls into it.
 
 ## SWE-bench Verified
 
@@ -56,7 +70,7 @@ the delta-testing method: the harness derives its own split from
 |---|---|
 | `Dockerfile` | `FROM` the prebuilt image via the ECR cache, nothing else |
 | `instance.json` | repository, version, base commit (read by the evaluator) |
-| `reference.json` | official F2P / P2P lists, **held out**: only `scripts/compare_official_split.py` reads it |
+| `reference.json` | official F2P / P2P lists, **held out**: only `sbmdt.analysis.verified` (`scripts/compare_official_split.py`) reads it |
 | `gold_patch.diff` | scraped from the GitHub PR (not the dataset's `patch`) |
 | `code_patch.diff`, `test_patch.diff` | path-based split of the gold patch |
 
