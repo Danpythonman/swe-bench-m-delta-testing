@@ -168,15 +168,17 @@ class MatchingKeyTests(unittest.TestCase):
             matching_keys('sympy__sympy-24562', 'a/test_n.py::test_issue', {}),
             ('test_issue',),
         )
-        # Django labels keep their spaces.
+        # Django labels keep their spaces, and newer instances use
+        # unittest's Python 3.11 name, method (module.Class.method).
         name = 'test_v (auth_tests.test_validators.T)'
+        py311 = 'test_v (auth_tests.test_validators.T.test_v)'
         self.assertEqual(
-            matching_keys('django__django-11099', name, {}), (name,)
+            matching_keys('django__django-11099', name, {}), (name, py311)
         )
         # A documented Django test is published under either spelling.
         self.assertEqual(
             matching_keys('django__django-1', name, {name: 'Checks v.'}),
-            (name, 'Checks v.'),
+            (name, py311, 'Checks v.'),
         )
 
     def test_short_descriptions(self):
