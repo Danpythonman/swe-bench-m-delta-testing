@@ -77,12 +77,16 @@ MODEL_PATCH_TYPES: Final[frozenset[str]] = frozenset(
 )
 """Patch types the gold test patch may be applied on top of."""
 
-# A small number of legacy prebuilt images were created from a checkout that
-# does not match the original GitHub PR base used by their gold patch. These
-# overrides restore the verified PR base before applying benchmark patches.
 # Where SWE-bench Multimodal images keep the binary files of the test patch.
 TEST_PATCH_ASSETS_DIR: Final[str] = '/swebench/image_assets/test_patch'
 
+# A small number of legacy prebuilt images were created from a checkout that
+# does not match the original GitHub PR base used by their gold patch. These
+# overrides restore the verified PR base before applying the reference
+# (before_patch) patch. Model patches are left on the image's checkout: agents
+# wrote them against the benchmark's base_commit, which is what the image
+# ships, so moving them to the PR base can make them fail to apply or test
+# them against different code.
 PATCH_BASE_COMMIT_OVERRIDES: Final[dict[str, str]] = {
     'PrismJS__prism-1585': '11695629f12925c586702453beaee5f4825d0ebd',
     'PrismJS__prism-1602': 'da474c77e2da4103192cd29827d3c0c64f9b8801',
@@ -686,8 +690,14 @@ class Evaluator(ABC):
         )
 
     def restore_patch_base(self) -> None:
-        """Check out a verified PR base when a legacy image is mismatched."""
+        """Check out a verified PR base when a legacy image is mismatched.
 
+        Only reference runs (before_patch and gold) are moved; see
+        ``PATCH_BASE_COMMIT_OVERRIDES``.
+        """
+
+        if self.patch_type in MODEL_PATCH_TYPES:
+            return
         target_commit = (
             GOLD_COMMIT_OVERRIDES.get(self.instance_id)
             if self.patch_type == PatchType.GOLD
