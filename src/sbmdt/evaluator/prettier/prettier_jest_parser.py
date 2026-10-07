@@ -31,6 +31,7 @@ import logging
 from typing import Any
 
 from sbmdt.evaluator.base import PatchType, TestResult
+from sbmdt.evaluator.paths import repo_relative
 
 __all__ = [
     'results_json_to_test_results',
@@ -51,6 +52,8 @@ def results_json_to_test_results(
 
     results: list[TestResult] = []
     for suite in suite_results:
+        # Jest names each suite result after the test file's absolute path.
+        test_file = repo_relative(suite.get('name'))
         test_cases: list[Any] = suite.get('assertionResults', [])
         for tc in test_cases:
             full_name: str | None = tc.get('fullName')
@@ -66,6 +69,7 @@ def results_json_to_test_results(
                     timestamp=timestamp,
                     test_name=full_name,
                     passed=(status == 'passed'),
+                    test_file=test_file,
                 )
             )
 

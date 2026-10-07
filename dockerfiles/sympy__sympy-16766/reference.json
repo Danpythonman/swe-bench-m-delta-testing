@@ -1,0 +1,15 @@
+{
+  "instance_id": "sympy__sympy-16766",
+  "fail_to_pass": [
+    "test_PythonCodePrinter"
+  ],
+  "pass_to_pass": [
+    "test_MpmathPrinter",
+    "test_NumPyPrinter",
+    "test_SciPyPrinter",
+    "test_pycode_reserved_words",
+    "test_printmethod",
+    "test_codegen_ast_nodes",
+    "test_issue_14283"
+  ]
+}

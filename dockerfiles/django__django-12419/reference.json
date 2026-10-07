@@ -1,0 +1,7 @@
+{
+  "instance_id": "django__django-12419",
+  "fail_to_pass": [
+    "test_middleware_headers (project_template.test_settings.TestStartProjectSettings)"
+  ],
+  "pass_to_pass": []
+}

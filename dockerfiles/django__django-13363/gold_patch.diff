@@ -1,0 +1,114 @@
+diff --git a/AUTHORS b/AUTHORS
+index 16272bdf28b6..5c50598ddc95 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -449,6 +449,7 @@ answer newbie questions, and generally made Django that much better:
+     Joao Oliveira <joaoxsouls@gmail.com>
+     Joao Pedro Silva <j.pedro004@gmail.com>
+     Joe Heck <http://www.rhonabwy.com/wp/>
++    Joe Jackson <joe@joejackson.me>
+     Joel Bohman <mail@jbohman.com>
+     Joel Heenan <joelh-django@planetjoel.com>
+     Joel Watts <joel@joelwatts.com>
+diff --git a/django/db/models/functions/datetime.py b/django/db/models/functions/datetime.py
+index b6594b043be6..682898073330 100644
+--- a/django/db/models/functions/datetime.py
++++ b/django/db/models/functions/datetime.py
+@@ -292,7 +292,7 @@ class TruncDate(TruncBase):
+     def as_sql(self, compiler, connection):
+         # Cast to date rather than truncate to date.
+         lhs, lhs_params = compiler.compile(self.lhs)
+-        tzname = timezone.get_current_timezone_name() if settings.USE_TZ else None
++        tzname = self.get_tzname()
+         sql = connection.ops.datetime_cast_date_sql(lhs, tzname)
+         return sql, lhs_params
+ 
+@@ -305,7 +305,7 @@ class TruncTime(TruncBase):
+     def as_sql(self, compiler, connection):
+         # Cast to time rather than truncate to time.
+         lhs, lhs_params = compiler.compile(self.lhs)
+-        tzname = timezone.get_current_timezone_name() if settings.USE_TZ else None
++        tzname = self.get_tzname()
+         sql = connection.ops.datetime_cast_time_sql(lhs, tzname)
+         return sql, lhs_params
+ 
+diff --git a/docs/ref/models/database-functions.txt b/docs/ref/models/database-functions.txt
+index f5efdb7e8752..3121a36fa921 100644
+--- a/docs/ref/models/database-functions.txt
++++ b/docs/ref/models/database-functions.txt
+@@ -623,20 +623,28 @@ that deal with date-parts can be used with ``DateField``::
+ ``DateTimeField`` truncation
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+-.. class:: TruncDate(expression, **extra)
++.. class:: TruncDate(expression, tzinfo=None, **extra)
+ 
+     .. attribute:: lookup_name = 'date'
+     .. attribute:: output_field = DateField()
+ 
++    .. versionchanged:: 3.2
++
++        The ``tzinfo`` parameter was added.
++
+ ``TruncDate`` casts ``expression`` to a date rather than using the built-in SQL
+ truncate function. It's also registered as a transform on  ``DateTimeField`` as
+ ``__date``.
+ 
+-.. class:: TruncTime(expression, **extra)
++.. class:: TruncTime(expression, tzinfo=None, **extra)
+ 
+     .. attribute:: lookup_name = 'time'
+     .. attribute:: output_field = TimeField()
+ 
++    .. versionchanged:: 3.2
++
++        The ``tzinfo`` parameter was added.
++
+ ``TruncTime`` casts ``expression`` to a time rather than using the built-in SQL
+ truncate function. It's also registered as a transform on ``DateTimeField`` as
+ ``__time``.
+diff --git a/docs/releases/3.2.txt b/docs/releases/3.2.txt
+index d29a582d7493..9017c3313807 100644
+--- a/docs/releases/3.2.txt
++++ b/docs/releases/3.2.txt
+@@ -290,6 +290,11 @@ Models
+   distinct fields if there's only one field specified in
+   :meth:`.QuerySet.distinct`.
+ 
++* The new ``tzinfo`` parameter of the
++  :class:`~django.db.models.functions.TruncDate` and
++  :class:`~django.db.models.functions.TruncTime` database functions allows
++  truncating datetimes in a specific timezone.
++
+ Pagination
+ ~~~~~~~~~~
+ 
+diff --git a/tests/db_functions/datetime/test_extract_trunc.py b/tests/db_functions/datetime/test_extract_trunc.py
+index f8ebb81cb597..f898ba5253ba 100644
+--- a/tests/db_functions/datetime/test_extract_trunc.py
++++ b/tests/db_functions/datetime/test_extract_trunc.py
+@@ -1124,14 +1124,24 @@ def test_trunc_timezone_applied_before_truncation(self):
+         model = DTModel.objects.annotate(
+             melb_year=TruncYear('start_datetime', tzinfo=melb),
+             pacific_year=TruncYear('start_datetime', tzinfo=pacific),
++            melb_date=TruncDate('start_datetime', tzinfo=melb),
++            pacific_date=TruncDate('start_datetime', tzinfo=pacific),
++            melb_time=TruncTime('start_datetime', tzinfo=melb),
++            pacific_time=TruncTime('start_datetime', tzinfo=pacific),
+         ).order_by('start_datetime').get()
+ 
++        melb_start_datetime = start_datetime.astimezone(melb)
++        pacific_start_datetime = start_datetime.astimezone(pacific)
+         self.assertEqual(model.start_datetime, start_datetime)
+         self.assertEqual(model.melb_year, truncate_to(start_datetime, 'year', melb))
+         self.assertEqual(model.pacific_year, truncate_to(start_datetime, 'year', pacific))
+         self.assertEqual(model.start_datetime.year, 2016)
+         self.assertEqual(model.melb_year.year, 2016)
+         self.assertEqual(model.pacific_year.year, 2015)
++        self.assertEqual(model.melb_date, melb_start_datetime.date())
++        self.assertEqual(model.pacific_date, pacific_start_datetime.date())
++        self.assertEqual(model.melb_time, melb_start_datetime.time())
++        self.assertEqual(model.pacific_time, pacific_start_datetime.time())
+ 
+     def test_trunc_ambiguous_and_invalid_times(self):
+         sao = pytz.timezone('America/Sao_Paulo')

@@ -10,14 +10,19 @@ retrieves the results.
 
 from __future__ import annotations
 
+import json
 import logging
 import re
-from typing import Final, override
+import shlex
+from typing import Any, Final, cast, override
 
+from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.evaluator.alibaba.karma_junit_parser import (
     results_xml_to_test_results,
 )
 from sbmdt.evaluator.base import Evaluator, TestResult
+from sbmdt.evaluator.paths import repo_relative
+from sbmdt.patches import TEST_PATCH_DIFF_FILENAME, read_diff
 from sbmdt.utils import (
     apply_change_regex,
     read_from_container,
@@ -31,6 +36,42 @@ __all__ = [
 log = logging.getLogger(__name__)
 
 DEFAULT_KARMA_CONFIG_FILE: Final[str] = '/testbed/test/karma.config.js'
+
+
+RENDERING_CASES_DIR: Final[str] = 'test/rendering/cases/'
+NODE_RESULTS_FILE: Final[str] = '/tmp/sbmdt-node-results.json'
+
+# Older checkouts keep the cases under rendering/cases/ at the top level.
+_RENDERING_CASE_PATH: Final[re.Pattern[str]] = re.compile(
+    r'^(?:test/)?rendering/cases/([^/]+)/'
+)
+
+# One line per case from test/rendering/test.js, e.g.
+#   case ./cases/icon-opacity/main.js': ok
+#   case ./cases/icon-opacity/main.js (note)': mismatch 0.0123
+_RENDERING_RESULT: Final[re.Pattern[str]] = re.compile(
+    r"case \./cases/(?P<case>[^/\s']+)/main\.js(?: \([^)]*\))?': "
+    r'(?P<outcome>ok|mismatch)'
+)
+
+
+def touched_rendering_cases(test_patch: str) -> list[str]:
+    """Return the rendering cases a test patch adds or changes.
+
+    Args:
+        test_patch: The instance's test patch.
+
+    Returns:
+        Case names in diff order, without duplicates.
+    """
+    cases: list[str] = []
+    # Read the diff headers rather than the hunks: a case is often changed
+    # only through its expected.png, a binary section with no +++ line.
+    for path in re.findall(r'^diff --git a/\S+ b/(\S+)', test_patch, re.M):
+        match = _RENDERING_CASE_PATH.match(path)
+        if match and match[1] not in cases:
+            cases.append(match[1])
+    return cases
 
 
 class OpenlayersEvaluator(Evaluator):
@@ -229,6 +270,26 @@ class OpenlayersEvaluator(Evaluator):
             assertion="require.resolve('regenerator-runtime/runtime.js')",
         )
 
+        # The checkout's Mocha timeout (2500ms) is tuned for a developer
+        # machine. On the 2-vCPU EC2 workers some specs overran it and left
+        # map <div>s behind; test-extensions.js then throws "Found extra
+        # <div> elements in the body" from a global hook, which ends the
+        # Karma run early (openlayers-12172 stopped at 2,609 of 3,276 and
+        # never reached the ol.style.Icon specs the patch is about).
+        try:
+            apply_change_regex(
+                container=self.container,
+                file=self._karma_config_file,
+                find=r'(mocha\s*:\s*\{[^}]*?)timeout\s*:\s*\d+',
+                replace=r'\1timeout: 60000',
+                assertion='timeout: 60000',
+            )
+        except Exception as exc:
+            log.info(
+                f'Skipping Mocha timeout increase for '
+                f'{self.instance_id}: {exc}'
+            )
+
         # Force webpack off source maps. Nested source-map@0.7+ still wins
         # over the 0.6.1 pin / initialize shim (openlayers-11545), and karma
         # then dies on mappings.wasm before junit can flush.
@@ -418,7 +479,23 @@ class OpenlayersEvaluator(Evaluator):
                 )
             )
 
-            if has_custom_launchers:
+            headless_launcher = re.search(
+                r"flags:\s*\[\s*'--headless[^']*'", existing_launchers.decode()
+            )
+            if headless_launcher:
+                # Newer checkouts (openlayers-15683) define their own
+                # headless launcher. Swapping in a headed SwiftShader
+                # Chrome under xvfb made Chrome 151 disconnect after 16 of
+                # 2,515 tests, so keep their launcher and only add the
+                # --no-sandbox root needs.
+                apply_change_regex(
+                    container=self.container,
+                    file=self._karma_config_file,
+                    find=r"flags:\s*\[(\s*'--headless[^']*')",
+                    replace=r"flags: [\1, '--no-sandbox'",
+                    assertion="'--no-sandbox'",
+                )
+            elif has_custom_launchers:
                 apply_change_regex(
                     container=self.container,
                     file=self._karma_config_file,
@@ -553,6 +630,26 @@ class OpenlayersEvaluator(Evaluator):
             write_to_container(self.container, shim_path, shim_script)
             self.container.exec_run(['chmod', '+x', shim_path])
             environment['PUPPETEER_EXECUTABLE_PATH'] = shim_path
+            # karma-chrome-launcher reads CHROME_BIN instead. Configs whose
+            # browsers: list falls back to plain 'Chrome' outside CircleCI
+            # (openlayers-9083) launch it as root without the flag, and
+            # Chrome refuses to start, so those get CHROME_BIN pointed at a
+            # no-sandbox shim. Only those: newer configs launch their own
+            # Chrome with WebGL flags, and overriding its binary made it
+            # disconnect after 16 of 2,515 tests (openlayers-15683).
+            _, karma_config = self.container.exec_run(
+                ['cat', self._karma_config_file]
+            )
+            assert isinstance(karma_config, bytes)
+            if re.search(rb"browsers:\s*\[\s*'Chrome'\s*\]", karma_config):
+                karma_shim_path = '/tmp/chrome-no-sandbox-karma'
+                write_to_container(
+                    self.container,
+                    karma_shim_path,
+                    f'#!/bin/sh\nexec {chrome_path[0]} --no-sandbox "$@"\n',
+                )
+                self.container.exec_run(['chmod', '+x', karma_shim_path])
+                environment['CHROME_BIN'] = karma_shim_path
         else:
             log.info(
                 f'no system Chrome found for {self.instance_id}; leaving '
@@ -606,13 +703,166 @@ class OpenlayersEvaluator(Evaluator):
 
         results = read_from_container(self.container, results_file)
 
-        return results_xml_to_test_results(
-            self.instance_id,
-            self.patch_type,
-            self.agent_name,
-            results,
-            self.timestamp,
+        return [
+            *results_xml_to_test_results(
+                self.instance_id,
+                self.patch_type,
+                self.agent_name,
+                results,
+                self.timestamp,
+            ),
+            *self._run_node_tests(environment),
+            *self._run_rendering_cases(environment),
+        ]
+
+    def _run_node_tests(self, environment: dict[str, str]) -> list[TestResult]:
+        """Run the Node-side Mocha suite when the checkout has one.
+
+        Newer checkouts split pure-function specs (ol/coordinate.js,
+        ol/extent.js, ...) out of Karma into ``test/node``, run by
+        ``npm run test-node``. Without it those tests never ran
+        (openlayers-13893's FAIL_TO_PASS tests live there).
+
+        Args:
+            environment: The environment the Karma run used.
+
+        Returns:
+            One result per Node test, or nothing when there is no
+            ``test-node`` script or its report cannot be read.
+        """
+        assert self.container is not None
+        _, scripts = self.container.exec_run(
+            [
+                'node',
+                '-e',
+                "process.stdout.write(require('./package.json').scripts"
+                "['test-node'] || '')",
+            ],
+            workdir='/testbed',
         )
+        assert isinstance(scripts, bytes)
+        if not scripts.strip():
+            return []
+        exit_code, _ = self.container.exec_run(
+            [
+                'bash',
+                '-c',
+                'npm run --silent test-node -- --reporter json '
+                f'> {NODE_RESULTS_FILE}',
+            ],
+            environment=environment,
+            workdir='/testbed',
+            stream=False,
+        )
+        log.info(f'test-node exit code: {exit_code}')
+        try:
+            raw = read_from_container(self.container, NODE_RESULTS_FILE)
+        except Exception as exc:
+            log.warning(f'No test-node report for {self.instance_id}: {exc}')
+            return []
+        # Tests may print to stdout around the reporter's JSON document.
+        start = raw.find('{\n  "stats"')
+        try:
+            report = json.loads(raw[start:]) if start >= 0 else None
+        except json.JSONDecodeError:
+            report = None
+        if not isinstance(report, dict):
+            log.warning(f'Unreadable test-node report for {self.instance_id}')
+            return []
+        tests = cast(list[dict[str, Any]], report.get('tests', []))
+        failures = cast(list[dict[str, Any]], report.get('failures', []))
+        failed = {(t.get('file'), t.get('fullTitle')) for t in failures}
+        return [
+            TestResult(
+                instance_id=self.instance_id,
+                patch_type=self.patch_type,
+                agent_name=self.agent_name,
+                timestamp=self.timestamp,
+                test_name=test['fullTitle'],
+                passed=(test.get('file'), test['fullTitle']) not in failed,
+                test_file=repo_relative(test.get('file')),
+            )
+            for test in tests
+            if test.get('fullTitle')
+        ]
+
+    def _run_rendering_cases(
+        self, environment: dict[str, str]
+    ) -> list[TestResult]:
+        """Run the rendering cases the test patch touches.
+
+        Rendering cases are pixel comparisons outside Karma, run by
+        ``npm run test-rendering``, which prints one line per case
+        (``case ./cases/<name>/main.js': ok`` or ``...': mismatch <n>``).
+        A fix to how something is drawn is often tested only by a new or
+        updated case, so these are the FAIL_TO_PASS tests of such
+        instances. Only touched cases run: the full suite takes long, and
+        pixel-exact cases that depend on the GPU can fail here for reasons
+        unrelated to the patch.
+
+        Args:
+            environment: The environment the Karma run used.
+
+        Returns:
+            One result per touched case, named ``rendering <name>``; empty
+            when no case is touched or the runner reported none.
+        """
+        assert self.container is not None
+        # The raw test patch, not test_patch_for(): that drops the binary
+        # sections, and a case is often changed only through its
+        # expected.png (the image itself comes from the image's assets).
+        test_patch = DOCKERFILES_BASE / self.instance_id
+        cases = touched_rendering_cases(
+            read_diff(test_patch / TEST_PATCH_DIFF_FILENAME)
+        )
+        if not cases:
+            return []
+        pattern = '|'.join(f'/{re.escape(case)}/' for case in cases)
+        command = (
+            # --log-level info: passing cases are logged at info level only.
+            # --timeout: the first page waits for webpack to bundle the
+            # cases, which overran the 60s default on the 2-vCPU workers
+            # (openlayers-13823 reported no case at all).
+            'xvfb-run -a npm run test-rendering -- --force --log-level info '
+            '--timeout 300000 '
+            f'--match {shlex.quote(pattern)}'
+        )
+        log.info(f'Running rendering cases {cases}: {command}')
+        exit_code, output = self.container.exec_run(
+            ['bash', '-c', f'timeout 1800 {command}'],
+            # CI makes the runner headless with --no-sandbox, as root needs.
+            environment={**environment, 'CI': 'true'},
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        text = output.decode(errors='replace')
+        log.info(f'test-rendering exit code: {exit_code}')
+        log.info(text)
+
+        outcomes: dict[str, bool] = {}
+        for match in _RENDERING_RESULT.finditer(text):
+            outcomes[match['case']] = match['outcome'] == 'ok'
+        if not outcomes:
+            log.warning(
+                f'test-rendering reported no case for {self.instance_id}; '
+                f'leaving rendering cases out'
+            )
+            return []
+        # A selected case without a result line crashed its page or had no
+        # screenshot to compare, which the runner reports as a failure.
+        return [
+            TestResult(
+                instance_id=self.instance_id,
+                patch_type=self.patch_type,
+                agent_name=self.agent_name,
+                timestamp=self.timestamp,
+                test_name=f'rendering {case}',
+                passed=outcomes.get(case, False),
+                test_file=f'{RENDERING_CASES_DIR}{case}/main.js',
+            )
+            for case in cases
+        ]
 
     @override
     def pre_cleanup(self) -> None:

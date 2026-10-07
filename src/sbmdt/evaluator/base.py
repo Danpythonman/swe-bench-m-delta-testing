@@ -77,9 +77,16 @@ MODEL_PATCH_TYPES: Final[frozenset[str]] = frozenset(
 )
 """Patch types the gold test patch may be applied on top of."""
 
+# Where SWE-bench Multimodal images keep the binary files of the test patch.
+TEST_PATCH_ASSETS_DIR: Final[str] = '/swebench/image_assets/test_patch'
+
 # A small number of legacy prebuilt images were created from a checkout that
 # does not match the original GitHub PR base used by their gold patch. These
-# overrides restore the verified PR base before applying benchmark patches.
+# overrides restore the verified PR base before applying the reference
+# (before_patch) patch. Model patches are left on the image's checkout: agents
+# wrote them against the benchmark's base_commit, which is what the image
+# ships, so moving them to the PR base can make them fail to apply or test
+# them against different code.
 PATCH_BASE_COMMIT_OVERRIDES: Final[dict[str, str]] = {
     'PrismJS__prism-1585': '11695629f12925c586702453beaee5f4825d0ebd',
     'PrismJS__prism-1602': 'da474c77e2da4103192cd29827d3c0c64f9b8801',
@@ -150,6 +157,10 @@ class TestResult:
         agent_name: The agent that produced that patch.
         test_name: Name of the individual test case.
         passed: Whether the test case passed.
+        test_file: Repository-relative path of the file that defines the
+            test, when the runner reports it. Names alone collide across
+            files (two suites can define the same test), and benchmarks
+            such as SWE-bench Multimodal grade some instances per file.
     """
 
     instance_id: str
@@ -158,6 +169,7 @@ class TestResult:
     timestamp: dt.datetime
     test_name: str
     passed: bool
+    test_file: str | None = None
 
     @staticmethod
     def from_dict(obj: dict[str, Any]) -> TestResult:
@@ -165,7 +177,8 @@ class TestResult:
 
         Args:
             obj: Mapping containing ``instance_id``, ``patch_type``,
-                ``agent_name``, ``test_name``, and ``passed`` keys.
+                ``agent_name``, ``test_name``, and ``passed`` keys, and
+                optionally ``test_file``.
 
         Returns:
             The constructed :class:`TestResult`.
@@ -210,6 +223,10 @@ class TestResult:
         if not isinstance(passed, bool):
             raise Exception('passed not bool')
 
+        test_file = obj.get('test_file', None)
+        if test_file is not None and not isinstance(test_file, str):
+            raise Exception('test_file not str')
+
         return TestResult(
             instance_id=instance_id,
             patch_type=PatchType(patch_type),
@@ -217,6 +234,7 @@ class TestResult:
             timestamp=dt.datetime.fromisoformat(timestamp),
             test_name=test_name,
             passed=passed,
+            test_file=test_file,
         )
 
     def to_dict(self, json_safe: bool = False) -> dict[str, Any]:
@@ -540,6 +558,8 @@ class Evaluator(ABC):
                 # Legacy images may have checkout filters or line-ending
                 # conversion that make working-tree bytes differ even when
                 # HEAD has the exact old blobs named by the submitted diff.
+                # The blobs are written byte for byte: a file committed with
+                # CRLF endings keeps them, matching the gold diff's context.
                 paths = re.findall(r'^diff --git a/\S+ b/(\S+)', section, re.M)
                 for path in paths:
                     _, restore_output = self.container.exec_run(
@@ -548,7 +568,6 @@ class Evaluator(ABC):
                             '-c',
                             'if git cat-file -e "HEAD:$1" 2>/dev/null; '
                             'then git cat-file blob "HEAD:$1" > "$1"; '
-                            'sed -i \'s/\\r$//\' "$1"; '
                             'else rm -rf -- "$1"; fi',
                             'git-materialize-gold-test',
                             path,
@@ -571,6 +590,7 @@ class Evaluator(ABC):
                     f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
                 ),
             )
+            self._refresh_index()
             exit_code = 1
             for check_command, apply_command in attempts:
                 check_code, check_output = self.container.exec_run(
@@ -589,11 +609,19 @@ class Evaluator(ABC):
                 log.info(output.decode())
                 if exit_code == 0:
                     break
-            if exit_code != 0 and self.instance_id in globals().get(
-                'PATCH_BASE_COMMIT_OVERRIDES', {}
-            ):
+            if exit_code != 0:
+                # Last resort: GNU patch with fuzz. An image's setup can
+                # rewrite tracked files (package.json for installs), which
+                # makes git apply and --3way refuse a correct gold patch
+                # (alibaba-fusion next-101); fuzzy matching still places
+                # the hunks, and only a dry run that succeeds is applied.
+                # -l ignores whitespace: a PR diff can carry a hunk that
+                # only strips trailing spaces the checkout no longer has
+                # (lighthouse-1446), which patch otherwise reads as
+                # already applied and git apply rejects outright.
                 dry_code, dry_output = self.container.exec_run(
-                    f'patch --dry-run --batch --forward -p1 -i {PATCH_FILE}',
+                    'patch --dry-run --batch --forward --fuzz=5 -l -p1 '
+                    f'-i {PATCH_FILE}',
                     workdir='/testbed',
                     stream=False,
                 )
@@ -601,7 +629,8 @@ class Evaluator(ABC):
                 outputs.append(dry_output.decode())
                 if dry_code == 0:
                     exit_code, output = self.container.exec_run(
-                        f'patch --batch --forward -p1 -i {PATCH_FILE}',
+                        'patch --batch --forward --fuzz=5 -l -p1 '
+                        f'-i {PATCH_FILE}',
                         workdir='/testbed',
                         stream=False,
                     )
@@ -614,9 +643,61 @@ class Evaluator(ABC):
                     f'{outputs[-1]}'
                 )
 
-    def restore_patch_base(self) -> None:
-        """Check out a verified PR base when a legacy image is mismatched."""
+    def _copy_test_patch_assets(self) -> None:
+        """Copy the test patch's binary files the image ships into /testbed.
 
+        A PR's diff names binary files (rendering expected.png images,
+        fixtures) without carrying them, so those sections are dropped when
+        the test patch is applied. SWE-bench Multimodal images bake the
+        files in under ``TEST_PATCH_ASSETS_DIR``; without them an
+        openlayers rendering case keeps its old expected image and the
+        test that pins the fix cannot change outcome. Does nothing on
+        images without the directory.
+        """
+        assert self.container is not None
+        exit_code, output = self.container.exec_run(
+            [
+                'bash',
+                '-c',
+                f'test -d {TEST_PATCH_ASSETS_DIR} || exit 0; '
+                f'cp -a {TEST_PATCH_ASSETS_DIR}/. /testbed/ && '
+                f'find {TEST_PATCH_ASSETS_DIR} -type f | wc -l',
+            ],
+            stream=False,
+        )
+        assert isinstance(output, bytes)
+        copied = output.decode().strip()
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to copy test patch assets for {self.instance_id}: '
+                f'{copied}'
+            )
+        if copied:
+            log.info(f'Copied {copied} test patch asset file(s) into /testbed')
+
+    def _refresh_index(self) -> None:
+        """Refresh the stat information Git caches for ``/testbed``.
+
+        Extracting an image's layers rewrites file timestamps, so tracked
+        files whose contents equal the index can still look modified to
+        Git. ``git apply --3way`` refuses such files ("does not match
+        index"), which made the three-way fallback fail on every image.
+        Refreshing changes no file contents.
+        """
+        assert self.container is not None
+        self.container.exec_run(
+            'git update-index -q --refresh', workdir='/testbed', stream=False
+        )
+
+    def restore_patch_base(self) -> None:
+        """Check out a verified PR base when a legacy image is mismatched.
+
+        Only reference runs (before_patch and gold) are moved; see
+        ``PATCH_BASE_COMMIT_OVERRIDES``.
+        """
+
+        if self.patch_type in MODEL_PATCH_TYPES:
+            return
         target_commit = (
             GOLD_COMMIT_OVERRIDES.get(self.instance_id)
             if self.patch_type == PatchType.GOLD
@@ -757,6 +838,7 @@ class Evaluator(ABC):
 
         write_to_container(self.container, TEST_PATCH_FILE, test_patch)
 
+        self._refresh_index()
         outputs = []
         commands = (
             f'git apply {TEST_PATCH_FILE}',
@@ -904,6 +986,11 @@ class Evaluator(ABC):
                     # same diff. The baseline needs the separate test patch
                     # so new regression tests can form FAIL_TO_PASS.
                     log.info(f'Not applying test patch for {self.patch_type}')
+            if (
+                self.apply_test_patch_enabled
+                or self.patch_type == PatchType.GOLD
+            ):
+                self._copy_test_patch_assets()
             log.info('Setting up...')
             self.setup()
             log.info('Evaluating...')

@@ -1,0 +1,26 @@
+diff --git a/CHANGES b/CHANGES
+index 3a9f527ad3d..c44051f3f89 100644
+--- a/CHANGES
++++ b/CHANGES
+@@ -30,6 +30,8 @@ Bugs fixed
+ * #8594: autodoc: empty __all__ attribute is ignored
+ * #8306: autosummary: mocked modules are documented as empty page when using
+   :recursive: option
++* #8618: html: kbd role produces incorrect HTML when compound-key separators (-,
++  + or ^) are used as keystrokes
+ * #8094: texinfo: image files on the different directory with document are not
+   copied
+ 
+diff --git a/sphinx/builders/html/transforms.py b/sphinx/builders/html/transforms.py
+index c91da57e993..311b1b7a032 100644
+--- a/sphinx/builders/html/transforms.py
++++ b/sphinx/builders/html/transforms.py
+@@ -37,7 +37,7 @@ class KeyboardTransform(SphinxPostTransform):
+     """
+     default_priority = 400
+     builders = ('html',)
+-    pattern = re.compile(r'(-|\+|\^|\s+)')
++    pattern = re.compile(r'(?<=.)(-|\+|\^|\s+)(?=.)')
+ 
+     def run(self, **kwargs: Any) -> None:
+         matcher = NodeMatcher(nodes.literal, classes=["kbd"])

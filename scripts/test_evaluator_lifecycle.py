@@ -54,6 +54,8 @@ class EvaluatorLifecycleTests(unittest.TestCase):
             setup=stage('setup'),
             evaluate=stage('evaluate', ['ok']),
             cleanup=stage('cleanup'),
+            # Copies image-shipped binaries; not a stage these tests order.
+            _copy_test_patch_assets=lambda: None,
         )
         if fail:
             with self.assertRaisesRegex(RuntimeError, fail):

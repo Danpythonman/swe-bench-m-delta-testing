@@ -1,0 +1,116 @@
+diff --git a/django/contrib/admin/options.py b/django/contrib/admin/options.py
+index 66f3396a6b31..c5968a79ed90 100644
+--- a/django/contrib/admin/options.py
++++ b/django/contrib/admin/options.py
+@@ -1031,6 +1031,7 @@ def construct_search(field_name):
+         if search_fields and search_term:
+             orm_lookups = [construct_search(str(search_field))
+                            for search_field in search_fields]
++            term_queries = []
+             for bit in smart_split(search_term):
+                 if bit.startswith(('"', "'")) and bit[0] == bit[-1]:
+                     bit = unescape_string_literal(bit)
+@@ -1038,7 +1039,8 @@ def construct_search(field_name):
+                     *((orm_lookup, bit) for orm_lookup in orm_lookups),
+                     _connector=models.Q.OR,
+                 )
+-                queryset = queryset.filter(or_queries)
++                term_queries.append(or_queries)
++            queryset = queryset.filter(models.Q(*term_queries))
+             may_have_duplicates |= any(
+                 lookup_spawns_duplicates(self.opts, search_spec)
+                 for search_spec in orm_lookups
+diff --git a/docs/ref/contrib/admin/index.txt b/docs/ref/contrib/admin/index.txt
+index 5caea603c1ae..ac8f44b76560 100644
+--- a/docs/ref/contrib/admin/index.txt
++++ b/docs/ref/contrib/admin/index.txt
+@@ -1185,6 +1185,22 @@ subclass::
+     :meth:`ModelAdmin.get_search_results` to provide additional or alternate
+     search behavior.
+ 
++    .. versionchanged:: 4.1
++
++        Searches using multiple search terms are now applied in a single call
++        to ``filter()``, rather than in sequential ``filter()`` calls.
++
++        For multi-valued relationships, this means that rows from the related
++        model must match all terms rather than any term. For example, if
++        ``search_fields`` is set to ``['child__name', 'child__age']``, and a
++        user searches for ``'Jamal 17'``, parent rows will be returned only if
++        there is a relationship to some 17-year-old child named Jamal, rather
++        than also returning parents who merely have a younger or older child
++        named Jamal in addition to some other 17-year-old.
++
++        See the :ref:`spanning-multi-valued-relationships` topic for more
++        discussion of this difference.
++
+ .. attribute:: ModelAdmin.search_help_text
+ 
+     .. versionadded:: 4.0
+@@ -1403,6 +1419,22 @@ templates used by the :class:`ModelAdmin` views:
+     field, for example ``... OR UPPER("polls_choice"."votes"::text) = UPPER('4')``
+     on PostgreSQL.
+ 
++    .. versionchanged:: 4.1
++
++        Searches using multiple search terms are now applied in a single call
++        to ``filter()``, rather than in sequential ``filter()`` calls.
++
++        For multi-valued relationships, this means that rows from the related
++        model must match all terms rather than any term. For example, if
++        ``search_fields`` is set to ``['child__name', 'child__age']``, and a
++        user searches for ``'Jamal 17'``, parent rows will be returned only if
++        there is a relationship to some 17-year-old child named Jamal, rather
++        than also returning parents who merely have a younger or older child
++        named Jamal in addition to some other 17-year-old.
++
++        See the :ref:`spanning-multi-valued-relationships` topic for more
++        discussion of this difference.
++
+ .. method:: ModelAdmin.save_related(request, form, formsets, change)
+ 
+     The ``save_related`` method is given the ``HttpRequest``, the parent
+diff --git a/docs/releases/4.1.txt b/docs/releases/4.1.txt
+index 3fdd7f53c6fb..5f184d234904 100644
+--- a/docs/releases/4.1.txt
++++ b/docs/releases/4.1.txt
+@@ -290,6 +290,26 @@ Dropped support for MariaDB 10.2
+ Upstream support for MariaDB 10.2 ends in May 2022. Django 4.1 supports MariaDB
+ 10.3 and higher.
+ 
++Admin changelist searches spanning multi-valued relationships changes
++---------------------------------------------------------------------
++
++Admin changelist searches using multiple search terms are now applied in a
++single call to ``filter()``, rather than in sequential ``filter()`` calls.
++
++For multi-valued relationships, this means that rows from the related model
++must match all terms rather than any term. For example, if ``search_fields``
++is set to ``['child__name', 'child__age']``, and a user searches for
++``'Jamal 17'``, parent rows will be returned only if there is a relationship to
++some 17-year-old child named Jamal, rather than also returning parents who
++merely have a younger or older child named Jamal in addition to some other
++17-year-old.
++
++See the :ref:`spanning-multi-valued-relationships` topic for more discussion of
++this difference. In Django 4.0 and earlier,
++:meth:`~django.contrib.admin.ModelAdmin.get_search_results` followed the
++second example query, but this undocumented behavior led to queries with
++excessive joins.
++
+ Miscellaneous
+ -------------
+ 
+diff --git a/docs/topics/db/queries.txt b/docs/topics/db/queries.txt
+index c24c06da686b..eb68c7b4dade 100644
+--- a/docs/topics/db/queries.txt
++++ b/docs/topics/db/queries.txt
+@@ -525,6 +525,8 @@ those latter objects, you could write::
+ 
+     Blog.objects.filter(entry__authors__isnull=False, entry__authors__name__isnull=True)
+ 
++.. _spanning-multi-valued-relationships:
++
+ Spanning multi-valued relationships
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 

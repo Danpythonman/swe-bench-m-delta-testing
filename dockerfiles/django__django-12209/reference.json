@@ -1,0 +1,7 @@
+{
+  "instance_id": "django__django-12209",
+  "fail_to_pass": [
+    "partial(func, *args, **keywords) - new function with partial application"
+  ],
+  "pass_to_pass": []
+}

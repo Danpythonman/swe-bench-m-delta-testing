@@ -1,0 +1,97 @@
+diff --git a/django/contrib/auth/forms.py b/django/contrib/auth/forms.py
+index d73d1c84952e..63420af94e29 100644
+--- a/django/contrib/auth/forms.py
++++ b/django/contrib/auth/forms.py
+@@ -141,6 +141,8 @@ def save(self, commit=True):
+         user.set_password(self.cleaned_data["password1"])
+         if commit:
+             user.save()
++            if hasattr(self, "save_m2m"):
++                self.save_m2m()
+         return user
+ 
+ 
+diff --git a/docs/releases/4.2.txt b/docs/releases/4.2.txt
+index a9841d1af4b6..fe74e8485a80 100644
+--- a/docs/releases/4.2.txt
++++ b/docs/releases/4.2.txt
+@@ -65,6 +65,9 @@ Minor features
+ * The default iteration count for the PBKDF2 password hasher is increased from
+   390,000 to 480,000.
+ 
++* :class:`~django.contrib.auth.forms.UserCreationForm` now saves many-to-many
++  form fields for a custom user model.
++
+ :mod:`django.contrib.contenttypes`
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+diff --git a/docs/topics/auth/customizing.txt b/docs/topics/auth/customizing.txt
+index c77e6c599d32..9c0a256d25c3 100644
+--- a/docs/topics/auth/customizing.txt
++++ b/docs/topics/auth/customizing.txt
+@@ -840,6 +840,11 @@ extend these forms in this manner::
+             model = CustomUser
+             fields = UserCreationForm.Meta.fields + ('custom_field',)
+ 
++.. versionchanged:: 4.2
++
++    In older versions, :class:`~django.contrib.auth.forms.UserCreationForm`
++    didn't save many-to-many form fields for a custom user model.
++
+ Custom users and :mod:`django.contrib.admin`
+ --------------------------------------------
+ 
+diff --git a/docs/topics/auth/default.txt b/docs/topics/auth/default.txt
+index fb5d04752dfd..549430aaadb4 100644
+--- a/docs/topics/auth/default.txt
++++ b/docs/topics/auth/default.txt
+@@ -1665,6 +1665,11 @@ provides several built-in forms located in :mod:`django.contrib.auth.forms`:
+     sets the user's password using
+     :meth:`~django.contrib.auth.models.User.set_password()`.
+ 
++    .. versionchanged:: 4.2
++
++        In older versions, :class:`UserCreationForm` didn't save many-to-many
++        form fields for a custom user model.
++
+ .. currentmodule:: django.contrib.auth
+ 
+ Authentication data in templates
+diff --git a/tests/auth_tests/test_forms.py b/tests/auth_tests/test_forms.py
+index 78078316e81a..1aee923bb90f 100644
+--- a/tests/auth_tests/test_forms.py
++++ b/tests/auth_tests/test_forms.py
+@@ -35,6 +35,7 @@
+ )
+ from .models.with_custom_email_field import CustomEmailField
+ from .models.with_integer_username import IntegerUsernameUser
++from .models.with_many_to_many import CustomUserWithM2M, Organization
+ from .settings import AUTH_TEMPLATES
+ 
+ 
+@@ -252,6 +253,25 @@ class Meta(UserCreationForm.Meta):
+         form = CustomUserCreationForm(data)
+         self.assertTrue(form.is_valid())
+ 
++    def test_custom_form_saves_many_to_many_field(self):
++        class CustomUserCreationForm(UserCreationForm):
++            class Meta(UserCreationForm.Meta):
++                model = CustomUserWithM2M
++                fields = UserCreationForm.Meta.fields + ("orgs",)
++
++        organization = Organization.objects.create(name="organization 1")
++
++        data = {
++            "username": "testclient@example.com",
++            "password1": "testclient",
++            "password2": "testclient",
++            "orgs": [str(organization.pk)],
++        }
++        form = CustomUserCreationForm(data)
++        self.assertIs(form.is_valid(), True)
++        user = form.save(commit=True)
++        self.assertSequenceEqual(user.orgs.all(), [organization])
++
+     def test_password_whitespace_not_stripped(self):
+         data = {
+             "username": "testuser",

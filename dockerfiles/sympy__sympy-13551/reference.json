@@ -1,0 +1,25 @@
+{
+  "instance_id": "sympy__sympy-13551",
+  "fail_to_pass": [
+    "test_issue_13546"
+  ],
+  "pass_to_pass": [
+    "test_karr_convention",
+    "test_karr_proposition_2a",
+    "test_karr_proposition_2b",
+    "test_simple_products",
+    "test_multiple_products",
+    "test_rational_products",
+    "test_special_products",
+    "test__eval_product",
+    "test_product_pow",
+    "test_infinite_product",
+    "test_conjugate_transpose",
+    "test_simplify",
+    "test_change_index",
+    "test_reorder",
+    "test_Product_is_convergent",
+    "test_reverse_order",
+    "test_issue_9983"
+  ]
+}

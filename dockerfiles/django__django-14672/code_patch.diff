@@ -1,0 +1,37 @@
+diff --git a/AUTHORS b/AUTHORS
+index 7ce3d2e08d76..783a52298fc2 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -923,6 +923,7 @@ answer newbie questions, and generally made Django that much better:
+     Tom Forbes <tom@tomforb.es>
+     Tom Insam
+     Tom Tobin
++    Tom Wojcik <me@tomwojcik.com>
+     Tomáš Ehrlich <tomas.ehrlich@gmail.com>
+     Tomáš Kopeček <permonik@m6.cz>
+     Tome Cvitan <tome@cvitan.com>
+diff --git a/django/db/models/fields/reverse_related.py b/django/db/models/fields/reverse_related.py
+index ccc2223a5f62..65950590e208 100644
+--- a/django/db/models/fields/reverse_related.py
++++ b/django/db/models/fields/reverse_related.py
+@@ -310,7 +310,7 @@ def __init__(self, field, to, related_name=None, related_query_name=None,
+     def identity(self):
+         return super().identity + (
+             self.through,
+-            self.through_fields,
++            make_hashable(self.through_fields),
+             self.db_constraint,
+         )
+ 
+diff --git a/docs/releases/3.2.6.txt b/docs/releases/3.2.6.txt
+index a44fa42181dd..5dba87a0dcec 100644
+--- a/docs/releases/3.2.6.txt
++++ b/docs/releases/3.2.6.txt
+@@ -12,3 +12,7 @@ Bugfixes
+ * Fixed a regression in Django 3.2 that caused a crash validating ``"NaN"``
+   input with a ``forms.DecimalField`` when additional constraints, e.g.
+   ``max_value``, were specified (:ticket:`32949`).
++
++* Fixed a bug in Django 3.2 where a system check would crash on a model with a
++  reverse many-to-many relation inherited from a parent class
++  (:ticket:`32947`).

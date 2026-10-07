@@ -1,0 +1,86 @@
+diff --git a/django/db/backends/sqlite3/base.py b/django/db/backends/sqlite3/base.py
+index ab4ea704920c..9ce32089601b 100644
+--- a/django/db/backends/sqlite3/base.py
++++ b/django/db/backends/sqlite3/base.py
+@@ -64,8 +64,10 @@ def list_aggregate(function):
+ 
+ 
+ def check_sqlite_version():
+-    if Database.sqlite_version_info < (3, 8, 3):
+-        raise ImproperlyConfigured('SQLite 3.8.3 or later is required (found %s).' % Database.sqlite_version)
++    if Database.sqlite_version_info < (3, 9, 0):
++        raise ImproperlyConfigured(
++            'SQLite 3.9.0 or later is required (found %s).' % Database.sqlite_version
++        )
+ 
+ 
+ check_sqlite_version()
+diff --git a/docs/ref/contrib/gis/install/index.txt b/docs/ref/contrib/gis/install/index.txt
+index 687fe5d59dfd..c8343913cf65 100644
+--- a/docs/ref/contrib/gis/install/index.txt
++++ b/docs/ref/contrib/gis/install/index.txt
+@@ -61,7 +61,7 @@ Database            Library Requirements            Supported Versions  Notes
+ PostgreSQL          GEOS, GDAL, PROJ, PostGIS       9.6+                Requires PostGIS.
+ MySQL               GEOS, GDAL                      5.7+                :ref:`Limited functionality <mysql-spatial-limitations>`.
+ Oracle              GEOS, GDAL                      12.2+               XE not supported.
+-SQLite              GEOS, GDAL, PROJ, SpatiaLite    3.8.3+              Requires SpatiaLite 4.3+
++SQLite              GEOS, GDAL, PROJ, SpatiaLite    3.9.0+              Requires SpatiaLite 4.3+
+ ==================  ==============================  ==================  =========================================
+ 
+ See also `this comparison matrix`__ on the OSGeo Wiki for
+diff --git a/docs/ref/databases.txt b/docs/ref/databases.txt
+index 809ee68db65c..8fc9e8966236 100644
+--- a/docs/ref/databases.txt
++++ b/docs/ref/databases.txt
+@@ -679,7 +679,7 @@ appropriate typecasting.
+ SQLite notes
+ ============
+ 
+-Django supports SQLite 3.8.3 and later.
++Django supports SQLite 3.9.0 and later.
+ 
+ SQLite_ provides an excellent development alternative for applications that
+ are predominantly read-only or require a smaller installation footprint. As
+diff --git a/docs/ref/models/fields.txt b/docs/ref/models/fields.txt
+index 759e004fcf11..605b8bd97947 100644
+--- a/docs/ref/models/fields.txt
++++ b/docs/ref/models/fields.txt
+@@ -1199,7 +1199,7 @@ Python native format: dictionaries, lists, strings, numbers, booleans and
+ ``None``.
+ 
+ ``JSONField`` is supported on MariaDB 10.2.7+, MySQL 5.7.8+, Oracle,
+-PostgreSQL, and SQLite 3.9.0+ (with the :ref:`JSON1 extension enabled
++PostgreSQL, and SQLite (with the :ref:`JSON1 extension enabled
+ <sqlite-json1>`).
+ 
+ .. attribute:: JSONField.encoder
+diff --git a/docs/releases/3.2.txt b/docs/releases/3.2.txt
+index 8cd77ffad0aa..aba6a6ccd4db 100644
+--- a/docs/releases/3.2.txt
++++ b/docs/releases/3.2.txt
+@@ -689,6 +689,8 @@ Miscellaneous
+   Due to a ``python-memcached`` limitation, the previous behavior is kept for
+   the deprecated ``MemcachedCache`` backend.
+ 
++* The minimum supported version of SQLite is increased from 3.8.3 to 3.9.0.
++
+ .. _deprecated-features-3.2:
+ 
+ Features deprecated in 3.2
+diff --git a/tests/backends/sqlite/tests.py b/tests/backends/sqlite/tests.py
+index 17a58f32aedf..07477a5c7130 100644
+--- a/tests/backends/sqlite/tests.py
++++ b/tests/backends/sqlite/tests.py
+@@ -30,9 +30,9 @@ class Tests(TestCase):
+     longMessage = True
+ 
+     def test_check_sqlite_version(self):
+-        msg = 'SQLite 3.8.3 or later is required (found 3.8.2).'
+-        with mock.patch.object(dbapi2, 'sqlite_version_info', (3, 8, 2)), \
+-                mock.patch.object(dbapi2, 'sqlite_version', '3.8.2'), \
++        msg = 'SQLite 3.9.0 or later is required (found 3.8.11.1).'
++        with mock.patch.object(dbapi2, 'sqlite_version_info', (3, 8, 11, 1)), \
++                mock.patch.object(dbapi2, 'sqlite_version', '3.8.11.1'), \
+                 self.assertRaisesMessage(ImproperlyConfigured, msg):
+             check_sqlite_version()
+ 

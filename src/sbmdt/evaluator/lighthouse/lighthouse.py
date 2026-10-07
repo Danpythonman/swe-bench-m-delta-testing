@@ -20,6 +20,7 @@ from sbmdt.evaluator.base import Evaluator, TestResult
 from sbmdt.evaluator.lighthouse.mocha_junit_parser import (
     results_xml_to_test_results,
 )
+from sbmdt.evaluator.paths import repo_relative
 from sbmdt.utils import apply_change_literal, read_from_container
 
 __all__ = [
@@ -27,6 +28,18 @@ __all__ = [
 ]
 
 log = logging.getLogger(__name__)
+
+# These checkouts target Node 10/12, where an unhandled promise rejection
+# only warned. The images run Node 15+, where it kills the process: before
+# lighthouse-10505's fix, a rejected NO_FCP promise took down the whole
+# core Jest run, leaving 58 of ~1,900 tests. Restore the old behaviour,
+# but only on Node 15+: older Node rejects the flag in NODE_OPTIONS and
+# then refuses to start at all.
+EXPORT_NODE_OPTIONS: Final[str] = (
+    'if node -e "process.exit(+process.versions.node.split(\\".\\")[0] '
+    '>= 15 ? 0 : 1)"; then '
+    'export NODE_OPTIONS=--unhandled-rejections=warn; fi'
+)
 
 PACKAGE_JSON_FILE: Final[str] = '/testbed/package.json'
 RUN_MOCHA_SCRIPT: Final[str] = '/testbed/lighthouse-core/scripts/run-mocha.sh'
@@ -89,9 +102,12 @@ class LighthouseEvaluator(Evaluator):
         mocha_scripts = [
             item for item in find_output.decode().splitlines() if item.strip()
         ]
+        # Newer checkouts (lighthouse-12970 on) also split the report,
+        # treemap and flow-report unit tests into their own scripts; leaving
+        # them out dropped those suites' FAIL_TO_PASS tests entirely.
         direct_suites = {
             suite: scripts.get(f'unit-{suite}')
-            for suite in ('core', 'cli', 'viewer')
+            for suite in ('core', 'cli', 'viewer', 'report', 'treemap', 'flow')
             if scripts.get(f'unit-{suite}')
         }
         modern_layout = (
@@ -540,6 +556,7 @@ compile(
         # non-standard) so ``mocha`` resolves.
         commands = [
             'export PATH="/testbed/node_modules/.bin:$PATH"',
+            EXPORT_NODE_OPTIONS,
             f'bash {self._run_mocha_script} --cli',
             f'bash {self._run_mocha_script} --core',
             f'bash {self._run_mocha_script} --viewer',
@@ -608,7 +625,10 @@ compile(
                 command = re.sub(r'--reporter\s+\S+', '', script)
                 command = command.replace('yarn mocha', 'yarn --silent mocha')
                 command = f'{command} --reporter json > {path}'
-            exports = 'export PATH=/testbed/node_modules/.bin:$PATH'
+            exports = (
+                'export PATH=/testbed/node_modules/.bin:$PATH; '
+                f'{EXPORT_NODE_OPTIONS}'
+            )
             if hasattr(self, '_chrome_wrapper'):
                 exports += (
                     f'; export LIGHTHOUSE_CHROMIUM_PATH={self._chrome_wrapper}'
@@ -666,6 +686,9 @@ compile(
                                 timestamp=self.timestamp,
                                 test_name=name,
                                 passed=test.get('status') == 'passed',
+                                test_file=repo_relative(
+                                    file_result.get('name')
+                                ),
                             )
                         )
             else:
@@ -684,6 +707,7 @@ compile(
                                 timestamp=self.timestamp,
                                 test_name=name,
                                 passed=name not in failed,
+                                test_file=repo_relative(test.get('file')),
                             )
                         )
         if not results:

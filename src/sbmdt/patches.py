@@ -45,9 +45,15 @@ CODE_PATCH_PRED_FILENAME: Final[str] = 'code_patch.pred'
 # A path is a test path if it sits in a test directory or carries a test
 # suffix. Kept deliberately broad: misfiling a test file as code would
 # silently reintroduce the very problem this module exists to solve.
+# ``testing/`` is where pytest-dev/pytest keeps its own suite. Jest snapshots
+# and shared test helpers count too: a snapshot update belongs with the tests
+# it pins, so the pre-patch run checks the new expectation.
 TEST_PATH: Final[re.Pattern[str]] = re.compile(
     r"""
-    (^|/)(test|tests|spec|specs|__tests__|__test__|e2e|cypress)/
+    (^|/)(test|tests|testing|spec|specs|__tests__|__test__|e2e|cypress)/
+    | (^|/)(__snapshots__|tests_config)/
+    | \.snap$
+    | (^|/)test[-_]helpers?\.[cm]?[jt]sx?$
     | [-_.](test|spec)\.[cm]?[jt]sx?$
     | \.(test|spec)\.[cm]?[jt]sx?$
     | (^|/)conftest\.py$
@@ -172,7 +178,9 @@ def drop_mode_only_sections(diff: str) -> tuple[str, list[str]]:
         section = diff[begin:end]
         header = DIFF_HEADER.match(section)
         assert header is not None
-        has_mode = bool(re.search(r'^old mode \d+\nnew mode \d+', section, re.M))
+        has_mode = bool(
+            re.search(r'^old mode \d+\nnew mode \d+', section, re.M)
+        )
         has_content = bool(re.search(r'^(--- |\+\+\+ |@@ )', section, re.M))
         if has_mode and not has_content:
             dropped.append(header.group(2))

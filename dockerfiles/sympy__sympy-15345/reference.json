@@ -1,0 +1,16 @@
+{
+  "instance_id": "sympy__sympy-15345",
+  "fail_to_pass": [
+    "test_Function"
+  ],
+  "pass_to_pass": [
+    "test_Integer",
+    "test_Rational",
+    "test_Pow",
+    "test_Mul",
+    "test_constants",
+    "test_containers",
+    "test_Integral",
+    "test_Derivative"
+  ]
+}

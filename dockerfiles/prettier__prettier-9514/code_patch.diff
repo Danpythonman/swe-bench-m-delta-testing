@@ -439,29 +439,6 @@ index c66b1fed62e6..344926dd06ef 100644
        return isJsSourceElement(node.type);
      case "json":
        return jsonSourceElements.has(node.type);
-diff --git a/tests_config/utils/check-parsers.js b/tests_config/utils/check-parsers.js
-index b55f2b37c27b..dfd2b683c622 100644
---- a/tests_config/utils/check-parsers.js
-+++ b/tests_config/utils/check-parsers.js
-@@ -50,8 +50,16 @@ const categoryParsers = new Map([
-   [
-     "js",
-     {
--      parsers: ["babel"],
--      verifyParsers: ["babel", "flow", "babel-flow", "typescript", "babel-ts"],
-+      parsers: ["babel", "meriyah", "espree"],
-+      verifyParsers: [
-+        "babel",
-+        "meriyah",
-+        "espree",
-+        "flow",
-+        "babel-flow",
-+        "typescript",
-+        "babel-ts",
-+      ],
-       extensions: [".js"],
-     },
-   ],
 diff --git a/website/playground/codeSamples.js b/website/playground/codeSamples.js
 index 0b3e978e4969..e5b258633ca8 100644
 --- a/website/playground/codeSamples.js

@@ -1,0 +1,37 @@
+diff --git a/doc/whats_new/v0.20.rst b/doc/whats_new/v0.20.rst
+index 0df0635d57c75..24f5219d83211 100644
+--- a/doc/whats_new/v0.20.rst
++++ b/doc/whats_new/v0.20.rst
+@@ -71,6 +71,7 @@ random sampling procedures.
+ - :class:`linear_model.PassiveAggressiveRegressor` (bug fix)
+ - :class:`linear_model.Perceptron` (bug fix)
+ - :class:`ensemble.gradient_boosting.GradientBoostingClassifier` (bug fix affecting feature importances)
++- :class:`linear_model.LogisticRegressionCV` (bug fix)
+ - The v0.19.0 release notes failed to mention a backwards incompatibility with
+   :class:`model_selection.StratifiedKFold` when ``shuffle=True`` due to
+   :issue:`7823`.
+@@ -442,6 +443,11 @@ Classifiers and regressors
+   the ``scoring`` parameter.
+   :issue:`10998` by :user:`Thomas Fan <thomasjpfan>`.
+ 
++- Fixed a bug in :class:`linear_model.LogisticRegressionCV` where the 'ovr'
++  strategy was always used to compute cross-validation scores in the
++  multiclass setting, even if 'multinomial' was set.
++  :issue:`8720` by :user:`William de Vazelhes <wdevazelhes>`.
++
+ - Fixed a bug in :class:`linear_model.OrthogonalMatchingPursuit` that was
+   broken when setting ``normalize=False``.
+   :issue:`10071` by `Alexandre Gramfort`_.
+diff --git a/sklearn/linear_model/logistic.py b/sklearn/linear_model/logistic.py
+index e4ea696ce7146..a3afb06e449c4 100644
+--- a/sklearn/linear_model/logistic.py
++++ b/sklearn/linear_model/logistic.py
+@@ -922,7 +922,7 @@ def _log_reg_scoring_path(X, y, train, test, pos_class=None, Cs=10,
+         check_input=False, max_squared_sum=max_squared_sum,
+         sample_weight=sample_weight)
+ 
+-    log_reg = LogisticRegression(fit_intercept=fit_intercept)
++    log_reg = LogisticRegression(multi_class=multi_class)
+ 
+     # The score method of Logistic Regression has a classes_ attribute.
+     if multi_class == 'ovr':

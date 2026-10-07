@@ -534,6 +534,29 @@ index 01f596247023..d42d967721fd 100644
    }
  
    const stringifiedOptions = stringifyOptionsForTitle(options);
+diff --git a/tests_config/utils/check-parsers.js b/tests_config/utils/check-parsers.js
+index b55f2b37c27b..dfd2b683c622 100644
+--- a/tests_config/utils/check-parsers.js
++++ b/tests_config/utils/check-parsers.js
+@@ -50,8 +50,16 @@ const categoryParsers = new Map([
+   [
+     "js",
+     {
+-      parsers: ["babel"],
+-      verifyParsers: ["babel", "flow", "babel-flow", "typescript", "babel-ts"],
++      parsers: ["babel", "meriyah", "espree"],
++      verifyParsers: [
++        "babel",
++        "meriyah",
++        "espree",
++        "flow",
++        "babel-flow",
++        "typescript",
++        "babel-ts",
++      ],
+       extensions: [".js"],
+     },
+   ],
 diff --git a/tests_integration/__tests__/__snapshots__/early-exit.js.snap b/tests_integration/__tests__/__snapshots__/early-exit.js.snap
 index 21fa7cb0a030..eb58ce63ea98 100644
 --- a/tests_integration/__tests__/__snapshots__/early-exit.js.snap

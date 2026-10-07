@@ -14,6 +14,7 @@ dependencies = [
     "boto3[crt]>=1.43.36",
     "docker>=7.1.0",
     "openpyxl>=3.1.5",
+    "pandas>=3.0.3",
     "pyarrow>=24.0.0",
     "python-dotenv>=1.2.2",
 ]
@@ -25,7 +26,6 @@ dev = [
     "ipykernel>=7.3.0",
     "matplotlib>=3.11.0",
     "nbstripout>=0.9.1",
-    "pandas>=3.0.3",
     "pre-commit",
     "pyarrow-stubs>=20.0.0.20260625",
     "pyright>=1.1.410",
@@ -48,6 +48,13 @@ venvPath = "."
 venv = ".venv"
 include = ["src"]
 exclude = [
+    # Runs inside benchmark containers under Python as old as 3.6.
+    "src/sbmdt/evaluator/python/injected",
+    # Pandas-heavy result analysis, moved here from scripts/ (which pyright
+    # never checked). Without pandas stubs nearly every frame operation is
+    # an unknown type, so these are left to ruff and their callers.
+    "src/sbmdt/analysis/reference.py",
+    "src/sbmdt/analysis/verified.py",
     "**/.*",
     "**/node_modules",
     "**/__pycache__",
@@ -66,6 +73,8 @@ ignore = [
 [tool.ruff]
 line-length = 79
 extend-exclude = [
+    # Runs inside benchmark containers under Python as old as 3.6.
+    "src/sbmdt/evaluator/python/injected",
 ]
 
 [tool.ruff.lint]

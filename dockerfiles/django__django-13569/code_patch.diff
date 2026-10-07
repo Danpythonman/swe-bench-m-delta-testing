@@ -1,0 +1,26 @@
+diff --git a/AUTHORS b/AUTHORS
+index f1a4315c8d5f..5f1ca7ccebee 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -293,6 +293,7 @@ answer newbie questions, and generally made Django that much better:
+     Erwin Junge <erwin@junge.nl>
+     Esdras Beleza <linux@esdrasbeleza.com>
+     Espen Grindhaug <http://grindhaug.org/>
++    Étienne Beaulé <beauleetienne0@gmail.com>
+     Eugene Lazutkin <http://lazutkin.com/blog/>
+     Evan Grim <https://github.com/egrim>
+     Fabrice Aneche <akh@nobugware.com>
+diff --git a/django/db/models/functions/math.py b/django/db/models/functions/math.py
+index 304e11222531..15915f4b7cdd 100644
+--- a/django/db/models/functions/math.py
++++ b/django/db/models/functions/math.py
+@@ -154,6 +154,9 @@ def as_oracle(self, compiler, connection, **extra_context):
+     def as_sqlite(self, compiler, connection, **extra_context):
+         return super().as_sql(compiler, connection, function='RAND', **extra_context)
+ 
++    def get_group_by_cols(self, alias=None):
++        return []
++
+ 
+ class Round(Transform):
+     function = 'ROUND'

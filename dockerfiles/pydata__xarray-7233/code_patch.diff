@@ -1,0 +1,29 @@
+diff --git a/doc/whats-new.rst b/doc/whats-new.rst
+index 36c84e24ee5..10de49e23d3 100644
+--- a/doc/whats-new.rst
++++ b/doc/whats-new.rst
+@@ -61,6 +61,8 @@ Bug fixes
+   now reopens the file from scratch for h5netcdf and scipy netCDF backends,
+   rather than reusing a cached version (:issue:`4240`, :issue:`4862`).
+   By `Stephan Hoyer <https://github.com/shoyer>`_.
++- Fixed bug where :py:meth:`Dataset.coarsen.construct` would demote non-dimension coordinates to variables. (:pull:`7233`)
++  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+ - Raise a TypeError when trying to plot empty data (:issue:`7156`, :pull:`7228`).
+   By `Michael Niklas <https://github.com/headtr1ck>`_.
+ 
+diff --git a/xarray/core/rolling.py b/xarray/core/rolling.py
+index c194ec084db..57a5456b70a 100644
+--- a/xarray/core/rolling.py
++++ b/xarray/core/rolling.py
+@@ -973,7 +973,10 @@ def construct(
+             else:
+                 reshaped[key] = var
+ 
+-        should_be_coords = set(window_dim) & set(self.obj.coords)
++        # should handle window_dim being unindexed
++        should_be_coords = (set(window_dim) & set(self.obj.coords)) | set(
++            self.obj.coords
++        )
+         result = reshaped.set_coords(should_be_coords)
+         if isinstance(self.obj, DataArray):
+             return self.obj._from_temp_dataset(result)

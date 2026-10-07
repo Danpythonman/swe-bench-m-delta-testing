@@ -3,6 +3,13 @@ terminate it.
 
 Used to run the pipeline on distributed cloud computing instances built from
 ``IMAGE_ID``.
+
+The number of instances running at once starts at ``--n-concurrent`` and
+can be changed while a batch runs: the script writes it to a control file
+(``logs/run_all_ec2-<pid>.concurrency`` by default, logged at start) and
+applies whatever number is written there, e.g.::
+
+    echo 63 > logs/run_all_ec2-12345.concurrency
 """
 
 from __future__ import annotations
@@ -11,14 +18,19 @@ import argparse
 import asyncio
 import datetime as dt
 import logging
+import os
 import random
 import shlex
 import signal
 from collections.abc import Coroutine
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Any, get_args
+from pathlib import Path
+from typing import Any, Final, get_args
 
 import boto3
+from aiolimiter import AsyncLimiter
+from botocore.config import Config
 from mypy_boto3_ec2 import EC2Client
 from mypy_boto3_ec2.literals import InstanceTypeType
 
@@ -50,6 +62,7 @@ from sbmdt.aws.ssm import (
     send_ssm_command,
     wait_for_ssm,
 )
+from sbmdt.env import PROJECT_BASE
 from sbmdt.evaluator.base import PatchType
 from sbmdt.log import setup_logging, setup_logging_for_asyncio
 
@@ -71,6 +84,7 @@ class RunArgs:
     pred_keys: list[str] | None
     pred_prefix: str | None
     n_concurrent: int
+    concurrency_file: Path | None
     image_id: str
     instance_type: InstanceTypeType
     subnet_id: str
@@ -92,6 +106,11 @@ at the same time; enforced via the semaphore in `main()`.
 Overridden by ``--n-concurrent`` when run as a script.
 """
 
+MAX_CONCURRENT: Final[int] = 256
+"""Upper bound the worker thread pool is sized for, so the concurrency can
+be raised mid-batch through ``--concurrency-file`` (threads start lazily).
+"""
+
 """Local AWS CLI profile used to create the boto3 session in
 ``run_instance``, rather than the default credential chain.
 """
@@ -99,6 +118,14 @@ GIT_BRANCH: str | None = None
 """If set, checked out on the instance (via ``make_git_checkout_command``)
 before the evaluation command is run.
 """
+
+# EC2 throttles RunInstances per account with a small burst allowance, so
+# launching a whole --n-concurrent batch at once fails with
+# RequestLimitExceeded (seen at 62). Launches are spaced out, and every
+# EC2 and SSM call (62 workers poll SSM) gets more patient, jittered
+# retries than botocore's default.
+_launch_limiter = AsyncLimiter(1, 1.0)
+_AWS_CLIENT_CONFIG = Config(retries={'mode': 'standard', 'max_attempts': 10})
 
 _cleanup_state: list[tuple[EC2Client, str]] = []
 """(ec2 client, instance_id) pairs for instances that have been created.
@@ -155,7 +182,9 @@ def make_command(
         The full shell command string to execute on the instance.
     """
     pred_filename = pred_s3_key.rsplit('/', 1)[-1]
-    stdout_s3_key = S3PredFilename.decode(pred_filename).encode(extension='.log')
+    stdout_s3_key = S3PredFilename.decode(pred_filename).encode(
+        extension='.log'
+    )
     args = [
         'bash',
         'aws/run_ec2.sh',
@@ -232,7 +261,9 @@ async def run_instance(
 
     log.info('Starting session')
     session = boto3.Session(profile_name=run_args.aws_profile)
-    ec2 = session.client('ec2', region_name=run_args.region)
+    ec2 = session.client(
+        'ec2', region_name=run_args.region, config=_AWS_CLIENT_CONFIG
+    )
 
     # Once the instance exists, always terminate it on the way out, even if
     # waiting for SSM, sending the command, or anything else below raises.
@@ -247,24 +278,27 @@ async def run_instance(
             f'block_device_name={run_args.block_device_name} '
             f'block_volume_size_gb={run_args.block_volume_size_gb}'
         )
-        instance_id = await create_instance(
-            ec2,
-            instance_name,
-            image_id=run_args.image_id,
-            instance_type=run_args.instance_type,
-            subnet_id=run_args.subnet_id,
-            security_group_ids=[run_args.security_group_id],
-            instance_profile_arn=run_args.instance_profile_arn,
-            block_device_name=run_args.block_device_name,
-            block_volume_size_gb=run_args.block_volume_size_gb,
-        )
+        async with _launch_limiter:
+            instance_id = await create_instance(
+                ec2,
+                instance_name,
+                image_id=run_args.image_id,
+                instance_type=run_args.instance_type,
+                subnet_id=run_args.subnet_id,
+                security_group_ids=[run_args.security_group_id],
+                instance_profile_arn=run_args.instance_profile_arn,
+                block_device_name=run_args.block_device_name,
+                block_volume_size_gb=run_args.block_volume_size_gb,
+            )
         log.info(f'Created instance: {instance_id}')
         _cleanup_state.append((ec2, instance_id))
 
         log.info('Waiting for instance to become ready')
         await wait_for_instance(ec2, instance_id)
 
-        ssm = session.client('ssm', region_name=run_args.region)
+        ssm = session.client(
+            'ssm', region_name=run_args.region, config=_AWS_CLIENT_CONFIG
+        )
 
         log.info('Waiting for SSM')
         await wait_for_ssm(ssm, instance_id)
@@ -306,12 +340,83 @@ async def run_instance(
     log.info('Done')
 
 
+class ResizableLimiter:
+    """A concurrency limit that can be changed while tasks wait on it.
+
+    Behaves like ``asyncio.Semaphore(limit)`` for ``async with``, but
+    ``set_limit`` may raise or lower the limit at any time. Raising it
+    wakes waiting tasks immediately; lowering it lets running tasks finish
+    and holds new ones back until fewer than the new limit are running.
+    """
+
+    def __init__(self, limit: int) -> None:
+        self._limit = limit
+        self._active = 0
+        self._changed = asyncio.Condition()
+
+    @property
+    def limit(self) -> int:
+        """The current limit."""
+        return self._limit
+
+    async def set_limit(self, limit: int) -> None:
+        """Change the limit and wake any task it now admits."""
+        async with self._changed:
+            self._limit = limit
+            self._changed.notify_all()
+
+    async def __aenter__(self) -> None:
+        async with self._changed:
+            await self._changed.wait_for(lambda: self._active < self._limit)
+            self._active += 1
+
+    async def __aexit__(self, *exc_info: object) -> None:
+        async with self._changed:
+            self._active -= 1
+            self._changed.notify_all()
+
+
+CONCURRENCY_POLL_SECONDS: Final[float] = 10.0
+
+
+async def watch_concurrency_file(
+    path: Path, limiter: ResizableLimiter
+) -> None:
+    """Apply the limit written to ``path`` while the batch runs.
+
+    The file holds one integer. It is polled every
+    ``CONCURRENCY_POLL_SECONDS``; unreadable or non-positive contents are
+    ignored with a warning, so a half-written file does no harm.
+
+    Args:
+        path: The control file.
+        limiter: The limiter whose limit the file sets.
+    """
+    while True:
+        await asyncio.sleep(CONCURRENCY_POLL_SECONDS)
+        try:
+            text = path.read_text().strip()
+        except FileNotFoundError:
+            continue
+        try:
+            limit = int(text)
+        except ValueError:
+            log.warning(f'Ignoring non-integer concurrency {text!r} in {path}')
+            continue
+        if limit < 1:
+            log.warning(f'Ignoring concurrency {limit} in {path}')
+            continue
+        if limit != limiter.limit:
+            log.info(f'Concurrency changed from {limiter.limit} to {limit}')
+            await limiter.set_limit(limit)
+
+
 async def run_instance_async(
     sbmdt_instance_id: str,
     patch_type: PatchType,
     pred_s3_key: str,
     run_args: RunArgs,
-    sem: asyncio.Semaphore,
+    sem: ResizableLimiter,
 ) -> None:
     """Run ``run_instance`` in a worker thread, bounded by ``sem``.
 
@@ -442,6 +547,19 @@ async def main(run_args: RunArgs) -> None:
     """
     loop = asyncio.get_running_loop()
     _register_signal_handlers(loop)
+    # Every blocking boto3 call (including the instance_running and
+    # instance_terminated waiters, which hold a thread for a minute or
+    # more) runs in the loop's default executor. Its default size,
+    # min(32, cpu_count + 4), is below a large --n-concurrent, so waiters
+    # would queue every other worker's SSM polling behind them. Size it to
+    # the batch: one waiter plus one short call per worker at most.
+    # Threads start lazily, so the cap can allow for the concurrency being
+    # raised mid-batch (see watch_concurrency_file) at no cost.
+    loop.set_default_executor(
+        ThreadPoolExecutor(
+            max_workers=2 * max(run_args.n_concurrent, MAX_CONCURRENT) + 4
+        )
+    )
 
     pred_keys = run_args.pred_keys
     all_pred_s3_keys = get_all_keys_in_s3_bucket(PREDS_S3_BUCKET_NAME)
@@ -456,10 +574,28 @@ async def main(run_args: RunArgs) -> None:
             )
         pred_s3_keys = pred_keys
     if run_args.pred_prefix is not None:
-        pred_s3_keys = [k for k in pred_s3_keys if k.startswith(run_args.pred_prefix)]
+        pred_s3_keys = [
+            k for k in pred_s3_keys if k.startswith(run_args.pred_prefix)
+        ]
+
+    # Shuffle the keys, not the tasks: _report_results pairs gather()'s
+    # results with this list by position, and shuffling the coroutines
+    # alone labelled every failure with some other run's key.
+    pred_s3_keys = list(pred_s3_keys)
+    random.shuffle(pred_s3_keys)
 
     tasks: list[Coroutine[Any, Any, None]] = []
-    sem = asyncio.Semaphore(run_args.n_concurrent)
+    sem = ResizableLimiter(run_args.n_concurrent)
+    watcher = None
+    if run_args.concurrency_file is not None:
+        path = run_args.concurrency_file
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f'{run_args.n_concurrent}\n')
+        log.info(
+            f'Concurrency is {run_args.n_concurrent}; change it while the '
+            f'batch runs with: echo N > {path}'
+        )
+        watcher = asyncio.create_task(watch_concurrency_file(path, sem))
     for key in pred_s3_keys:
         pred_filename = S3PredFilename.decode(key.rsplit('/', 1)[-1])
         sbmdt_instance_id = pred_filename.instance_id
@@ -469,8 +605,6 @@ async def main(run_args: RunArgs) -> None:
                 sbmdt_instance_id, patch_type, key, run_args, sem
             )
         )
-
-    random.shuffle(tasks)
 
     work_tasks = asyncio.gather(*tasks, return_exceptions=True)
     shutdown_wait = asyncio.create_task(_shutdown.wait())
@@ -498,6 +632,8 @@ async def main(run_args: RunArgs) -> None:
     else:
         log.info('Work finished without a shutdown request')
 
+    if watcher is not None:
+        watcher.cancel()
     _report_results(pred_s3_keys, work_tasks)
 
 
@@ -520,6 +656,19 @@ def parse_args() -> RunArgs:
         type=int,
         default=N_CONCURRENT,
         help='Maximum number of EC2 instances running at the same time.',
+    )
+    parser.add_argument(
+        '--concurrency-file',
+        type=Path,
+        default=(
+            PROJECT_BASE / 'logs' / f'run_all_ec2-{os.getpid()}.concurrency'
+        ),
+        help=(
+            'File that sets the concurrency while the batch runs: it is '
+            'written with --n-concurrent at start, and writing another '
+            'number to it (echo 63 > FILE) takes effect within '
+            f'{CONCURRENCY_POLL_SECONDS:.0f}s.'
+        ),
     )
     parser.add_argument(
         '--pred-keys',
@@ -628,6 +777,7 @@ def parse_args() -> RunArgs:
         pred_keys=args.pred_keys,
         pred_prefix=args.pred_prefix,
         n_concurrent=args.n_concurrent,
+        concurrency_file=args.concurrency_file,
         image_id=args.image_id,
         instance_type=args.instance_type,
         subnet_id=args.subnet_id,

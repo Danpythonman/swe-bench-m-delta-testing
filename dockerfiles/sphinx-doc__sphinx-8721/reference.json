@@ -1,0 +1,11 @@
+{
+  "instance_id": "sphinx-doc__sphinx-8721",
+  "fail_to_pass": [
+    "tests/test_ext_viewcode.py::test_viewcode_epub_default"
+  ],
+  "pass_to_pass": [
+    "tests/test_ext_viewcode.py::test_viewcode_epub_enabled",
+    "tests/test_ext_viewcode.py::test_linkcode",
+    "tests/test_ext_viewcode.py::test_local_source_files"
+  ]
+}

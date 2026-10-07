@@ -1,0 +1,7 @@
+{
+  "instance_id": "pylint-dev__pylint-4661",
+  "fail_to_pass": [
+    "tests/lint/unittest_lint.py::test_pylint_home"
+  ],
+  "pass_to_pass": []
+}
