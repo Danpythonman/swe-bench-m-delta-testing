@@ -33,6 +33,7 @@ __all__ = [
     'split_diff',
     'drop_unappliable_binary',
     'drop_mode_only_sections',
+    'file_sections',
     'test_patch_for',
     'write_diff',
 ]
@@ -187,6 +188,30 @@ def drop_mode_only_sections(diff: str) -> tuple[str, list[str]]:
         else:
             kept.append(section)
     return ''.join(kept), dropped
+
+
+def file_sections(diff: str) -> list[tuple[str, str]]:
+    """Cut a unified diff into its per-file sections.
+
+    Args:
+        diff: A unified diff.
+
+    Returns:
+        ``(path, section)`` pairs in diff order, where ``path`` is the
+        post-image path. A diff without ``diff --git`` headers comes back
+        as one section with an empty path.
+    """
+    starts = [m.start() for m in DIFF_HEADER.finditer(diff)]
+    if not starts:
+        return [('', diff)] if diff else []
+    bounds = starts + [len(diff)]
+    sections: list[tuple[str, str]] = []
+    for begin, end in zip(bounds[:-1], bounds[1:], strict=True):
+        section = diff[begin:end]
+        header = DIFF_HEADER.match(section)
+        assert header is not None
+        sections.append((header.group(2), section))
+    return sections
 
 
 def read_diff(path: Path) -> str:

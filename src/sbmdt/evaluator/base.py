@@ -26,6 +26,7 @@ from sbmdt.env import DOCKERFILES_BASE
 from sbmdt.patches import (
     drop_mode_only_sections,
     drop_unappliable_binary,
+    file_sections,
     split_diff,
     test_patch_for,
 )
@@ -543,6 +544,105 @@ class Evaluator(ABC):
                 f'file-mode section(s): {dropped_modes}'
             )
         is_gold = str(getattr(self, 'patch_type', '')) == 'gold'
+        is_model = getattr(self, 'patch_type', None) in MODEL_PATCH_TYPES
+        container = self.container
+
+        def run(command: str) -> tuple[int, str]:
+            code, output = container.exec_run(
+                command, workdir='/testbed', stream=False
+            )
+            assert isinstance(output, bytes)
+            return code, output.decode()
+
+        def try_apply() -> tuple[int, list[str]]:
+            """Apply PATCH_FILE with the strictest method that works."""
+            outputs: list[str] = []
+            attempts = (
+                (f'git apply --check {PATCH_FILE}', f'git apply {PATCH_FILE}'),
+                (
+                    f'git apply --check --recount {PATCH_FILE}',
+                    f'git apply --recount {PATCH_FILE}',
+                ),
+                (
+                    'git apply --check --3way --whitespace=nowarn '
+                    f'{PATCH_FILE}',
+                    f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
+                ),
+            )
+            for check_command, apply_command in attempts:
+                check_code, check_output = run(check_command)
+                outputs.append(check_output)
+                if check_code != 0:
+                    continue
+                exit_code, output = run(apply_command)
+                outputs.append(output)
+                log.info(exit_code)
+                log.info(output)
+                if exit_code == 0:
+                    return 0, outputs
+            # Last resort: GNU patch with fuzz. An image's setup can
+            # rewrite tracked files (package.json for installs), which
+            # makes git apply and --3way refuse a correct gold patch
+            # (alibaba-fusion next-101); fuzzy matching still places
+            # the hunks, and only a dry run that succeeds is applied.
+            # -l ignores whitespace: a PR diff can carry a hunk that
+            # only strips trailing spaces the checkout no longer has
+            # (lighthouse-1446), which patch otherwise reads as
+            # already applied and git apply rejects outright.
+            dry_code, dry_output = run(
+                'patch --dry-run --batch --forward --fuzz=5 -l -p1 '
+                f'-i {PATCH_FILE}'
+            )
+            outputs.append(dry_output)
+            if dry_code != 0:
+                return dry_code, outputs
+            exit_code, output = run(
+                f'patch --batch --forward --fuzz=5 -l -p1 -i {PATCH_FILE}'
+            )
+            outputs.append(output)
+            return exit_code, outputs
+
+        def apply_file_by_file(section: str) -> tuple[int, list[str]]:
+            """Apply a model patch one file at a time, skipping no-ops.
+
+            Refact's patches are ``git diff`` dumps of the agent's whole
+            checkout, so besides the fix they carry the image's own setup
+            edits (package.json pins an install added). Our images already
+            have those edits, so the file's hunks read as already applied
+            and one such file sinks the whole patch, although applying it
+            would change nothing. A file whose reverse applies cleanly is
+            therefore skipped; every other file must apply as usual. Only
+            model patches get this: gold and before-patch runs are strict.
+            Files applied before a later file fails are left in place,
+            which does not matter because the run fails either way.
+            """
+            outputs: list[str] = []
+            skipped: list[str] = []
+            for path, file_section in file_sections(section):
+                write_to_container(container, PATCH_FILE, file_section)
+                exit_code, file_outputs = try_apply()
+                outputs.extend(file_outputs)
+                if exit_code == 0:
+                    continue
+                reverse_code, reverse_output = run(
+                    f'git apply --check --reverse {PATCH_FILE}'
+                )
+                if reverse_code != 0:
+                    reverse_code, reverse_output = run(
+                        'patch --dry-run --batch --reverse --fuzz=5 -l -p1 '
+                        f'-i {PATCH_FILE}'
+                    )
+                outputs.append(reverse_output)
+                if reverse_code != 0:
+                    log.error(f'{self.instance_id}: {path} does not apply')
+                    return exit_code, outputs
+                skipped.append(path)
+            log.info(
+                f'{self.instance_id}: applied file by file; skipped '
+                f'{len(skipped)} file(s) already in the checkout: {skipped}'
+            )
+            return 0, outputs
+
         sections = split_diff(patch) if is_gold else (patch,)
         gold_test_section = sections[1] if is_gold else ''
         for section_number, section in enumerate(
@@ -577,65 +677,10 @@ class Evaluator(ABC):
                     )
                     assert isinstance(restore_output, bytes)
             write_to_container(self.container, PATCH_FILE, section)
-            outputs = []
-            attempts = (
-                (f'git apply --check {PATCH_FILE}', f'git apply {PATCH_FILE}'),
-                (
-                    f'git apply --check --recount {PATCH_FILE}',
-                    f'git apply --recount {PATCH_FILE}',
-                ),
-                (
-                    'git apply --check --3way --whitespace=nowarn '
-                    f'{PATCH_FILE}',
-                    f'git apply --3way --whitespace=nowarn {PATCH_FILE}',
-                ),
-            )
             self._refresh_index()
-            exit_code = 1
-            for check_command, apply_command in attempts:
-                check_code, check_output = self.container.exec_run(
-                    check_command, workdir='/testbed', stream=False
-                )
-                assert isinstance(check_output, bytes)
-                outputs.append(check_output.decode())
-                if check_code != 0:
-                    continue
-                exit_code, output = self.container.exec_run(
-                    apply_command, workdir='/testbed', stream=False
-                )
-                assert isinstance(output, bytes)
-                outputs.append(output.decode())
-                log.info(exit_code)
-                log.info(output.decode())
-                if exit_code == 0:
-                    break
-            if exit_code != 0:
-                # Last resort: GNU patch with fuzz. An image's setup can
-                # rewrite tracked files (package.json for installs), which
-                # makes git apply and --3way refuse a correct gold patch
-                # (alibaba-fusion next-101); fuzzy matching still places
-                # the hunks, and only a dry run that succeeds is applied.
-                # -l ignores whitespace: a PR diff can carry a hunk that
-                # only strips trailing spaces the checkout no longer has
-                # (lighthouse-1446), which patch otherwise reads as
-                # already applied and git apply rejects outright.
-                dry_code, dry_output = self.container.exec_run(
-                    'patch --dry-run --batch --forward --fuzz=5 -l -p1 '
-                    f'-i {PATCH_FILE}',
-                    workdir='/testbed',
-                    stream=False,
-                )
-                assert isinstance(dry_output, bytes)
-                outputs.append(dry_output.decode())
-                if dry_code == 0:
-                    exit_code, output = self.container.exec_run(
-                        'patch --batch --forward --fuzz=5 -l -p1 '
-                        f'-i {PATCH_FILE}',
-                        workdir='/testbed',
-                        stream=False,
-                    )
-                    assert isinstance(output, bytes)
-                    outputs.append(output.decode())
+            exit_code, outputs = try_apply()
+            if exit_code != 0 and is_model:
+                exit_code, outputs = apply_file_by_file(section)
             if exit_code != 0:
                 log.error('Failed to apply patch section %s', section_number)
                 raise Exception(
