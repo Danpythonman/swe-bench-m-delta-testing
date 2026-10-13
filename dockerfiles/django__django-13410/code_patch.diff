@@ -1,0 +1,36 @@
+diff --git a/django/core/files/locks.py b/django/core/files/locks.py
+index c46b00b90576..b02faaa181e5 100644
+--- a/django/core/files/locks.py
++++ b/django/core/files/locks.py
+@@ -107,9 +107,12 @@ def unlock(f):
+             return True
+     else:
+         def lock(f, flags):
+-            ret = fcntl.flock(_fd(f), flags)
+-            return ret == 0
++            try:
++                fcntl.flock(_fd(f), flags)
++                return True
++            except BlockingIOError:
++                return False
+ 
+         def unlock(f):
+-            ret = fcntl.flock(_fd(f), fcntl.LOCK_UN)
+-            return ret == 0
++            fcntl.flock(_fd(f), fcntl.LOCK_UN)
++            return True
+diff --git a/docs/releases/3.2.txt b/docs/releases/3.2.txt
+index 30cc6a401ae2..e77785f8e2a8 100644
+--- a/docs/releases/3.2.txt
++++ b/docs/releases/3.2.txt
+@@ -504,6 +504,10 @@ Miscellaneous
+   distinguishes inherited field instances across models. Additionally, the
+   ordering of such fields is now defined.
+ 
++* The undocumented ``django.core.files.locks.lock()`` function now returns
++  ``False`` if the file cannot be locked, instead of raising
++  :exc:`BlockingIOError`.
++
+ .. _deprecated-features-3.2:
+ 
+ Features deprecated in 3.2

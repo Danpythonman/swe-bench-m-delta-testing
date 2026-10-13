@@ -1,0 +1,26 @@
+diff --git a/sympy/physics/vector/tests/test_vector.py b/sympy/physics/vector/tests/test_vector.py
+index 828a25f3c43c..a49dbb4aa232 100644
+--- a/sympy/physics/vector/tests/test_vector.py
++++ b/sympy/physics/vector/tests/test_vector.py
+@@ -13,6 +13,8 @@ def test_Vector():
+     assert A.y != A.z
+     assert A.z != A.x
+ 
++    assert A.x + 0 == A.x
++
+     v1 = x*A.x + y*A.y + z*A.z
+     v2 = x**2*A.x + y**2*A.y + z**2*A.z
+     v3 = v1 + v2
+diff --git a/sympy/physics/vector/vector.py b/sympy/physics/vector/vector.py
+index a048ee57f1f8..884911921829 100644
+--- a/sympy/physics/vector/vector.py
++++ b/sympy/physics/vector/vector.py
+@@ -57,6 +57,8 @@ def __hash__(self):
+ 
+     def __add__(self, other):
+         """The add operator for Vector. """
++        if other == 0:
++            return self
+         other = _check_vector(other)
+         return Vector(self.args + other.args)
+ 

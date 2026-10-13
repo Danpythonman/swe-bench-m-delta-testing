@@ -1,0 +1,29 @@
+diff --git a/django/db/models/fields/related.py b/django/db/models/fields/related.py
+index d517d7269ba0..c2aea9c7306e 100644
+--- a/django/db/models/fields/related.py
++++ b/django/db/models/fields/related.py
+@@ -914,7 +914,7 @@ def validate(self, value, model_instance):
+             return
+ 
+         using = router.db_for_read(self.remote_field.model, instance=model_instance)
+-        qs = self.remote_field.model._default_manager.using(using).filter(
++        qs = self.remote_field.model._base_manager.using(using).filter(
+             **{self.remote_field.field_name: value}
+         )
+         qs = qs.complex_filter(self.get_limit_choices_to())
+diff --git a/docs/releases/3.2.txt b/docs/releases/3.2.txt
+index 8544df77c3fb..743d341a7f73 100644
+--- a/docs/releases/3.2.txt
++++ b/docs/releases/3.2.txt
+@@ -349,6 +349,11 @@ Miscellaneous
+   (``USE_L10N = True``). After upgrading to Django 3.2 in such configurations,
+   the first request to any previously cached value will be a cache miss.
+ 
++* ``ForeignKey.validate()`` now uses
++  :attr:`~django.db.models.Model._base_manager` rather than
++  :attr:`~django.db.models.Model._default_manager` to check that related
++  instances exist.
++
+ .. _deprecated-features-3.2:
+ 
+ Features deprecated in 3.2

@@ -1,0 +1,24 @@
+diff --git a/AUTHORS b/AUTHORS
+index cdb43476cbea..d3cb3a62f783 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -99,6 +99,7 @@ answer newbie questions, and generally made Django that much better:
+     Arthur Koziel <http://arthurkoziel.com>
+     Arthur Rio <arthur.rio44@gmail.com>
+     Arvis Bickovskis <viestards.lists@gmail.com>
++    Arya Khaligh <bartararya@gmail.com>
+     Aryeh Leib Taurog <http://www.aryehleib.com/>
+     A S Alam <aalam@users.sf.net>
+     Asif Saif Uddin <auvipy@gmail.com>
+diff --git a/django/contrib/staticfiles/storage.py b/django/contrib/staticfiles/storage.py
+index f957a667b28a..fe1342374905 100644
+--- a/django/contrib/staticfiles/storage.py
++++ b/django/contrib/staticfiles/storage.py
+@@ -260,6 +260,7 @@ def post_process(self, paths, dry_run=False, **options):
+                 processed_adjustable_paths[name] = (name, hashed_name, processed)
+ 
+         paths = {path: paths[path] for path in adjustable_paths}
++        substitutions = False
+ 
+         for i in range(self.max_post_process_passes):
+             substitutions = False

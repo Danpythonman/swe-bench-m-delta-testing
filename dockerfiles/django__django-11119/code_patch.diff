@@ -1,0 +1,25 @@
+diff --git a/AUTHORS b/AUTHORS
+index 01908ad6c9c7..c8054c9e20b6 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -627,6 +627,7 @@ answer newbie questions, and generally made Django that much better:
+     Nasir Hussain <nasirhjafri@gmail.com>
+     Natalia Bidart <nataliabidart@gmail.com>
+     Nate Bragg <jonathan.bragg@alum.rpi.edu>
++    Nathan Gaberel <nathan@gnab.fr>
+     Neal Norwitz <nnorwitz@google.com>
+     Nebojša Dorđević
+     Ned Batchelder <https://nedbatchelder.com/>
+diff --git a/django/template/engine.py b/django/template/engine.py
+index dfaa67ba1207..ff9ce58d599e 100644
+--- a/django/template/engine.py
++++ b/django/template/engine.py
+@@ -160,7 +160,7 @@ def render_to_string(self, template_name, context=None):
+         if isinstance(context, Context):
+             return t.render(context)
+         else:
+-            return t.render(Context(context))
++            return t.render(Context(context, autoescape=self.autoescape))
+ 
+     def select_template(self, template_name_list):
+         """

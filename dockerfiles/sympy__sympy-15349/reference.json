@@ -1,0 +1,11 @@
+{
+  "instance_id": "sympy__sympy-15349",
+  "fail_to_pass": [
+    "test_quaternion_conversions"
+  ],
+  "pass_to_pass": [
+    "test_quaternion_construction",
+    "test_quaternion_complex_real_addition",
+    "test_quaternion_functions"
+  ]
+}

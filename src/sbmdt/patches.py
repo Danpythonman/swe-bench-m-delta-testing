@@ -33,6 +33,7 @@ __all__ = [
     'split_diff',
     'drop_unappliable_binary',
     'drop_mode_only_sections',
+    'file_sections',
     'test_patch_for',
     'write_diff',
 ]
@@ -45,9 +46,15 @@ CODE_PATCH_PRED_FILENAME: Final[str] = 'code_patch.pred'
 # A path is a test path if it sits in a test directory or carries a test
 # suffix. Kept deliberately broad: misfiling a test file as code would
 # silently reintroduce the very problem this module exists to solve.
+# ``testing/`` is where pytest-dev/pytest keeps its own suite. Jest snapshots
+# and shared test helpers count too: a snapshot update belongs with the tests
+# it pins, so the pre-patch run checks the new expectation.
 TEST_PATH: Final[re.Pattern[str]] = re.compile(
     r"""
-    (^|/)(test|tests|spec|specs|__tests__|__test__|e2e|cypress)/
+    (^|/)(test|tests|testing|spec|specs|__tests__|__test__|e2e|cypress)/
+    | (^|/)(__snapshots__|tests_config)/
+    | \.snap$
+    | (^|/)test[-_]helpers?\.[cm]?[jt]sx?$
     | [-_.](test|spec)\.[cm]?[jt]sx?$
     | \.(test|spec)\.[cm]?[jt]sx?$
     | (^|/)conftest\.py$
@@ -172,13 +179,39 @@ def drop_mode_only_sections(diff: str) -> tuple[str, list[str]]:
         section = diff[begin:end]
         header = DIFF_HEADER.match(section)
         assert header is not None
-        has_mode = bool(re.search(r'^old mode \d+\nnew mode \d+', section, re.M))
+        has_mode = bool(
+            re.search(r'^old mode \d+\nnew mode \d+', section, re.M)
+        )
         has_content = bool(re.search(r'^(--- |\+\+\+ |@@ )', section, re.M))
         if has_mode and not has_content:
             dropped.append(header.group(2))
         else:
             kept.append(section)
     return ''.join(kept), dropped
+
+
+def file_sections(diff: str) -> list[tuple[str, str]]:
+    """Cut a unified diff into its per-file sections.
+
+    Args:
+        diff: A unified diff.
+
+    Returns:
+        ``(path, section)`` pairs in diff order, where ``path`` is the
+        post-image path. A diff without ``diff --git`` headers comes back
+        as one section with an empty path.
+    """
+    starts = [m.start() for m in DIFF_HEADER.finditer(diff)]
+    if not starts:
+        return [('', diff)] if diff else []
+    bounds = starts + [len(diff)]
+    sections: list[tuple[str, str]] = []
+    for begin, end in zip(bounds[:-1], bounds[1:], strict=True):
+        section = diff[begin:end]
+        header = DIFF_HEADER.match(section)
+        assert header is not None
+        sections.append((header.group(2), section))
+    return sections
 
 
 def read_diff(path: Path) -> str:

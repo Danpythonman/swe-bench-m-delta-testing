@@ -1,0 +1,9 @@
+{
+  "instance_id": "django__django-15127",
+  "fail_to_pass": [
+    "test_override_settings_level_tags (messages_tests.tests.TestLevelTags)"
+  ],
+  "pass_to_pass": [
+    "test_eq (messages_tests.tests.MessageTests)"
+  ]
+}

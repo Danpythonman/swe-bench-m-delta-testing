@@ -1,0 +1,124 @@
+diff --git a/django/db/models/aggregates.py b/django/db/models/aggregates.py
+index da4ff928aa05..8b10829eb8ee 100644
+--- a/django/db/models/aggregates.py
++++ b/django/db/models/aggregates.py
+@@ -99,6 +99,7 @@ def _get_repr_options(self):
+ class Avg(FixDurationInputMixin, NumericOutputFieldMixin, Aggregate):
+     function = 'AVG'
+     name = 'Avg'
++    allow_distinct = True
+ 
+ 
+ class Count(Aggregate):
+@@ -142,6 +143,7 @@ def _get_repr_options(self):
+ class Sum(FixDurationInputMixin, Aggregate):
+     function = 'SUM'
+     name = 'Sum'
++    allow_distinct = True
+ 
+ 
+ class Variance(NumericOutputFieldMixin, Aggregate):
+diff --git a/docs/ref/models/querysets.txt b/docs/ref/models/querysets.txt
+index f84097ae9666..409d8f0f2987 100644
+--- a/docs/ref/models/querysets.txt
++++ b/docs/ref/models/querysets.txt
+@@ -3378,7 +3378,7 @@ by the aggregate.
+ ``Avg``
+ ~~~~~~~
+ 
+-.. class:: Avg(expression, output_field=None, filter=None, **extra)
++.. class:: Avg(expression, output_field=None, distinct=False, filter=None, **extra)
+ 
+     Returns the mean value of the given expression, which must be numeric
+     unless you specify a different ``output_field``.
+@@ -3387,6 +3387,18 @@ by the aggregate.
+     * Return type: ``float`` if input is ``int``, otherwise same as input
+       field, or ``output_field`` if supplied
+ 
++    Has one optional argument:
++
++    .. attribute:: distinct
++
++        If ``distinct=True``, ``Avg`` returns the mean value of unique values.
++        This is the SQL equivalent of ``AVG(DISTINCT <field>)``. The default
++        value is ``False``.
++
++    .. versionchanged:: 3.0
++
++        Support for ``distinct=True`` was added.
++
+ ``Count``
+ ~~~~~~~~~
+ 
+@@ -3451,13 +3463,25 @@ by the aggregate.
+ ``Sum``
+ ~~~~~~~
+ 
+-.. class:: Sum(expression, output_field=None, filter=None, **extra)
++.. class:: Sum(expression, output_field=None, distinct=False, filter=None, **extra)
+ 
+     Computes the sum of all values of the given expression.
+ 
+     * Default alias: ``<field>__sum``
+     * Return type: same as input field, or ``output_field`` if supplied
+ 
++    Has one optional argument:
++
++    .. attribute:: distinct
++
++        If ``distinct=True``, ``Sum`` returns the sum of unique values. This is
++        the SQL equivalent of ``SUM(DISTINCT <field>)``. The default value is
++        ``False``.
++
++    .. versionchanged:: 3.0
++
++        Support for ``distinct=True`` was added.
++
+ ``Variance``
+ ~~~~~~~~~~~~
+ 
+diff --git a/docs/releases/3.0.txt b/docs/releases/3.0.txt
+index 4bfebba73b5d..da1578c0eb76 100644
+--- a/docs/releases/3.0.txt
++++ b/docs/releases/3.0.txt
+@@ -291,6 +291,9 @@ Models
+   customize the get and set behavior by overriding their
+   :py:ref:`descriptors <descriptors>`.
+ 
++* :class:`~django.db.models.Avg` and :class:`~django.db.models.Sum` now support
++  the ``distinct`` argument.
++
+ Requests and Responses
+ ~~~~~~~~~~~~~~~~~~~~~~
+ 
+diff --git a/tests/aggregation/tests.py b/tests/aggregation/tests.py
+index bd6ecf699c1b..0f799c4bc3f6 100644
+--- a/tests/aggregation/tests.py
++++ b/tests/aggregation/tests.py
+@@ -388,9 +388,6 @@ def test_count(self):
+         vals = Book.objects.aggregate(Count("rating"))
+         self.assertEqual(vals, {"rating__count": 6})
+ 
+-        vals = Book.objects.aggregate(Count("rating", distinct=True))
+-        self.assertEqual(vals, {"rating__count": 4})
+-
+     def test_count_star(self):
+         with self.assertNumQueries(1) as ctx:
+             Book.objects.aggregate(n=Count("*"))
+@@ -403,6 +400,16 @@ def test_count_distinct_expression(self):
+         )
+         self.assertEqual(aggs['distinct_ratings'], 4)
+ 
++    def test_distinct_on_aggregate(self):
++        for aggregate, expected_result in (
++            (Avg, 4.125),
++            (Count, 4),
++            (Sum, 16.5),
++        ):
++            with self.subTest(aggregate=aggregate.__name__):
++                books = Book.objects.aggregate(ratings=aggregate('rating', distinct=True))
++                self.assertEqual(books['ratings'], expected_result)
++
+     def test_non_grouped_annotation_not_in_group_by(self):
+         """
+         An annotation not included in values() before an aggregate should be

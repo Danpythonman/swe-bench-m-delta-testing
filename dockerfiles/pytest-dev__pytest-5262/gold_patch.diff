@@ -1,0 +1,36 @@
+diff --git a/changelog/5257.bugfix.rst b/changelog/5257.bugfix.rst
+new file mode 100644
+index 00000000000..5205190882d
+--- /dev/null
++++ b/changelog/5257.bugfix.rst
+@@ -0,0 +1 @@
++Ensure that ``sys.stdout.mode`` does not include ``'b'`` as it is a text stream.
+diff --git a/src/_pytest/capture.py b/src/_pytest/capture.py
+index 25eab7fdf14..56017113429 100644
+--- a/src/_pytest/capture.py
++++ b/src/_pytest/capture.py
+@@ -447,6 +447,10 @@ def name(self):
+         """Ensure that file.name is a string."""
+         return repr(self.buffer)
+ 
++    @property
++    def mode(self):
++        return self.buffer.mode.replace("b", "")
++
+     def __getattr__(self, name):
+         return getattr(object.__getattribute__(self, "buffer"), name)
+ 
+diff --git a/testing/test_capture.py b/testing/test_capture.py
+index 5d80eb63da0..f1802cc16dc 100644
+--- a/testing/test_capture.py
++++ b/testing/test_capture.py
+@@ -1051,6 +1051,9 @@ def test_simple_resume_suspend(self, tmpfile):
+             cap.done()
+             pytest.raises(AttributeError, cap.suspend)
+ 
++    def test_capfd_sys_stdout_mode(self, capfd):
++        assert "b" not in sys.stdout.mode
++
+ 
+ @contextlib.contextmanager
+ def saved_fd(fd):

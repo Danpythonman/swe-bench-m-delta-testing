@@ -1,0 +1,31 @@
+diff --git a/django/db/models/query.py b/django/db/models/query.py
+index 85cd8311a7d2..67ffe7f0000a 100644
+--- a/django/db/models/query.py
++++ b/django/db/models/query.py
+@@ -1224,7 +1224,12 @@ def ordered(self):
+             return True
+         if self.query.extra_order_by or self.query.order_by:
+             return True
+-        elif self.query.default_ordering and self.query.get_meta().ordering:
++        elif (
++            self.query.default_ordering and
++            self.query.get_meta().ordering and
++            # A default ordering doesn't affect GROUP BY queries.
++            not self.query.group_by
++        ):
+             return True
+         else:
+             return False
+diff --git a/docs/releases/3.1.2.txt b/docs/releases/3.1.2.txt
+index 1243654bfb64..f9e45370ab94 100644
+--- a/docs/releases/3.1.2.txt
++++ b/docs/releases/3.1.2.txt
+@@ -11,3 +11,8 @@ Bugfixes
+ 
+ * Fixed a bug in Django 3.1 where ``FileField`` instances with a callable
+   storage were not correctly deconstructed (:ticket:`31941`).
++
++* Fixed a regression in Django 3.1 where the :attr:`.QuerySet.ordered`
++  attribute returned incorrectly ``True`` for ``GROUP BY`` queries (e.g.
++  ``.annotate().values()``) on models with ``Meta.ordering``. A model's
++  ``Meta.ordering`` doesn't affect such queries (:ticket:`31990`).

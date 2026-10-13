@@ -1,0 +1,97 @@
+diff --git a/django/db/models/base.py b/django/db/models/base.py
+index e3b14a41a0d0..844c01e95eeb 100644
+--- a/django/db/models/base.py
++++ b/django/db/models/base.py
+@@ -849,6 +849,7 @@ def _save_table(self, raw=False, cls=None, force_insert=False,
+         updated = False
+         # Skip an UPDATE when adding an instance and primary key has a default.
+         if (
++            not raw and
+             not force_insert and
+             self._state.adding and
+             self._meta.pk.default and
+diff --git a/docs/ref/models/instances.txt b/docs/ref/models/instances.txt
+index 9345bc0fe0bd..1524ad2fcd79 100644
+--- a/docs/ref/models/instances.txt
++++ b/docs/ref/models/instances.txt
+@@ -465,8 +465,9 @@ How Django knows to UPDATE vs. INSERT
+ 
+ You may have noticed Django database objects use the same ``save()`` method
+ for creating and changing objects. Django abstracts the need to use ``INSERT``
+-or ``UPDATE`` SQL statements. Specifically, when you call ``save()``, Django
+-follows this algorithm:
++or ``UPDATE`` SQL statements. Specifically, when you call ``save()`` and the
++object's primary key attribute does **not** define a
++:attr:`~django.db.models.Field.default`, Django follows this algorithm:
+ 
+ * If the object's primary key attribute is set to a value that evaluates to
+   ``True`` (i.e., a value other than ``None`` or the empty string), Django
+@@ -475,6 +476,11 @@ follows this algorithm:
+   didn't update anything (e.g. if primary key is set to a value that doesn't
+   exist in the database), Django executes an ``INSERT``.
+ 
++If the object's primary key attribute defines a
++:attr:`~django.db.models.Field.default` then Django executes an ``UPDATE`` if
++it is an existing model instance and primary key is set to a value that exists
++in the database. Otherwise, Django executes an ``INSERT``.
++
+ The one gotcha here is that you should be careful not to specify a primary-key
+ value explicitly when saving new objects, if you cannot guarantee the
+ primary-key value is unused. For more on this nuance, see `Explicitly specifying
+@@ -490,6 +496,12 @@ which returns ``NULL``. In such cases it is possible to revert to the old
+ algorithm by setting the :attr:`~django.db.models.Options.select_on_save`
+ option to ``True``.
+ 
++.. versionchanged:: 3.0
++
++    ``Model.save()`` no longer attempts to find a row when saving a new
++    ``Model`` instance and a default value for the primary key is provided, and
++    always executes an ``INSERT``.
++
+ .. _ref-models-force-insert:
+ 
+ Forcing an INSERT or UPDATE
+diff --git a/docs/releases/3.0.2.txt b/docs/releases/3.0.2.txt
+index ebb85d1f46a7..e232fa81f8f2 100644
+--- a/docs/releases/3.0.2.txt
++++ b/docs/releases/3.0.2.txt
+@@ -18,3 +18,7 @@ Bugfixes
+ * Fixed a regression in Django 3.0 that caused a migration crash on PostgreSQL
+   10+ when adding a foreign key and changing data in the same migration
+   (:ticket:`31106`).
++
++* Fixed a regression in Django 3.0 where loading fixtures crashed for models
++  defining a :attr:`~django.db.models.Field.default` for the primary key
++  (:ticket:`31071`).
+diff --git a/docs/releases/3.0.txt b/docs/releases/3.0.txt
+index 435755f732a3..f133c58654b0 100644
+--- a/docs/releases/3.0.txt
++++ b/docs/releases/3.0.txt
+@@ -372,6 +372,27 @@ Tests
+ Backwards incompatible changes in 3.0
+ =====================================
+ 
++``Model.save()`` when providing a default for the primary key
++-------------------------------------------------------------
++
++:meth:`.Model.save` no longer attempts to find a row when saving a new
++``Model`` instance and a default value for the primary key is provided, and
++always performs a single ``INSERT`` query. In older Django versions,
++``Model.save()`` performed either an ``INSERT`` or an ``UPDATE`` based on
++whether or not the row exists.
++
++This makes calling ``Model.save()`` while providing a default primary key value
++equivalent to passing :ref:`force_insert=True <ref-models-force-insert>` to
++model's ``save()``. Attempts to use a new ``Model`` instance to update an
++existing row will result in an ``IntegrityError``.
++
++In order to update an existing model for a specific primary key value, use the
++:meth:`~django.db.models.query.QuerySet.update_or_create` method or
++``QuerySet.filter(pk=…).update(…)`` instead. For example::
++
++    >>> MyModel.objects.update_or_create(pk=existing_pk, defaults={'name': 'new name'})
++    >>> MyModel.objects.filter(pk=existing_pk).update(name='new name')
++
+ Database backend API
+ --------------------
+ 

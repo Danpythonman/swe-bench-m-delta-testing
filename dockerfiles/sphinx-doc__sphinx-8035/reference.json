@@ -1,0 +1,10 @@
+{
+  "instance_id": "sphinx-doc__sphinx-8035",
+  "fail_to_pass": [
+    "tests/test_ext_autodoc_private_members.py::test_private_members"
+  ],
+  "pass_to_pass": [
+    "tests/test_ext_autodoc_private_members.py::test_private_field",
+    "tests/test_ext_autodoc_private_members.py::test_private_field_and_private_members"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "instance_id": "pytest-dev__pytest-7432",
+  "repo": "pytest-dev/pytest",
+  "version": "5.4",
+  "base_commit": "e6e300e729dd33956e5448d8be9a0b1540b4e53a"
+}

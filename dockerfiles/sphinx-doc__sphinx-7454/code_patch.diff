@@ -1,0 +1,32 @@
+diff --git a/CHANGES b/CHANGES
+index e0923b433ca..835dca01833 100644
+--- a/CHANGES
++++ b/CHANGES
+@@ -19,6 +19,8 @@ Bugs fixed
+ ----------
+ 
+ * #7428: py domain: a reference to class ``None`` emits a nitpicky warning
++* #7445: py domain: a return annotation ``None`` in the function signature is
++  not converted to a hyperlink when using intersphinx
+ * #7418: std domain: duplication warning for glossary terms is case insensitive
+ * #7438: C++, fix merging overloaded functions in parallel builds.
+ * #7422: autodoc: fails with ValueError when using autodoc_mock_imports
+diff --git a/sphinx/domains/python.py b/sphinx/domains/python.py
+index 893bb0a22dd..07a66fe22a7 100644
+--- a/sphinx/domains/python.py
++++ b/sphinx/domains/python.py
+@@ -71,8 +71,13 @@
+ def _parse_annotation(annotation: str) -> List[Node]:
+     """Parse type annotation."""
+     def make_xref(text: str) -> addnodes.pending_xref:
++        if text == 'None':
++            reftype = 'obj'
++        else:
++            reftype = 'class'
++
+         return pending_xref('', nodes.Text(text),
+-                            refdomain='py', reftype='class', reftarget=text)
++                            refdomain='py', reftype=reftype, reftarget=text)
+ 
+     def unparse(node: ast.AST) -> List[Node]:
+         if isinstance(node, ast.Attribute):

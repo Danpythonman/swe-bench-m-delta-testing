@@ -1,0 +1,10 @@
+{
+  "instance_id": "sympy__sympy-23824",
+  "fail_to_pass": [
+    "test_kahane_simplify1"
+  ],
+  "pass_to_pass": [
+    "test_kahane_algorithm",
+    "test_gamma_matrix_class"
+  ]
+}

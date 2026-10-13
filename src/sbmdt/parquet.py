@@ -4,18 +4,55 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
+from typing import Final
 
+import pandas as pd
 import pyarrow as pa
+import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 
 from sbmdt.aws.s3 import buffer_to_s3
 from sbmdt.evaluator.base import TestResult
 
 __all__ = [
+    'TEST_RESULTS_SCHEMA',
+    'read_test_results',
     'test_results_to_parquet_table',
     'parquet_table_to_file',
     'parquet_table_to_s3',
 ]
+
+
+TEST_RESULTS_SCHEMA: Final[pa.Schema] = pa.schema(
+    [
+        ('instance_id', pa.string()),
+        ('patch_type', pa.string()),
+        ('agent_name', pa.string()),
+        ('timestamp', pa.timestamp('us', tz='UTC')),
+        ('test_name', pa.string()),
+        ('passed', pa.bool_()),
+        ('test_file', pa.string()),
+    ]
+)
+
+
+def read_test_results(path: Path) -> pd.DataFrame:
+    """Read a directory of result objects under one schema.
+
+    Results written before ``test_file`` existed lack that column.
+    Reading the directory with pandas alone takes the schema from
+    whichever file it sees first and silently drops the column from every
+    other file, so the full schema is imposed here and older files read
+    it as null.
+
+    Args:
+        path: Directory of Parquet result objects (or a single file).
+
+    Returns:
+        One row per test result.
+    """
+    dataset = ds.dataset(path, format='parquet', schema=TEST_RESULTS_SCHEMA)
+    return dataset.to_table().to_pandas()
 
 
 def test_results_to_parquet_table(results: list[TestResult]) -> pa.Table:
@@ -26,22 +63,12 @@ def test_results_to_parquet_table(results: list[TestResult]) -> pa.Table:
 
     Returns:
         A :class:`pyarrow.Table` with one row per result and columns
-        ``instance_id``, ``patch_type``, ``agent_name``, ``test_name``,
-        and ``passed``.
+        ``instance_id``, ``patch_type``, ``agent_name``, ``timestamp``,
+        ``test_name``, ``passed`` and ``test_file`` (null when unknown).
     """
 
     table = pa.Table.from_pylist(
-        [r.to_dict() for r in results],
-        schema=pa.schema(
-            [
-                ('instance_id', pa.string()),
-                ('patch_type', pa.string()),
-                ('agent_name', pa.string()),
-                ('timestamp', pa.timestamp('us', tz='UTC')),
-                ('test_name', pa.string()),
-                ('passed', pa.bool_()),
-            ]
-        ),
+        [r.to_dict() for r in results], schema=TEST_RESULTS_SCHEMA
     )
 
     return table

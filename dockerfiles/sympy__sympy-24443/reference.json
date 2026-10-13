@@ -1,0 +1,9 @@
+{
+  "instance_id": "sympy__sympy-24443",
+  "fail_to_pass": [
+    "test_homomorphism"
+  ],
+  "pass_to_pass": [
+    "test_isomorphisms"
+  ]
+}

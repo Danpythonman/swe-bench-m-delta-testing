@@ -1,0 +1,59 @@
+diff --git a/AUTHORS b/AUTHORS
+index cdb43476cbea..d3cb3a62f783 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -99,6 +99,7 @@ answer newbie questions, and generally made Django that much better:
+     Arthur Koziel <http://arthurkoziel.com>
+     Arthur Rio <arthur.rio44@gmail.com>
+     Arvis Bickovskis <viestards.lists@gmail.com>
++    Arya Khaligh <bartararya@gmail.com>
+     Aryeh Leib Taurog <http://www.aryehleib.com/>
+     A S Alam <aalam@users.sf.net>
+     Asif Saif Uddin <auvipy@gmail.com>
+diff --git a/django/contrib/staticfiles/storage.py b/django/contrib/staticfiles/storage.py
+index f957a667b28a..fe1342374905 100644
+--- a/django/contrib/staticfiles/storage.py
++++ b/django/contrib/staticfiles/storage.py
+@@ -260,6 +260,7 @@ def post_process(self, paths, dry_run=False, **options):
+                 processed_adjustable_paths[name] = (name, hashed_name, processed)
+ 
+         paths = {path: paths[path] for path in adjustable_paths}
++        substitutions = False
+ 
+         for i in range(self.max_post_process_passes):
+             substitutions = False
+diff --git a/tests/staticfiles_tests/storage.py b/tests/staticfiles_tests/storage.py
+index 79f406ca6c09..6a319f934d8b 100644
+--- a/tests/staticfiles_tests/storage.py
++++ b/tests/staticfiles_tests/storage.py
+@@ -97,3 +97,7 @@ class ExtraPatternsStorage(ManifestStaticFilesStorage):
+ class NoneHashStorage(ManifestStaticFilesStorage):
+     def file_hash(self, name, content=None):
+         return None
++
++
++class NoPostProcessReplacedPathStorage(ManifestStaticFilesStorage):
++    max_post_process_passes = 0
+diff --git a/tests/staticfiles_tests/test_storage.py b/tests/staticfiles_tests/test_storage.py
+index db655f2453c3..d5aa1c1c9dc3 100644
+--- a/tests/staticfiles_tests/test_storage.py
++++ b/tests/staticfiles_tests/test_storage.py
+@@ -463,6 +463,18 @@ def test_hashed_name(self):
+         self.assertEqual(relpath, 'cached/styles.css')
+ 
+ 
++@override_settings(
++    STATICFILES_STORAGE='staticfiles_tests.storage.NoPostProcessReplacedPathStorage'
++)
++class TestCollectionNoPostProcessReplacedPaths(CollectionTestCase):
++    run_collectstatic_in_setUp = False
++
++    def test_collectstatistic_no_post_process_replaced_paths(self):
++        stdout = StringIO()
++        self.run_collectstatic(verbosity=1, stdout=stdout)
++        self.assertIn('post-processed', stdout.getvalue())
++
++
+ @override_settings(STATICFILES_STORAGE='staticfiles_tests.storage.SimpleStorage')
+ class TestCollectionSimpleStorage(CollectionTestCase):
+     hashed_file_path = hashed_file_path

@@ -1,0 +1,9 @@
+{
+  "instance_id": "sympy__sympy-20916",
+  "fail_to_pass": [
+    "test_super_sub"
+  ],
+  "pass_to_pass": [
+    "test_requires_partial"
+  ]
+}

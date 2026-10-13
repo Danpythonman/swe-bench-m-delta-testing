@@ -1,0 +1,118 @@
+diff --git a/django/core/management/commands/runserver.py b/django/core/management/commands/runserver.py
+index d9fb0883500a..1e8f4d3b2557 100644
+--- a/django/core/management/commands/runserver.py
++++ b/django/core/management/commands/runserver.py
+@@ -51,6 +51,10 @@ def add_arguments(self, parser):
+             '--noreload', action='store_false', dest='use_reloader',
+             help='Tells Django to NOT use the auto-reloader.',
+         )
++        parser.add_argument(
++            '--skip-checks', action='store_true',
++            help='Skip system checks.',
++        )
+ 
+     def execute(self, *args, **options):
+         if options['no_color']:
+@@ -114,8 +118,9 @@ def inner_run(self, *args, **options):
+         shutdown_message = options.get('shutdown_message', '')
+         quit_command = 'CTRL-BREAK' if sys.platform == 'win32' else 'CONTROL-C'
+ 
+-        self.stdout.write("Performing system checks...\n\n")
+-        self.check(display_num_errors=True)
++        if not options['skip_checks']:
++            self.stdout.write('Performing system checks...\n\n')
++            self.check(display_num_errors=True)
+         # Need to check migrations here, so can't use the
+         # requires_migrations_check attribute.
+         self.check_migrations()
+diff --git a/docs/ref/django-admin.txt b/docs/ref/django-admin.txt
+index b7f6e175be84..2dcd8604003a 100644
+--- a/docs/ref/django-admin.txt
++++ b/docs/ref/django-admin.txt
+@@ -968,7 +968,8 @@ more robust change detection, and a reduction in power usage. Django supports
+ When you start the server, and each time you change Python code while the
+ server is running, the system check framework will check your entire Django
+ project for some common errors (see the :djadmin:`check` command). If any
+-errors are found, they will be printed to standard output.
++errors are found, they will be printed to standard output. You can use the
++``--skip-checks`` option to skip running system checks.
+ 
+ You can run as many concurrent servers as you want, as long as they're on
+ separate ports by executing ``django-admin runserver`` more than once.
+@@ -1006,6 +1007,10 @@ multithreaded by default.
+ Uses IPv6 for the development server. This changes the default IP address from
+ ``127.0.0.1`` to ``::1``.
+ 
++.. versionchanged:: 4.0
++
++    Support for the ``--skip-checks`` option was added.
++
+ Examples of using different ports and addresses
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+diff --git a/docs/releases/4.0.txt b/docs/releases/4.0.txt
+index 52531c126665..ed991fb67293 100644
+--- a/docs/releases/4.0.txt
++++ b/docs/releases/4.0.txt
+@@ -153,7 +153,8 @@ Logging
+ Management Commands
+ ~~~~~~~~~~~~~~~~~~~
+ 
+-* ...
++* The :djadmin:`runserver` management command now supports the
++  :option:`--skip-checks` option.
+ 
+ Migrations
+ ~~~~~~~~~~
+diff --git a/tests/admin_scripts/tests.py b/tests/admin_scripts/tests.py
+index d9ec07a3e34c..fd94d4919f76 100644
+--- a/tests/admin_scripts/tests.py
++++ b/tests/admin_scripts/tests.py
+@@ -1313,6 +1313,29 @@ def test_readonly_database(self):
+         # You have # ...
+         self.assertIn('unapplied migration(s)', self.output.getvalue())
+ 
++    @mock.patch('django.core.management.commands.runserver.run')
++    @mock.patch('django.core.management.base.BaseCommand.check_migrations')
++    @mock.patch('django.core.management.base.BaseCommand.check')
++    def test_skip_checks(self, mocked_check, *mocked_objects):
++        call_command(
++            'runserver',
++            use_reloader=False,
++            skip_checks=True,
++            stdout=self.output,
++        )
++        self.assertNotIn('Performing system checks...', self.output.getvalue())
++        mocked_check.assert_not_called()
++
++        self.output.truncate(0)
++        call_command(
++            'runserver',
++            use_reloader=False,
++            skip_checks=False,
++            stdout=self.output,
++        )
++        self.assertIn('Performing system checks...', self.output.getvalue())
++        mocked_check.assert_called()
++
+ 
+ class ManageRunserverMigrationWarning(TestCase):
+ 
+diff --git a/tests/utils_tests/test_autoreload.py b/tests/utils_tests/test_autoreload.py
+index a43d7c2fded2..64bbcda27a1f 100644
+--- a/tests/utils_tests/test_autoreload.py
++++ b/tests/utils_tests/test_autoreload.py
+@@ -98,8 +98,11 @@ def test_check_errors_catches_all_exceptions(self):
+         filename = self.temporary_file('test_exception.py')
+         filename.write_text('raise Exception')
+         with extend_sys_path(str(filename.parent)):
+-            with self.assertRaises(Exception):
+-                autoreload.check_errors(import_module)('test_exception')
++            try:
++                with self.assertRaises(Exception):
++                    autoreload.check_errors(import_module)('test_exception')
++            finally:
++                autoreload._exception = None
+         self.assertFileFound(filename)
+ 
+     def test_zip_reload(self):

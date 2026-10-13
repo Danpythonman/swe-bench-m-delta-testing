@@ -1,0 +1,26 @@
+diff --git a/CHANGES b/CHANGES
+index 9c889420fd6..d8a0675836e 100644
+--- a/CHANGES
++++ b/CHANGES
+@@ -22,6 +22,8 @@ Incompatible changes
+   ``<div>``
+ * #8508: LaTeX: uplatex becomes a default setting of latex_engine for Japanese
+   documents
++* #5977: py domain: ``:var:``, ``:cvar:`` and ``:ivar:`` fields do not create
++  cross-references
+ 
+ Deprecated
+ ----------
+diff --git a/sphinx/domains/python.py b/sphinx/domains/python.py
+index 000e2e8d34f..5afe2993a4f 100644
+--- a/sphinx/domains/python.py
++++ b/sphinx/domains/python.py
+@@ -354,7 +354,7 @@ class PyObject(ObjectDescription):
+                             'keyword', 'kwarg', 'kwparam'),
+                      typerolename='class', typenames=('paramtype', 'type'),
+                      can_collapse=True),
+-        PyTypedField('variable', label=_('Variables'), rolename='obj',
++        PyTypedField('variable', label=_('Variables'),
+                      names=('var', 'ivar', 'cvar'),
+                      typerolename='class', typenames=('vartype',),
+                      can_collapse=True),

@@ -1,0 +1,69 @@
+diff --git a/django/conf/global_settings.py b/django/conf/global_settings.py
+index 09c9b95d26d5..8bb59a403756 100644
+--- a/django/conf/global_settings.py
++++ b/django/conf/global_settings.py
+@@ -637,6 +637,6 @@ def gettext_noop(s):
+ SECURE_HSTS_PRELOAD = False
+ SECURE_HSTS_SECONDS = 0
+ SECURE_REDIRECT_EXEMPT = []
+-SECURE_REFERRER_POLICY = None
++SECURE_REFERRER_POLICY = 'same-origin'
+ SECURE_SSL_HOST = None
+ SECURE_SSL_REDIRECT = False
+diff --git a/docs/ref/settings.txt b/docs/ref/settings.txt
+index b4a5bdc48f9b..8c3f6f2b473f 100644
+--- a/docs/ref/settings.txt
++++ b/docs/ref/settings.txt
+@@ -2395,12 +2395,16 @@ from URL paths, so patterns shouldn't include them, e.g.
+ 
+ .. versionadded:: 3.0
+ 
+-Default: ``None``
++Default: ``'same-origin'``
+ 
+ If configured, the :class:`~django.middleware.security.SecurityMiddleware` sets
+ the :ref:`referrer-policy` header on all responses that do not already have it
+ to the value provided.
+ 
++.. versionchanged:: 3.1
++
++    In older versions, the default value is ``None``.
++
+ .. setting:: SECURE_SSL_HOST
+ 
+ ``SECURE_SSL_HOST``
+diff --git a/docs/releases/3.1.txt b/docs/releases/3.1.txt
+index 4a165156e13e..903e2510baf3 100644
+--- a/docs/releases/3.1.txt
++++ b/docs/releases/3.1.txt
+@@ -285,6 +285,19 @@ Requests and Responses
+ * The new :meth:`.HttpRequest.accepts` method returns whether the request
+   accepts the given MIME type according to the ``Accept`` HTTP header.
+ 
++.. _whats-new-security-3.1:
++
++Security
++~~~~~~~~
++
++* The :setting:`SECURE_REFERRER_POLICY` setting now defaults to
++  ``'same-origin'``. With this configured,
++  :class:`~django.middleware.security.SecurityMiddleware` sets the
++  :ref:`referrer-policy` header to ``same-origin`` on all responses that do not
++  already have it. This prevents the ``Referer`` header being sent to other
++  origins. If you need the previous behavior, explicitly set
++  :setting:`SECURE_REFERRER_POLICY` to ``None``.
++
+ Serialization
+ ~~~~~~~~~~~~~
+ 
+@@ -452,6 +465,10 @@ Miscellaneous
+ * Providing a non-local remote field in the :attr:`.ForeignKey.to_field`
+   argument now raises :class:`~django.core.exceptions.FieldError`.
+ 
++* :setting:`SECURE_REFERRER_POLICY` now defaults to ``'same-origin'``. See the
++  *What's New* :ref:`Security section <whats-new-security-3.1>` above for more
++  details.
++
+ .. _deprecated-features-3.1:
+ 
+ Features deprecated in 3.1

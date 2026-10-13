@@ -1,0 +1,35 @@
+diff --git a/doc/api/next_api_changes/behavior/23299-TAC.rst b/doc/api/next_api_changes/behavior/23299-TAC.rst
+new file mode 100644
+index 000000000000..745bd47d6c6b
+--- /dev/null
++++ b/doc/api/next_api_changes/behavior/23299-TAC.rst
+@@ -0,0 +1,6 @@
++mpl.rc_context no longer resets the value of ``'backend'``
++~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++
++`matplotlib.rc_context` incorrectly reset the value of :rc:`backend` if backend
++resolution was triggered in the context. This affected only the value. The actual backend
++was not changed. Now, `matplotlib.rc_context` does not reset  :rc:`backend` anymore.
+diff --git a/lib/matplotlib/__init__.py b/lib/matplotlib/__init__.py
+index c268a56724c9..528be266ffac 100644
+--- a/lib/matplotlib/__init__.py
++++ b/lib/matplotlib/__init__.py
+@@ -1059,6 +1059,8 @@ def rc_context(rc=None, fname=None):
+     """
+     Return a context manager for temporarily changing rcParams.
+ 
++    The :rc:`backend` will not be reset by the context manager.
++
+     Parameters
+     ----------
+     rc : dict
+@@ -1087,7 +1089,8 @@ def rc_context(rc=None, fname=None):
+              plt.plot(x, y)  # uses 'print.rc'
+ 
+     """
+-    orig = rcParams.copy()
++    orig = dict(rcParams.copy())
++    del orig['backend']
+     try:
+         if fname:
+             rc_file(fname)

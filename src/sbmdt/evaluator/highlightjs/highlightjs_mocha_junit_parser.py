@@ -75,7 +75,16 @@ def results_xml_to_test_results(
         test_name = (
             f'{classname} {name}' if classname and classname != name else name
         )
-        passed = tc.find('failure') is None and tc.find('error') is None
+        failure = tc.find('failure')
+        if failure is None:
+            failure = tc.find('error')
+        passed = failure is None
+        if failure is not None:
+            # The parsed results keep only pass/fail, so the log is the only
+            # place a failure's cause survives (a hook failure hides a whole
+            # suite, for example).
+            detail = failure.get('message') or failure.text or ''
+            log.info(f'FAILED {test_name}: {detail[:2000]}')
         results.append(
             TestResult(
                 instance_id=instance_id,

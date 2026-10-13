@@ -1,0 +1,13 @@
+diff --git a/tests/test_pycode_ast.py b/tests/test_pycode_ast.py
+index 9b12d24d5f6..32a784b7419 100644
+--- a/tests/test_pycode_ast.py
++++ b/tests/test_pycode_ast.py
+@@ -53,7 +53,7 @@
+     ("+ a", "+ a"),                             # UAdd
+     ("- 1", "- 1"),                             # UnaryOp
+     ("- a", "- a"),                             # USub
+-    ("(1, 2, 3)", "1, 2, 3"),                   # Tuple
++    ("(1, 2, 3)", "(1, 2, 3)"),                   # Tuple
+     ("()", "()"),                               # Tuple (empty)
+ ])
+ def test_unparse(source, expected):

@@ -1,0 +1,93 @@
+diff --git a/AUTHORS b/AUTHORS
+index a92baaceb99a..f5c71c7e3061 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -442,6 +442,7 @@ answer newbie questions, and generally made Django that much better:
+     Jeremy Carbaugh <jcarbaugh@gmail.com>
+     Jeremy Dunck <jdunck@gmail.com>
+     Jeremy Lainé <jeremy.laine@m4x.org>
++    Jerin Peter George <jerinpetergeorge@gmail.com>
+     Jesse Young <adunar@gmail.com>
+     Jezeniel Zapanta <jezeniel.zapanta@gmail.com>
+     jhenry <jhenry@theonion.com>
+diff --git a/django/forms/models.py b/django/forms/models.py
+index 422bc5d1785f..a88c384841d4 100644
+--- a/django/forms/models.py
++++ b/django/forms/models.py
+@@ -1284,7 +1284,11 @@ def to_python(self, value):
+                 value = getattr(value, key)
+             value = self.queryset.get(**{key: value})
+         except (ValueError, TypeError, self.queryset.model.DoesNotExist):
+-            raise ValidationError(self.error_messages['invalid_choice'], code='invalid_choice')
++            raise ValidationError(
++                self.error_messages['invalid_choice'],
++                code='invalid_choice',
++                params={'value': value},
++            )
+         return value
+ 
+     def validate(self, value):
+diff --git a/docs/ref/forms/fields.txt b/docs/ref/forms/fields.txt
+index b13af1a27025..a4f80831ad3a 100644
+--- a/docs/ref/forms/fields.txt
++++ b/docs/ref/forms/fields.txt
+@@ -1219,6 +1219,9 @@ generating choices. See :ref:`iterating-relationship-choices` for details.
+     * Validates that the given id exists in the queryset.
+     * Error message keys: ``required``, ``invalid_choice``
+ 
++    The ``invalid_choice`` error message may contain ``%(value)s``, which will
++    be replaced with the selected choice.
++
+     Allows the selection of a single model object, suitable for representing a
+     foreign key. Note that the default widget for ``ModelChoiceField`` becomes
+     impractical when the number of entries increases. You should avoid using it
+@@ -1307,6 +1310,11 @@ generating choices. See :ref:`iterating-relationship-choices` for details.
+             def label_from_instance(self, obj):
+                 return "My Object #%i" % obj.id
+ 
++    .. versionchanged:: 4.0
++
++        Support for containing ``%(value)s`` in the ``invalid_choice`` error
++        message was added.
++
+ ``ModelMultipleChoiceField``
+ ----------------------------
+ 
+diff --git a/docs/releases/4.0.txt b/docs/releases/4.0.txt
+index 1e408c97bda9..99ad826865f5 100644
+--- a/docs/releases/4.0.txt
++++ b/docs/releases/4.0.txt
+@@ -135,7 +135,11 @@ File Uploads
+ Forms
+ ~~~~~
+ 
+-* ...
++* :class:`~django.forms.ModelChoiceField` now includes the provided value in
++  the ``params`` argument of a raised
++  :exc:`~django.core.exceptions.ValidationError` for the ``invalid_choice``
++  error message. This allows custom error messages to use the ``%(value)s``
++  placeholder.
+ 
+ Generic Views
+ ~~~~~~~~~~~~~
+diff --git a/tests/forms_tests/tests/test_error_messages.py b/tests/forms_tests/tests/test_error_messages.py
+index 1a6d1386c3d6..340c39546cb3 100644
+--- a/tests/forms_tests/tests/test_error_messages.py
++++ b/tests/forms_tests/tests/test_error_messages.py
+@@ -308,3 +308,16 @@ def test_modelchoicefield(self):
+         self.assertFormErrors(['REQUIRED'], f.clean, '')
+         self.assertFormErrors(['NOT A LIST OF VALUES'], f.clean, '3')
+         self.assertFormErrors(['4 IS INVALID CHOICE'], f.clean, ['4'])
++
++    def test_modelchoicefield_value_placeholder(self):
++        f = ModelChoiceField(
++            queryset=ChoiceModel.objects.all(),
++            error_messages={
++                'invalid_choice': '"%(value)s" is not one of the available choices.',
++            },
++        )
++        self.assertFormErrors(
++            ['"invalid" is not one of the available choices.'],
++            f.clean,
++            'invalid',
++        )

@@ -45,7 +45,10 @@ async def process(filepath: Path, sem: asyncio.Semaphore) -> None:
     diff_filepath = filepath / GOLD_PATCH_DIFF_FILENAME
     pred_filepath = filepath / GOLD_PATCH_PRED_FILENAME
     async with sem:
-        async with aiofiles.open(diff_filepath) as f_in:
+        # newline='' keeps carriage returns: a diff of a file committed with
+        # CRLF endings carries them in its context lines, and without them
+        # the patch no longer applies to that file.
+        async with aiofiles.open(diff_filepath, newline='') as f_in:
             diff = await f_in.read()
             pred = Pred(
                 instance_id=filepath.name,

@@ -1,0 +1,6 @@
+{
+  "instance_id": "django__django-16100",
+  "repo": "django/django",
+  "version": "4.2",
+  "base_commit": "c6350d594c359151ee17b0c4f354bb44f28ff69e"
+}

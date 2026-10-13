@@ -1,0 +1,17 @@
+{
+  "instance_id": "sympy__sympy-13031",
+  "fail_to_pass": [
+    "test_sparse_matrix"
+  ],
+  "pass_to_pass": [
+    "test_transpose",
+    "test_trace",
+    "test_CL_RL",
+    "test_add",
+    "test_errors",
+    "test_len",
+    "test_sparse_zeros_sparse_eye",
+    "test_copyin",
+    "test_sparse_solve"
+  ]
+}

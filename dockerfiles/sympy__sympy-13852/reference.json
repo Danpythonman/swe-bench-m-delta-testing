@@ -1,0 +1,12 @@
+{
+  "instance_id": "sympy__sympy-13852",
+  "fail_to_pass": [
+    "test_polylog_values"
+  ],
+  "pass_to_pass": [
+    "test_zeta_eval",
+    "test_dirichlet_eta_eval",
+    "test_stieltjes",
+    "test_stieltjes_evalf"
+  ]
+}

@@ -1,0 +1,117 @@
+diff --git a/django/db/migrations/operations/models.py b/django/db/migrations/operations/models.py
+index c120f5d32dff..01c44a9a261c 100644
+--- a/django/db/migrations/operations/models.py
++++ b/django/db/migrations/operations/models.py
+@@ -34,9 +34,12 @@ def references_model(self, name, app_label):
+     def reduce(self, operation, app_label):
+         return (
+             super().reduce(operation, app_label) or
+-            not operation.references_model(self.name, app_label)
++            self.can_reduce_through(operation, app_label)
+         )
+ 
++    def can_reduce_through(self, operation, app_label):
++        return not operation.references_model(self.name, app_label)
++
+ 
+ class CreateModel(ModelOperation):
+     """Create a model's table."""
+@@ -528,6 +531,14 @@ def describe(self):
+     def migration_name_fragment(self):
+         return 'alter_%s_%s' % (self.name_lower, self.option_name)
+ 
++    def can_reduce_through(self, operation, app_label):
++        return (
++            super().can_reduce_through(operation, app_label) or (
++                isinstance(operation, AlterTogetherOptionOperation) and
++                type(operation) is not type(self)
++            )
++        )
++
+ 
+ class AlterUniqueTogether(AlterTogetherOptionOperation):
+     """
+diff --git a/tests/migrations/test_autodetector.py b/tests/migrations/test_autodetector.py
+index d25b14cedb65..bb37af24e38d 100644
+--- a/tests/migrations/test_autodetector.py
++++ b/tests/migrations/test_autodetector.py
+@@ -1573,21 +1573,13 @@ def test_foo_together_ordering(self):
+         self.assertOperationTypes(changes, 'otherapp', 0, [
+             'AlterUniqueTogether',
+             'AlterIndexTogether',
+-            'AlterUniqueTogether',
+-            'AlterIndexTogether',
+         ])
+         self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 0, name='book', unique_together=set(),
+-        )
+-        self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 1, name='book', index_together=set(),
+-        )
+-        self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 2, name='book',
++            changes, 'otherapp', 0, 0, name='book',
+             unique_together={('title', 'author')},
+         )
+         self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 3, name='book',
++            changes, 'otherapp', 0, 1, name='book',
+             index_together={('title', 'author')},
+         )
+ 
+@@ -1637,28 +1629,20 @@ def test_remove_field_and_foo_together(self):
+         # Right number/type of migrations?
+         self.assertNumberMigrations(changes, "otherapp", 1)
+         self.assertOperationTypes(changes, 'otherapp', 0, [
+-            'AlterUniqueTogether',
+-            'AlterIndexTogether',
+             'AlterUniqueTogether',
+             'AlterIndexTogether',
+             'RemoveField',
+         ])
+         self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 0, name='book', unique_together=set(),
+-        )
+-        self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 1, name='book', index_together=set(),
+-        )
+-        self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 2, name='book',
++            changes, 'otherapp', 0, 0, name='book',
+             unique_together={('author', 'title')},
+         )
+         self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 3, name='book',
++            changes, 'otherapp', 0, 1, name='book',
+             index_together={('author', 'title')},
+         )
+         self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 4, model_name='book', name='newfield',
++            changes, 'otherapp', 0, 2, model_name='book', name='newfield',
+         )
+ 
+     def test_alter_field_and_foo_together(self):
+@@ -1744,21 +1728,13 @@ def test_rename_field_and_foo_together(self):
+             'RenameField',
+             'AlterUniqueTogether',
+             'AlterIndexTogether',
+-            'AlterUniqueTogether',
+-            'AlterIndexTogether',
+         ])
+         self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 1, name='book', unique_together=set(),
+-        )
+-        self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 2, name='book', index_together=set(),
+-        )
+-        self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 3, name='book',
++            changes, 'otherapp', 0, 1, name='book',
+             unique_together={('title', 'newfield2')},
+         )
+         self.assertOperationAttributes(
+-            changes, 'otherapp', 0, 4, name='book',
++            changes, 'otherapp', 0, 2, name='book',
+             index_together={('title', 'newfield2')},
+         )
+ 

@@ -1,0 +1,25 @@
+diff --git a/django/db/models/fields/__init__.py b/django/db/models/fields/__init__.py
+index 0f53d9c30bf9..0ce7de02c638 100644
+--- a/django/db/models/fields/__init__.py
++++ b/django/db/models/fields/__init__.py
+@@ -2524,7 +2524,7 @@ def __instancecheck__(self, instance):
+         return isinstance(instance, self._subclasses) or super().__instancecheck__(instance)
+ 
+     def __subclasscheck__(self, subclass):
+-        return subclass in self._subclasses or super().__subclasscheck__(subclass)
++        return issubclass(subclass, self._subclasses) or super().__subclasscheck__(subclass)
+ 
+ 
+ class AutoField(AutoFieldMixin, IntegerField, metaclass=AutoFieldMeta):
+diff --git a/docs/releases/3.2.1.txt b/docs/releases/3.2.1.txt
+index d303b46d4daa..e8361e737026 100644
+--- a/docs/releases/3.2.1.txt
++++ b/docs/releases/3.2.1.txt
+@@ -10,3 +10,7 @@ Bugfixes
+ ========
+ 
+ * Corrected detection of GDAL 3.2 on Windows (:ticket:`32544`).
++
++* Fixed a bug in Django 3.2 where subclasses of ``BigAutoField`` and
++  ``SmallAutoField`` were not allowed for the :setting:`DEFAULT_AUTO_FIELD`
++  setting (:ticket:`32620`).

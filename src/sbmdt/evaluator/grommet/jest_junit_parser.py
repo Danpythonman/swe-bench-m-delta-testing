@@ -7,15 +7,20 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import re
 import xml.etree.ElementTree as ET
+from typing import Final
 
 from sbmdt.evaluator.base import PatchType, TestResult
+from sbmdt.evaluator.paths import repo_relative
 
 __all__ = [
     'results_xml_to_test_results',
 ]
 
 log = logging.getLogger(__name__)
+
+JS_TEST_FILE: Final[re.Pattern[str]] = re.compile(r'\.(?:[cm]?jsx?|tsx?)$')
 
 
 def results_xml_to_test_results(
@@ -46,20 +51,30 @@ def results_xml_to_test_results(
     root = ET.fromstring(xml_string)
 
     results: list[TestResult] = []
-    for tc in root.findall('.//testcase'):
-        test_name = tc.get('name')
-        if test_name is None:
-            log.warning('no test name')
-            continue
-        results.append(
-            TestResult(
-                instance_id=instance_id,
-                patch_type=patch_type,
-                agent_name=agent_name,
-                timestamp=timestamp,
-                test_name=test_name,
-                passed=(tc.find('failure') is None),
-            )
+    suites = [root] if root.tag == 'testsuite' else root.iter('testsuite')
+    for suite in suites:
+        # The evaluators ask jest-junit for the file both ways: a ``file``
+        # attribute per testcase (newer releases) and the file path as the
+        # suite name (JEST_JUNIT_SUITE_NAME='{filepath}', older ones too).
+        suite_name = suite.get('name', '')
+        suite_file = suite.get('file') or (
+            suite_name if JS_TEST_FILE.search(suite_name) else None
         )
+        for tc in suite.findall('testcase'):
+            test_name = tc.get('name')
+            if test_name is None:
+                log.warning('no test name')
+                continue
+            results.append(
+                TestResult(
+                    instance_id=instance_id,
+                    patch_type=patch_type,
+                    agent_name=agent_name,
+                    timestamp=timestamp,
+                    test_name=test_name,
+                    passed=(tc.find('failure') is None),
+                    test_file=repo_relative(tc.get('file') or suite_file),
+                )
+            )
 
     return results

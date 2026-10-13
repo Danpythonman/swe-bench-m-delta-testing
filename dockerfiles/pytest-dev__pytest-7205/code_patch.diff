@@ -1,0 +1,39 @@
+diff --git a/AUTHORS b/AUTHORS
+index b59ebc2a27f..68f156862c5 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -216,6 +216,7 @@ Ondřej Súkup
+ Oscar Benjamin
+ Patrick Hayes
+ Pauli Virtanen
++Pavel Karateev
+ Paweł Adamczak
+ Pedro Algarvio
+ Philipp Loose
+diff --git a/changelog/7126.bugfix.rst b/changelog/7126.bugfix.rst
+new file mode 100644
+index 00000000000..1a85e899781
+--- /dev/null
++++ b/changelog/7126.bugfix.rst
+@@ -0,0 +1,2 @@
++``--setup-show`` now doesn't raise an error when a bytes value is used as a ``parametrize``
++parameter when Python is called with the ``-bb`` flag.
+diff --git a/src/_pytest/setuponly.py b/src/_pytest/setuponly.py
+index c9cc589ffee..9e4cd951947 100644
+--- a/src/_pytest/setuponly.py
++++ b/src/_pytest/setuponly.py
+@@ -1,4 +1,5 @@
+ import pytest
++from _pytest._io.saferepr import saferepr
+ 
+ 
+ def pytest_addoption(parser):
+@@ -66,7 +67,7 @@ def _show_fixture_action(fixturedef, msg):
+             tw.write(" (fixtures used: {})".format(", ".join(deps)))
+ 
+     if hasattr(fixturedef, "cached_param"):
+-        tw.write("[{}]".format(fixturedef.cached_param))
++        tw.write("[{}]".format(saferepr(fixturedef.cached_param, maxsize=42)))
+ 
+     tw.flush()
+ 

@@ -1,0 +1,50 @@
+diff --git a/django/forms/widgets.py b/django/forms/widgets.py
+index 6fe220bea703..d83d63c16971 100644
+--- a/django/forms/widgets.py
++++ b/django/forms/widgets.py
+@@ -522,9 +522,7 @@ def format_value(self, value):
+ 
+     def get_context(self, name, value, attrs):
+         if self.check_test(value):
+-            if attrs is None:
+-                attrs = {}
+-            attrs['checked'] = True
++            attrs = {**(attrs or {}), 'checked': True}
+         return super().get_context(name, value, attrs)
+ 
+     def value_from_datadict(self, data, files, name):
+diff --git a/tests/forms_tests/widget_tests/test_checkboxinput.py b/tests/forms_tests/widget_tests/test_checkboxinput.py
+index 6483b7f2115f..8dba2178c9db 100644
+--- a/tests/forms_tests/widget_tests/test_checkboxinput.py
++++ b/tests/forms_tests/widget_tests/test_checkboxinput.py
+@@ -89,3 +89,8 @@ def test_value_from_datadict_string_int(self):
+     def test_value_omitted_from_data(self):
+         self.assertIs(self.widget.value_omitted_from_data({'field': 'value'}, {}, 'field'), False)
+         self.assertIs(self.widget.value_omitted_from_data({}, {}, 'field'), False)
++
++    def test_get_context_does_not_mutate_attrs(self):
++        attrs = {'checked': False}
++        self.widget.get_context('name', True, attrs)
++        self.assertIs(attrs['checked'], False)
+diff --git a/tests/postgres_tests/test_array.py b/tests/postgres_tests/test_array.py
+index 481d93f830e4..ee66fbcd60c2 100644
+--- a/tests/postgres_tests/test_array.py
++++ b/tests/postgres_tests/test_array.py
+@@ -1103,6 +1103,17 @@ def test_get_context(self):
+             }
+         )
+ 
++    def test_checkbox_get_context_attrs(self):
++        context = SplitArrayWidget(
++            forms.CheckboxInput(),
++            size=2,
++        ).get_context('name', [True, False])
++        self.assertEqual(context['widget']['value'], '[True, False]')
++        self.assertEqual(
++            [subwidget['attrs'] for subwidget in context['widget']['subwidgets']],
++            [{'checked': True}, {}]
++        )
++
+     def test_render(self):
+         self.check_html(
+             SplitArrayWidget(forms.TextInput(), size=2), 'array', None,

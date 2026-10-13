@@ -1,0 +1,13 @@
+{
+  "instance_id": "psf__requests-1142",
+  "fail_to_pass": [
+    "test_requests.py::RequestsTestCase::test_no_content_length"
+  ],
+  "pass_to_pass": [
+    "test_requests.py::RequestsTestCase::test_basic_building",
+    "test_requests.py::RequestsTestCase::test_entry_points",
+    "test_requests.py::RequestsTestCase::test_invalid_url",
+    "test_requests.py::RequestsTestCase::test_params_are_added_before_fragment",
+    "test_requests.py::RequestsTestCase::test_path_is_not_double_encoded"
+  ]
+}

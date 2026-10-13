@@ -1,0 +1,6 @@
+{
+  "instance_id": "django__django-16612",
+  "repo": "django/django",
+  "version": "5.0",
+  "base_commit": "55bcbd8d172b689811fae17cde2f09218dd74e9c"
+}
