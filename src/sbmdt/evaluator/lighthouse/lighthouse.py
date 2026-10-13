@@ -21,7 +21,11 @@ from sbmdt.evaluator.lighthouse.mocha_junit_parser import (
     results_xml_to_test_results,
 )
 from sbmdt.evaluator.paths import repo_relative
-from sbmdt.utils import apply_change_literal, read_from_container
+from sbmdt.utils import (
+    apply_change_literal,
+    read_from_container,
+    write_to_container,
+)
 
 __all__ = [
     'LighthouseEvaluator',
@@ -41,7 +45,35 @@ EXPORT_NODE_OPTIONS: Final[str] = (
     'export NODE_OPTIONS=--unhandled-rejections=warn; fi'
 )
 
+# Some code under test calls process.exit: lighthouse-cli/run.js's
+# showPageLoadError exits when Chrome fails to load a page, which happened
+# intermittently in lighthouse-2610's CLI round-trip test. Inside Mocha that
+# kills the run before mocha-junit-reporter writes its XML, losing the whole
+# suite. Preloaded into Mocha's processes only, this turns such a call from
+# repository code (not node_modules, so Mocha's own exit is untouched) into
+# an error, which fails just the test that triggered it.
+NO_EXIT_PRELOAD: Final[str] = '/tmp/sbmdt-no-exit.js'
+NO_EXIT_SCRIPT: Final[str] = r"""
+if (/(^|[\/])_?mocha(\.js)?$/.test(process.argv[1] || '')) {
+  const exit = process.exit;
+  process.exit = function (code) {
+    const caller = (new Error().stack || '').split('\n')[2] || '';
+    if (/\/testbed\/(?!node_modules\/)/.test(caller)) {
+      throw new Error(
+        'process.exit(' + code + ') called by the code under test'
+      );
+    }
+    return exit.apply(process, arguments);
+  };
+}
+"""
+EXPORT_NO_EXIT_PRELOAD: Final[str] = (
+    f'export NODE_OPTIONS="${{NODE_OPTIONS:+$NODE_OPTIONS }}'
+    f'--require {NO_EXIT_PRELOAD}"'
+)
+
 PACKAGE_JSON_FILE: Final[str] = '/testbed/package.json'
+CLI_DIR: Final[str] = '/testbed/lighthouse-cli'
 RUN_MOCHA_SCRIPT: Final[str] = '/testbed/lighthouse-core/scripts/run-mocha.sh'
 RESULTS_DIR: Final[str] = '/testbed/test-results'
 # Each suite is run independently (rather than via run-mocha.sh's default
@@ -213,6 +245,14 @@ class LighthouseEvaluator(Evaluator):
             )
 
         install_definition = scripts.get(install_script, '')
+        run_install = install_script
+        if 'install-all:task:windows' in scripts:
+            # install-all:task runs its yarn installs in parallel
+            # ("yarn & yarn install-extension & yarn install-viewer &
+            # wait"), and on lighthouse-4036 they corrupted the shared yarn
+            # cache. The Windows variant runs the same installs one after
+            # another.
+            run_install = 'install-all:task:windows'
         if (
             install_script == 'install-cli'
             and 'yarn install' in install_definition
@@ -229,7 +269,7 @@ class LighthouseEvaluator(Evaluator):
             )
         else:
             exit_code, output = self.container.exec_run(
-                f'npm run {install_script}',
+                f'npm run {run_install}',
                 workdir='/testbed',
                 stream=False,
             )
@@ -241,7 +281,7 @@ class LighthouseEvaluator(Evaluator):
         if exit_code != 0:
             raise Exception(
                 f'Failed to install lighthouse-cli dependencies for '
-                f'{self.instance_id} (via "{install_script}"): '
+                f'{self.instance_id} (via "{run_install}"): '
                 f'{output.decode()}'
             )
 
@@ -265,51 +305,60 @@ class LighthouseEvaluator(Evaluator):
                     f'{self.instance_id}: {output.decode()}'
                 )
 
-        # lighthouse-cli/package.json declares loose historical ranges.
-        # Installing them today selects much newer releases within those
-        # ranges, which do not necessarily compile these old checkouts.
-        # Pin @types/node to the known baseline and TypeScript to the minimum
-        # version declared by this checkout's own manifest.
-        exit_code, output = self.container.exec_run(
-            'npm install @types/node@6.0.45 --save-exact',
-            workdir='/testbed/lighthouse-cli',
-            stream=False,
-        )
-        assert isinstance(output, bytes)
-
-        log.info(exit_code)
-        log.info(output.decode())
-
-        if exit_code != 0:
-            raise Exception(
-                f'Failed to pin lighthouse-cli @types/node for '
-                f'{self.instance_id}: {output.decode()}'
-            )
-
-        cli_package = json.loads(
-            read_from_container(
-                self.container, '/testbed/lighthouse-cli/package.json'
-            )
-        )
-        typescript_range = cli_package.get('devDependencies', {}).get(
-            'typescript'
-        )
-        version_match = re.search(r'\d+\.\d+\.\d+', typescript_range or '')
-        if version_match:
-            typescript_version = version_match.group()
+        # From about v2.6 (lighthouse-4036) lighthouse-cli is plain
+        # JavaScript with no package.json of its own, so there is nothing
+        # to pin or compile there. Running npm install in it anyway would
+        # walk up and change /testbed's own manifest instead.
+        has_cli_package = self._exists(f'{CLI_DIR}/package.json')
+        version_match = None
+        pin_outputs: list[str] = []
+        if has_cli_package:
+            # lighthouse-cli/package.json declares loose historical ranges.
+            # Installing them today selects much newer releases within those
+            # ranges, which do not necessarily compile these old checkouts.
+            # Pin @types/node to the known baseline and TypeScript to the
+            # minimum version declared by this checkout's own manifest.
             exit_code, output = self.container.exec_run(
-                f'npm install typescript@{typescript_version} --save-exact',
-                workdir='/testbed/lighthouse-cli',
+                'npm install @types/node@6.0.45 --save-exact',
+                workdir=CLI_DIR,
                 stream=False,
             )
             assert isinstance(output, bytes)
+
             log.info(exit_code)
             log.info(output.decode())
+
             if exit_code != 0:
                 raise Exception(
-                    f'Failed to pin typescript@{typescript_version} for '
+                    f'Failed to pin lighthouse-cli @types/node for '
                     f'{self.instance_id}: {output.decode()}'
                 )
+            pin_outputs.append(output.decode())
+
+            cli_package = json.loads(
+                read_from_container(self.container, f'{CLI_DIR}/package.json')
+            )
+            typescript_range = cli_package.get('devDependencies', {}).get(
+                'typescript'
+            )
+            version_match = re.search(r'\d+\.\d+\.\d+', typescript_range or '')
+            if version_match:
+                typescript_version = version_match.group()
+                exit_code, output = self.container.exec_run(
+                    f'npm install typescript@{typescript_version} '
+                    '--save-exact',
+                    workdir=CLI_DIR,
+                    stream=False,
+                )
+                assert isinstance(output, bytes)
+                log.info(exit_code)
+                log.info(output.decode())
+                if exit_code != 0:
+                    raise Exception(
+                        f'Failed to pin typescript@{typescript_version} for '
+                        f'{self.instance_id}: {output.decode()}'
+                    )
+                pin_outputs.append(output.decode())
 
         # install-cli's prepublish hook is supposed to build the CLI
         # automatically, but fails silently due to an npm lifecycle
@@ -375,6 +424,29 @@ class LighthouseEvaluator(Evaluator):
                     f'Failed to build lighthouse-cli for {self.instance_id} '
                     f'(via "{build_script}"): '
                     f'{build_log}'
+                )
+
+        # npm doesn't understand a yarn-installed node_modules, and the pins
+        # above can prune packages yarn hoisted there: on lighthouse-3442
+        # they "removed 186 packages", among them nyc's bundled yargs-parser,
+        # which lighthouse-cli/run.js requires without declaring it, so the
+        # CLI suite crashed on load. Re-running yarn restores them and keeps
+        # the pins, which package.json now records exactly.
+        if any(
+            re.search(r'removed \d+ package', o) for o in pin_outputs
+        ) and self._exists(f'{CLI_DIR}/yarn.lock'):
+            exit_code, output = self.container.exec_run(
+                'yarn install --ignore-scripts --non-interactive',
+                workdir=CLI_DIR,
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to restore lighthouse-cli dependencies for '
+                    f'{self.instance_id}: {output.decode()}'
                 )
 
         if (
@@ -489,6 +561,7 @@ compile(
 
         # 3. Create results directory
         self.container.exec_run(f'mkdir -p {RESULTS_DIR}', workdir='/testbed')
+        write_to_container(self.container, NO_EXIT_PRELOAD, NO_EXIT_SCRIPT)
 
         # run-mocha.sh's location is not fixed: lighthouse-5688 (the
         # install-all/build-all layout) has no
@@ -528,6 +601,11 @@ compile(
 
         log.info('All changes applied successfully.')
 
+    def _exists(self, path: str) -> bool:
+        """Whether ``path`` is a regular file in the container."""
+        assert self.container is not None
+        return self.container.exec_run(['test', '-f', path])[0] == 0
+
     @override
     def evaluate(self) -> list[TestResult]:
         """Run each Mocha suite and retrieve the combined JUnit XML results.
@@ -557,6 +635,7 @@ compile(
         commands = [
             'export PATH="/testbed/node_modules/.bin:$PATH"',
             EXPORT_NODE_OPTIONS,
+            EXPORT_NO_EXIT_PRELOAD,
             f'bash {self._run_mocha_script} --cli',
             f'bash {self._run_mocha_script} --core',
             f'bash {self._run_mocha_script} --viewer',

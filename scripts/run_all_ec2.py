@@ -106,6 +106,11 @@ at the same time; enforced via the semaphore in `main()`.
 Overridden by ``--n-concurrent`` when run as a script.
 """
 
+AUTO_SHUTDOWN_MARGIN_MINUTES: Final[int] = 15
+"""How long an instance outlives ``--run-timeout-minutes`` before its
+user-data auto-shutdown fires.
+"""
+
 MAX_CONCURRENT: Final[int] = 256
 """Upper bound the worker thread pool is sized for, so the concurrency can
 be raised mid-batch through ``--concurrency-file`` (threads start lazily).
@@ -289,6 +294,10 @@ async def run_instance(
                 instance_profile_arn=run_args.instance_profile_arn,
                 block_device_name=run_args.block_device_name,
                 block_volume_size_gb=run_args.block_volume_size_gb,
+                # Outlive the run's own timeout, plus time to boot, check
+                # out the branch and upload results
+                auto_shutdown_minutes=run_args.run_timeout_minutes
+                + AUTO_SHUTDOWN_MARGIN_MINUTES,
             )
         log.info(f'Created instance: {instance_id}')
         _cleanup_state.append((ec2, instance_id))
