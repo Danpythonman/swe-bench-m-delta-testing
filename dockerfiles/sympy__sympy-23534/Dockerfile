@@ -1,3 +1,4 @@
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.sympy_1776_sympy-23534:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.sympy_1776_sympy-23534@sha256:8a18511507a128964f0a001f54354370b84f4598d59b43d8df24163ba560a516
 
 WORKDIR /testbed

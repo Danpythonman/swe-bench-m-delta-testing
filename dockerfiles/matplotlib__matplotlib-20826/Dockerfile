@@ -1,3 +1,4 @@
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.matplotlib_1776_matplotlib-20826:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.matplotlib_1776_matplotlib-20826@sha256:633a9cd8b4ae6e6e82fc6c2b7f1c2b19b72f34c013d9162dd7734b86ad1fdf3a
 
 WORKDIR /testbed

@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.alibaba-fusion_1776_next-3218:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.alibaba-fusion_1776_next-3218@sha256:e347e264b3ba17700993c8df049ad3a0603f744df43ec9f85516f6a1a0ff2398
 
 WORKDIR /install
 # Install docker cli

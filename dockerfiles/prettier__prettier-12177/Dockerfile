@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.prettier_1776_prettier-12177:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.prettier_1776_prettier-12177@sha256:32d3713af771e01cd1577f07a26dcd2b36ba934d5ce198a57cea149cb1d492a8
 
 WORKDIR /install
 # Install docker cli

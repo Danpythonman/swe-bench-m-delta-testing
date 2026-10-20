@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.quarto-dev_1776_quarto-cli-4064:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.quarto-dev_1776_quarto-cli-4064@sha256:a69304055847e0c50f726c055d0a9733bf78202093bb2f31deda1f4487aec071
 
 WORKDIR /install
 # Install docker cli

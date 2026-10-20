@@ -25,10 +25,11 @@ from typing import Final
 
 import boto3
 
-from sbmdt.aws.ecr import base_image, docker_login, is_cached
+from sbmdt.aws.ecr import docker_login, is_cached
 from sbmdt.aws.env import AWS_PROFILE, REGION
 from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.env import DOCKERFILES_BASE
+from sbmdt.images import ECR_DOCKER_HUB, base_image
 from sbmdt.log import setup_logging
 
 log = logging.getLogger(__name__)
@@ -92,7 +93,7 @@ def main() -> None:
     ecr = session.client('ecr')
     images = sorted(
         {
-            base_image(path.name)
+            base_image(path.name, ECR_DOCKER_HUB)
             for path in DOCKERFILES_BASE.iterdir()
             if benchmark_of(path.name) == Benchmark.SWE_BENCH_VERIFIED
         }

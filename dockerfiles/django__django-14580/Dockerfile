@@ -1,3 +1,4 @@
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.django_1776_django-14580:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.django_1776_django-14580@sha256:34f0b2435968031cc19f39e942843c395128c10b0a73f4107742e06944aeb338
 
 WORKDIR /testbed

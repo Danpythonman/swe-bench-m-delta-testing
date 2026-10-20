@@ -8,27 +8,10 @@ from typing import Any, cast
 
 import boto3
 
-from sbmdt.env import DOCKERFILES_BASE
-
 __all__ = [
-    'base_image',
     'docker_login',
     'is_cached',
 ]
-
-
-def base_image(instance_id: str) -> str:
-    """Return the image the instance's Dockerfile is built ``FROM``.
-
-    Args:
-        instance_id: A Verified instance ID.
-
-    Returns:
-        The full image reference, e.g. ``<registry>/docker-hub/...:latest``.
-    """
-    dockerfile = (DOCKERFILES_BASE / instance_id / 'Dockerfile').read_text()
-    first = dockerfile.splitlines()[0]
-    return first.removeprefix('FROM ').strip()
 
 
 def is_cached(ecr: Any, image: str) -> bool:
@@ -36,16 +19,21 @@ def is_cached(ecr: Any, image: str) -> bool:
 
     Args:
         ecr: A boto3 ECR client.
-        image: A full image reference in the ECR registry.
+        image: A full image reference in the ECR registry, by tag
+            (``...:latest``) or by digest (``...@sha256:...``).
 
     Returns:
-        Whether the cached repository exists and has the tag.
+        Whether the cached repository exists and has the tag or digest.
     """
-    repository, _, tag = image.split('/', 1)[1].rpartition(':')
+    path = image.split('/', 1)[1]
+    if '@' in path:
+        repository, digest = path.split('@', 1)
+        image_id = {'imageDigest': digest}
+    else:
+        repository, _, tag = path.rpartition(':')
+        image_id = {'imageTag': tag}
     try:
-        ecr.describe_images(
-            repositoryName=repository, imageIds=[{'imageTag': tag}]
-        )
+        ecr.describe_images(repositoryName=repository, imageIds=[image_id])
     except Exception:
         return False
     return True

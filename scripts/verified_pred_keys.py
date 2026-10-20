@@ -21,7 +21,7 @@ from typing import Any
 
 import boto3
 
-from sbmdt.aws.ecr import base_image, is_cached
+from sbmdt.aws.ecr import is_cached
 from sbmdt.aws.env import AWS_PROFILE, REGION
 from sbmdt.aws.s3 import (
     PREDS_S3_BUCKET_NAME,
@@ -30,6 +30,7 @@ from sbmdt.aws.s3 import (
 )
 from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.evaluator.base import PatchType, TestResultsFilename
+from sbmdt.images import ECR_DOCKER_HUB, base_image
 
 PATCH_TYPES = (PatchType.GOLD, PatchType.BEFORE_PATCH)
 
@@ -88,7 +89,7 @@ def main() -> None:
         if args.cached_only:
             if pred.instance_id not in cached:
                 cached[pred.instance_id] = is_cached(
-                    ecr, base_image(pred.instance_id)
+                    ecr, base_image(pred.instance_id, ECR_DOCKER_HUB)
                 )
             if not cached[pred.instance_id]:
                 continue

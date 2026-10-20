@@ -29,7 +29,8 @@ src/sbmdt/
   utils.py                             # docker container file read/write/patch helpers
   parquet.py                           # TestResult <-> Parquet, read_test_results
   git_repos.py                         # blobless repository clones under .cache/repos
-  aws/ecr.py                           # ECR pull-through cache: base images, login
+  images.py                            # base images: digest pins, registry choice
+  aws/ecr.py                           # ECR pull-through cache: lookup, login
   analysis/                            # importable analysis (scripts/ are thin CLIs)
     test_split.py                      # classify_tests: F2P/P2P/flaky from runs
     reference.py                       # reference split, model scoring (analyze_results)
@@ -70,7 +71,7 @@ the delta-testing method: the harness derives its own split from
 
 | File | Source |
 |---|---|
-| `Dockerfile` | `FROM` the prebuilt image via the ECR cache, nothing else |
+| `Dockerfile` | `FROM` the prebuilt image, pinned by digest (see [Base images](#base-images)), nothing else |
 | `instance.json` | repository, version, base commit (read by the evaluator) |
 | `reference.json` | official F2P / P2P lists, **held out**: only `sbmdt.analysis.verified` (`scripts/compare_official_split.py`) reads it |
 | `gold_patch.diff` | scraped from the GitHub PR (not the dataset's `patch`) |
@@ -94,12 +95,13 @@ the delta-testing method: the harness derives its own split from
 
 ```bash
 uv run scripts/import_swebench.py                  # Dockerfile, instance.json, reference.json
+uv run scripts/pin_base_images.py                  # pin each Dockerfile's base image by digest
 GITHUB_TOKEN=$(gh auth token) uv run scripts/get_gold_patches.py
 uv run scripts/split_gold_patch.py
 uv run scripts/format_gold_diff_into_pred.py
 uv run scripts/audit_gold_apply.py                 # every gold patch applies at its base commit?
 
-# Reference runs (Docker must be logged into the ECR cache, see aws/run_ec2.sh)
+# Reference runs
 uv run scripts/run_instance.py django__django-11099 before_patch --apply-test-patch --json --file
 uv run scripts/run_instance.py django__django-11099 gold \
     --pred-file dockerfiles/django__django-11099/gold_patch.pred --json --file
@@ -110,11 +112,43 @@ uv run scripts/compare_official_split.py --data results
 `scripts/analyze_results.py` reads only SWE-bench M rows, so Verified
 results can share the S3 bucket without changing M figures.
 
+## Base images
+
+Every Dockerfile starts
+
+```dockerfile
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.<name>@sha256:<digest>
+```
+
+The prebuilt SWE-bench image is pinned by digest, so a rerun gets exactly
+the environment the published results came from even if SWE-bench re-pushes
+the tag. By default it comes from Docker Hub, so running the harness needs
+nothing but Docker: no AWS account or login.
+
+The registry is a build argument, which the evaluator takes from
+`SBMDT_REGISTRY`. EC2 workers (`aws/run_ec2.sh`) set it to the project's
+ECR pull-through cache, which mirrors Docker Hub (same digests) and spares
+large batches Docker Hub's anonymous pull limit (about 100 pulls per six
+hours per IP). To use the cache locally:
+
+```bash
+aws ecr get-login-password --region us-east-1 \
+    | docker login -u AWS --password-stdin 607869540801.dkr.ecr.us-east-1.amazonaws.com
+export SBMDT_REGISTRY=607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub
+```
+
+`scripts/pin_base_images.py` pins new Dockerfiles (`--check` lists any that
+are not pinned; `--repin` deliberately moves every pin to the tag's current
+digest).
+
 ## Requirements
 
 - Python 3.13+
 - [uv](https://docs.astral.sh/uv/) ((**strongly**) recommended) or pip
 - Docker, with the daemon running and accessible to the current user
+- Optional: an AWS account, only to run many instances in parallel on EC2
+  (`scripts/run_all_ec2.py`, `aws/README.md`)
 
 ## Installation
 

@@ -1,3 +1,4 @@
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.pydata_1776_xarray-3151:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.pydata_1776_xarray-3151@sha256:154a77ba71a5b6ab4d75f0f368d91432916af6b2711472b0100d955474642172
 
 WORKDIR /testbed

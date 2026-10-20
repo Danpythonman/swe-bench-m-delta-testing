@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.googlechrome_1776_lighthouse-14800:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.googlechrome_1776_lighthouse-14800@sha256:fb1682f5e54f311a35947d78206bfa3494425a3e7ec2767effa275acea4dfd04
 
 WORKDIR /install
 # Install docker cli

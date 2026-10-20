@@ -66,17 +66,16 @@ def minimal_dockerfile(content: bytes) -> bytes:
     by these evaluators. Omitting those layers saves most of the worker's
     bounded lifetime for the actual test suite.
     """
+    lines = [line.strip() for line in content.decode('utf-8').splitlines()]
     first = next(
-        (
-            line.strip()
-            for line in content.decode('utf-8').splitlines()
-            if line.strip().startswith('FROM ')
-        ),
-        None,
+        (i for i, line in enumerate(lines) if line.startswith('FROM ')), None
     )
     if first is None:
         raise ValueError('Dockerfile has no FROM instruction')
-    return f'{first}\n\nWORKDIR /testbed\n'.encode()
+    # Keep the ARG lines before FROM: FROM ${REGISTRY}/... needs them.
+    header = [line for line in lines[:first] if line.startswith('ARG ')]
+    header.append(lines[first])
+    return ('\n'.join(header) + '\n\nWORKDIR /testbed\n').encode()
 
 
 def prediction_identity(prediction_key: str):

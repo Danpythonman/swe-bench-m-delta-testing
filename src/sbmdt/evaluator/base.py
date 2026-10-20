@@ -23,6 +23,7 @@ from docker.models.containers import Container
 from docker.models.images import Image
 
 from sbmdt.env import DOCKERFILES_BASE
+from sbmdt.images import registry
 from sbmdt.patches import (
     drop_mode_only_sections,
     drop_unappliable_binary,
@@ -480,12 +481,13 @@ class Evaluator(ABC):
         client = docker.from_env()
         resource_name = f'sbmdt-{self.instance_id}'.lower()
         # Note that rm=True remove intermediate containers after build
-        log.info('Building image...')
+        log.info(f'Building image (base images from {registry()})...')
         self.image, _ = _build_image_with_retry(
             client,
             path=str(self.dockerfile_path.parent.resolve()),
             tag=f'{resource_name}:latest',
             labels={LABEL_KEY: LABEL_VALUE},
+            buildargs={'REGISTRY': registry()},
             rm=True,
             forcerm=True,
         )

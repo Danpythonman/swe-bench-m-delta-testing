@@ -104,12 +104,19 @@ done
 # is short-lived (12h) so this is done fresh on every run rather than baked
 # into the AMI. Best-effort: a login failure shouldn't fail an instance
 # whose Dockerfile doesn't use the cache.
+#
+# Dockerfiles build FROM ${REGISTRY}/swebench/...@sha256:..., pinned by digest
+# (see src/sbmdt/images.py); SBMDT_REGISTRY tells the evaluator which
+# registry to pass in. The cache mirrors Docker Hub, so either serves the
+# same image.
 ECR_REGISTRY='607869540801.dkr.ecr.us-east-1.amazonaws.com'
 if aws ecr get-login-password --region us-east-1 \
     | docker login --username AWS --password-stdin "${ECR_REGISTRY}"; then
     echo "Logged into ${ECR_REGISTRY}"
+    export SBMDT_REGISTRY="${ECR_REGISTRY}/docker-hub"
 else
     echo "run_ec2.sh: ECR login failed; falling back to direct Docker Hub pulls" >&2
+    export SBMDT_REGISTRY='docker.io'
 fi
 
 # Local path that run_instance.py writes its own log output to.

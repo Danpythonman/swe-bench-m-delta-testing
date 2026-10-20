@@ -1,3 +1,4 @@
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.astropy_1776_astropy-14369:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.astropy_1776_astropy-14369@sha256:ba6a17ac704562c63d361457c25320d5dcf60b0d1592568e9264bbd148025140
 
 WORKDIR /testbed

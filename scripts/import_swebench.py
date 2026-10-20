@@ -38,6 +38,7 @@ import pyarrow.parquet as pq
 
 from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.env import DOCKERFILES_BASE
+from sbmdt.images import BaseImage, dockerfile_header
 from sbmdt.instance import InstanceMetadata, ReferenceSplit
 from sbmdt.log import setup_logging
 
@@ -48,17 +49,9 @@ DATASET_URL: Final[str] = (
     'resolve/main/data/test-00000-of-00001.parquet'
 )
 
-# Docker Hub images are pulled through this ECR pull-through cache to avoid
-# Docker Hub's anonymous rate limit (see aws/run_ec2.sh).
-ECR_DOCKER_HUB: Final[str] = (
-    '607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub'
-)
-
-DOCKERFILE_TEMPLATE: Final[str] = """\
-FROM {registry}/swebench/sweb.eval.x86_64.{image}:latest
-
-WORKDIR /testbed
-"""
+# The image is written by tag; scripts/pin_base_images.py then pins it by
+# digest. The registry is a build argument (see sbmdt.images).
+DOCKERFILE_BODY: Final[str] = '\nWORKDIR /testbed\n'
 
 
 def image_name(instance_id: str) -> str:
@@ -117,10 +110,11 @@ def import_row(row: dict[str, Any], base: Path) -> None:
 
     instance_dir = base / instance_id
     instance_dir.mkdir(parents=True, exist_ok=True)
+    image = BaseImage(
+        f'swebench/sweb.eval.x86_64.{image_name(instance_id)}', 'latest', None
+    )
     (instance_dir / 'Dockerfile').write_text(
-        DOCKERFILE_TEMPLATE.format(
-            registry=ECR_DOCKER_HUB, image=image_name(instance_id)
-        )
+        dockerfile_header(image) + DOCKERFILE_BODY
     )
     InstanceMetadata(
         instance_id=instance_id,

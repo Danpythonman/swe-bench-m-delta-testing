@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.scratchfoundation_1776_scratch-gui-5039:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.scratchfoundation_1776_scratch-gui-5039@sha256:3184772a305631398bc2520f81d1a9907e1130e82535514d72b1fab26ce550bd
 
 WORKDIR /install
 # Install docker cli
