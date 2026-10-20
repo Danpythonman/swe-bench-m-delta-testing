@@ -6,7 +6,7 @@ For a given benchmark instance, this project builds a Docker image from the inst
 
 ## How it works
 
-1. `sbmdt.evaluate(instance_id)` looks at the instance ID prefix and dispatches to a concrete `Evaluator` (currently only `alibaba-*` instances are supported, via `AlibabaEvaluator`, **this is where help is needed**).
+1. `sbmdt.evaluate(instance_id)` looks at the instance ID prefix and dispatches to a concrete `Evaluator`. Every SWE-bench M repository has one (`alibaba-fusion`, `bpmn-io`, `carbon-design-system`, `eslint`, `GoogleChrome` (Lighthouse), `grommet`, `highlightjs`, `openlayers`, `prettier`, `PrismJS`, `quarto-dev`, `scratchfoundation`), and SWE-bench Verified instances go to the Python evaluators (see [SWE-bench Verified](#swe-bench-verified)).
 
 2. The evaluator's `run()` lifecycle (`setup`, then `evaluate`, then `cleanup`) is shared by all evaluators (`src/sbmdt/evaluator/base.py`):
    - **setup**: builds the Docker image from `dockerfiles/<instance_id>/Dockerfile`, starts a container.
@@ -36,9 +36,11 @@ src/sbmdt/
     verified.py                        # Verified label matching (compare_official_split)
   evaluator/
     base.py                            # Evaluator ABC, PatchType, TestResult
-    alibaba/
-      alibaba.py                       # AlibabaEvaluator (Karma-based test runner)
-      karma_junit_parser.py            # JUnit XML -> TestResult parsing
+    alibaba/                           # one package per SWE-bench M repository:
+      alibaba.py                       #   <repo>.py holds the evaluator,
+      karma_junit_parser.py            #   *_parser.py turns its report into TestResults
+    bpmn/  carbon/  eslint/  grommet/  highlightjs/  lighthouse/
+    openlayers/  prettier/  prismjs/  quarto/  scratchgui/
     python/                            # shared base for SWE-bench Verified evaluators
       python.py                        # PythonEvaluator, JSON-lines -> TestResult
       pytest_evaluator.py              # PytestEvaluator (10 pytest repositories)
@@ -128,16 +130,41 @@ pip install -e .
 
 ## Usage
 
+Each SWE-bench M instance has `dockerfiles/<instance_id>/` holding its
+`Dockerfile`, `gold_patch.diff` / `gold_patch.pred`, and the
+`code_patch` / `test_patch` halves of the gold patch.
+
+Delta testing an instance takes two reference runs and then one run per
+model patch. Each run writes one results file to `results/`:
+
+```bash
+# Reference runs: the tests before the fix, and with the gold patch
+uv run scripts/run_instance.py alibaba-fusion__next-717 before_patch --apply-test-patch --parquet --file
+uv run scripts/run_instance.py alibaba-fusion__next-717 gold \
+    --pred-file dockerfiles/alibaba-fusion__next-717/gold_patch.pred --parquet --file
+
+# A model patch (with_image or without_image)
+uv run scripts/run_instance.py alibaba-fusion__next-717 with_image \
+    --pred-file path/to/patch.pred --apply-test-patch --parquet --file
+```
+
+`--json --file` writes the same results as JSON for reading by eye, and
+`--parquet --s3 --bucket BUCKET` uploads them instead.
+
+`scripts/analyze_results.py reference` classifies each test (FAIL_TO_PASS,
+PASS_TO_PASS, flaky, ...) from the `before_patch` and `gold` runs, and
+`scripts/analyze_results.py score` grades model patches against that split.
+Both read a directory of Parquet results only (`--data`, default
+`s3-sync/test-results`, filled by `aws/sync-s3-with-local.sh`). To run many
+instances in parallel on EC2, see `scripts/run_all_ec2.py --help` and
+[aws/README.md](aws/README.md).
+
+From Python, `sbmdt.evaluate(instance_id)` runs the same lifecycle:
+
 ```python
 from sbmdt import evaluate
 
 evaluate('alibaba-fusion__next-717')
-```
-
-See [test.py](test.py) for a runnable example that also wires up logging to `logs/log.log`:
-
-```bash
-uv run python test.py
 ```
 
 ## Development
@@ -191,17 +218,10 @@ Then code the pipeline for the repo by:
 2. Make sure you make `/src/sbmdt/evaluator/<repo>/__init__.py`.
 3. Make a subclass of `Evaluator` class called `<repo>Evaluator`.
 4. Code! ;)
+5. Add its instance-ID prefix to `_load_evaluator_cls` in `src/sbmdt/interface.py`.
 
-Once you code the pipeline for the repo:
-
-```
-uv run main.py <instance-id> <patch_type> [--pred-file]
-```
-
-Examples:
+Then run it as in [Usage](#usage):
 
 ```
-uv run main.py alibaba-fusion__next-717 before_patch
-
-uv run main.py alibaba-fusion__next-717 without_image --pred-file ../Project/image-necessity-paper-analysis/preds/without-images/alibaba-fusion__next-717.pred
+uv run scripts/run_instance.py <instance-id> <patch_type> [--pred-file PRED_FILE] (--json | --parquet) (--file | --s3)
 ```

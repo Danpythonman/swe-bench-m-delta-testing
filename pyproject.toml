@@ -6,6 +6,8 @@ authors = [
     { name = "Daniel Di Giovanni", email = "dannyjdigio@gmail.com" }
 ]
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
     "aiofiles>=25.1.0",
@@ -33,7 +35,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
