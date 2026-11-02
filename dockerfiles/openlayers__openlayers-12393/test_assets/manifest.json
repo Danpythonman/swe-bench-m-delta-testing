@@ -1,0 +1,14 @@
+{
+ "test/rendering/cases/image-stretched-disable-smoothing/expected.png": {
+  "action": "modify",
+  "blob": "8121f09e86330161a4b8c46bab9a344421bf1cca"
+ },
+ "test/rendering/cases/reproj-image-stretched-disable-smoothing/expected.png": {
+  "action": "modify",
+  "blob": "2a6b3aa259db7e71a8604f7a4c08676740786e07"
+ },
+ "test/rendering/cases/reproj-image/expected.png": {
+  "action": "modify",
+  "blob": "e56de31db1e8bee51cec51149fc528231283db37"
+ }
+}

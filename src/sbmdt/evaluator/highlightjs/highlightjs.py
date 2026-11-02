@@ -61,6 +61,12 @@ MOCHA_OUTPUT_FILE: Final[str] = '/tmp/test-results.xml'
 TEST_CMD: Final[str] = (
     'npm test -- --reporter mocha-junit-reporter --timeout 60000'
 )
+# `npm run build` is the node target in every 10.x/11.x package.json;
+# 9.x calls the same script through `npm run node`. Try the named
+# script first and fall back to the tool it wraps.
+BUILD_CMD: Final[str] = (
+    'sh -c "npm run build || node ./tools/build.js -t node"'
+)
 
 
 class HighlightjsEvaluator(Evaluator):
@@ -115,15 +121,17 @@ class HighlightjsEvaluator(Evaluator):
 
         # The tests load the built library under build/, not src/. Without
         # a rebuild every patch was tested against the image's prebuilt,
-        # unpatched build, so no FAIL_TO_PASS test could ever pass.
+        # unpatched build, so no FAIL_TO_PASS test could ever pass. A failed
+        # build is raised rather than logged: grading the stale bundle would
+        # score the unpatched library as if it were the patch.
         exit_code, output = self.container.exec_run(
-            'npm run build', workdir='/testbed', stream=False
+            BUILD_CMD, workdir='/testbed', stream=False
         )
         assert isinstance(output, bytes)
-        log.info(f'npm run build exit code: {exit_code}')
+        log.info(f'build exit code: {exit_code}')
         if exit_code != 0:
             raise Exception(
-                f'npm run build failed for {self.instance_id}: '
+                f'build failed for {self.instance_id}: '
                 f'{output.decode()[-2000:]}'
             )
 

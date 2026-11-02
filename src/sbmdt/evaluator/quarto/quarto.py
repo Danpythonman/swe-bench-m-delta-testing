@@ -12,12 +12,15 @@ plain-text results.
 from __future__ import annotations
 
 import logging
+import re
+import shlex
 from typing import Final, override
 
 from sbmdt.evaluator.base import Evaluator, TestResult
 from sbmdt.evaluator.quarto.deno_test_parser import (
     results_text_to_test_results,
 )
+from sbmdt.patches import test_patch_for
 
 __all__ = [
     'QuartoEvaluator',
@@ -25,11 +28,26 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
+QUARTO_ROOT: Final[str] = '/testbed'
 TESTS_DIR: Final[str] = '/testbed/tests'
-DENO_BIN: Final[str] = '/testbed/package/dist/bin/tools/deno'
 QUARTO_SHARE_PATH: Final[str] = '/testbed/src/resources'
 QUARTO_BIN_PATH: Final[str] = '/testbed/package/dist/bin'
-IMPORT_MAP: Final[str] = '/testbed/src/import_map.json'
+# Where tests/run-tests.sh finds deno has moved with quarto's packaging:
+# bin/deno until spring 2022, bin/tools/deno after, and bin/tools/<arch>/
+# deno once the arch-specific layout arrived. Hard-coding the middle one
+# made every run of quarto-cli-475 exit 127 before a single test, leaving
+# an empty result instead of a failure. First existing path wins.
+DENO_CANDIDATES: Final[tuple[str, ...]] = (
+    f'{QUARTO_BIN_PATH}/tools/x86_64/deno',
+    f'{QUARTO_BIN_PATH}/tools/deno',
+    f'{QUARTO_BIN_PATH}/deno',
+)
+# run-tests.sh switched its --importmap to dev_import_map.json when that
+# file appeared; older checkouts only have import_map.json.
+IMPORT_MAP_CANDIDATES: Final[tuple[str, ...]] = (
+    '/testbed/src/dev_import_map.json',
+    '/testbed/src/import_map.json',
+)
 DENO_TEST_FLAGS: Final[str] = (
     '--unstable --allow-read --allow-write --allow-run --allow-env --allow-net'
 )
@@ -40,6 +58,35 @@ DENO_TEST_FLAGS: Final[str] = (
 # which xelatex has been observed to do.
 TEST_TIMEOUT_SECONDS: Final[int] = 1800
 TIMEOUT_CMD: Final[str] = f'timeout --kill-after=30 {TEST_TIMEOUT_SECONDS}'
+
+SMOKE_ALL: Final[str] = 'smoke/smoke-all.test.ts'
+
+
+def tests_for_patch(test_patch: str) -> tuple[list[str], str | None]:
+    """The test files a test patch touches, and a smoke-all document glob.
+
+    Paths are relative to tests/. A document under docs/smoke-all/ is
+    not a test file itself: smoke-all.test.ts renders whatever its
+    first argument globs (every document, without one), so those
+    documents become that argument and smoke-all joins the file list.
+    Other documents are read by a test file the patch also touches.
+    """
+    files, docs = [], []
+    for path in re.findall(r'^diff --git a/\S+ b/(\S+)', test_patch, re.M):
+        if not path.startswith('tests/'):
+            continue
+        rel = path[len('tests/'):]
+        if rel.endswith('.test.ts'):
+            files.append(rel)
+        elif rel.startswith('docs/smoke-all/') and rel.endswith(
+                ('.qmd', '.ipynb')):
+            docs.append(rel)
+    glob = None
+    if docs:
+        if SMOKE_ALL not in files:
+            files.append(SMOKE_ALL)
+        glob = docs[0] if len(docs) == 1 else '{' + ','.join(docs) + '}'
+    return sorted(set(files)), glob
 
 
 class QuartoEvaluator(Evaluator):
@@ -156,15 +203,38 @@ class QuartoEvaluator(Evaluator):
         if self.container is None:
             raise Exception('no container')
 
+        deno_bin = self._first_existing(DENO_CANDIDATES)
+        import_map = self._first_existing(IMPORT_MAP_CANDIDATES)
+        log.info('deno: %s  import map: %s', deno_bin, import_map)
+        # Only the tests this instance's test patch touches, as the
+        # benchmark's own harness does. The whole suite no longer fits
+        # the time cap once the smoke tests actually render (they died
+        # on start-up before QUARTO_ROOT was set): quarto-cli-4064 hit
+        # the 1800s timeout 159 tests in, never reaching its own
+        # smoke-all document. With nothing selectable, run everything.
+        files, smoke_glob = tests_for_patch(test_patch_for(self.instance_id))
+        log.info('quarto tests: %s  smoke-all glob: %s',
+                 files or 'whole suite', smoke_glob)
         command = (
-            f'{TIMEOUT_CMD} {DENO_BIN} test {DENO_TEST_FLAGS}'
-            f' --importmap={IMPORT_MAP}'
+            f'{TIMEOUT_CMD} {deno_bin} test {DENO_TEST_FLAGS}'
+            f' --importmap={import_map}'
         )
+        if files:
+            command += ' ' + ' '.join(shlex.quote(f) for f in files)
+        if smoke_glob:
+            command += ' -- ' + shlex.quote(smoke_glob)
         exit_code, output = self.container.exec_run(
             command,
             workdir=TESTS_DIR,
             environment={
                 'NO_COLOR': '1',
+                # run-tests.sh exports QUARTO_ROOT alongside QUARTO_DEBUG.
+                # With debug on and no root, quarto() looks for its dev
+                # `configuration` file under src/, fails to read it, and
+                # every smoke test dies there before rendering anything:
+                # ~190 of 224 tests in both base and gold on quarto-cli
+                # 2689, 2756, 3853, 4064 and 4184.
+                'QUARTO_ROOT': QUARTO_ROOT,
                 'QUARTO_BIN_PATH': QUARTO_BIN_PATH,
                 'QUARTO_SHARE_PATH': QUARTO_SHARE_PATH,
                 'QUARTO_DEBUG': 'true',
@@ -185,6 +255,20 @@ class QuartoEvaluator(Evaluator):
             decoded,
             self.timestamp,
         )
+
+    def _first_existing(self, paths: tuple[str, ...]) -> str:
+        """The first of `paths` present in the container, else the last.
+
+        Falling back to the last candidate keeps the old behaviour of a
+        clear "No such file" in the log when none exist.
+        """
+        assert self.container is not None
+        probe = ' '.join(f'[ -e {p} ] && echo {p} && exit 0;' for p in paths)
+        _, output = self.container.exec_run(
+            ['sh', '-c', probe + ' exit 1'], stream=False)
+        assert isinstance(output, bytes)
+        found = output.decode().strip().splitlines()
+        return found[0] if found else paths[-1]
 
     @override
     def pre_cleanup(self) -> None:

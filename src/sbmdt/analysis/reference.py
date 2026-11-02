@@ -18,7 +18,7 @@ from typing import Any, Final
 
 import pandas as pd
 
-from sbmdt.analysis.test_split import classify_tests
+from sbmdt.analysis.test_split import Columns, classify_tests
 from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.parquet import read_test_results
 
@@ -246,7 +246,19 @@ def reference_split(
             [INSTANCE, PATCH, 'agent_name'], observed=True
         )['timestamp'].transform('max')
         subset = subset[subset['timestamp'] == latest].copy()
-    split = classify_tests(subset, pre_label=pre, post_label=post)
+    # One run per side is kept, so a name seen twice in one run is two
+    # tests sharing a title, not flakiness: collapse within each run first.
+    # The coverage guard stays off: a test absent before the patch counts
+    # as failing, the definition both benchmarks' splits are derived with
+    # (a touched-scope Verified run legitimately lacks the tests the patch
+    # adds, so the guard would quarantine it).
+    split = classify_tests(
+        subset,
+        pre_label=pre,
+        post_label=post,
+        columns=Columns(run='timestamp'),
+        min_pre_run_coverage=0,
+    )
 
     categories = {
         'FAIL_TO_PASS': split.fail_to_pass,

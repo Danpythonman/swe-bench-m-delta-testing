@@ -1,0 +1,18 @@
+{
+ "test/rendering/cases/webgl-data-tile-interpolate-false/expected.png": {
+  "action": "add",
+  "blob": "68cc13c50516d5e010e5ca3dfb4b42a409c47700"
+ },
+ "test/rendering/cases/webgl-data-tile-interpolate-true/expected.png": {
+  "action": "add",
+  "blob": "b2bc53610990486b70201118e8e21058b268d538"
+ },
+ "test/rendering/cases/webgl-mixed-layers/expected.png": {
+  "action": "modify",
+  "blob": "681d53e6838b43c0ec1acabde6909ea5bc278cd8"
+ },
+ "test/rendering/cases/webgl-multiple-layers/expected.png": {
+  "action": "modify",
+  "blob": "0a01e8cfedeeeeb61f4c7b59cc1214aaf31f7894"
+ }
+}

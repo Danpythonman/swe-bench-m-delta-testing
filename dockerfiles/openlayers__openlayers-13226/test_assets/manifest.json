@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/webgl-tile-no-wrap/expected.png": {
+  "action": "add",
+  "blob": "cd90580e7478aa9f6289e928e761cd795a77d15e"
+ }
+}

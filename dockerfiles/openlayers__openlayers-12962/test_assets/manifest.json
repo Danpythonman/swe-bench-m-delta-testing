@@ -1,0 +1,22 @@
+{
+ "test/rendering/cases/layer-tile-stack-opacity/expected.png": {
+  "action": "add",
+  "blob": "89db24d82f79fdeeae430114d7ab64293cbbe7ad"
+ },
+ "test/rendering/data/tiles/south-carolina/11/566/1-828.png": {
+  "action": "add",
+  "blob": "8be510c7b23e01c93af592f239a864715c29303c"
+ },
+ "test/rendering/data/tiles/south-carolina/11/566/2-828.png": {
+  "action": "add",
+  "blob": "b1792f6d7b22490af953e8f1deeeb239e559860c"
+ },
+ "test/rendering/data/tiles/south-carolina/11/566/3-828.png": {
+  "action": "add",
+  "blob": "6cfc78af6cbf5fed17f86702a0d3432f3005adcb"
+ },
+ "test/rendering/data/tiles/south-carolina/11/566/4-828.png": {
+  "action": "add",
+  "blob": "a62506c36a39e431163c134b01c210e957052a5f"
+ }
+}

@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/reproj-tile-no-wrap/expected.png": {
+  "action": "add",
+  "blob": "3cba47a2e1e41e8af6894cd0046d9df1b9945b50"
+ },
+ "test/rendering/cases/webgl-reproj-no-wrap/expected.png": {
+  "action": "add",
+  "blob": "d135e81fd2df1ef29073237c6864ce3c4cefd332"
+ }
+}

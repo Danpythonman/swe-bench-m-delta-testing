@@ -14,6 +14,7 @@ import json
 import logging
 import re
 import shlex
+from pathlib import Path
 from typing import Any, Final, cast, override
 
 from sbmdt.env import DOCKERFILES_BASE
@@ -33,11 +34,18 @@ __all__ = [
     'OpenlayersEvaluator',
 ]
 
+# Appended to test-extensions.js so it lands in the test bundle ahead of
+# karma-mocha's call to mocha.run(). See the file itself for why.
+_ABORT_SHIM: Final[str] = (
+    Path(__file__).with_name('mocha_abort_shim.js').read_text(
+        encoding='utf-8')
+)
+
 log = logging.getLogger(__name__)
 
 DEFAULT_KARMA_CONFIG_FILE: Final[str] = '/testbed/test/karma.config.js'
 
-
+RENDERING_RUNNER: Final[str] = 'test/rendering/test.js'
 RENDERING_CASES_DIR: Final[str] = 'test/rendering/cases/'
 NODE_RESULTS_FILE: Final[str] = '/tmp/sbmdt-node-results.json'
 
@@ -251,6 +259,35 @@ class OpenlayersEvaluator(Evaluator):
                 init_require + karma_text,
             )
 
+        # karma-chrome-launcher reads CHROME_BIN. Several configs
+        # set it themselves from puppeteer's bundled binary, which
+        # overwrites whatever evaluate() exports and sends the
+        # launcher back to a binary with no --no-sandbox wrapper.
+        # Make the assignment conditional so an exported value
+        # wins and the original stays as the fallback.
+        # apply_change_regex raises when nothing matches, and plenty
+        # of configs never mention CHROME_BIN, so look first.
+        _chrome_bin_assign = re.compile(
+            r'process\.env\.CHROME_BIN\s*=\s*'
+            r'require\([^)]*\)\.executablePath\(\);'
+        )
+        if _chrome_bin_assign.search(karma_text):
+            apply_change_regex(
+                container=self.container,
+                file=self._karma_config_file,
+                find=_chrome_bin_assign.pattern,
+                replace=(
+                    'if (!process.env.CHROME_BIN) { '
+                    "process.env.CHROME_BIN = "
+                    "require('puppeteer').executablePath(); }"
+                ),
+                assertion='if (!process.env.CHROME_BIN)',
+            )
+            log.info(
+                'made the CHROME_BIN assignment conditional for %s',
+                self.instance_id,
+            )
+
         # Requiring the runtime above fixes the Node-side Karma process, but
         # Babel-generated async helpers execute in Chrome. Include the same
         # module as the first browser file so it defines regeneratorRuntime
@@ -331,7 +368,18 @@ class OpenlayersEvaluator(Evaluator):
                 'require.resolve("source-map/package.json"))\'); '
                 'find node_modules -path "*/source-map/package.json" '
                 '-print0 | while IFS= read -r -d "" p; do '
-                '  ver=$(node -p "require(process.argv[1]).version" "$p"); '
+                # `find node_modules ...` prints "node_modules/x/...", with
+                # no leading "./", and require() reads a specifier that
+                # starts with a bare word as a *package name*, not a path.
+                # So this threw "Cannot find module
+                # 'node_modules/@jridgewell/source-map/package.json'",
+                # $ver came back empty, the case below never matched, and
+                # the nested source-map@0.7 it exists to replace was left
+                # in place -- which is what later killed the suite. Six
+                # openlayers instances died this way. "./$p" makes it a
+                # relative path again.
+                '  ver=$(node -p "require(process.argv[1]).version" '
+                '"./$p"); '
                 '  case "$ver" in 0.7*|0.8*|0.9*|1.*) '
                 '    d=$(dirname "$p"); rm -rf "$d"; cp -a "$root" "$d";; '
                 '  esac; '
@@ -371,6 +419,31 @@ class OpenlayersEvaluator(Evaluator):
             replace=_add_junit_reporter,
             assertion='junitReporter: {',
         )
+
+        # Every openlayers config from v5.3.0 to v10.2.1 pins mocha's
+        # per-test timeout at 2500ms, which upstream CI meets on a GPU.
+        # These workers rasterize WebGL in software through SwiftShader,
+        # where the first shader compile alone can outrun that budget: the
+        # same ol/layer/Heatmap tests passed in openlayers-10478's run and
+        # timed out in openlayers-10723's, minutes apart, on identical
+        # code. A timeout is an environment budget rather than a test
+        # assertion -- the same class of knob as the karma disconnect
+        # ceilings above -- so raising it costs nothing a real hang would
+        # not still catch, and stops the software renderer from inventing
+        # failures the reference never saw.
+        try:
+            apply_change_regex(
+                container=self.container,
+                file=self._karma_config_file,
+                find=r'mocha:\s*\{\s*timeout:\s*\d+',
+                replace='mocha: {\n        timeout: 10000',
+                assertion='timeout: 10000',
+            )
+        except Exception as exc:
+            log.warning(
+                f'could not raise the mocha timeout for '
+                f'{self.instance_id}: {exc}'
+            )
 
         # The old fixed plugin list assumed every instance's package.json
         # carries the same karma-* packages this evaluator happened to be
@@ -511,7 +584,8 @@ class OpenlayersEvaluator(Evaluator):
                         'customLaunchers: {\n'
                         '      ChromeNoSandbox: {\n'
                         "        base: 'Chrome',\n"
-                        "        flags: ['--no-sandbox', '--enable-webgl', "
+                        "        flags: ['--no-sandbox', "
+                        "'--disable-dev-shm-usage', '--enable-webgl', "
                         "'--ignore-gpu-blocklist', "
                         "'--use-angle=swiftshader'],\n"
                         '      },'
@@ -531,7 +605,8 @@ class OpenlayersEvaluator(Evaluator):
                         '    customLaunchers: {\n'
                         '      ChromeNoSandbox: {\n'
                         "        base: 'Chrome',\n"
-                        "        flags: ['--no-sandbox', '--enable-webgl', "
+                        "        flags: ['--no-sandbox', "
+                        "'--disable-dev-shm-usage', '--enable-webgl', "
                         "'--ignore-gpu-blocklist', "
                         "'--use-angle=swiftshader'],\n"
                         '      },\n'
@@ -545,6 +620,102 @@ class OpenlayersEvaluator(Evaluator):
                 f'{self.instance_id}; leaving browsers: as-is and relying '
                 f'on the PUPPETEER_EXECUTABLE_PATH shim for --no-sandbox'
             )
+
+        # OpenLayers' test bootstrap registers a root-level afterEach
+        # that throws 'Found extra <div> elements in the body' when a test
+        # leaves DOM behind. Mocha treats a failing hook as fatal to the
+        # suite that owns it, and the root suite owns every test, so one
+        # test that times out mid-render -- leaving its map div attached
+        # because the cleanup never ran -- cancels the whole remaining
+        # run. openlayers-13020 reported "Executed 51 of 2083" for exactly
+        # this reason, and every unexecuted test then scores as a failure,
+        # which is how one slow render becomes two thousand phantom
+        # regressions.
+        #
+        # The guard is suite hygiene, not a benchmark test: its name
+        # appears in no FAIL_TO_PASS or PASS_TO_PASS list, so it can only
+        # ever subtract signal. Doing what it asks for -- removing the
+        # leftover divs -- instead of throwing leaves the next test just
+        # as isolated while letting the run finish. `garbage` is a live
+        # HTMLCollection, so draining index 0 empties it. The guard's text
+        # is byte-identical from v5.3.0 through v10.2.1; only the file
+        # moved from test/ to test/browser/ along the way.
+        _, extensions_output = self.container.exec_run(
+            [
+                'find', '/testbed/test', '-name', 'test-extensions.js',
+                '-not', '-path', '*/node_modules/*',
+            ],
+        )
+        assert isinstance(extensions_output, bytes)
+        extensions_files = [
+            line.strip()
+            for line in extensions_output.decode().splitlines()
+            if line.strip()
+        ]
+        if not extensions_files:
+            log.warning(
+                f'no test-extensions.js under /testbed/test for '
+                f'{self.instance_id}; leaving the body-div guard alone'
+            )
+        for extensions_file in extensions_files:
+            # A commit that words the guard differently must not abort the
+            # evaluation: failing to defuse it costs only the tests the
+            # abort would have taken anyway, which is the status quo.
+            try:
+                apply_change_regex(
+                    container=self.container,
+                    file=extensions_file,
+                    find=(
+                        r'if \(garbage\.length\) \{\s*'
+                        r"throw new Error\('Found extra <div> elements in "
+                        r"the body'\);\s*\}"
+                    ),
+                    replace=(
+                        'while (garbage.length) {\n'
+                        '      garbage[0].parentNode.removeChild('
+                        'garbage[0]);\n'
+                        '    }'
+                    ),
+                    assertion='garbage[0].parentNode.removeChild(garbage[0])',
+                )
+            except Exception as exc:
+                log.warning(
+                    f'could not defuse the body-div guard in '
+                    f'{extensions_file} for {self.instance_id}: {exc}'
+                )
+            else:
+                log.info(
+                    f'defused the body-div guard in {extensions_file} for '
+                    f'{self.instance_id}'
+                )
+
+        # Defusing the body-div guard above removes one way for the
+        # suite to cancel itself; this removes the other. Mocha 9 aborts
+        # every remaining suite when an assertion fires after its test has
+        # already passed, which cost openlayers-13020 1690 of 2083 tests
+        # even with the guard defused.
+        for extensions_file in extensions_files:
+            try:
+                current = read_from_container(
+                    self.container, extensions_file
+                )
+                if '__abortDefused' in current:
+                    continue
+                write_to_container(
+                    container=self.container,
+                    file=extensions_file,
+                    content=current + '\n' + _ABORT_SHIM,
+                )
+            except Exception as exc:
+                log.warning(
+                    f'could not install the mocha abort shim in '
+                    f'{extensions_file} for {self.instance_id}: {exc}'
+                )
+            else:
+                log.info(
+                    f'installed the mocha abort shim in {extensions_file} '
+                    f'for {self.instance_id}'
+                )
 
         log.info('All changes applied successfully.')
 
@@ -622,10 +793,19 @@ class OpenlayersEvaluator(Evaluator):
             # and pointing PUPPETEER_EXECUTABLE_PATH at the shim instead of
             # the binary itself, reaches both launch paths without needing
             # to know which one a given commit uses.
+            # --disable-gpu alone breaks the WebGL-backed rendering tests
+            # this suite depends on (see the sibling karma-chrome-launcher
+            # branch above, which uses software rendering instead of
+            # disabling the GPU outright for exactly that reason). Keep
+            # both shim and launcher on the same flags so which resolution
+            # path a given commit's config happens to use doesn't change
+            # whether WebGL is available.
             shim_path = '/tmp/chrome-no-sandbox'
             shim_script = (
                 f'#!/bin/sh\n'
-                f'exec {chrome_path[0]} --no-sandbox --disable-gpu "$@"\n'
+                f'exec {chrome_path[0]} --no-sandbox '
+                f'--disable-dev-shm-usage --enable-webgl '
+                f'--ignore-gpu-blocklist --use-angle=swiftshader "$@"\n'
             )
             write_to_container(self.container, shim_path, shim_script)
             self.container.exec_run(['chmod', '+x', shim_path])
@@ -815,6 +995,22 @@ class OpenlayersEvaluator(Evaluator):
         cases = touched_rendering_cases(
             read_diff(test_patch / TEST_PATCH_DIFF_FILENAME)
         )
+        # Older commits have no rendering runner, and a case the test patch
+        # deletes has nothing left to run.
+        _, present = self.container.exec_run(
+            [
+                'bash',
+                '-c',
+                f'test -f {RENDERING_RUNNER} || exit 0; '
+                'for c in "$@"; do '
+                f'test -f {RENDERING_CASES_DIR}$c/main.js && echo "$c"; done',
+                'present-cases',
+                *cases,
+            ],
+            workdir='/testbed',
+        )
+        assert isinstance(present, bytes)
+        cases = [c for c in cases if c in present.decode().split()]
         if not cases:
             return []
         pattern = '|'.join(f'/{re.escape(case)}/' for case in cases)

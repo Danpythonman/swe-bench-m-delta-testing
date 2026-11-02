@@ -1,0 +1,14 @@
+{
+ "test/rendering/cases/layer-vector-extent-rotation-declutter/expected.png": {
+  "action": "add",
+  "blob": "8d3d5701d4b4000f8ccab886fb7a37fdd9a51cfd"
+ },
+ "test/rendering/cases/layer-vector-multi-world-declutter/expected.png": {
+  "action": "add",
+  "blob": "908c05a4a2eb4fdda0f161fdabbc699e29234cd2"
+ },
+ "test/rendering/cases/vector-layer-opacity-declutter/expected.png": {
+  "action": "add",
+  "blob": "a46891bd4b4e88abfc1d3cd8b37cc90d1dc8b18d"
+ }
+}
