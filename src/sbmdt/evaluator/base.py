@@ -13,7 +13,7 @@ import logging
 import re
 import time
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Final, final
@@ -33,6 +33,7 @@ from sbmdt.patches import (
     test_patch_for,
 )
 from sbmdt.pred import Pred
+from sbmdt.provenance import harness_commit
 from sbmdt.utils import write_to_container
 
 __all__ = [
@@ -164,6 +165,9 @@ class TestResult:
             test, when the runner reports it. Names alone collide across
             files (two suites can define the same test), and benchmarks
             such as SWE-bench Multimodal grade some instances per file.
+        harness_commit: The commit of this harness that produced the
+            result (see :mod:`sbmdt.provenance`), so runs from different
+            versions of an evaluator can be told apart.
     """
 
     instance_id: str
@@ -173,6 +177,7 @@ class TestResult:
     test_name: str
     passed: bool
     test_file: str | None = None
+    harness_commit: str | None = None
 
     @staticmethod
     def from_dict(obj: dict[str, Any]) -> TestResult:
@@ -181,7 +186,7 @@ class TestResult:
         Args:
             obj: Mapping containing ``instance_id``, ``patch_type``,
                 ``agent_name``, ``test_name``, and ``passed`` keys, and
-                optionally ``test_file``.
+                optionally ``test_file`` and ``harness_commit``.
 
         Returns:
             The constructed :class:`TestResult`.
@@ -230,6 +235,10 @@ class TestResult:
         if test_file is not None and not isinstance(test_file, str):
             raise Exception('test_file not str')
 
+        commit = obj.get('harness_commit', None)
+        if commit is not None and not isinstance(commit, str):
+            raise Exception('harness_commit not str')
+
         return TestResult(
             instance_id=instance_id,
             patch_type=PatchType(patch_type),
@@ -238,6 +247,7 @@ class TestResult:
             test_name=test_name,
             passed=passed,
             test_file=test_file,
+            harness_commit=commit,
         )
 
     def to_dict(self, json_safe: bool = False) -> dict[str, Any]:
@@ -1102,7 +1112,12 @@ class Evaluator(ABC):
             log.info('Setting up...')
             self.setup()
             log.info('Evaluating...')
-            results = self.evaluate()
+            commit = harness_commit()
+            log.info(f'Harness commit: {commit}')
+            results = [
+                replace(result, harness_commit=commit)
+                for result in self.evaluate()
+            ]
         except Exception:
             # Without this the stage that failed is invisible: the run
             # goes straight from its last INFO line to "Cleaning up",

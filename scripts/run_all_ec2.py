@@ -22,6 +22,7 @@ import os
 import random
 import shlex
 import signal
+import subprocess
 from collections.abc import Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -95,6 +96,7 @@ class RunArgs:
     block_volume_size_gb: int
     aws_profile: str
     git_branch: str | None
+    git_commit: str | None
     apply_test_patch: bool
     run_timeout_minutes: int
 
@@ -123,6 +125,104 @@ GIT_BRANCH: str | None = None
 """If set, checked out on the instance (via ``make_git_checkout_command``)
 before the evaluation command is run.
 """
+
+RESULT_PATHS: Final[tuple[str, ...]] = (
+    'src/sbmdt/evaluator',
+    'src/sbmdt/analysis',
+    'src/sbmdt/patches.py',
+    'dockerfiles',
+)
+"""Paths whose changes alter results; see ``unmerged_result_changes``."""
+
+UNMERGED_WINDOW_DAYS: Final[int] = 60
+"""How far back ``unmerged_result_changes`` looks on other branches."""
+
+
+def _git(*args: str) -> str:
+    """Run git in the project and return its stripped standard output."""
+    return subprocess.run(
+        ['git', '-C', str(PROJECT_BASE), *args],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+
+def resolve_launch_commit(branch: str) -> str:
+    """The commit every worker checks out: the tip of ``origin/branch``.
+
+    Workers fetch from GitHub, so a commit that exists only locally never
+    reaches them; a run would then silently use older code than the
+    launcher's checkout. Resolving the commit once here also keeps a batch
+    on one version when the branch moves while it runs.
+
+    Args:
+        branch: The branch the workers check out.
+
+    Returns:
+        The full commit hash of ``origin/branch``.
+
+    Raises:
+        SystemExit: If the local HEAD is not contained in
+            ``origin/branch``, i.e. there are unpushed commits.
+    """
+    _git('fetch', '--quiet', 'origin', branch)
+    remote = _git('rev-parse', f'origin/{branch}')
+    local = _git('rev-parse', 'HEAD')
+    ancestor = subprocess.run(
+        ['git', '-C', str(PROJECT_BASE), 'merge-base', '--is-ancestor',
+         local, remote],
+        capture_output=True,
+    )
+    if ancestor.returncode != 0:
+        raise SystemExit(
+            f'local HEAD {local[:10]} is not on origin/{branch} '
+            f'({remote[:10]}): push it first, or the workers run code '
+            f'that is not what you have checked out'
+        )
+    if local != remote:
+        log.warning(
+            f'origin/{branch} ({remote[:10]}) is ahead of the local HEAD '
+            f'({local[:10]}); the workers run origin/{branch}'
+        )
+    return remote
+
+
+def unmerged_result_changes(commit: str) -> dict[str, int]:
+    """Recent commits on other branches that change results but are not
+    in ``commit``.
+
+    Fixes that stay on a side branch are invisible to every run launched
+    from the main one, and nothing in the results shows it: September's
+    evaluator fixes sat unmerged for six weeks while every October run went
+    without them.
+
+    Args:
+        commit: The commit about to be launched.
+
+    Returns:
+        Remote branch name to the number of its commits from the last
+        ``UNMERGED_WINDOW_DAYS`` days that touch ``RESULT_PATHS`` and are
+        missing from ``commit``.
+    """
+    _git('fetch', '--quiet', '--prune', 'origin')
+    branches = _git(
+        'for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin'
+    ).splitlines()
+    missing: dict[str, int] = {}
+    for branch in branches:
+        if branch in ('origin', 'origin/HEAD'):
+            continue
+        count = int(
+            _git(
+                'rev-list', '--count', '--no-merges',
+                f'--since={UNMERGED_WINDOW_DAYS}.days',
+                f'{commit}..{branch}', '--', *RESULT_PATHS,
+            )
+        )
+        if count:
+            missing[branch] = count
+    return missing
 
 # EC2 throttles RunInstances per account with a small burst allowance, so
 # launching a whole --n-concurrent batch at once fails with
@@ -214,10 +314,12 @@ def make_command(
     return command
 
 
-def make_git_checkout_command(branch: str) -> str:
+def make_git_checkout_command(branch: str, commit: str | None = None) -> str:
     """Build the shell command to fetch and check out ``branch`` in
     ``/opt/sbmdt`` on the EC2 instance, ahead of running the evaluation
-    command built by ``make_command``.
+    command built by ``make_command``. With ``commit``, that exact commit
+    is checked out (as ``branch``), so every worker of a batch runs the
+    same code even if the branch moves meanwhile.
 
     Three details of the environment have to be worked around. The
     repository is cloned as ``ssm-user`` at image build time but SSM runs
@@ -233,14 +335,19 @@ def make_git_checkout_command(branch: str) -> str:
 
     Args:
         branch: Name of the git branch to fetch and check out.
+        commit: The commit to check out; the branch's tip if omitted.
 
     Returns:
         The full shell command string to execute on the instance.
     """
     ref = f'refs/remotes/origin/{branch}'
     git = ['git', '-c', 'safe.directory=/opt/sbmdt']
-    fetch = [*git, 'fetch', '--depth', '1', 'origin', f'+{branch}:{ref}']
-    checkout = [*git, 'checkout', '-B', branch, f'origin/{branch}']
+    if commit is None:
+        fetch = [*git, 'fetch', '--depth', '1', 'origin', f'+{branch}:{ref}']
+        checkout = [*git, 'checkout', '-B', branch, f'origin/{branch}']
+    else:
+        fetch = [*git, 'fetch', '--depth', '1', 'origin', commit]
+        checkout = [*git, 'checkout', '-B', branch, commit]
     command = ' && '.join(
         ['cd /opt/sbmdt', shlex.join(fetch), shlex.join(checkout)]
     )
@@ -313,11 +420,16 @@ async def run_instance(
         await wait_for_ssm(ssm, instance_id)
 
         if run_args.git_branch is not None:
-            log.info(f'Checking out branch {run_args.git_branch}')
+            log.info(
+                f'Checking out branch {run_args.git_branch} at '
+                f'{run_args.git_commit}'
+            )
             await send_ssm_command(
                 ssm,
                 instance_id,
-                make_git_checkout_command(run_args.git_branch),
+                make_git_checkout_command(
+                    run_args.git_branch, run_args.git_commit
+                ),
             )
 
         log.info('Sending command')
@@ -797,6 +909,7 @@ def parse_args() -> RunArgs:
         block_volume_size_gb=args.block_volume_size_gb,
         aws_profile=args.aws_profile,
         git_branch=args.git_branch,
+        git_commit=None,
         apply_test_patch=args.apply_test_patch,
         run_timeout_minutes=args.run_timeout_minutes,
     )
@@ -806,4 +919,23 @@ if __name__ == '__main__':
     setup_logging(level=logging.INFO)
     setup_logging_for_asyncio(log)
     run_args = parse_args()
+    if run_args.git_branch is None:
+        log.warning(
+            'no --git-branch: workers run whatever the AMI was built from, '
+            'and only harness_commit in the results says which code that was'
+        )
+    else:
+        run_args.git_commit = resolve_launch_commit(run_args.git_branch)
+        log.info(
+            f'Workers check out {run_args.git_branch} at '
+            f'{run_args.git_commit}'
+        )
+        for branch, count in unmerged_result_changes(
+            run_args.git_commit
+        ).items():
+            log.warning(
+                f'{branch} has {count} recent commit(s) changing evaluators, '
+                f'analysis or instance data that {run_args.git_commit[:10]} '
+                f'does not contain; merge them first if they are fixes'
+            )
     asyncio.run(main(run_args))

@@ -32,6 +32,7 @@ TEST_RESULTS_SCHEMA: Final[pa.Schema] = pa.schema(
         ('test_name', pa.string()),
         ('passed', pa.bool_()),
         ('test_file', pa.string()),
+        ('harness_commit', pa.string()),
     ]
 )
 
@@ -39,11 +40,12 @@ TEST_RESULTS_SCHEMA: Final[pa.Schema] = pa.schema(
 def read_test_results(path: Path) -> pd.DataFrame:
     """Read a directory of result objects under one schema.
 
-    Results written before ``test_file`` existed lack that column.
+    Results written before ``test_file`` or ``harness_commit`` existed lack
+    those columns.
     Reading the directory with pandas alone takes the schema from
-    whichever file it sees first and silently drops the column from every
+    whichever file it sees first and silently drops a column from every
     other file, so the full schema is imposed here and older files read
-    it as null.
+    them as null.
 
     Args:
         path: Directory of Parquet result objects (or a single file).
@@ -64,7 +66,8 @@ def test_results_to_parquet_table(results: list[TestResult]) -> pa.Table:
     Returns:
         A :class:`pyarrow.Table` with one row per result and columns
         ``instance_id``, ``patch_type``, ``agent_name``, ``timestamp``,
-        ``test_name``, ``passed`` and ``test_file`` (null when unknown).
+        ``test_name``, ``passed``, ``test_file`` and ``harness_commit``
+        (null when unknown).
     """
 
     table = pa.Table.from_pylist(

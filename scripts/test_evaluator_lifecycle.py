@@ -24,6 +24,10 @@ namespace = dict(
     TestResult=TestResult,
     MODEL_PATCH_TYPES=MODEL_PATCH_TYPES,
     final=final,
+    # The stages return placeholders, not TestResults, so stamping the
+    # harness commit leaves them as they are.
+    harness_commit=lambda: None,
+    replace=lambda result, **_: result,
 )
 exec(
     compile(ast.Module(body=[method], type_ignores=[]), str(BASE), 'exec'),
