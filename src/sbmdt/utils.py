@@ -17,6 +17,7 @@ __all__ = [
     'apply_change_literal',
     'apply_change_regex',
     'apply_change',
+    'node_accepts_node_option',
 ]
 
 
@@ -60,17 +61,22 @@ def read_from_container(container: Container, file: str) -> str:
         return raw_bytes.decode()
 
 
-def write_to_container(container: Container, file: str, content: str) -> None:
+def write_to_container(
+    container: Container, file: str, content: str | bytes
+) -> None:
     """
-    Write a string to a file inside a Docker container.
+    Write a string (or raw bytes) to a file inside a Docker container.
 
     Args:
         container: The running Docker container to write to.
         file: Absolute path to the file inside the container.
-        content: The string content to write to the file.
+        content: The content to write; a string is UTF-8 encoded,
+            bytes (e.g. an image) are written as they are.
     """
     # Convert the string to bytes since tar works with raw bytes
-    encoded: bytes = content.encode()
+    encoded: bytes = (
+        content.encode() if isinstance(content, str) else content
+    )
 
     # Create an in-memory buffer to build the tar archive into
     buf = io.BytesIO()
@@ -234,3 +240,29 @@ def apply_change(
         if callable(replace):
             raise TypeError('literal mode requires a string replacement')
         apply_change_literal(container, file, find, replace, assertion)
+
+
+def node_accepts_node_option(container: Container, flag: str) -> bool:
+    """Report whether this image's node will start with ``flag`` set.
+
+    ``--openssl-legacy-provider`` re-enables the MD4 hashing that webpack 4
+    relies on, and the usual test is whether node is 17 or newer. That test
+    is wrong here. The SWE-bench base images are tagged ``:latest``, so the
+    node inside them moves; recent builds refuse the flag *inside*
+    ``NODE_OPTIONS`` ("--openssl-legacy-provider is not allowed in
+    NODE_OPTIONS") and exit before the test runner starts. Node 21 satisfies
+    ">= 17" and still refuses, which is how every bpmn-js run began exiting
+    9 with no results file. Asking node directly costs one exec and cannot
+    go stale.
+
+    Args:
+        container: Running container to probe.
+        flag: A single node CLI flag, e.g. ``--openssl-legacy-provider``.
+
+    Returns:
+        True if node starts cleanly with ``NODE_OPTIONS=<flag>``.
+    """
+    exit_code, _ = container.exec_run(
+        ['node', '-e', ''], environment={'NODE_OPTIONS': flag}, stream=False
+    )
+    return exit_code == 0

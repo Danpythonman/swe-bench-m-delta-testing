@@ -1,0 +1,12 @@
+{
+  "instance_id": "sphinx-doc__sphinx-7985",
+  "fail_to_pass": [
+    "tests/test_build_linkcheck.py::test_defaults",
+    "tests/test_build_linkcheck.py::test_anchors_ignored"
+  ],
+  "pass_to_pass": [
+    "tests/test_build_linkcheck.py::test_defaults_json",
+    "tests/test_build_linkcheck.py::test_auth",
+    "tests/test_build_linkcheck.py::test_linkcheck_request_headers"
+  ]
+}

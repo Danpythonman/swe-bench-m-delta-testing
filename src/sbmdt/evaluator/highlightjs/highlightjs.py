@@ -54,7 +54,19 @@ __all__ = [
 log = logging.getLogger(__name__)
 
 MOCHA_OUTPUT_FILE: Final[str] = '/tmp/test-results.xml'
-TEST_CMD: Final[str] = 'npm test -- --reporter mocha-junit-reporter'
+# The "special cases tests" before-all hook highlights a whole fixture page
+# with language auto-detection. On the 2-vCPU EC2 workers it overran
+# Mocha's default 2s timeout, failing the hook and dropping all 26 special
+# case tests from the results, so give hooks and tests more room.
+TEST_CMD: Final[str] = (
+    'npm test -- --reporter mocha-junit-reporter --timeout 60000'
+)
+# `npm run build` is the node target in every 10.x/11.x package.json;
+# 9.x calls the same script through `npm run node`. Try the named
+# script first and fall back to the tool it wraps.
+BUILD_CMD: Final[str] = (
+    'sh -c "npm run build || node ./tools/build.js -t node"'
+)
 
 
 class HighlightjsEvaluator(Evaluator):
@@ -106,6 +118,22 @@ class HighlightjsEvaluator(Evaluator):
 
         if self.container is None:
             raise Exception('no container')
+
+        # The tests load the built library under build/, not src/. Without
+        # a rebuild every patch was tested against the image's prebuilt,
+        # unpatched build, so no FAIL_TO_PASS test could ever pass. A failed
+        # build is raised rather than logged: grading the stale bundle would
+        # score the unpatched library as if it were the patch.
+        exit_code, output = self.container.exec_run(
+            BUILD_CMD, workdir='/testbed', stream=False
+        )
+        assert isinstance(output, bytes)
+        log.info(f'build exit code: {exit_code}')
+        if exit_code != 0:
+            raise Exception(
+                f'build failed for {self.instance_id}: '
+                f'{output.decode()[-2000:]}'
+            )
 
         exit_code, output = self.container.exec_run(
             TEST_CMD,

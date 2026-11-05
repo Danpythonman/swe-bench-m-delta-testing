@@ -1,0 +1,4 @@
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.django_1776_django-15252@sha256:98b640f30877340d9f3fb681e6613c99b9661f33e294023d4d9ce697ecd128e7
+
+WORKDIR /testbed

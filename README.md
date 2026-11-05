@@ -1,12 +1,12 @@
 # swe-bench-m-delta-testing
 
-Delta testing on [SWE-bench Multimodal](https://www.swebench.com/multimodal.html) instances against agent-generated patches.
+Delta testing on [SWE-bench Multimodal](https://www.swebench.com/multimodal.html) instances against agent-generated patches, extended to [SWE-bench Verified](https://www.swebench.com/verified.html) (see [SWE-bench Verified](#swe-bench-verified)).
 
 For a given benchmark instance, this project builds a Docker image from the instance's reference Dockerfile, runs the instance's test suite inside a container, and collects per-test pass/fail results. The goal is to compare test outcomes across different patch states (e.g. before a patch, with a patch applied) to see which tests change behavior.
 
 ## How it works
 
-1. `sbmdt.evaluate(instance_id)` looks at the instance ID prefix and dispatches to a concrete `Evaluator` (currently only `alibaba-*` instances are supported, via `AlibabaEvaluator`, **this is where help is needed**).
+1. `sbmdt.evaluate(instance_id)` looks at the instance ID prefix and dispatches to a concrete `Evaluator`. Every SWE-bench M repository has one (`alibaba-fusion`, `bpmn-io`, `carbon-design-system`, `eslint`, `GoogleChrome` (Lighthouse), `grommet`, `highlightjs`, `openlayers`, `prettier`, `PrismJS`, `quarto-dev`, `scratchfoundation`), and SWE-bench Verified instances go to the Python evaluators (see [SWE-bench Verified](#swe-bench-verified)).
 
 2. The evaluator's `run()` lifecycle (`setup`, then `evaluate`, then `cleanup`) is shared by all evaluators (`src/sbmdt/evaluator/base.py`):
    - **setup**: builds the Docker image from `dockerfiles/<instance_id>/Dockerfile`, starts a container.
@@ -21,22 +21,134 @@ For a given benchmark instance, this project builds a Docker image from the inst
 dockerfiles/<instance_id>/Dockerfile   # one Dockerfile per benchmark instance
 src/sbmdt/
   interface.py                         # evaluation entrypoint
+  benchmark.py                         # SWE-bench M vs Verified, by instance ID prefix
+  instance.py                          # Verified instance.json / reference.json
   env.py                               # path constants (project base, dockerfiles dir)
   log.py                               # logging setup
   pred.py                              # Pred: a model-generated patch prediction
   utils.py                             # docker container file read/write/patch helpers
+  parquet.py                           # TestResult <-> Parquet, read_test_results
+  git_repos.py                         # blobless repository clones under .cache/repos
+  images.py                            # base images: digest pins, registry choice
+  aws/ecr.py                           # ECR pull-through cache: lookup, login
+  analysis/                            # importable analysis (scripts/ are thin CLIs)
+    test_split.py                      # classify_tests: F2P/P2P/flaky from runs
+    reference.py                       # reference split, model scoring (analyze_results)
+    verified.py                        # Verified label matching (compare_official_split)
   evaluator/
     base.py                            # Evaluator ABC, PatchType, TestResult
-    alibaba/
-      alibaba.py                       # AlibabaEvaluator (Karma-based test runner)
-      karma_junit_parser.py            # JUnit XML -> TestResult parsing
+    alibaba/                           # one package per SWE-bench M repository:
+      alibaba.py                       #   <repo>.py holds the evaluator,
+      karma_junit_parser.py            #   *_parser.py turns its report into TestResults
+    bpmn/  carbon/  eslint/  grommet/  highlightjs/  lighthouse/
+    openlayers/  prettier/  prismjs/  quarto/  scratchgui/
+    python/                            # shared base for SWE-bench Verified evaluators
+      python.py                        # PythonEvaluator, JSON-lines -> TestResult
+      pytest_evaluator.py              # PytestEvaluator (10 pytest repositories)
+      selection.py                     # touched-scope test selection
+      injected/                        # modules copied into containers (Python 3.6+)
+    django/django.py                   # DjangoEvaluator (tests/runtests.py)
+    sympy/sympy.py                     # SympyEvaluator (bin/test)
+scripts/                               # command-line entry points (uv run scripts/...)
+notebooks/                             # exploratory analysis
 ```
+
+Code shared between scripts and notebooks lives in the `sbmdt` package, so
+it is imported normally (`from sbmdt.analysis.reference import
+reference_split`) instead of by path; a script only parses arguments and
+calls into it.
+
+## SWE-bench Verified
+
+The harness also evaluates the 500 SWE-bench Verified instances (12 Python
+repositories). Everything except the prebuilt `sweb.eval` Docker images is
+this project's own: no SWE-bench harness code is used. Verified's published
+FAIL_TO_PASS / PASS_TO_PASS lists are public, which makes them a check on
+the delta-testing method: the harness derives its own split from
+`before_patch` and `gold` runs and only then compares.
+
+**Instance data** (`dockerfiles/<instance_id>/`, same flat layout as M):
+
+| File | Source |
+|---|---|
+| `Dockerfile` | `FROM` the prebuilt image, pinned by digest (see [Base images](#base-images)), nothing else |
+| `instance.json` | repository, version, base commit (read by the evaluator) |
+| `reference.json` | official F2P / P2P lists, **held out**: only `sbmdt.analysis.verified` (`scripts/compare_official_split.py`) reads it |
+| `gold_patch.diff` | scraped from the GitHub PR (not the dataset's `patch`) |
+| `code_patch.diff`, `test_patch.diff` | path-based split of the gold patch |
+
+**Evaluators** (`src/sbmdt/evaluator/python/`, `django/`, `sympy/`):
+
+- Tests run in *touched* scope: only the test files `test_patch.diff`
+  changes, not the whole suite.
+- Results are never scraped from console output. A small module of this
+  project's own (`evaluator/python/injected/`) is copied into the container
+  and hooks the runner, writing one JSON line per outcome:
+  a pytest plugin for pytest repositories, a `unittest.TestResult` hook
+  around Django's `tests/runtests.py`, and a `PyTestReporter` hook around
+  SymPy's `bin/test` (SymPy images ship no pytest). The injected modules
+  run under the repository's interpreter, as old as Python 3.6.
+- Test names are pytest node IDs, `method (module.Class)` for Django, and
+  `path::function` for SymPy.
+
+**Pipeline:**
+
+```bash
+uv run scripts/import_swebench.py                  # Dockerfile, instance.json, reference.json
+uv run scripts/pin_base_images.py                  # pin each Dockerfile's base image by digest
+GITHUB_TOKEN=$(gh auth token) uv run scripts/get_gold_patches.py
+uv run scripts/split_gold_patch.py
+uv run scripts/format_gold_diff_into_pred.py
+uv run scripts/audit_gold_apply.py                 # every gold patch applies at its base commit?
+
+# Reference runs
+uv run scripts/run_instance.py django__django-11099 before_patch --apply-test-patch --json --file
+uv run scripts/run_instance.py django__django-11099 gold \
+    --pred-file dockerfiles/django__django-11099/gold_patch.pred --json --file
+
+uv run scripts/compare_official_split.py --data results
+```
+
+`scripts/analyze_results.py` reads only SWE-bench M rows, so Verified
+results can share the S3 bucket without changing M figures.
+
+## Base images
+
+Every Dockerfile starts
+
+```dockerfile
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.<name>@sha256:<digest>
+```
+
+The prebuilt SWE-bench image is pinned by digest, so a rerun gets exactly
+the environment the published results came from even if SWE-bench re-pushes
+the tag. By default it comes from Docker Hub, so running the harness needs
+nothing but Docker: no AWS account or login.
+
+The registry is a build argument, which the evaluator takes from
+`SBMDT_REGISTRY`. EC2 workers (`aws/run_ec2.sh`) set it to the project's
+ECR pull-through cache, which mirrors Docker Hub (same digests) and spares
+large batches Docker Hub's anonymous pull limit (about 100 pulls per six
+hours per IP). To use the cache locally:
+
+```bash
+aws ecr get-login-password --region us-east-1 \
+    | docker login -u AWS --password-stdin 607869540801.dkr.ecr.us-east-1.amazonaws.com
+export SBMDT_REGISTRY=607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub
+```
+
+`scripts/pin_base_images.py` pins new Dockerfiles (`--check` lists any that
+are not pinned; `--repin` deliberately moves every pin to the tag's current
+digest).
 
 ## Requirements
 
 - Python 3.13+
 - [uv](https://docs.astral.sh/uv/) ((**strongly**) recommended) or pip
 - Docker, with the daemon running and accessible to the current user
+- Optional: an AWS account, only to run many instances in parallel on EC2
+  (`scripts/run_all_ec2.py`, `aws/README.md`)
 
 ## Installation
 
@@ -52,16 +164,55 @@ pip install -e .
 
 ## Usage
 
+Each SWE-bench M instance has `dockerfiles/<instance_id>/` holding its
+`Dockerfile`, `gold_patch.diff` / `gold_patch.pred`, and the
+`code_patch` / `test_patch` halves of the gold patch.
+
+Delta testing an instance takes two reference runs and then one run per
+model patch. Each run writes one results file to `results/`:
+
+```bash
+# Reference runs: the tests before the fix, and with the gold patch
+uv run scripts/run_instance.py alibaba-fusion__next-717 before_patch --apply-test-patch --parquet --file
+uv run scripts/run_instance.py alibaba-fusion__next-717 gold \
+    --pred-file dockerfiles/alibaba-fusion__next-717/gold_patch.pred --parquet --file
+
+# A model patch (with_image or without_image)
+uv run scripts/run_instance.py alibaba-fusion__next-717 with_image \
+    --pred-file path/to/patch.pred --apply-test-patch --parquet --file
+
+# The derived FAIL_TO_PASS / PASS_TO_PASS split, and RESOLVED or UNRESOLVED
+# for every model patch
+uv run scripts/derive_and_grade.py --list
+```
+
+To try it without an agent of your own, [`examples/`](examples/) has three
+hand-written patches for `django__django-11099` (one resolves, one changes
+nothing, one breaks a PASS_TO_PASS test) and the exact commands to run them.
+
+`derive_and_grade.py` reads every result in `results/` (JSON or Parquet,
+Verified or Multimodal) and writes `analysis/derived/split.json` and
+`verdicts.csv`. A patch is resolved when every FAIL_TO_PASS test passes and
+every PASS_TO_PASS test still passes; a test that did not run counts as
+failed.
+
+`--json --file` writes the same results as JSON for reading by eye, and
+`--parquet --s3 --bucket BUCKET` uploads them instead.
+
+`scripts/analyze_results.py reference` classifies each test (FAIL_TO_PASS,
+PASS_TO_PASS, flaky, ...) from the `before_patch` and `gold` runs, and
+`scripts/analyze_results.py score` grades model patches against that split.
+Both read a directory of Parquet results only (`--data`, default
+`s3-sync/test-results`, filled by `aws/sync-s3-with-local.sh`). To run many
+instances in parallel on EC2, see `scripts/run_all_ec2.py --help` and
+[aws/README.md](aws/README.md).
+
+From Python, `sbmdt.evaluate(instance_id)` runs the same lifecycle:
+
 ```python
 from sbmdt import evaluate
 
 evaluate('alibaba-fusion__next-717')
-```
-
-See [test.py](test.py) for a runnable example that also wires up logging to `logs/log.log`:
-
-```bash
-uv run python test.py
 ```
 
 ## Development
@@ -115,17 +266,10 @@ Then code the pipeline for the repo by:
 2. Make sure you make `/src/sbmdt/evaluator/<repo>/__init__.py`.
 3. Make a subclass of `Evaluator` class called `<repo>Evaluator`.
 4. Code! ;)
+5. Add its instance-ID prefix to `_load_evaluator_cls` in `src/sbmdt/interface.py`.
 
-Once you code the pipeline for the repo:
-
-```
-uv run main.py <instance-id> <patch_type> [--pred-file]
-```
-
-Examples:
+Then run it as in [Usage](#usage):
 
 ```
-uv run main.py alibaba-fusion__next-717 before_patch
-
-uv run main.py alibaba-fusion__next-717 without_image --pred-file ../Project/image-necessity-paper-analysis/preds/without-images/alibaba-fusion__next-717.pred
+uv run scripts/run_instance.py <instance-id> <patch_type> [--pred-file PRED_FILE] (--json | --parquet) (--file | --s3)
 ```

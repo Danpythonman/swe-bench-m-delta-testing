@@ -22,6 +22,7 @@ from aiolimiter import AsyncLimiter
 __all__ = [
     'GOLD_PATCH_DIFF_FILENAME',
     'GOLD_PATCH_PRED_FILENAME',
+    'GITHUB_DIFF_MEDIA_TYPE',
     'MAX_CONCURRENCY',
     'MAX_UNAUTHENTICATED_GITHUB_REQUESTS_PER_HOUR',
     'MAX_AUTHENTICATED_GITHUB_REQUESTS_PER_HOUR',
@@ -42,6 +43,12 @@ MAX_UNAUTHENTICATED_GITHUB_REQUESTS_PER_HOUR: Final[int] = 60
 MAX_AUTHENTICATED_GITHUB_REQUESTS_PER_HOUR: Final[int] = 5_000
 
 GOLD_MODEL_NAME: Final[str] = 'GOLD'
+
+# Asking the PR endpoint for this media type returns the PR as a unified
+# diff in one authenticated API call. The PR's github.com ``.diff`` URL
+# serves the same diff but counts against the much lower, unauthenticated
+# web rate limit, and answers with an HTML error page when throttled.
+GITHUB_DIFF_MEDIA_TYPE: Final[str] = 'application/vnd.github.diff'
 
 
 def hours_to_seconds(hours: int | float) -> int | float:
@@ -132,7 +139,7 @@ def _retry_delay(response: aiohttp.ClientResponse, attempt: int) -> float:
 async def _fetch_once(
     session: aiohttp.ClientSession,
     url: str,
-    headers: dict[str, str] | None,
+    headers: dict[str, str],
     sem: asyncio.Semaphore,
     limiter: AsyncLimiter,
     attempt: int,
@@ -161,17 +168,21 @@ async def fetch(
     sem: asyncio.Semaphore,
     limiter: AsyncLimiter,
     max_retries: int = 5,
+    accept: str | None = None,
 ) -> str:
     """Fetch a URL, automatically retrying on GitHub rate limit responses.
 
     Wraps `_fetch_once` in a retry loop: each time a :class:`RateLimited`
     error comes back, it logs a warning, sleeps for the suggested delay, and
     tries again, up to :param:`max_retries` attempts. Raises RuntimeError if it
-    never succeeds.
+    never succeeds. :param:`accept`, when given, is sent as the ``Accept``
+    header, e.g. :data:`GITHUB_DIFF_MEDIA_TYPE` to get a PR as a diff.
     """
-    headers = (
-        {'Authorization': f'Bearer {github_token}'} if github_token else None
-    )
+    headers: dict[str, str] = {}
+    if github_token:
+        headers['Authorization'] = f'Bearer {github_token}'
+    if accept:
+        headers['Accept'] = accept
 
     for attempt in range(max_retries):
         try:

@@ -1,0 +1,69 @@
+diff --git a/django/core/handlers/base.py b/django/core/handlers/base.py
+index 8e8c3da06aa5..728e449703c9 100644
+--- a/django/core/handlers/base.py
++++ b/django/core/handlers/base.py
+@@ -51,11 +51,11 @@ def load_middleware(self, is_async=False):
+                 middleware_is_async = middleware_can_async
+             try:
+                 # Adapt handler, if needed.
+-                handler = self.adapt_method_mode(
++                adapted_handler = self.adapt_method_mode(
+                     middleware_is_async, handler, handler_is_async,
+                     debug=settings.DEBUG, name='middleware %s' % middleware_path,
+                 )
+-                mw_instance = middleware(handler)
++                mw_instance = middleware(adapted_handler)
+             except MiddlewareNotUsed as exc:
+                 if settings.DEBUG:
+                     if str(exc):
+@@ -63,6 +63,8 @@ def load_middleware(self, is_async=False):
+                     else:
+                         logger.debug('MiddlewareNotUsed: %r', middleware_path)
+                 continue
++            else:
++                handler = adapted_handler
+ 
+             if mw_instance is None:
+                 raise ImproperlyConfigured(
+diff --git a/docs/releases/3.1.5.txt b/docs/releases/3.1.5.txt
+index 0d1111844613..eea060d11220 100644
+--- a/docs/releases/3.1.5.txt
++++ b/docs/releases/3.1.5.txt
+@@ -12,3 +12,7 @@ Bugfixes
+ * Fixed ``__isnull=True`` lookup on key transforms for
+   :class:`~django.db.models.JSONField` with Oracle and SQLite
+   (:ticket:`32252`).
++
++* Fixed a bug in Django 3.1 that caused a crash when processing middlewares in
++  an async context with a middleware that raises a ``MiddlewareNotUsed``
++  exception (:ticket:`32299`).
+diff --git a/tests/middleware_exceptions/tests.py b/tests/middleware_exceptions/tests.py
+index 8b019ba5248a..2a389ce125c4 100644
+--- a/tests/middleware_exceptions/tests.py
++++ b/tests/middleware_exceptions/tests.py
+@@ -181,6 +181,25 @@ def test_do_not_log_when_debug_is_false(self):
+             with self.assertLogs('django.request', 'DEBUG'):
+                 self.client.get('/middleware_exceptions/view/')
+ 
++    @override_settings(MIDDLEWARE=[
++        'middleware_exceptions.middleware.SyncAndAsyncMiddleware',
++        'middleware_exceptions.tests.MyMiddleware',
++    ])
++    async def test_async_and_sync_middleware_chain_async_call(self):
++        with self.assertLogs('django.request', 'DEBUG') as cm:
++            response = await self.async_client.get('/middleware_exceptions/view/')
++        self.assertEqual(response.content, b'OK')
++        self.assertEqual(response.status_code, 200)
++        self.assertEqual(
++            cm.records[0].getMessage(),
++            'Asynchronous middleware middleware_exceptions.tests.MyMiddleware '
++            'adapted.',
++        )
++        self.assertEqual(
++            cm.records[1].getMessage(),
++            "MiddlewareNotUsed: 'middleware_exceptions.tests.MyMiddleware'",
++        )
++
+ 
+ @override_settings(
+     DEBUG=True,

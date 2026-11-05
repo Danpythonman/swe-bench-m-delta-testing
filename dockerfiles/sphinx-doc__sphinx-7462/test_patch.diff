@@ -1,0 +1,30 @@
+diff --git a/tests/test_domain_py.py b/tests/test_domain_py.py
+index cc3d3cf5364..e330ba6349c 100644
+--- a/tests/test_domain_py.py
++++ b/tests/test_domain_py.py
+@@ -255,6 +255,13 @@ def test_parse_annotation():
+                           [pending_xref, "int"],
+                           [desc_sig_punctuation, "]"]))
+ 
++    doctree = _parse_annotation("Tuple[()]")
++    assert_node(doctree, ([pending_xref, "Tuple"],
++                          [desc_sig_punctuation, "["],
++                          [desc_sig_punctuation, "("],
++                          [desc_sig_punctuation, ")"],
++                          [desc_sig_punctuation, "]"]))
++
+     doctree = _parse_annotation("Callable[[int, int], int]")
+     assert_node(doctree, ([pending_xref, "Callable"],
+                           [desc_sig_punctuation, "["],
+diff --git a/tests/test_pycode_ast.py b/tests/test_pycode_ast.py
+index 117feb8f752..9b12d24d5f6 100644
+--- a/tests/test_pycode_ast.py
++++ b/tests/test_pycode_ast.py
+@@ -54,6 +54,7 @@
+     ("- 1", "- 1"),                             # UnaryOp
+     ("- a", "- a"),                             # USub
+     ("(1, 2, 3)", "1, 2, 3"),                   # Tuple
++    ("()", "()"),                               # Tuple (empty)
+ ])
+ def test_unparse(source, expected):
+     module = ast.parse(source)

@@ -6,3 +6,7 @@ dockerfiles/** linguist-generated=true
 # rewrites those lines and the patch then fails to apply on the worker.
 dockerfiles/**/*.diff -text
 dockerfiles/**/*.pred -text
+
+# Restored test images are used only if they still hash to the blob id
+# their test patch names, so they must reach the worker byte for byte.
+dockerfiles/**/test_assets/** -text

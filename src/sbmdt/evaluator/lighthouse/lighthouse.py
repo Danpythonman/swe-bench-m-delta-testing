@@ -20,7 +20,12 @@ from sbmdt.evaluator.base import Evaluator, TestResult
 from sbmdt.evaluator.lighthouse.mocha_junit_parser import (
     results_xml_to_test_results,
 )
-from sbmdt.utils import apply_change_literal, read_from_container
+from sbmdt.evaluator.paths import repo_relative
+from sbmdt.utils import (
+    apply_change_literal,
+    read_from_container,
+    write_to_container,
+)
 
 __all__ = [
     'LighthouseEvaluator',
@@ -28,7 +33,47 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
+# These checkouts target Node 10/12, where an unhandled promise rejection
+# only warned. The images run Node 15+, where it kills the process: before
+# lighthouse-10505's fix, a rejected NO_FCP promise took down the whole
+# core Jest run, leaving 58 of ~1,900 tests. Restore the old behaviour,
+# but only on Node 15+: older Node rejects the flag in NODE_OPTIONS and
+# then refuses to start at all.
+EXPORT_NODE_OPTIONS: Final[str] = (
+    'if node -e "process.exit(+process.versions.node.split(\\".\\")[0] '
+    '>= 15 ? 0 : 1)"; then '
+    'export NODE_OPTIONS=--unhandled-rejections=warn; fi'
+)
+
+# Some code under test calls process.exit: lighthouse-cli/run.js's
+# showPageLoadError exits when Chrome fails to load a page, which happened
+# intermittently in lighthouse-2610's CLI round-trip test. Inside Mocha that
+# kills the run before mocha-junit-reporter writes its XML, losing the whole
+# suite. Preloaded into Mocha's processes only, this turns such a call from
+# repository code (not node_modules, so Mocha's own exit is untouched) into
+# an error, which fails just the test that triggered it.
+NO_EXIT_PRELOAD: Final[str] = '/tmp/sbmdt-no-exit.js'
+NO_EXIT_SCRIPT: Final[str] = r"""
+if (/(^|[\/])_?mocha(\.js)?$/.test(process.argv[1] || '')) {
+  const exit = process.exit;
+  process.exit = function (code) {
+    const caller = (new Error().stack || '').split('\n')[2] || '';
+    if (/\/testbed\/(?!node_modules\/)/.test(caller)) {
+      throw new Error(
+        'process.exit(' + code + ') called by the code under test'
+      );
+    }
+    return exit.apply(process, arguments);
+  };
+}
+"""
+EXPORT_NO_EXIT_PRELOAD: Final[str] = (
+    f'export NODE_OPTIONS="${{NODE_OPTIONS:+$NODE_OPTIONS }}'
+    f'--require {NO_EXIT_PRELOAD}"'
+)
+
 PACKAGE_JSON_FILE: Final[str] = '/testbed/package.json'
+CLI_DIR: Final[str] = '/testbed/lighthouse-cli'
 RUN_MOCHA_SCRIPT: Final[str] = '/testbed/lighthouse-core/scripts/run-mocha.sh'
 RESULTS_DIR: Final[str] = '/testbed/test-results'
 # Each suite is run independently (rather than via run-mocha.sh's default
@@ -89,9 +134,12 @@ class LighthouseEvaluator(Evaluator):
         mocha_scripts = [
             item for item in find_output.decode().splitlines() if item.strip()
         ]
+        # Newer checkouts (lighthouse-12970 on) also split the report,
+        # treemap and flow-report unit tests into their own scripts; leaving
+        # them out dropped those suites' FAIL_TO_PASS tests entirely.
         direct_suites = {
             suite: scripts.get(f'unit-{suite}')
-            for suite in ('core', 'cli', 'viewer')
+            for suite in ('core', 'cli', 'viewer', 'report', 'treemap', 'flow')
             if scripts.get(f'unit-{suite}')
         }
         modern_layout = (
@@ -197,6 +245,14 @@ class LighthouseEvaluator(Evaluator):
             )
 
         install_definition = scripts.get(install_script, '')
+        run_install = install_script
+        if 'install-all:task:windows' in scripts:
+            # install-all:task runs its yarn installs in parallel
+            # ("yarn & yarn install-extension & yarn install-viewer &
+            # wait"), and on lighthouse-4036 they corrupted the shared yarn
+            # cache. The Windows variant runs the same installs one after
+            # another.
+            run_install = 'install-all:task:windows'
         if (
             install_script == 'install-cli'
             and 'yarn install' in install_definition
@@ -213,7 +269,7 @@ class LighthouseEvaluator(Evaluator):
             )
         else:
             exit_code, output = self.container.exec_run(
-                f'npm run {install_script}',
+                f'npm run {run_install}',
                 workdir='/testbed',
                 stream=False,
             )
@@ -225,7 +281,7 @@ class LighthouseEvaluator(Evaluator):
         if exit_code != 0:
             raise Exception(
                 f'Failed to install lighthouse-cli dependencies for '
-                f'{self.instance_id} (via "{install_script}"): '
+                f'{self.instance_id} (via "{run_install}"): '
                 f'{output.decode()}'
             )
 
@@ -249,51 +305,76 @@ class LighthouseEvaluator(Evaluator):
                     f'{self.instance_id}: {output.decode()}'
                 )
 
-        # lighthouse-cli/package.json declares loose historical ranges.
-        # Installing them today selects much newer releases within those
-        # ranges, which do not necessarily compile these old checkouts.
-        # Pin @types/node to the known baseline and TypeScript to the minimum
-        # version declared by this checkout's own manifest.
-        exit_code, output = self.container.exec_run(
-            'npm install @types/node@6.0.45 --save-exact',
-            workdir='/testbed/lighthouse-cli',
-            stream=False,
-        )
-        assert isinstance(output, bytes)
-
-        log.info(exit_code)
-        log.info(output.decode())
-
-        if exit_code != 0:
-            raise Exception(
-                f'Failed to pin lighthouse-cli @types/node for '
-                f'{self.instance_id}: {output.decode()}'
+        # From about v2.6 (lighthouse-4036) lighthouse-cli is plain
+        # JavaScript with no package.json of its own, so there is nothing
+        # to pin or compile there. Running npm install in it anyway would
+        # walk up and change /testbed's own manifest instead.
+        has_cli_package = self._exists(f'{CLI_DIR}/package.json')
+        version_match = None
+        pin_outputs: list[str] = []
+        if has_cli_package:
+            # lighthouse-cli/package.json declares loose historical ranges.
+            # Installing them today selects much newer releases within those
+            # ranges, which do not necessarily compile these old checkouts.
+            # Pin @types/node and TypeScript to the minimum version this
+            # checkout's own manifest declares. The manifest is read before
+            # pinning, because --save-exact rewrites the fields read here.
+            cli_package = json.loads(
+                read_from_container(self.container, f'{CLI_DIR}/package.json')
             )
-
-        cli_package = json.loads(
-            read_from_container(
-                self.container, '/testbed/lighthouse-cli/package.json'
+            dependencies = {
+                **cli_package.get('dependencies', {}),
+                **cli_package.get('devDependencies', {}),
+            }
+            # Most manifests ask for "^6.0.45", whose floor is right. Some
+            # ask for exactly 6.0.66, the release that added `isTTY` to
+            # WritableStream: lighthouse-3692 needs it, and under 6.0.45
+            # tsc fails with TS2339. Only a manifest that declares nothing
+            # falls back to the 6.0.45 baseline.
+            types_node_match = re.search(
+                r'\d+\.\d+\.\d+', dependencies.get('@types/node') or ''
             )
-        )
-        typescript_range = cli_package.get('devDependencies', {}).get(
-            'typescript'
-        )
-        version_match = re.search(r'\d+\.\d+\.\d+', typescript_range or '')
-        if version_match:
-            typescript_version = version_match.group()
+            types_node_version = (
+                types_node_match.group() if types_node_match else '6.0.45'
+            )
             exit_code, output = self.container.exec_run(
-                f'npm install typescript@{typescript_version} --save-exact',
-                workdir='/testbed/lighthouse-cli',
+                f'npm install @types/node@{types_node_version} --save-exact',
+                workdir=CLI_DIR,
                 stream=False,
             )
             assert isinstance(output, bytes)
+
             log.info(exit_code)
             log.info(output.decode())
+
             if exit_code != 0:
                 raise Exception(
-                    f'Failed to pin typescript@{typescript_version} for '
+                    f'Failed to pin lighthouse-cli @types/node@'
+                    f'{types_node_version} for '
                     f'{self.instance_id}: {output.decode()}'
                 )
+            pin_outputs.append(output.decode())
+
+            typescript_range = dependencies.get('typescript')
+            version_match = re.search(r'\d+\.\d+\.\d+', typescript_range or '')
+            if version_match:
+                typescript_version = version_match.group()
+                exit_code, output = self.container.exec_run(
+                    f'npm install typescript@{typescript_version} '
+                    '--save-exact',
+                    workdir=CLI_DIR,
+                    stream=False,
+                )
+                assert isinstance(output, bytes)
+                log.info(exit_code)
+                log.info(output.decode())
+                if exit_code != 0:
+                    raise Exception(
+                        f'Failed to pin typescript@{typescript_version} for '
+                        f'{self.instance_id}: {output.decode()}'
+                    )
+                pin_outputs.append(output.decode())
+
 
         # install-cli's prepublish hook is supposed to build the CLI
         # automatically, but fails silently due to an npm lifecycle
@@ -359,6 +440,29 @@ class LighthouseEvaluator(Evaluator):
                     f'Failed to build lighthouse-cli for {self.instance_id} '
                     f'(via "{build_script}"): '
                     f'{build_log}'
+                )
+
+        # npm doesn't understand a yarn-installed node_modules, and the pins
+        # above can prune packages yarn hoisted there: on lighthouse-3442
+        # they "removed 186 packages", among them nyc's bundled yargs-parser,
+        # which lighthouse-cli/run.js requires without declaring it, so the
+        # CLI suite crashed on load. Re-running yarn restores them and keeps
+        # the pins, which package.json now records exactly.
+        if any(
+            re.search(r'removed \d+ package', o) for o in pin_outputs
+        ) and self._exists(f'{CLI_DIR}/yarn.lock'):
+            exit_code, output = self.container.exec_run(
+                'yarn install --ignore-scripts --non-interactive',
+                workdir=CLI_DIR,
+                stream=False,
+            )
+            assert isinstance(output, bytes)
+            log.info(exit_code)
+            log.info(output.decode())
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to restore lighthouse-cli dependencies for '
+                    f'{self.instance_id}: {output.decode()}'
                 )
 
         if (
@@ -473,6 +577,7 @@ compile(
 
         # 3. Create results directory
         self.container.exec_run(f'mkdir -p {RESULTS_DIR}', workdir='/testbed')
+        write_to_container(self.container, NO_EXIT_PRELOAD, NO_EXIT_SCRIPT)
 
         # run-mocha.sh's location is not fixed: lighthouse-5688 (the
         # install-all/build-all layout) has no
@@ -494,16 +599,50 @@ compile(
                 f'{run_mocha_script!r}, not the default {RUN_MOCHA_SCRIPT!r}'
             )
         self._run_mocha_script = run_mocha_script
+        mocha_source = read_from_container(
+            self.container, self._run_mocha_script
+        )
 
-        # 4. Add the JUnit reporter to each Mocha invocation
+        # 4. Add the JUnit reporter to each Mocha invocation.
+        #
+        # The anchor is the file-list expansion, not '--timeout 60000;'.
+        # The timeout is one revision's spelling of this line rather than
+        # anything the script guarantees: across the 18 lighthouse
+        # instances that ship a run-mocha.sh, _runmocha is written three
+        # different ways, and lighthouse-4301 predates the timeout
+        # entirely --
+        #
+        #     mocha --reporter dot $2 $(find $1/test -name '*-test.js');
+        #
+        # so the literal was absent, setup raised "Could not find target
+        # string", and the instance produced no results at all. The find
+        # expression is in all 18 and exactly once in each, so it anchors
+        # every spelling without becoming ambiguous.
+        #
+        # Appending after it keeps mocha's own argument order intact: the
+        # reporter flags land between the file list and whatever trailed
+        # it, which is where they already sat for the 17 instances this
+        # step used to handle.
+        mocha_files = "$(find $1/test -name '*-test.js')"
+        reporter = (
+            ' --reporter mocha-junit-reporter'
+            f' --reporter-options mochaFile={RESULTS_DIR}/$1.xml'
+        )
+
+        # 4301 is also the one revision with no --timeout, which leaves
+        # mocha on its 2s default. The other 17 raised it to 60s because
+        # these suites launch a real Chrome and do not finish in two
+        # seconds; a timeout that short would report failures that are
+        # purely a clock. Both sides of the comparison get the same
+        # value, so supplying it where the checkout omits it removes
+        # noise rather than adding bias.
+        timeout = '' if '--timeout' in mocha_source else ' --timeout 60000'
+
         apply_change_literal(
             container=self.container,
             file=self._run_mocha_script,
-            find='--timeout 60000;',
-            replace=(
-                '--timeout 60000 --reporter mocha-junit-reporter'
-                f' --reporter-options mochaFile={RESULTS_DIR}/$1.xml;'
-            ),
+            find=mocha_files,
+            replace=mocha_files + reporter + timeout,
             assertion=(
                 'mocha-junit-reporter --reporter-options'
                 f' mochaFile={RESULTS_DIR}/$1.xml'
@@ -511,6 +650,11 @@ compile(
         )
 
         log.info('All changes applied successfully.')
+
+    def _exists(self, path: str) -> bool:
+        """Whether ``path`` is a regular file in the container."""
+        assert self.container is not None
+        return self.container.exec_run(['test', '-f', path])[0] == 0
 
     @override
     def evaluate(self) -> list[TestResult]:
@@ -540,6 +684,8 @@ compile(
         # non-standard) so ``mocha`` resolves.
         commands = [
             'export PATH="/testbed/node_modules/.bin:$PATH"',
+            EXPORT_NODE_OPTIONS,
+            EXPORT_NO_EXIT_PRELOAD,
             f'bash {self._run_mocha_script} --cli',
             f'bash {self._run_mocha_script} --core',
             f'bash {self._run_mocha_script} --viewer',
@@ -608,7 +754,10 @@ compile(
                 command = re.sub(r'--reporter\s+\S+', '', script)
                 command = command.replace('yarn mocha', 'yarn --silent mocha')
                 command = f'{command} --reporter json > {path}'
-            exports = 'export PATH=/testbed/node_modules/.bin:$PATH'
+            exports = (
+                'export PATH=/testbed/node_modules/.bin:$PATH; '
+                f'{EXPORT_NODE_OPTIONS}'
+            )
             if hasattr(self, '_chrome_wrapper'):
                 exports += (
                     f'; export LIGHTHOUSE_CHROMIUM_PATH={self._chrome_wrapper}'
@@ -666,6 +815,9 @@ compile(
                                 timestamp=self.timestamp,
                                 test_name=name,
                                 passed=test.get('status') == 'passed',
+                                test_file=repo_relative(
+                                    file_result.get('name')
+                                ),
                             )
                         )
             else:
@@ -684,6 +836,7 @@ compile(
                                 timestamp=self.timestamp,
                                 test_name=name,
                                 passed=name not in failed,
+                                test_file=repo_relative(test.get('file')),
                             )
                         )
         if not results:

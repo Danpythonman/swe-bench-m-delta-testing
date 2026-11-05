@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 
+from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.evaluator.base import Evaluator, PatchType, TestResult
 from sbmdt.pred import Pred
 
@@ -28,6 +29,8 @@ def _load_evaluator_cls(instance_id: str) -> type[Evaluator]:
     Raises:
         Exception: If ``instance_id`` does not match any known evaluator.
     """
+    if benchmark_of(instance_id) == Benchmark.SWE_BENCH_VERIFIED:
+        return _load_verified_evaluator_cls(instance_id)
     if instance_id.startswith('alibaba'):
         from sbmdt.evaluator.alibaba import AlibabaEvaluator
 
@@ -77,6 +80,31 @@ def _load_evaluator_cls(instance_id: str) -> type[Evaluator]:
 
         return HighlightjsEvaluator
     raise Exception(f'unknown instance ID {instance_id}')
+
+
+def _load_verified_evaluator_cls(instance_id: str) -> type[Evaluator]:
+    """Return the evaluator class for a SWE-bench Verified instance.
+
+    Django and SymPy have their own runners; every other Verified
+    repository is tested with pytest.
+
+    Args:
+        instance_id: A SWE-bench Verified instance ID.
+
+    Returns:
+        The evaluator class for the instance's repository.
+    """
+    if instance_id.startswith('django__django'):
+        from sbmdt.evaluator.django import DjangoEvaluator
+
+        return DjangoEvaluator
+    if instance_id.startswith('sympy__sympy'):
+        from sbmdt.evaluator.sympy import SympyEvaluator
+
+        return SympyEvaluator
+    from sbmdt.evaluator.python import PytestEvaluator
+
+    return PytestEvaluator
 
 
 def evaluate(

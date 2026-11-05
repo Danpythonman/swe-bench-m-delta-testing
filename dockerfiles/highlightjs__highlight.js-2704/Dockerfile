@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.highlightjs_1776_highlight.js-2704:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.highlightjs_1776_highlight.js-2704@sha256:7fa6cf2191f2cde92bb6c3351f78b5dab7774429254e4eed81f81d0a7c3131b5
 
 WORKDIR /install
 # Install docker cli

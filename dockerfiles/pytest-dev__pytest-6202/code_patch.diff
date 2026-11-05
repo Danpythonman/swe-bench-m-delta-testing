@@ -1,0 +1,33 @@
+diff --git a/AUTHORS b/AUTHORS
+index d0e584f6367..c10ee5c15ce 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -261,6 +261,7 @@ Virgil Dupras
+ Vitaly Lashmanov
+ Vlad Dragos
+ Volodymyr Piskun
++Wei Lin
+ Wil Cooley
+ William Lee
+ Wim Glenn
+diff --git a/changelog/6189.bugfix.rst b/changelog/6189.bugfix.rst
+new file mode 100644
+index 00000000000..060a2260a2e
+--- /dev/null
++++ b/changelog/6189.bugfix.rst
+@@ -0,0 +1 @@
++Fix incorrect result of ``getmodpath`` method.
+diff --git a/src/_pytest/python.py b/src/_pytest/python.py
+index b8b365ad34d..734a92f9bb7 100644
+--- a/src/_pytest/python.py
++++ b/src/_pytest/python.py
+@@ -285,8 +285,7 @@ def getmodpath(self, stopatmodule=True, includemodule=False):
+                     break
+             parts.append(name)
+         parts.reverse()
+-        s = ".".join(parts)
+-        return s.replace(".[", "[")
++        return ".".join(parts)
+ 
+     def reportinfo(self):
+         # XXX caching?

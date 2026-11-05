@@ -1,0 +1,73 @@
+diff --git a/django/core/management/commands/flush.py b/django/core/management/commands/flush.py
+index e8ed3967f70e..bc8021cf4eb2 100644
+--- a/django/core/management/commands/flush.py
++++ b/django/core/management/commands/flush.py
+@@ -60,7 +60,7 @@ def handle(self, **options):
+ 
+         if confirm == 'yes':
+             try:
+-                connection.ops.execute_sql_flush(database, sql_list)
++                connection.ops.execute_sql_flush(sql_list)
+             except Exception as exc:
+                 raise CommandError(
+                     "Database %s couldn't be flushed. Possible reasons:\n"
+diff --git a/django/db/backends/base/operations.py b/django/db/backends/base/operations.py
+index 70ac07ae0950..305306e8ce90 100644
+--- a/django/db/backends/base/operations.py
++++ b/django/db/backends/base/operations.py
+@@ -400,9 +400,12 @@ def sql_flush(self, style, tables, *, reset_sequences=False, allow_cascade=False
+         """
+         raise NotImplementedError('subclasses of BaseDatabaseOperations must provide a sql_flush() method')
+ 
+-    def execute_sql_flush(self, using, sql_list):
++    def execute_sql_flush(self, sql_list):
+         """Execute a list of SQL statements to flush the database."""
+-        with transaction.atomic(using=using, savepoint=self.connection.features.can_rollback_ddl):
++        with transaction.atomic(
++            using=self.connection.alias,
++            savepoint=self.connection.features.can_rollback_ddl,
++        ):
+             with self.connection.cursor() as cursor:
+                 for sql in sql_list:
+                     cursor.execute(sql)
+diff --git a/docs/releases/3.1.txt b/docs/releases/3.1.txt
+index 3ec3afcf3ac4..4cf8183d4b0b 100644
+--- a/docs/releases/3.1.txt
++++ b/docs/releases/3.1.txt
+@@ -526,6 +526,10 @@ backends.
+ * The ``allow_cascade`` argument of ``DatabaseOperations.sql_flush()`` is now a
+   keyword-only argument.
+ 
++* The ``using`` positional argument of
++  ``DatabaseOperations.execute_sql_flush()`` is removed. The method now uses
++  the database of the called instance.
++
+ Dropped support for MariaDB 10.1
+ --------------------------------
+ 
+diff --git a/tests/backends/base/test_operations.py b/tests/backends/base/test_operations.py
+index 0485fe84651f..b0ffe958c8ab 100644
+--- a/tests/backends/base/test_operations.py
++++ b/tests/backends/base/test_operations.py
+@@ -172,7 +172,7 @@ def test_execute_sql_flush_statements(self):
+             reset_sequences=True,
+             allow_cascade=True,
+         )
+-        connection.ops.execute_sql_flush(connection.alias, sql_list)
++        connection.ops.execute_sql_flush(sql_list)
+ 
+         with transaction.atomic():
+             self.assertIs(Author.objects.exists(), False)
+diff --git a/tests/backends/tests.py b/tests/backends/tests.py
+index d6c2331378cc..40fc6de7fc11 100644
+--- a/tests/backends/tests.py
++++ b/tests/backends/tests.py
+@@ -162,7 +162,7 @@ def test_sequence_name_length_limits_flush(self):
+             VLM_m2m._meta.db_table,
+         ]
+         sql_list = connection.ops.sql_flush(no_style(), tables, reset_sequences=True)
+-        connection.ops.execute_sql_flush(connection.alias, sql_list)
++        connection.ops.execute_sql_flush(sql_list)
+ 
+ 
+ class SequenceResetTest(TestCase):

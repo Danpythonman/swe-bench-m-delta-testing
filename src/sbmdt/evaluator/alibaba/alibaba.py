@@ -9,12 +9,17 @@ the results.
 from __future__ import annotations
 
 import logging
+import re
+from dataclasses import replace
+from pathlib import Path
 from typing import Final, override
 
 from sbmdt.evaluator.alibaba.karma_junit_parser import (
     results_xml_to_test_results,
 )
 from sbmdt.evaluator.base import Evaluator, TestResult
+from sbmdt.evaluator.python.selection import changed_paths
+from sbmdt.patches import test_patch_for
 from sbmdt.utils import (
     apply_change_literal,
     apply_change_regex,
@@ -30,6 +35,70 @@ log = logging.getLogger(__name__)
 
 KARMA_FILE: Final[str] = '/testbed/scripts/test/karma.js'
 PATCH_FILE: Final[str] = '/tmp/model.patch'
+DEFAULT_RESULTS_FILE: Final[str] = (
+    '/testbed/scripts/test/test-results/results.xml'
+)
+
+# A component's specs live under test/<component>/. ``core`` is run by a
+# plain Mocha runner that writes no JUnit XML, so it is not selectable.
+_COMPONENT_PATH: Final[re.Pattern[str]] = re.compile(r'^test/([^/]+)/')
+
+
+def touched_components(test_patch: str) -> list[str]:
+    """Return the Karma components whose specs a test patch changes.
+
+    Args:
+        test_patch: The instance's test patch.
+
+    Returns:
+        Component names in diff order, without duplicates or ``core``.
+    """
+    components: list[str] = []
+    for path in changed_paths(test_patch):
+        match = _COMPONENT_PATH.match(path)
+        if match and match[1] != 'core' and match[1] not in components:
+            components.append(match[1])
+    return components
+
+
+# The OpenLayers evaluator's Mocha abort shim, served to the browser as
+# the first file karma loads. See add_abort_shim for why.
+ABORT_SHIM_FILE: Final[str] = '/testbed/scripts/test/sbmdt-mocha-abort-shim.js'
+_ABORT_SHIM: Final[str] = (
+    Path(__file__).parent.parent.joinpath('openlayers', 'mocha_abort_shim.js')
+    .read_text(encoding='utf-8')
+)
+_FILES_LIST: Final[re.Pattern[str]] = re.compile(r'files:\s*\[')
+
+
+def add_abort_shim(karma_source: str) -> str:
+    """Put the abort shim first in karma's ``files`` list.
+
+    One late async error was ending whole alibaba runs. In next-4182 a
+    component that had already unmounted threw ``Cannot read properties
+    of null (reading 'focusInput')`` after its test passed, and the run
+    stopped at 117 of 1565 tests; next-2984 stopped at 42 of 1484 the
+    same way. It happened to before_patch runs too, so it is not the
+    patch: it is Mocha aborting every remaining suite when a test that
+    already passed fails asynchronously, the same abort the OpenLayers
+    evaluator defuses. The offending test is still recorded as failed.
+
+    karma's mocha framework serves mocha.js and its adapter before any
+    file in this list, so the shim finds ``window.mocha`` already defined
+    and wraps ``run`` before the adapter calls it.
+
+    Raises:
+        ValueError: If the config has no ``files`` list to extend.
+    """
+    entry = f"'{ABORT_SHIM_FILE}',"
+    if entry in karma_source:
+        return karma_source
+    updated, n = _FILES_LIST.subn(
+        lambda m: f'{m.group(0)}\n            {entry}', karma_source, count=1
+    )
+    if n == 0:
+        raise ValueError('karma config has no files list')
+    return updated
 
 # next-2984/3454/4182 ship node via nvm (or a one-off path under
 # ~/.nvm/versions) that is not on the image ENV PATH. `bash -lc` alone is
@@ -115,51 +184,146 @@ class AlibabaEvaluator(Evaluator):
             )
 
         # 2. Add junit to reporters
-        apply_change_literal(
-            container=self.container,
-            file=KARMA_FILE,
-            find="reporters: ['spec', 'coverage']",
-            replace="reporters: ['spec', 'coverage', 'junit']",
-            assertion="reporters: ['spec', 'coverage', 'junit']",
-        )
+        #
+        # This used to match the literal "reporters: ['spec', 'coverage']",
+        # which is one commit's exact formatting rather than anything
+        # stable: the members of that array, their order and the
+        # whitespace around them all vary across the checkouts. next-4806
+        # and next-4859 both aborted their whole run on
+        #
+        #     Could not find target string: "reporters: ['spec', 'coverage']"
+        #
+        # having evaluated nothing. A failure of ours that is recorded as
+        # the instance failing is worse than a crash, because it reads as
+        # evidence about the agent. Match the array and append to whatever
+        # it holds; a config that declares no reporters at all gets the
+        # key inserted at its config.set({ instead.
+        karma_source = read_from_container(self.container, KARMA_FILE)
+        if "'junit'" in karma_source:
+            log.info('junit reporter already present; skipping')
+        elif re.search(r'reporters:\s*\[', karma_source):
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'reporters:\s*\[([^\]]*)\]',
+                replace=lambda m: 'reporters: [{}{}]'.format(
+                    m.group(1).strip() + ', '
+                    if m.group(1).strip() else '',
+                    "'junit'",
+                ),
+                assertion="'junit'",
+            )
+        else:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'(?:config|karma)\.set\(\s*\{',
+                replace=lambda m: m.group(0) + "\n    reporters: ['junit'],",
+                assertion="reporters: ['junit'],",
+            )
 
         # 3. Add junitReporter config
-        apply_change_literal(
-            container=self.container,
-            file=KARMA_FILE,
-            find="hostname: 'localhost'",
-            replace="""junitReporter: {
-                    outputDir: 'test-results',
-                    outputFile: 'results.xml',
-                    useBrowserName: false,
-                },
-                hostname: 'localhost'""",
-            assertion='junitReporter:',
+        #
+        # Anchored on hostname: 'localhost' only because most configs
+        # happen to have it. The block just has to land inside the object
+        # config.set() is given, so fall back to the opening brace when
+        # the anchor is missing rather than failing the instance.
+        junit_block = (
+            'junitReporter: {\n'
+            "                    outputDir: 'test-results',\n"
+            "                    outputFile: 'results.xml',\n"
+            '                    useBrowserName: false,\n'
+            '                },'
         )
+        karma_source = read_from_container(self.container, KARMA_FILE)
+        if 'junitReporter:' in karma_source:
+            log.info('junitReporter config already present; skipping')
+        elif "hostname: 'localhost'" in karma_source:
+            apply_change_literal(
+                container=self.container,
+                file=KARMA_FILE,
+                find="hostname: 'localhost'",
+                replace=(
+                    junit_block
+                    + "\n                hostname: 'localhost'"
+                ),
+                assertion='junitReporter:',
+            )
+        else:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'(?:config|karma)\.set\(\s*\{',
+                replace=lambda m: f'{m.group(0)}\n    {junit_block}',
+                assertion='junitReporter:',
+            )
 
         # 4. Add plugin
-        apply_change_regex(
-            container=self.container,
-            file=KARMA_FILE,
-            find=r"'karma-coverage',?",
-            replace=lambda m: (
-                "'karma-coverage',\n            'karma-junit-reporter',"
-            ),
-            assertion="'karma-junit-reporter',",
-        )
+        #
+        # Same anchoring problem as step 2: 'karma-coverage' is not in
+        # every config's plugins list, and a config that lists no plugins
+        # at all relies on karma's autoloading, which does not find a
+        # reporter installed after the fact. Append to the list when there
+        # is one and create it when there is not.
+        karma_source = read_from_container(self.container, KARMA_FILE)
+        if "'karma-junit-reporter'" in karma_source:
+            log.info('karma-junit-reporter plugin already present; skipping')
+        elif "'karma-coverage'" in karma_source:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r"'karma-coverage',?",
+                replace=lambda m: (
+                    "'karma-coverage',\n            'karma-junit-reporter',"
+                ),
+                assertion="'karma-junit-reporter',",
+            )
+        elif re.search(r'plugins:\s*\[', karma_source):
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'plugins:\s*\[',
+                replace=lambda m: (
+                    m.group(0)
+                    + "\n            'karma-junit-reporter',"
+                ),
+                assertion="'karma-junit-reporter',",
+            )
+        else:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'(?:config|karma)\.set\(\s*\{',
+                replace=lambda m: (
+                    f"{m.group(0)}\n    plugins: ['karma-junit-reporter'],"
+                ),
+                assertion="'karma-junit-reporter'",
+            )
 
         # 5. Under CI=true, karma.js forces browsers: ['ChromeHeadless']
         # with no --no-sandbox (next-3454/4182). ChromeTravis is already
         # defined with the flag; point CI at it. Also stop puppeteer's
         # executablePath() from clobbering the CHROME_BIN shim evaluate()
         # installs.
-        apply_change_literal(
-            container=self.container,
-            file=KARMA_FILE,
-            find="options.browsers = ['ChromeHeadless']",
-            replace="options.browsers = ['ChromeTravis']",
-            assertion="options.browsers = ['ChromeTravis']",
-        )
+        # Best-effort for the same reason as the CHROME_BIN edit below: a
+        # config that never forces ChromeHeadless under CI has nothing
+        # here to redirect, and aborting the instance over a substitution
+        # that was not needed is the failure mode this evaluator keeps
+        # producing.
+        try:
+            apply_change_literal(
+                container=self.container,
+                file=KARMA_FILE,
+                find="options.browsers = ['ChromeHeadless']",
+                replace="options.browsers = ['ChromeTravis']",
+                assertion="options.browsers = ['ChromeTravis']",
+            )
+        except Exception as exc:
+            log.info(
+                'no CI ChromeHeadless override to redirect for %s (%s)',
+                self.instance_id,
+                exc,
+            )
         # Optional: some commits assign CHROME_BIN from puppeteer with
         # slightly different formatting; ChromeTravis already supplies
         # --no-sandbox, so failing this edit must not abort setup.
@@ -168,15 +332,15 @@ class AlibabaEvaluator(Evaluator):
                 container=self.container,
                 file=KARMA_FILE,
                 find=(
-                    r"process\.env\.CHROME_BIN\s*=\s*\n?\s*"
+                    r'process\.env\.CHROME_BIN\s*=\s*\n?\s*'
                     r"require\(['\"]puppeteer['\"]\)\.executablePath\(\);"
                 ),
                 replace=(
-                    "process.env.CHROME_BIN = process.env.CHROME_BIN || "
+                    'process.env.CHROME_BIN = process.env.CHROME_BIN || '
                     "require('puppeteer').executablePath();"
                 ),
                 assertion=(
-                    "process.env.CHROME_BIN = process.env.CHROME_BIN || "
+                    'process.env.CHROME_BIN = process.env.CHROME_BIN || '
                     "require('puppeteer').executablePath();"
                 ),
             )
@@ -186,11 +350,41 @@ class AlibabaEvaluator(Evaluator):
                 f'{self.instance_id}: {exc}'
             )
 
+        # karma.js only sets singleRun for the all-components run; testing
+        # one component (see evaluate) would otherwise leave Karma watching
+        # for changes and never exit.
+        try:
+            apply_change_regex(
+                container=self.container,
+                file=KARMA_FILE,
+                find=r'singleRun\s*:\s*singleRun\s*,',
+                replace='singleRun: true,',
+                assertion='singleRun: true,',
+            )
+        except Exception as exc:
+            log.info(f'Leaving singleRun as is for {self.instance_id}: {exc}')
+        # 6. Keep one late async error from cancelling the whole run.
+        # Best-effort like the edits above: a config without a files list
+        # has nowhere to put the shim, and that must not cost the run.
+        write_to_container(self.container, ABORT_SHIM_FILE, _ABORT_SHIM)
+        try:
+            karma_source = read_from_container(self.container, KARMA_FILE)
+            write_to_container(
+                self.container, KARMA_FILE, add_abort_shim(karma_source)
+            )
+            log.info('mocha abort shim added to %s', KARMA_FILE)
+        except ValueError as exc:
+            log.info(
+                'no files list for the abort shim in %s (%s)',
+                self.instance_id,
+                exc,
+            )
+
         log.info('All changes applied successfully.')
 
     @override
     def evaluate(self) -> list[TestResult]:
-        """Run ``npm test`` and retrieve the JUnit XML results.
+        """Run ``npm test`` per touched component and retrieve the results.
 
         Returns:
             A list of :class:`TestResult` parsed from the JUnit XML output.
@@ -243,34 +437,81 @@ class AlibabaEvaluator(Evaluator):
                 f'leaving CHROME_BIN unset'
             )
 
-        exit_code, output = self.container.exec_run(
-            [
-                'bash',
-                '-lc',
-                # Inline CI/TRAVIS as well as the docker environment= map:
-                # bash -lc can drop unset-looking env on some images, and
-                # the test runner only skips inquirer when CI is visible.
-                f'export CI=true TRAVIS=true; {_NPM_PREFIX}npm test',
-            ],
-            environment=environment,
-            workdir='/testbed',
-            stream=False,
-        )
-        log.info('done running')
-        assert isinstance(output, bytes)
+        # Run each component the test patch touches on its own, as the
+        # repository's runner allows (``npm test <component>``). The
+        # all-in-one run aborts at the first suite whose hook throws: in
+        # next-1720 a broken Rating hook stopped Karma at 754 of 1,337
+        # tests, so the Search tests the patch is about never ran.
+        components = touched_components(test_patch_for(self.instance_id))
+        log.info(f'Components to test: {components or "all"}')
+        results: list[TestResult] = []
+        for component in components or ['']:
+            self.container.exec_run(
+                [
+                    'find',
+                    '/testbed',
+                    '-name',
+                    'results.xml',
+                    '-not',
+                    '-path',
+                    '*/node_modules/*',
+                    '-delete',
+                ],
+                workdir='/testbed',
+            )
+            exit_code, output = self.container.exec_run(
+                [
+                    'bash',
+                    '-lc',
+                    # Inline CI/TRAVIS as well as the docker environment=
+                    # map: bash -lc can drop unset-looking env on some
+                    # images, and the test runner only skips inquirer when
+                    # CI is visible.
+                    f'export CI=true TRAVIS=true; {_NPM_PREFIX}npm test '
+                    f'{component}',
+                ],
+                environment=environment,
+                workdir='/testbed',
+                stream=False,
+            )
+            log.info(f'done running {component or "all components"}')
+            assert isinstance(output, bytes)
+            log.info(exit_code)
+            log.info(output.decode())
+            component_results = results_xml_to_test_results(
+                self.instance_id,
+                self.patch_type,
+                self.agent_name,
+                self._read_results(),
+                self.timestamp,
+            )
+            # Karma's JUnit output names no spec file, but a one-component
+            # run comes from test/<component>/ alone, which keeps tests of
+            # two components that share a name apart.
+            if component:
+                component_results = [
+                    replace(result, test_file=f'test/{component}')
+                    for result in component_results
+                ]
+            results.extend(component_results)
+        return results
 
-        log.info(exit_code)
-        log.info(output.decode())
+    def _read_results(self) -> str:
+        """Read the results.xml the last Karma run wrote.
 
+        Returns:
+            The JUnit XML.
+
+        Raises:
+            Exception: If Karma wrote no results.xml.
+        """
+        assert self.container is not None
         # junitReporter's outputDir is relative to karma's basePath, which
         # is not guaranteed to put results.xml next to karma.js -- two
         # instances (next-4182, next-3454) failed with the results file
         # missing at exactly that assumed path. Finding whatever karma
         # actually wrote, the same way openlayers' evaluator does, instead
         # of assuming a fixed location.
-        default_results_file = (
-            '/testbed/scripts/test/test-results/results.xml'
-        )
         _, results_find = self.container.exec_run(
             [
                 'find',
@@ -285,33 +526,22 @@ class AlibabaEvaluator(Evaluator):
             stream=False,
         )
         assert isinstance(results_find, bytes)
-        written = [
-            p for p in results_find.decode().splitlines() if p.strip()
-        ]
-        if default_results_file in written:
-            results_file = default_results_file
+        written = [p for p in results_find.decode().splitlines() if p.strip()]
+        if DEFAULT_RESULTS_FILE in written:
+            results_file = DEFAULT_RESULTS_FILE
         elif written:
             results_file = written[0]
             log.info(
                 f'results.xml for {self.instance_id} is at '
                 f'{results_file!r}, not the expected '
-                f'{default_results_file!r}'
+                f'{DEFAULT_RESULTS_FILE!r}'
             )
         else:
             raise Exception(
                 f'karma wrote no results.xml for {self.instance_id}; '
-                f'expected it at {default_results_file!r}'
+                f'expected it at {DEFAULT_RESULTS_FILE!r}'
             )
-
-        results = read_from_container(self.container, results_file)
-
-        return results_xml_to_test_results(
-            self.instance_id,
-            self.patch_type,
-            self.agent_name,
-            results,
-            self.timestamp,
-        )
+        return read_from_container(self.container, results_file)
 
     @override
     def pre_cleanup(self) -> None:

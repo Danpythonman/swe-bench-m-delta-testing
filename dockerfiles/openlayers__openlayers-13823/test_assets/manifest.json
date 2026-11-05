@@ -1,0 +1,18 @@
+{
+ "test/rendering/cases/image-no-stretch-interpolate-false/expected.png": {
+  "action": "modify",
+  "blob": "08ca31953ed6a0c6c54e0f59e39f6da057399d12"
+ },
+ "test/rendering/cases/image-stretched-interpolate-false/expected.png": {
+  "action": "modify",
+  "blob": "1b30265d04fc0cf62ca67da2235c026ec9512429"
+ },
+ "test/rendering/cases/layer-image/expected.png": {
+  "action": "modify",
+  "blob": "d167008af0275b975916304126cfa89fb4dd756b"
+ },
+ "test/rendering/cases/postrender-immediate/expected.png": {
+  "action": "modify",
+  "blob": "fd0a748da56ee40ff366efe1fd80d439b60a2433"
+ }
+}

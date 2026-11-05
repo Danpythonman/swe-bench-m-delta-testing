@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.openlayers_1776_openlayers-13020:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.openlayers_1776_openlayers-13020@sha256:2dad9cd774dfa0264286e7a0f5228a017cddf49d991a2e4caef720387f174f3b
 
 WORKDIR /install
 # Install docker cli

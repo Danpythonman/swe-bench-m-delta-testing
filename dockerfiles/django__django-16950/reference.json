@@ -1,0 +1,11 @@
+{
+  "instance_id": "django__django-16950",
+  "fail_to_pass": [
+    "If form data is provided, a parent's auto-generated alternate key is"
+  ],
+  "pass_to_pass": [
+    "#24377 - Inlines with a model field default should ignore that default",
+    "#24377 - If we're adding a new object, a parent's auto-generated pk",
+    "#24958 - Variant of test_inlineformset_factory_nulls_default_pks for"
+  ]
+}

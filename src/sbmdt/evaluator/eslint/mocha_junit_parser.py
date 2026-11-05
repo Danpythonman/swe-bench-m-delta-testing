@@ -22,6 +22,8 @@ Example output shape::
 from __future__ import annotations
 
 import datetime as dt
+import logging
+import re
 import xml.etree.ElementTree as ET
 
 from sbmdt.evaluator.base import PatchType, TestResult
@@ -29,6 +31,32 @@ from sbmdt.evaluator.base import PatchType, TestResult
 __all__ = [
     'results_xml_to_test_results',
 ]
+
+log = logging.getLogger(__name__)
+
+# XML 1.0 forbids most control characters outright, and no escape can
+# represent them.  mocha-junit-reporter 1.18.0 copies test names and
+# assertion messages into the document verbatim, so an ESLint test whose
+# fixture contains a raw control character -- and several do, since
+# ESLint tests how its rules handle them -- produces a file that no
+# conforming parser will read.  One such character cost eslint-8120 all
+# 14573 of its testcases.
+_ILLEGAL_XML = re.compile(
+    '[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\U00010000-\U0010FFFF]'
+)
+
+
+def _strip_illegal_xml_chars(xml_content: str) -> tuple[str, int]:
+    """Remove characters XML 1.0 does not permit.
+
+    Args:
+        xml_content: Raw XML, possibly carrying control characters.
+
+    Returns:
+        A tuple of the cleaned XML and the number of characters removed.
+    """
+    cleaned, removed = _ILLEGAL_XML.subn('', xml_content)
+    return cleaned, removed
 
 
 def results_xml_to_test_results(
@@ -67,6 +95,14 @@ def results_xml_to_test_results(
     Raises:
         xml.etree.ElementTree.ParseError: If ``xml_content`` is not valid XML.
     """
+
+    xml_content, removed = _strip_illegal_xml_chars(xml_content)
+    if removed:
+        log.warning(
+            'removed %d character(s) XML 1.0 forbids from the results of '
+            '%s; without this the whole file fails to parse',
+            removed, instance_id,
+        )
 
     root = ET.fromstring(xml_content)
 

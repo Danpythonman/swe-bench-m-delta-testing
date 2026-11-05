@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.eslint_1776_eslint-12652:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.eslint_1776_eslint-12652@sha256:90411828e080676e296ae54bf0c95ef296ad95f0e56ba2d65211bc59f37af2ce
 
 WORKDIR /install
 # Install docker cli

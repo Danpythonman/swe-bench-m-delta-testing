@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/webgl-data-tile-clip-extent-reproj/expected.png": {
+  "action": "add",
+  "blob": "a25f8dc835d255dd7508eb3950c7910e27130457"
+ },
+ "test/rendering/cases/webgl-data-tile-clip-extent/expected.png": {
+  "action": "add",
+  "blob": "2fd4c72767ab8fd6ef1dc7e993f79e6b3b645ebb"
+ }
+}

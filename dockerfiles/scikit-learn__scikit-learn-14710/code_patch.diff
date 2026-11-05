@@ -1,0 +1,33 @@
+diff --git a/doc/whats_new/v0.22.rst b/doc/whats_new/v0.22.rst
+index e1aa1cd8641f5..770b48b0cb69a 100644
+--- a/doc/whats_new/v0.22.rst
++++ b/doc/whats_new/v0.22.rst
+@@ -132,6 +132,8 @@ Changelog
+     method for both estimators. :pr:`13769` by `Nicolas Hug`_.
+   - |Fix| Estimators now bin the training and validation data separately to
+     avoid any data leak. :pr:`13933` by `Nicolas Hug`_.
++  - |Fix| Fixed a bug where early stopping would break with string targets.
++    :pr:`14710` by :user:`Guillaume Lemaitre <glemaitre>`.
+ 
+   Note that pickles from 0.21 will not work in 0.22.
+ 
+diff --git a/sklearn/ensemble/_hist_gradient_boosting/gradient_boosting.py b/sklearn/ensemble/_hist_gradient_boosting/gradient_boosting.py
+index ad6a5a8ca381b..70a507d09c1c6 100644
+--- a/sklearn/ensemble/_hist_gradient_boosting/gradient_boosting.py
++++ b/sklearn/ensemble/_hist_gradient_boosting/gradient_boosting.py
+@@ -426,11 +426,15 @@ def _check_early_stopping_scorer(self, X_binned_small_train, y_small_train,
+ 
+         Scores are computed on validation data or on training data.
+         """
++        if is_classifier(self):
++            y_small_train = self.classes_[y_small_train.astype(int)]
+         self.train_score_.append(
+             self.scorer_(self, X_binned_small_train, y_small_train)
+         )
+ 
+         if self._use_validation_data:
++            if is_classifier(self):
++                y_val = self.classes_[y_val.astype(int)]
+             self.validation_score_.append(
+                 self.scorer_(self, X_binned_val, y_val)
+             )

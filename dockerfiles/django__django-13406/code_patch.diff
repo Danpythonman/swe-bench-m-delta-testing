@@ -1,0 +1,38 @@
+diff --git a/django/db/models/query.py b/django/db/models/query.py
+index b48d0df9c000..85cd8311a7d2 100644
+--- a/django/db/models/query.py
++++ b/django/db/models/query.py
+@@ -210,6 +210,8 @@ def query(self):
+ 
+     @query.setter
+     def query(self, value):
++        if value.values_select:
++            self._iterable_class = ValuesIterable
+         self._query = value
+ 
+     def as_manager(cls):
+diff --git a/docs/ref/models/querysets.txt b/docs/ref/models/querysets.txt
+index 228e2cf73627..7f55684e0827 100644
+--- a/docs/ref/models/querysets.txt
++++ b/docs/ref/models/querysets.txt
+@@ -106,6 +106,20 @@ the query construction and is not part of the public API. However, it is safe
+ (and fully supported) to pickle and unpickle the attribute's contents as
+ described here.
+ 
++.. admonition:: Restrictions on ``QuerySet.values_list()``
++
++    If you recreate :meth:`QuerySet.values_list` using the pickled ``query``
++    attribute, it will be converted to :meth:`QuerySet.values`::
++
++        >>> import pickle
++        >>> qs = Blog.objects.values_list('id', 'name')
++        >>> qs
++        <QuerySet [(1, 'Beatles Blog')]>
++        >>> reloaded_qs = Blog.objects.all()
++        >>> reloaded_qs.query = pickle.loads(pickle.dumps(qs.query))
++        >>> reloaded_qs
++        <QuerySet [{'id': 1, 'name': 'Beatles Blog'}]>
++
+ .. admonition:: You can't share pickles between versions
+ 
+     Pickles of ``QuerySets`` are only valid for the version of Django that

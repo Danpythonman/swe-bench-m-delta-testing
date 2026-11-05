@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/webgl-points-rotation/expected.png": {
+  "action": "add",
+  "blob": "a4d325f2e308280871b67d5a5caf068328d96a67"
+ }
+}

@@ -1,0 +1,18 @@
+{
+ "test/rendering/cases/cog-math/expected.png": {
+  "action": "add",
+  "blob": "73f6d22fca0b6665e0d248b8a4079ebfae935041"
+ },
+ "test/rendering/cases/cog-stats/expected.png": {
+  "action": "add",
+  "blob": "2232e686a5d9e7e1a3070139a0731c3722a3d213"
+ },
+ "test/rendering/data/raster/sentinel-b04.tif": {
+  "action": "add",
+  "blob": "f470a054d989bb6fac2a567c79cf73690a20fc90"
+ },
+ "test/rendering/data/raster/sentinel-b08.tif": {
+  "action": "add",
+  "blob": "55f7e7aa42c91d56b7f0fb96d5b67bee6628ad6b"
+ }
+}

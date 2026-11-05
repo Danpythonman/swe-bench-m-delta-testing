@@ -1,0 +1,29 @@
+diff --git a/doc/whats-new.rst b/doc/whats-new.rst
+index 277c32b1016..1e0873c628d 100644
+--- a/doc/whats-new.rst
++++ b/doc/whats-new.rst
+@@ -90,6 +90,10 @@ New Features
+ 
+ Bug fixes
+ ~~~~~~~~~
++- Use specific type checks in
++  :py:func:`~xarray.core.variable.as_compatible_data` instead of blanket
++  access to ``values`` attribute (:issue:`2097`)
++  By `Yunus Sevinchan <https://github.com/blsqr>`_.
+ - :py:meth:`DataArray.resample` and :py:meth:`Dataset.resample` do not trigger computations anymore if :py:meth:`Dataset.weighted` or :py:meth:`DataArray.weighted` are applied (:issue:`4625`, :pull:`4668`). By `Julius Busecke <https://github.com/jbusecke>`_.
+ - :py:func:`merge` with ``combine_attrs='override'`` makes a copy of the attrs (:issue:`4627`).
+ - By default, when possible, xarray will now always use values of type ``int64`` when encoding
+diff --git a/xarray/core/variable.py b/xarray/core/variable.py
+index 45553eb9b1e..7ca90d6b3c7 100644
+--- a/xarray/core/variable.py
++++ b/xarray/core/variable.py
+@@ -218,7 +218,8 @@ def as_compatible_data(data, fastpath=False):
+         data = np.timedelta64(getattr(data, "value", data), "ns")
+ 
+     # we don't want nested self-described arrays
+-    data = getattr(data, "values", data)
++    if isinstance(data, (pd.Series, pd.Index, pd.DataFrame)):
++        data = data.values
+ 
+     if isinstance(data, np.ma.MaskedArray):
+         mask = np.ma.getmaskarray(data)

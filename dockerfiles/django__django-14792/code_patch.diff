@@ -1,0 +1,29 @@
+diff --git a/django/utils/timezone.py b/django/utils/timezone.py
+index bb2b6b95943c..0f5d012c593f 100644
+--- a/django/utils/timezone.py
++++ b/django/utils/timezone.py
+@@ -72,8 +72,11 @@ def get_current_timezone_name():
+ 
+ 
+ def _get_timezone_name(timezone):
+-    """Return the name of ``timezone``."""
+-    return str(timezone)
++    """
++    Return the offset for fixed offset timezones, or the name of timezone if
++    not set.
++    """
++    return timezone.tzname(None) or str(timezone)
+ 
+ # Timezone selection functions.
+ 
+diff --git a/docs/releases/3.2.7.txt b/docs/releases/3.2.7.txt
+index 0219460649d2..644e71dafdd8 100644
+--- a/docs/releases/3.2.7.txt
++++ b/docs/releases/3.2.7.txt
+@@ -9,4 +9,5 @@ Django 3.2.7 fixes several bugs in 3.2.6.
+ Bugfixes
+ ========
+ 
+-* ...
++* Fixed a regression in Django 3.2 that caused the incorrect offset extraction
++  from fixed offset timezones (:ticket:`32992`).

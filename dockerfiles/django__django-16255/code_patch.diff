@@ -1,0 +1,26 @@
+diff --git a/django/contrib/sitemaps/__init__.py b/django/contrib/sitemaps/__init__.py
+index 27756d9d9694..3d276b60d490 100644
+--- a/django/contrib/sitemaps/__init__.py
++++ b/django/contrib/sitemaps/__init__.py
+@@ -167,7 +167,7 @@ def get_latest_lastmod(self):
+             return None
+         if callable(self.lastmod):
+             try:
+-                return max([self.lastmod(item) for item in self.items()])
++                return max([self.lastmod(item) for item in self.items()], default=None)
+             except TypeError:
+                 return None
+         else:
+diff --git a/docs/releases/4.1.4.txt b/docs/releases/4.1.4.txt
+index 21040ebab64b..3079fc55b7fe 100644
+--- a/docs/releases/4.1.4.txt
++++ b/docs/releases/4.1.4.txt
+@@ -11,3 +11,8 @@ Bugfixes
+ 
+ * Fixed a regression in Django 4.1 that caused an unnecessary table rebuilt
+   when adding ``ManyToManyField`` on SQLite (:ticket:`34138`).
++
++* Fixed a bug in Django 4.1 that caused a crash of the sitemap index view with
++  an empty :meth:`Sitemap.items() <django.contrib.sitemaps.Sitemap.items>` and
++  a callable :attr:`~django.contrib.sitemaps.Sitemap.lastmod`
++  (:ticket:`34088`).

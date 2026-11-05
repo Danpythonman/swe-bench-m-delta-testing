@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/webgl-precompose-event/expected.png": {
+  "action": "add",
+  "blob": "d93d3624f65a87f247ae7b9bbf2132c68647bb3f"
+ }
+}

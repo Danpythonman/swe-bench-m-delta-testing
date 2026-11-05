@@ -12,9 +12,10 @@ bpmn-js uses Karma as its test runner, configured at
    package is a non-functional snap stub).
 4. Runs ``npm test`` with ``TEST_BROWSERS=ChromeHeadless`` (PhantomJS is
    the config default but cannot parse this project's compiled bundle).
-   On Node ≥ 17 also sets ``NODE_OPTIONS=--openssl-legacy-provider``;
-   on Node < 17 that flag is omitted because it is rejected by
-   ``NODE_OPTIONS`` and aborts before Karma starts.
+   Also sets ``NODE_OPTIONS=--openssl-legacy-provider`` when this
+   image's node actually accepts it, which is probed rather than
+   inferred from the version (see
+   :func:`sbmdt.utils.node_accepts_node_option`).
 5. Reads the resulting XML from the container and returns parsed results.
 
 All bpmn-js instances share the same project layout and test infrastructure,
@@ -33,6 +34,7 @@ from sbmdt.evaluator.bpmn.karma_junit_parser import (
 )
 from sbmdt.utils import (
     apply_change_regex,
+    node_accepts_node_option,
     read_from_container,
     write_to_container,
 )
@@ -45,6 +47,10 @@ log = logging.getLogger(__name__)
 
 KARMA_CONFIG_FILE: Final[str] = '/testbed/test/config/karma.unit.js'
 RESULTS_XML: Final[str] = '/testbed/test-results/results.xml'
+
+# Re-enables the legacy OpenSSL provider webpack 4's MD4 hashing
+# needs. Probed per image - see node_accepts_node_option.
+OPENSSL_LEGACY_FLAG: Final[str] = '--openssl-legacy-provider'
 
 # Flags needed for headless Chrome as root in Docker. --no-sandbox is
 # already upstream for ChromeHeadless_Linux; --disable-dev-shm-usage was
@@ -140,7 +146,10 @@ class BpmnEvaluator(Evaluator):
         )
         assert isinstance(output, bytes)
         status = output.decode().strip()
-        log.info('puppeteer chrome check: %s (exit_code=%s)', status, exit_code)
+        log.info(
+            'puppeteer chrome check: %s (exit_code=%s)',
+            status, exit_code,
+        )
         if status.startswith('ok:'):
             return
 
@@ -165,9 +174,11 @@ class BpmnEvaluator(Evaluator):
 
         # SWE-bench images set PUPPETEER_SKIP_DOWNLOAD — clear it.
         for cmd in (
-            'env -u PUPPETEER_SKIP_DOWNLOAD -u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
+            'env -u PUPPETEER_SKIP_DOWNLOAD '
+            '-u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
             'node node_modules/puppeteer/install.js',
-            'env -u PUPPETEER_SKIP_DOWNLOAD -u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
+            'env -u PUPPETEER_SKIP_DOWNLOAD '
+            '-u PUPPETEER_SKIP_CHROMIUM_DOWNLOAD '
             'npx --yes puppeteer browsers install chrome',
         ):
             log.info('Attempting Chromium download via: %s', cmd)
@@ -245,12 +256,16 @@ class BpmnEvaluator(Evaluator):
         log.info('Patched unconditional puppeteer CHROME_BIN assignment')
 
     def _ensure_chrome_docker_launcher(self) -> None:
-        """Install or rewrite ``ChromeHeadless_Linux`` with Docker-safe flags."""
+        """Install or rewrite ``ChromeHeadless_Linux`` with Docker-safe flags.
+        """
         assert self.container is not None
 
         content = read_from_container(self.container, KARMA_CONFIG_FILE)
         if '--no-proxy-server' in content:
-            log.info('Chrome Docker flags already present; skipping launcher patch')
+            log.info(
+                'Chrome Docker flags already present; skipping'
+                ' launcher patch'
+            )
             return
 
         launcher_block = (
@@ -300,7 +315,9 @@ class BpmnEvaluator(Evaluator):
             write_to_container(self.container, KARMA_CONFIG_FILE, updated)
             verify = read_from_container(self.container, KARMA_CONFIG_FILE)
             if '--no-proxy-server' not in verify:
-                raise Exception('Failed to inject ChromeHeadless_Linux launcher')
+                raise Exception(
+                    'Failed to inject ChromeHeadless_Linux launcher'
+                )
             return
 
         raise Exception(
@@ -319,7 +336,10 @@ class BpmnEvaluator(Evaluator):
         )
         assert isinstance(output, bytes)
         node_version = output.decode().strip()
-        log.info('container node version=%s (exit_code=%s)', node_version, exit_code)
+        log.info(
+            'container node version=%s (exit_code=%s)',
+            node_version, exit_code,
+        )
 
         env: dict[str, str] = {
             # Keep local-batch-work's selection: the config maps
@@ -355,7 +375,8 @@ class BpmnEvaluator(Evaluator):
             write_to_container(
                 self.container,
                 shim,
-                f'#!/bin/bash\nexec {chrome_bin} --no-sandbox --disable-gpu "$@"\n',
+                f'#!/bin/bash\n'
+                f'exec {chrome_bin} --no-sandbox --disable-gpu "$@"\n',
             )
             self.container.exec_run(['chmod', '+x', shim], stream=False)
             env['CHROME_BIN'] = shim
@@ -364,19 +385,20 @@ class BpmnEvaluator(Evaluator):
         else:
             log.warning('Could not locate a Chrome binary to set CHROME_BIN')
 
-        try:
-            major = int(node_version.split('.', 1)[0])
-        except ValueError:
-            major = 0
-            log.warning('Could not parse node version %r', node_version)
-
-        if major >= 17:
-            env['NODE_OPTIONS'] = '--openssl-legacy-provider'
-            log.info('Setting NODE_OPTIONS=--openssl-legacy-provider (node>=17)')
+        # A node-version gate is the usual way to decide this, and it is
+        # wrong for these images. They are tagged :latest, so node moves
+        # under the benchmark, and current builds refuse the flag inside
+        # NODE_OPTIONS and exit 9 before Karma starts - no results file,
+        # which is how every bpmn-js run stopped producing data. Node 21
+        # passes ">= 17" and still refuses. Ask node instead.
+        if node_accepts_node_option(self.container, OPENSSL_LEGACY_FLAG):
+            env['NODE_OPTIONS'] = OPENSSL_LEGACY_FLAG
+            log.info('Setting NODE_OPTIONS=%s', OPENSSL_LEGACY_FLAG)
         else:
-            log.info(
-                'Skipping NODE_OPTIONS=--openssl-legacy-provider (node=%s)',
+            log.warning(
+                'node %s in this image rejects %s; running without it',
                 node_version,
+                OPENSSL_LEGACY_FLAG,
             )
 
         return env

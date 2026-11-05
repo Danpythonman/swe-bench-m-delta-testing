@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.prismjs_1776_prism-3001:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.prismjs_1776_prism-3001@sha256:ca75e108a89f8a4de9375e41f982e9c487389f1f2ddc8f6b8fd55a62215ae1d9
 
 WORKDIR /install
 # Install docker cli

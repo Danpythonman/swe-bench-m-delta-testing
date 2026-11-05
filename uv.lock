@@ -1864,6 +1864,7 @@ dependencies = [
     { name = "boto3", extra = ["crt"] },
     { name = "docker" },
     { name = "openpyxl" },
+    { name = "pandas" },
     { name = "pyarrow" },
     { name = "python-dotenv" },
 ]
@@ -1874,7 +1875,6 @@ dev = [
     { name = "ipykernel" },
     { name = "matplotlib" },
     { name = "nbstripout" },
-    { name = "pandas" },
     { name = "pre-commit" },
     { name = "pyarrow-stubs" },
     { name = "pyright" },
@@ -1889,6 +1889,7 @@ requires-dist = [
     { name = "boto3", extras = ["crt"], specifier = ">=1.43.36" },
     { name = "docker", specifier = ">=7.1.0" },
     { name = "openpyxl", specifier = ">=3.1.5" },
+    { name = "pandas", specifier = ">=3.0.3" },
     { name = "pyarrow", specifier = ">=24.0.0" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
 ]
@@ -1899,7 +1900,6 @@ dev = [
     { name = "ipykernel", specifier = ">=7.3.0" },
     { name = "matplotlib", specifier = ">=3.11.0" },
     { name = "nbstripout", specifier = ">=0.9.1" },
-    { name = "pandas", specifier = ">=3.0.3" },
     { name = "pre-commit" },
     { name = "pyarrow-stubs", specifier = ">=20.0.0.20260625" },
     { name = "pyright", specifier = ">=1.1.410" },

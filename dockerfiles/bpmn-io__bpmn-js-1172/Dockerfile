@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.bpmn-io_1776_bpmn-js-1172:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.bpmn-io_1776_bpmn-js-1172@sha256:4f897a81d23d4a00320546d6e2ab71f3fd27cbf8d5aa800930db0727a2df5151
 
 WORKDIR /install
 # Install docker cli
