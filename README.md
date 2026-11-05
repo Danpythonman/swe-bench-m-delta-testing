@@ -180,7 +180,17 @@ uv run scripts/run_instance.py alibaba-fusion__next-717 gold \
 # A model patch (with_image or without_image)
 uv run scripts/run_instance.py alibaba-fusion__next-717 with_image \
     --pred-file path/to/patch.pred --apply-test-patch --parquet --file
+
+# The derived FAIL_TO_PASS / PASS_TO_PASS split, and RESOLVED or UNRESOLVED
+# for every model patch
+uv run scripts/derive_and_grade.py --list
 ```
+
+`derive_and_grade.py` reads every result in `results/` (JSON or Parquet,
+Verified or Multimodal) and writes `analysis/derived/split.json` and
+`verdicts.csv`. A patch is resolved when every FAIL_TO_PASS test passes and
+every PASS_TO_PASS test still passes; a test that did not run counts as
+failed.
 
 `--json --file` writes the same results as JSON for reading by eye, and
 `--parquet --s3 --bucket BUCKET` uploads them instead.
