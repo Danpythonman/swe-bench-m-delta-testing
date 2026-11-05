@@ -186,6 +186,10 @@ uv run scripts/run_instance.py alibaba-fusion__next-717 with_image \
 uv run scripts/derive_and_grade.py --list
 ```
 
+To try it without an agent of your own, [`examples/`](examples/) has three
+hand-written patches for `django__django-11099` (one resolves, one changes
+nothing, one breaks a PASS_TO_PASS test) and the exact commands to run them.
+
 `derive_and_grade.py` reads every result in `results/` (JSON or Parquet,
 Verified or Multimodal) and writes `analysis/derived/split.json` and
 `verdicts.csv`. A patch is resolved when every FAIL_TO_PASS test passes and

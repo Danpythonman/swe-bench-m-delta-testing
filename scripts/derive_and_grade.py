@@ -107,7 +107,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--list',
         action='store_true',
-        help='Also print every FAIL_TO_PASS test name.',
+        help='Also print every FAIL_TO_PASS test, and every F2P or P2P '
+        'test an agent patch did not pass.',
     )
     return parser.parse_args()
 
@@ -198,7 +199,9 @@ def print_split(split: dict[str, dict[str, list[str]]], names: bool) -> None:
                 print(f'      F2P  {test}')
 
 
-def grade(frame: pd.DataFrame, tests: pd.DataFrame) -> pd.DataFrame:
+def grade(
+    frame: pd.DataFrame, tests: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Grade every agent's runs against the derived split.
 
     Args:
@@ -206,11 +209,15 @@ def grade(frame: pd.DataFrame, tests: pd.DataFrame) -> pd.DataFrame:
         tests: The per-test frame from ``reference_split``.
 
     Returns:
-        One row per (instance, variant, agent), with counts and a
-        ``resolved`` flag; empty if there are no agent runs.
+        A ``(verdicts, failures)`` pair. ``verdicts`` has one row per
+        (instance, variant, agent), with counts and a ``resolved`` flag;
+        ``failures`` has one row per F2P or P2P test that did not pass
+        (failed, not run, or flaky). Both are empty if there are no
+        agent runs.
     """
     runs = frame[frame[PATCH].isin(VARIANTS)]
     verdicts = []
+    failures = []
     for (variant, agent), _ in runs.groupby(
         [PATCH, 'agent_name'], observed=True
     ):
@@ -220,6 +227,9 @@ def grade(frame: pd.DataFrame, tests: pd.DataFrame) -> pd.DataFrame:
         summary = resolved(scored)
         summary.insert(1, 'agent_name', agent)
         verdicts.append(summary)
+        failed = scored[scored['status'] != 'passed'].copy()
+        failed['agent_name'] = agent
+        failures.append(failed)
     graded = set(pd.concat(verdicts)[INSTANCE]) if verdicts else set()
     missing = sorted(set(runs[INSTANCE]) - graded)
     if missing:
@@ -228,15 +238,22 @@ def grade(frame: pd.DataFrame, tests: pd.DataFrame) -> pd.DataFrame:
             f'against: {", ".join(missing)}'
         )
     if not verdicts:
-        return pd.DataFrame()
-    return pd.concat(verdicts, ignore_index=True)
+        return pd.DataFrame(), pd.DataFrame()
+    return (
+        pd.concat(verdicts, ignore_index=True),
+        pd.concat(failures, ignore_index=True),
+    )
 
 
-def print_verdicts(verdicts: pd.DataFrame) -> None:
+def print_verdicts(
+    verdicts: pd.DataFrame, failures: pd.DataFrame, names: bool
+) -> None:
     """Print one line per graded agent run.
 
     Args:
-        verdicts: The output of :func:`grade`.
+        verdicts: The verdicts from :func:`grade`.
+        failures: The tests that did not pass, from :func:`grade`.
+        names: Whether to list the tests that did not pass.
     """
     print('Agent patches:')
     width = verdicts[INSTANCE].str.len().max()
@@ -250,6 +267,15 @@ def print_verdicts(verdicts: pd.DataFrame) -> None:
             f'  {r.instance_id:<{width}}  {r.agent_name} ({r.variant}): '
             f'{verdict:<10}  {detail}'
         )
+        if names:
+            mine = failures[
+                (failures[INSTANCE] == r.instance_id)
+                & (failures['agent_name'] == r.agent_name)
+                & (failures['variant'] == r.variant)
+            ]
+            for f in mine.sort_values(['category', TEST]).itertuples():
+                label = SHORT[f.category]
+                print(f'      {label} {f.status:<7}  {f.test_name}')
     if (verdicts['f2p'] > 0).any() and (
         verdicts['f2p_not_run'] == verdicts['f2p']
     ).all():
@@ -276,10 +302,10 @@ def main() -> None:
     split = split_json(tests)
     print_split(split, args.list)
 
-    verdicts = grade(frame, tests)
+    verdicts, failures = grade(frame, tests)
     if not verdicts.empty:
         print()
-        print_verdicts(verdicts)
+        print_verdicts(verdicts, failures, args.list)
 
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / 'split.json').write_text(json.dumps(split, indent=1) + '\n')
