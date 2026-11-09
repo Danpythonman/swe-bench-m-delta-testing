@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Mapping
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, field
 from typing import cast
 
 import pandas as pd
@@ -25,6 +25,13 @@ import pandas as pd
 # --- Public API ---
 
 __all__: list[str] = [
+    'ABSENT_AS_FAIL',
+    'ABSENT_BY_EVIDENCE',
+    'ERROR',
+    'FAIL',
+    'NOT_EXECUTED',
+    'PASS',
+    'absent_states',
     'ClassificationError',
     'Columns',
     'MissingColumnError',
@@ -91,6 +98,54 @@ RENDERING_CASE_PATTERN = re.compile(
 _MIN_TITLE_LENGTH: int = 6
 _TEMPLATE_MARKERS: tuple[str, ...] = ('${', '%s', '%d')
 
+#: What a run says about one test. Results store only pass/fail, so a test
+#: the run reports is PASS or FAIL. A test the run does not report is ERROR
+#: when something explains its absence -- an error row covering it (its
+#: file failed to import, its class setup crashed), or the test patch adding
+#: it, which only happens when its file failed to load -- and NOT_EXECUTED
+#: when nothing does: the run never reached it, so how it would have ended
+#: is unknown.
+PASS: str = 'PASS'
+FAIL: str = 'FAIL'
+ERROR: str = 'ERROR'
+NOT_EXECUTED: str = 'NOT_EXECUTED'
+
+#: How a missing pre-patch test is read. ``'fail'`` counts it as failing
+#: (the original rule). ``'evidence'`` counts it as failing only when it is
+#: ERROR; a NOT_EXECUTED test gets no label.
+ABSENT_AS_FAIL: str = 'fail'
+ABSENT_BY_EVIDENCE: str = 'evidence'
+
+#: Error rows that stand for tests they kept from running. unittest reports a
+#: crashed class or module fixture, and a module that failed to import, as
+#: one row naming the scope (``setUpClass (servers.tests.LiveServerViews)``,
+#: ``servers.tests (unittest.loader._FailedTest)``).
+_UNITTEST_FIXTURE = re.compile(
+    r'^(?:setUpClass|setUpModule) \((?P<scope>[\w.]+)\)$'
+)
+_UNITTEST_IMPORT = re.compile(
+    r'^(?P<scope>[\w.]+) \(unittest\.loader\._FailedTest(?:\.[\w.]+)?\)$'
+)
+#: jest reports a describe() block whose body threw as one row (prettier-9514
+#: asks for a parser only the fix adds).
+_JS_DECLARATION = re.compile(
+    r'^(?P<prefix>.+?) encountered a declaration exception$'
+)
+#: mocha reports a failed setup hook as one row; the tests under it never
+#: start. A failed "after" hook is not here on purpose: the test it follows
+#: did run, and the ones mocha then skips were simply never reached.
+_MOCHA_SETUP_HOOK = re.compile(
+    r'^(?P<prefix>.*?)\s*"before (?:all|each)" hook\b'
+)
+#: The scope a unittest test id names: ``method (module.Class)``.
+_UNITTEST_ID = re.compile(r'^(?P<method>\w+) \((?P<scope>[\w.]+)\)$')
+
+#: Python tests and test classes a test patch adds.
+_PY_DEF = re.compile(r'^\+\s*(?:async\s+)?def\s+(\w+)', re.MULTILINE)
+_PY_CLASS = re.compile(r'^\+\s*class\s+(\w+)', re.MULTILINE)
+_DIFF_FILE = re.compile(r'^diff --git a/(\S+) b/(\S+)$', re.MULTILINE)
+_NEW_FILE = re.compile(r'^(?:new file mode|--- /dev/null)', re.MULTILINE)
+
 # --- Exceptions ---
 
 
@@ -120,6 +175,9 @@ class Columns:
     patch_type: str = 'patch_type'
     test_name: str = 'test_name'
     passed: str = 'passed'
+    # The file a test is defined in, where results carry it. Only used to
+    # keep a JS error row from covering a same-titled test in another file.
+    file: str | None = None
     # Which column separates one execution of the suite from another.
     # Without it a test name that occurs twice *inside a single run* is
     # indistinguishable from one test that answered differently on two
@@ -161,6 +219,14 @@ class TestSplit:
             other set, because a truncated pre-patch run manufactures
             FAIL_TO_PASS entries out of tests it never reached. The value
             is the post-patch test list, kept for auditing.
+        errored: Tests absent from the pre-patch run whose absence an error
+            explains (``ERROR``); they are classified as failing there, so
+            they also appear in ``fail_to_pass`` or ``broken``. Only filled
+            when absent tests are read by evidence.
+        not_executed: Tests absent from the pre-patch run with nothing to
+            explain it (``NOT_EXECUTED``). They are in no other set: with no
+            pre-patch outcome there is no transition to classify. Only
+            filled when absent tests are read by evidence.
     """
 
     fail_to_pass: dict[str, list[str]]
@@ -169,6 +235,8 @@ class TestSplit:
     broken: dict[str, list[str]]
     flaky: dict[str, list[str]]
     incomplete: dict[str, list[str]]
+    errored: dict[str, list[str]] = field(default_factory=dict)
+    not_executed: dict[str, list[str]] = field(default_factory=dict)
 
 
 # --- Functions ---
@@ -348,6 +416,7 @@ def _pivot_patch_status(
     columns: Columns,
     pre_label: str,
     post_label: str,
+    fill_absent: bool = True,
 ) -> pd.DataFrame:
     """Lay the pre- and post-patch verdicts side by side.
 
@@ -356,9 +425,11 @@ def _pivot_patch_status(
         columns: The column-name mapping.
         pre_label: Value of the patch_type column for pre-patch runs.
         post_label: Value of the patch_type column for post-patch runs.
+        fill_absent: Read a test absent before the patch as failing. When
+            False the pre column keeps NaN for it, for the caller to decide.
 
     Returns:
-        One row per (instance, test) with boolean pre and post columns.
+        One row per (instance, test) with pre and post columns.
     """
     wide = (
         stable.pivot(
@@ -372,15 +443,200 @@ def _pivot_patch_status(
         .reset_index()
     )
 
-    # A test the patch introduced has no pre-patch run. Absent is
-    # equivalent to not passing, which makes it a FAIL_TO_PASS.
-    wide[pre_label] = wide[pre_label].fillna(False).astype(bool)
+    # A test the patch introduced has no pre-patch run. Under the original
+    # rule absent is equivalent to not passing, which makes it a
+    # FAIL_TO_PASS.
+    if fill_absent:
+        wide[pre_label] = wide[pre_label].fillna(False).astype(bool)
 
     # Without a post-patch verdict there is nothing to classify: the
     # patch deleted, renamed, or skipped the test.
     wide = wide.dropna(subset=[post_label])
     wide[post_label] = wide[post_label].astype(bool)
     return wide
+
+
+def _unittest_scope_covered(test: str, scopes: set[str]) -> bool:
+    """Whether a unittest id falls under a crashed class or module."""
+    match = _UNITTEST_ID.match(test)
+    if not match:
+        return False
+    scope = match.group('scope')
+    return any(scope == s or scope.startswith(s + '.') for s in scopes)
+
+
+def _collector_covered(test: str, failed: set[str]) -> bool:
+    """Whether a pytest node id sits under a failed collector.
+
+    pytest reports a file (or class) it could not collect as one failing
+    row named by that node, and a node with children is never a test, so a
+    failing ``path`` row covers every ``path::...`` test.
+    """
+    parts = test.split('::')
+    return any('::'.join(parts[:i]) in failed for i in range(1, len(parts)))
+
+
+def _error_prefixes(
+    failed: Mapping[str, str | None],
+) -> list[tuple[str, str | None]]:
+    """The JS block prefixes (and files) an error row stopped from running."""
+    prefixes = []
+    for name, file in failed.items():
+        for pattern in (_JS_DECLARATION, _MOCHA_SETUP_HOOK):
+            match = pattern.match(name)
+            if match and (match.group('prefix').strip() or file):
+                prefixes.append((match.group('prefix').strip(), file))
+    return prefixes
+
+
+def _error_scopes(failed: set[str]) -> set[str]:
+    """The unittest classes and modules a fixture or import error names."""
+    scopes = set()
+    for name in failed:
+        match = _UNITTEST_FIXTURE.match(name) or _UNITTEST_IMPORT.match(name)
+        if match:
+            scopes.add(match.group('scope'))
+    return scopes
+
+
+@dataclass(frozen=True)
+class _PatchAdds:
+    """What a test patch adds: test titles, Python names, and new files."""
+
+    titles: tuple[str, ...]
+    py_names: frozenset[str]
+    new_files: frozenset[str]
+
+    @classmethod
+    def parse(cls, diff: str) -> _PatchAdds:
+        leaf, block = test_patch_titles(diff)
+        names = {n for n in _PY_DEF.findall(diff) if n.startswith('test')}
+        names |= set(_PY_CLASS.findall(diff))
+        new_files = set()
+        sections = list(_DIFF_FILE.finditer(diff))
+        for i, header in enumerate(sections):
+            last = i + 1 == len(sections)
+            end = len(diff) if last else sections[i + 1].start()
+            body = diff[header.end():end]
+            if _NEW_FILE.search(body):
+                new_files.add(header.group(2))
+        return cls(tuple(leaf + block), frozenset(names), frozenset(new_files))
+
+    def adds(self, test: str, file: str | None) -> bool:
+        """Whether ``test`` (defined in ``file``, if known) is one of these."""
+        node_path = test.split('::')[0] if '::' in test else None
+        paths = [p for p in (file, node_path) if p]
+        if any(
+            p.endswith(f) or f.endswith(p)
+            for p in paths
+            for f in self.new_files
+        ):
+            return True
+        if any(title in test for title in self.titles):
+            return True
+        if self.py_names:
+            match = _UNITTEST_ID.match(test)
+            if match:
+                scope = match.group('scope').split('.')
+                idents = {match.group('method'), *scope}
+            else:
+                parts = test.split('::')[1:]
+                idents = {re.sub(r'\[.*', '', part) for part in parts}
+            return bool(idents & self.py_names)
+        return False
+
+
+def _absent_states(
+    wide: pd.DataFrame,
+    status: pd.DataFrame,
+    columns: Columns,
+    pre_label: str,
+    files: Mapping[tuple[str, str], str],
+    test_patches: Mapping[str, str],
+) -> pd.Series:
+    """Decide ERROR or NOT_EXECUTED for each test absent before the patch.
+
+    Args:
+        wide: Output of `_pivot_patch_status` with ``fill_absent=False``.
+        status: Output of `_collapse_runs`, for the pre-patch error rows.
+        columns: The column-name mapping.
+        pre_label: Value of the patch_type column for pre-patch runs.
+        files: (instance, test) -> the file the test is defined in.
+        test_patches: Instance id -> its test_patch.diff contents.
+
+    Returns:
+        ERROR or NOT_EXECUTED for every row of ``wide`` whose pre column is
+        NaN, indexed like ``wide``.
+    """
+    absent = wide[wide[pre_label].isna()]
+    states = pd.Series(NOT_EXECUTED, index=absent.index, dtype=object)
+    if absent.empty:
+        return states
+    pre_failed = status[
+        (status[columns.patch_type] == pre_label)
+        & ~status[_ALL_PASSED].astype(bool)
+    ]
+    failed_by_instance = {
+        str(k): set(g[columns.test_name].astype(str))
+        for k, g in pre_failed.groupby(columns.instance, observed=True)
+    }
+    for key, rows in absent.groupby(columns.instance, observed=True):
+        instance = str(key)
+        names = rows[columns.test_name].astype(str)
+        found = absent_states(
+            names,
+            failed_by_instance.get(instance, set()),
+            {name: files[(instance, name)]
+             for name in set(names) | failed_by_instance.get(instance, set())
+             if (instance, name) in files},
+            test_patches.get(instance),
+        )
+        states.loc[names.index] = names.map(found).to_numpy()
+    return states
+
+
+def absent_states(
+    absent: Iterable[str],
+    failed: set[str],
+    files: Mapping[str, str],
+    test_patch: str | None,
+) -> dict[str, str]:
+    """Say why each test is missing from one run of one instance.
+
+    Args:
+        absent: The tests the run does not report.
+        failed: Every test name the run reports as failing, error rows
+            included.
+        files: Test name -> the file it is defined in, where known.
+        test_patch: The instance's test_patch.diff, if known.
+
+    Returns:
+        Test name -> ``ERROR`` when an error row covers it or the test
+        patch adds it, ``NOT_EXECUTED`` otherwise.
+    """
+    scopes = _error_scopes(failed)
+    prefixes = _error_prefixes({name: files.get(name) for name in failed})
+    adds = _PatchAdds.parse(test_patch) if test_patch else None
+    states = {}
+    for test in absent:
+        file = files.get(test)
+        covered = (
+            _collector_covered(test, failed)
+            or _unittest_scope_covered(test, scopes)
+            or any(
+                test.startswith(prefix + ' ')
+                and (error_file is None or file is None or error_file == file)
+                for prefix, error_file in prefixes
+                if prefix
+            )
+            or any(
+                not prefix and error_file is not None and error_file == file
+                for prefix, error_file in prefixes
+            )
+            or (adds is not None and adds.adds(test, file))
+        )
+        states[test] = ERROR if covered else NOT_EXECUTED
+    return states
 
 
 def _to_mapping(frame: pd.DataFrame, columns: Columns) -> dict[str, list[str]]:
@@ -530,6 +786,8 @@ def classify_tests(
     columns: Columns | None = None,
     min_pre_run_coverage: float = MIN_PRE_RUN_COVERAGE,
     test_patch_diffs: Mapping[str, str] | None = None,
+    absent_before: str = ABSENT_AS_FAIL,
+    test_patches: Mapping[str, str] | None = None,
 ) -> TestSplit:
     """Build FAIL_TO_PASS and PASS_TO_PASS test sets per instance.
 
@@ -550,6 +808,15 @@ def classify_tests(
             instead of being inferred from the pre/post delta alone,
             which is what keeps a renamed suite from becoming a
             reference of hundreds of tests.
+        absent_before: How to read a test the pre-patch run does not
+            report. ``ABSENT_AS_FAIL`` (the default) counts it as failing.
+            ``ABSENT_BY_EVIDENCE`` counts it as failing only when its absence
+            is explained -- an error row covers it, or ``test_patches``
+            shows the patch adding it (``ERROR``) -- and otherwise leaves it
+            ``NOT_EXECUTED``, with no label.
+        test_patches: Instance id -> test_patch.diff contents, read only by
+            ``ABSENT_BY_EVIDENCE`` to recognise tests the patch adds. Unlike
+            ``test_patch_diffs`` it does not anchor FAIL_TO_PASS.
 
     Returns:
         A TestSplit holding the two headline sets plus the discarded
@@ -568,7 +835,34 @@ def classify_tests(
         status, columns, pre_label, post_label, min_pre_run_coverage
     )
     stable, flaky = _split_flaky(status, columns)
-    wide = _pivot_patch_status(stable, columns, pre_label, post_label)
+    if absent_before not in (ABSENT_AS_FAIL, ABSENT_BY_EVIDENCE):
+        raise ValueError(f'unknown absent_before rule: {absent_before!r}')
+    by_evidence = absent_before == ABSENT_BY_EVIDENCE
+    wide = _pivot_patch_status(
+        stable, columns, pre_label, post_label, fill_absent=not by_evidence
+    )
+    errored_rows = wide.iloc[0:0]
+    not_executed_rows = wide.iloc[0:0]
+    if by_evidence:
+        files: dict[tuple[str, str], str] = {}
+        if columns.file and columns.file in frame.columns:
+            known = frame[frame[columns.file].notna()]
+            files = dict(zip(
+                zip(known[columns.instance].astype(str),
+                    known[columns.test_name].astype(str), strict=True),
+                known[columns.file].astype(str),
+                strict=True,
+            ))
+        states = _absent_states(
+            wide, status, columns, pre_label, files, test_patches or {}
+        )
+        errored_rows = wide.loc[states.index[states == ERROR]]
+        not_executed_rows = wide.loc[states.index[states == NOT_EXECUTED]]
+        not_executed_rows = not_executed_rows[
+            ~not_executed_rows[columns.instance].isin(incomplete_ids)
+        ]
+        wide = wide.drop(index=states.index[states == NOT_EXECUTED])
+        wide[pre_label] = wide[pre_label].fillna(False).astype(bool)
 
     # Split the quarantined instances off before classifying, so a
     # truncated pre-patch run cannot contribute phantom FAIL_TO_PASS
@@ -630,7 +924,27 @@ def classify_tests(
         broken=_to_mapping(cast(pd.DataFrame, wide[~pre & ~post]), columns),
         flaky=_to_mapping(flaky, columns),
         incomplete=_to_mapping(incomplete_rows, columns),
+        errored=_to_mapping(
+            cast(pd.DataFrame, errored_rows[
+                ~errored_rows[columns.instance].isin(incomplete_ids)
+            ]),
+            columns,
+        ),
+        not_executed=_to_mapping(
+            cast(pd.DataFrame, not_executed_rows), columns
+        ),
     )
+
+    if split.not_executed:
+        logger.warning(
+            'left %d test(s) in %d instance(s) unlabelled: the %s run did not '
+            'execute them and no error explains why, so their %s outcome is '
+            'unknown',
+            sum(len(v) for v in split.not_executed.values()),
+            len(split.not_executed),
+            pre_label,
+            pre_label,
+        )
 
     if split.incomplete:
         logger.warning(

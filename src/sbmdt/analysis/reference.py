@@ -18,7 +18,16 @@ from typing import Any, Final
 
 import pandas as pd
 
-from sbmdt.analysis.test_split import Columns, classify_tests
+from sbmdt.analysis.test_split import (
+    ABSENT_BY_EVIDENCE,
+    ERROR,
+    FAIL,
+    NOT_EXECUTED,
+    PASS,
+    Columns,
+    absent_states,
+    classify_tests,
+)
 from sbmdt.benchmark import Benchmark, benchmark_of
 from sbmdt.parquet import read_test_results
 
@@ -144,9 +153,9 @@ def disambiguate_test_names(frame: pd.DataFrame) -> pd.DataFrame:
 def both_sides(frame: pd.DataFrame, pre: str, post: str) -> set[str]:
     """List the instances that have runs under both patch types.
 
-    An instance missing one side cannot be classified: a test with no
-    pre-patch row reads as fail -> pass, so an instance with no pre-patch
-    runs at all would report its whole passing suite as FAIL_TO_PASS.
+    An instance missing one side cannot be classified: with no pre-patch
+    run at all, every test would be absent before the patch, which says
+    nothing about how any of them behaved without the fix.
 
     Args:
         frame: The full results frame.
@@ -214,7 +223,10 @@ def mapping_to_frame(mapping: dict[str, list[str]]) -> pd.DataFrame:
 
 
 def reference_split(
-    frame: pd.DataFrame, pre: str, post: str
+    frame: pd.DataFrame,
+    pre: str,
+    post: str,
+    absent_before: str = ABSENT_BY_EVIDENCE,
 ) -> tuple[pd.DataFrame, Any]:
     """Classify every test in the instances that have both sides.
 
@@ -222,6 +234,10 @@ def reference_split(
         frame: The full results frame.
         pre: patch_type marking the pre-patch runs.
         post: patch_type marking the post-patch runs.
+        absent_before: How a test absent before the patch is read (see
+            :func:`sbmdt.analysis.test_split.classify_tests`). The default
+            reads it by evidence; ``ABSENT_AS_FAIL`` restores the original
+            rule, for comparing the two.
 
     Returns:
         A ``(tests, split)`` pair. ``tests`` has one row per classified
@@ -248,16 +264,23 @@ def reference_split(
         subset = subset[subset['timestamp'] == latest].copy()
     # One run per side is kept, so a name seen twice in one run is two
     # tests sharing a title, not flakiness: collapse within each run first.
-    # The coverage guard stays off: a test absent before the patch counts
-    # as failing, the definition both benchmarks' splits are derived with
-    # (a touched-scope Verified run legitimately lacks the tests the patch
-    # adds, so the guard would quarantine it).
+    # The coverage guard stays off (a touched-scope Verified run
+    # legitimately lacks the tests the patch adds, so the guard would
+    # quarantine it). Instead each test absent before the patch is read by
+    # evidence: ERROR when an error row covers it or the test patch adds it
+    # -- it could not run without the fix, which counts as failing, as in
+    # both benchmarks' own splits -- and NOT_EXECUTED otherwise, which gets
+    # no label because its pre-patch outcome is unknown.
     split = classify_tests(
         subset,
         pre_label=pre,
         post_label=post,
-        columns=Columns(run='timestamp'),
+        columns=Columns(
+            run='timestamp', file=FILE if FILE in subset.columns else None
+        ),
         min_pre_run_coverage=0,
+        absent_before=absent_before,
+        test_patches=_test_patches(subset[INSTANCE].unique()),
     )
 
     categories = {
@@ -266,6 +289,7 @@ def reference_split(
         'REGRESSED': split.regressed,
         'BROKEN': split.broken,
         'FLAKY': split.flaky,
+        'NOT_EXECUTED': split.not_executed,
     }
     parts = []
     for label, mapping in categories.items():
@@ -280,7 +304,52 @@ def reference_split(
     tests = tests.merge(marks, on=[INSTANCE, TEST], how='left')
     tests['added'] = tests['added'].fillna(False)
     tests['removed'] = tests['removed'].fillna(False)
+    tests['pre_state'] = _pre_states(tests, split)
     return tests, split
+
+
+def _test_patches(instance_ids) -> dict[str, str]:
+    """Each instance's test patch, where one can be found."""
+    from sbmdt.patches import test_patch_for
+
+    patches = {}
+    for instance_id in instance_ids:
+        try:
+            patches[str(instance_id)] = test_patch_for(str(instance_id))
+        except FileNotFoundError:
+            continue
+    return patches
+
+
+def _pre_states(tests: pd.DataFrame, split: Any) -> pd.Series:
+    """What the pre-patch run says about each classified test.
+
+    PASS or FAIL when the run reports the test, ERROR when it does not but
+    an error explains why, NOT_EXECUTED when nothing does. A flaky test has
+    no single state and gets none.
+    """
+    errored = {
+        (instance, test)
+        for instance, names in split.errored.items()
+        for test in names
+    }
+    by_category = {
+        'FAIL_TO_PASS': FAIL,
+        'BROKEN': FAIL,
+        'PASS_TO_PASS': PASS,
+        'REGRESSED': PASS,
+        'NOT_EXECUTED': NOT_EXECUTED,
+    }
+    return pd.Series(
+        [
+            ERROR if (instance, test) in errored else by_category.get(category)
+            for instance, test, category in zip(
+                tests[INSTANCE], tests[TEST], tests['category'], strict=True
+            )
+        ],
+        index=tests.index,
+        dtype=object,
+    )
 
 
 def reference_table(tests: pd.DataFrame) -> pd.DataFrame:
@@ -392,7 +461,11 @@ def score_variant(
     Returns:
         The reference FAIL_TO_PASS and PASS_TO_PASS tests for the scorable
         instances, each tagged ``passed``, ``failed``, ``not_run`` or
-        ``flaky`` under the model patch.
+        ``flaky`` under the model patch (``status``, which the verdict
+        reads), and with the run's ``state`` for the test: PASS, FAIL,
+        ERROR (not run, and an error explains why), NOT_EXECUTED (not run,
+        and nothing explains it) or FLAKY. A test that did not pass, for
+        whatever reason, does not count as passing.
     """
     model_runs = frame[frame[PATCH] == variant].copy()
     if agent is not None:
@@ -411,8 +484,33 @@ def score_variant(
     statuses = _model_statuses(model_runs)
     scored = scored.merge(statuses, on=[INSTANCE, TEST], how='left')
     scored['status'] = scored['status'].fillna('not_run')
+    scored['state'] = _run_states(scored, model_runs)
     scored['variant'] = variant
     return scored
+
+
+def _run_states(scored: pd.DataFrame, runs: pd.DataFrame) -> pd.Series:
+    """The four-state outcome of each scored test in a model patch's run."""
+    states = scored['status'].map(
+        {'passed': PASS, 'failed': FAIL, 'flaky': 'FLAKY'}
+    )
+    missing = scored[scored['status'] == 'not_run']
+    if missing.empty:
+        return states
+    failed = runs[~runs[PASSED].astype(bool)]
+    has_file = FILE in runs.columns
+    patches = _test_patches(missing[INSTANCE].unique())
+    for instance, rows in missing.groupby(INSTANCE):
+        mine = failed[failed[INSTANCE] == instance]
+        files = {}
+        if has_file:
+            known = runs[(runs[INSTANCE] == instance) & runs[FILE].notna()]
+            files = dict(zip(known[TEST], known[FILE], strict=True))
+        found = absent_states(
+            rows[TEST], set(mine[TEST]), files, patches.get(instance)
+        )
+        states.loc[rows.index] = rows[TEST].map(found)
+    return states
 
 
 def score_table(scored: pd.DataFrame) -> pd.DataFrame:
@@ -469,6 +567,7 @@ def resolved(scored: pd.DataFrame) -> pd.DataFrame:
     for instance, group in scored.groupby(INSTANCE):
         f2p = group[group['category'] == 'FAIL_TO_PASS']
         p2p = group[group['category'] == 'PASS_TO_PASS']
+        states = f2p['state'] if 'state' in f2p else pd.Series(dtype=object)
         f2p_ok = len(f2p) > 0 and bool((f2p['status'] == 'passed').all())
         p2p_ok = bool((p2p['status'] == 'passed').all()) if len(p2p) else True
         rows.append(
@@ -478,6 +577,8 @@ def resolved(scored: pd.DataFrame) -> pd.DataFrame:
                 'f2p': len(f2p),
                 'f2p_passed': int((f2p['status'] == 'passed').sum()),
                 'f2p_not_run': int((f2p['status'] == 'not_run').sum()),
+                'f2p_error': int((states == ERROR).sum()),
+                'f2p_not_executed': int((states == NOT_EXECUTED).sum()),
                 'p2p': len(p2p),
                 'p2p_passed': int((p2p['status'] == 'passed').sum()),
                 'p2p_failed': int((p2p['status'] == 'failed').sum()),
