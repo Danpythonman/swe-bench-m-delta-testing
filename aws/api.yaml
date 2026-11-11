@@ -1,0 +1,434 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  SWE-DT hosted evaluation API. API Gateway (API keys, usage plan) in front
+  of one Lambda; each evaluation runs on its own short-lived EC2 worker that
+  has no IAM role and terminates itself. Deploy with aws/api/deploy.sh.
+
+Parameters:
+  NamePrefix:
+    Type: String
+    Default: sbmdt-api
+  HarnessCommit:
+    Type: String
+    AllowedPattern: "^[0-9a-f]{40}$"
+    Description: Commit of the tool repository the workers check out.
+  WorkerAmiId:
+    Type: AWS::EC2::Image::Id
+    Default: ami-070ff54484e26f9bb
+    Description: Worker image built by aws/sbmdt-worker-ami.pkr.hcl.
+  WorkerInstanceType:
+    Type: String
+    Default: t3a.large
+  WorkerSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnet from aws/aws-resources.yaml.
+  WorkerSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Egress-only security group from aws/aws-resources.yaml.
+  MaxWorkers:
+    Type: Number
+    Default: 5
+  DailyLimitPerKey:
+    Type: Number
+    Default: 20
+  RunMinutes:
+    Type: Number
+    Default: 60
+    Description: A worker powers itself off (and terminates) after this long.
+  StaleMinutes:
+    Type: Number
+    Default: 75
+    Description: Workers older than this are terminated by the API.
+  MonthlyBudgetUsd:
+    Type: Number
+    Default: 20
+  BudgetEmail:
+    Type: String
+    Default: ""
+    Description: Where to send budget alerts; empty for no budget.
+
+Conditions:
+  HasBudget: !Not [!Equals [!Ref BudgetEmail, ""]]
+
+Resources:
+  # ---------- Storage ----------
+  JobsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-after-30-days
+            Status: Enabled
+            ExpirationInDays: 30
+      Tags:
+        - Key: Project
+          Value: !Ref NamePrefix
+
+  JobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref NamePrefix
+
+  EnabledParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${NamePrefix}/enabled"
+      Type: String
+      Value: "true"
+      Description: Kill switch. Set to false to refuse new evaluations.
+
+  # ---------- Workers ----------
+  WorkerLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub "${NamePrefix}-worker"
+      LaunchTemplateData:
+        ImageId: !Ref WorkerAmiId
+        InstanceType: !Ref WorkerInstanceType
+        InstanceInitiatedShutdownBehavior: terminate
+        # No IamInstanceProfile: the worker has no AWS credentials.
+        MetadataOptions:
+          HttpEndpoint: enabled
+          HttpTokens: required
+          # Containers sit one hop further, so they cannot reach IMDS.
+          HttpPutResponseHopLimit: 1
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: 16
+              VolumeType: gp3
+              DeleteOnTermination: true
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            SubnetId: !Ref WorkerSubnetId
+            Groups:
+              - !Ref WorkerSecurityGroupId
+            AssociatePublicIpAddress: true
+            DeleteOnTermination: true
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: sbmdt-api
+                Value: worker
+          - ResourceType: volume
+            Tags:
+              - Key: sbmdt-api
+                Value: worker
+
+  # ---------- API Lambda ----------
+  ApiFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: api
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt JobsTable.Arn
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub "${JobsBucket.Arn}/*"
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${NamePrefix}/enabled"
+              # Start workers only from this launch template...
+              - Effect: Allow
+                Action: ec2:RunInstances
+                Resource: "*"
+                Condition:
+                  ArnLike:
+                    ec2:LaunchTemplate: !Sub "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${WorkerLaunchTemplate}"
+              - Effect: Allow
+                Action: ec2:CreateTags
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    ec2:CreateAction: RunInstances
+              - Effect: Allow
+                Action: ec2:DescribeInstances
+                Resource: "*"
+              # ...and terminate only instances tagged as workers.
+              - Effect: Allow
+                Action: ec2:TerminateInstances
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    ec2:ResourceTag/sbmdt-api: worker
+
+  ApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${NamePrefix}"
+      Runtime: python3.13
+      Handler: handler.handler
+      Code: api/
+      Role: !GetAtt ApiFunctionRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          TABLE: !Ref JobsTable
+          BUCKET: !Ref JobsBucket
+          LAUNCH_TEMPLATE_ID: !Ref WorkerLaunchTemplate
+          HARNESS_COMMIT: !Ref HarnessCommit
+          ENABLED_PARAMETER: !Ref EnabledParameter
+          MAX_WORKERS: !Ref MaxWorkers
+          DAILY_LIMIT: !Ref DailyLimitPerKey
+          RUN_MINUTES: !Ref RunMinutes
+          STALE_MINUTES: !Ref StaleMinutes
+
+  ApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ApiFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*"
+
+  # ---------- API Gateway ----------
+  Api:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Ref NamePrefix
+      ApiKeySourceType: HEADER
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  V1:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !GetAtt Api.RootResourceId
+      PathPart: v1
+  Evaluations:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !Ref V1
+      PathPart: evaluations
+  Evaluation:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !Ref Evaluations
+      PathPart: "{id}"
+  Instances:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !Ref V1
+      PathPart: instances
+  Jobs:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !Ref V1
+      PathPart: jobs
+  Job:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !Ref Jobs
+      PathPart: "{id}"
+  JobPatch:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !Ref Job
+      PathPart: patch
+  JobResult:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !Ref Job
+      PathPart: result
+
+  SubmitMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref Evaluations
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations"
+  StatusMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref Evaluation
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations"
+  InstancesMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref Instances
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations"
+  # Worker routes: no API key; the handler checks the per-job token.
+  JobPatchMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref JobPatch
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations"
+  JobResultMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref JobResult
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations"
+
+  Deployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - SubmitMethod
+      - StatusMethod
+      - InstancesMethod
+      - JobPatchMethod
+      - JobResultMethod
+    Properties:
+      RestApiId: !Ref Api
+
+  Stage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref Api
+      DeploymentId: !Ref Deployment
+      StageName: prod
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingRateLimit: 10
+          ThrottlingBurstLimit: 20
+
+  UsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: Stage
+    Properties:
+      UsagePlanName: !Sub "${NamePrefix}-default"
+      Description: >-
+        Per-key request limits. The evaluation limit (DailyLimitPerKey) is
+        enforced by the Lambda, so status polling does not use it up.
+      ApiStages:
+        - ApiId: !Ref Api
+          Stage: prod
+      Throttle:
+        RateLimit: 2
+        BurstLimit: 5
+      Quota:
+        Limit: 2000
+        Period: DAY
+
+  OwnerKey:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn: Stage
+    Properties:
+      Name: !Sub "${NamePrefix}-owner"
+      Enabled: true
+
+  OwnerKeyInPlan:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref OwnerKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref UsagePlan
+
+  # ---------- Spending alert ----------
+  Budget:
+    Type: AWS::Budgets::Budget
+    Condition: HasBudget
+    Properties:
+      Budget:
+        BudgetName: !Sub "${NamePrefix}-monthly"
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetUsd
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref BudgetEmail
+
+Outputs:
+  ApiUrl:
+    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/prod"
+  OwnerKeyId:
+    Description: "aws apigateway get-api-key --include-value --api-key <id>"
+    Value: !Ref OwnerKey
+  UsagePlanId:
+    Value: !Ref UsagePlan
+  JobsBucket:
+    Value: !Ref JobsBucket
+  JobsTable:
+    Value: !Ref JobsTable
+  EnabledParameter:
+    Value: !Ref EnabledParameter
