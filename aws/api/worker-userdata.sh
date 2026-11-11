@@ -13,7 +13,7 @@ exec >/var/log/sbmdt-job.log 2>&1
 set -u
 
 export HOME=/root
-export PATH=/usr/local/bin:/usr/bin:/bin
+export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export UV_PYTHON_INSTALL_DIR=/opt/uv/python
 export SBMDT_REGISTRY=docker.io
 
