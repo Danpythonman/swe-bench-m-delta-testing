@@ -235,6 +235,18 @@ Base URL: `https://nz0fly8erk.execute-api.us-east-1.amazonaws.com/prod`.
 Every request needs an API key in the `x-api-key` header. Ask the
 maintainers for one.
 
+The [`swe-dt`](https://pypi.org/project/swe-dt/) client wraps the API (see
+[`client/`](client/)):
+
+```bash
+pip install swe-dt
+export SWE_DT_API_KEY=...
+swe-dt submit fix.diff --instance django__django-11099 --wait
+swe-dt submit preds.jsonl --wait    # SWE-bench predictions
+```
+
+Or with `curl`:
+
 ```bash
 API=https://nz0fly8erk.execute-api.us-east-1.amazonaws.com/prod
 KEY=...  # your API key
