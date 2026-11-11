@@ -215,6 +215,71 @@ from sbmdt import evaluate
 evaluate('alibaba-fusion__next-717')
 ```
 
+To grade one model patch against the released labels in
+[`dataset/`](dataset/) instead of your own reference runs:
+
+```bash
+uv run scripts/run_instance.py django__django-11099 with_image \
+    --pred-file path/to/patch.pred --apply-test-patch --json --file
+uv run scripts/grade_against_dataset.py django__django-11099
+```
+
+## Hosted API
+
+The hosted API grades model patches without Docker or a local checkout.
+Submit a patch for any instance in `dataset/`. It is run on a fresh EC2
+worker at a pinned commit of this repository, and graded against the
+dataset's labels. A django-11099 patch takes about 3.5 minutes.
+
+Base URL: `https://nz0fly8erk.execute-api.us-east-1.amazonaws.com/prod`.
+Every request needs an API key in the `x-api-key` header. Ask the
+maintainers for one.
+
+```bash
+API=https://nz0fly8erk.execute-api.us-east-1.amazonaws.com/prod
+KEY=...  # your API key
+
+# Instances that can be evaluated
+curl -H "x-api-key: $KEY" $API/v1/instances
+
+# Submit a patch (a unified diff against the instance's base commit).
+# Returns 202 and {"id": ..., "status": "RUNNING", ...}.
+jq -n --rawfile patch fix.diff \
+    '{instance_id: "django__django-11099", patch: $patch, agent_name: "my-agent"}' |
+  curl -X POST -H "x-api-key: $KEY" -H 'Content-Type: application/json' \
+       --data-binary @- $API/v1/evaluations
+
+# Poll until status is DONE, FAILED or TIMEOUT
+curl -H "x-api-key: $KEY" $API/v1/evaluations/<id>
+```
+
+A finished evaluation has a `result`:
+
+```json
+{"instance_id": "django__django-11099", "resolved": false,
+ "f2p": 2, "f2p_passed": 2, "p2p": 20, "p2p_lost": 1,
+ "failed_f2p": [],
+ "lost_p2p": ["test_validate (auth_tests.test_validators.NumericPasswordValidatorTest)"]}
+```
+
+A patch resolves the instance when every FAIL_TO_PASS test passes and no
+PASS_TO_PASS test is lost. A test that does not run counts against the patch.
+`FAILED` means the run could not be graded, for example because the patch
+did not apply. The `error` field gives the reason. `harness_commit` is the
+commit of this repository that ran the evaluation.
+
+Limits:
+- 20 evaluations per key per UTC day.
+- 5 evaluations running at once across all keys.
+- Patches up to 1 MB.
+- 60 minutes per evaluation.
+
+When a limit is hit, the API answers 429. It answers 503 while evaluations
+are paused. Each evaluation can be read only with the key that submitted it.
+
+To run your own copy of the API (CloudFormation, in your own AWS account),
+see `aws/api.yaml`, `aws/api/deploy.sh` and `aws/api/new_key.sh`.
+
 ## Development
 
 ```bash
