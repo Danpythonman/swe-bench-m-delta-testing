@@ -1,0 +1,27 @@
+[project]
+name = "swe-dt"
+version = "0.1.0"
+description = "Client for the hosted SWE-DT API: grade coding-agent patches for SWE-bench Verified and Multimodal against delta-tested labels."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+dependencies = []
+keywords = ["swe-bench", "coding agents", "evaluation", "benchmark"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Homepage = "https://github.com/Danpythonman/swe-bench-m-delta-testing"
+Documentation = "https://github.com/Danpythonman/swe-bench-m-delta-testing#hosted-api"
+Dataset = "https://github.com/Danpythonman/swe-bench-m-delta-testing/tree/master/dataset"
+
+[project.scripts]
+swe-dt = "swe_dt.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
