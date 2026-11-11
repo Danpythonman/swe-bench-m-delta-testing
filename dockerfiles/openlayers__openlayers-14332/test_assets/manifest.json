@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/postrender-immediate/expected.png": {
+  "action": "modify",
+  "blob": "6e9fe8f617768af43fd48c117cbc075c089a8ed3"
+ }
+}

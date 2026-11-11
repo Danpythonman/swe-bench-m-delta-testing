@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/layer-vector-declutter/expected.png": {
+  "action": "add",
+  "blob": "b52772f294df2568c1efb9e9f29bf56cad35952d"
+ }
+}

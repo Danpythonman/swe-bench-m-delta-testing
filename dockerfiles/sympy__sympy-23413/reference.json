@@ -1,0 +1,10 @@
+{
+  "instance_id": "sympy__sympy-23413",
+  "fail_to_pass": [
+    "test_hermite_normal"
+  ],
+  "pass_to_pass": [
+    "test_smith_normal",
+    "test_smith_normal_deprecated"
+  ]
+}

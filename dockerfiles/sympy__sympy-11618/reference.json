@@ -1,0 +1,12 @@
+{
+  "instance_id": "sympy__sympy-11618",
+  "fail_to_pass": [
+    "test_issue_11617"
+  ],
+  "pass_to_pass": [
+    "test_point3D",
+    "test_Point2D",
+    "test_issue_9214",
+    "test_transform"
+  ]
+}

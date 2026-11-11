@@ -1,0 +1,22 @@
+{
+ "test/rendering/cases/webgl-tile-multisource/expected.png": {
+  "action": "add",
+  "blob": "fb2abb6c7fe1c2d8654d09b30dfbd89a1d392dbe"
+ },
+ "test/rendering/data/tiles/osm/1/0/0.png": {
+  "action": "add",
+  "blob": "4e10306aa88cf221c4ba5d6f4d1e12ceb1da3816"
+ },
+ "test/rendering/data/tiles/osm/1/0/1.png": {
+  "action": "add",
+  "blob": "42792c5dde96fb8fdc547de0039382ba0716b240"
+ },
+ "test/rendering/data/tiles/osm/1/1/0.png": {
+  "action": "add",
+  "blob": "0252154d99979a968516d4c2f4ca5706e20f814a"
+ },
+ "test/rendering/data/tiles/osm/1/1/1.png": {
+  "action": "add",
+  "blob": "ade949540760284106cc48fd98680ad152ac8311"
+ }
+}

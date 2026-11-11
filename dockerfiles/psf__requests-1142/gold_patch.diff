@@ -1,0 +1,47 @@
+diff --git a/AUTHORS.rst b/AUTHORS.rst
+index 124458818d..078ed993be 100644
+--- a/AUTHORS.rst
++++ b/AUTHORS.rst
+@@ -119,3 +119,4 @@ Patches and Suggestions
+ - Jonatan Heyman
+ - David Bonner <dbonner@gmail.com> @rascalking
+ - Vinod Chandru
++- Johnny Goodnow <j.goodnow29@gmail.com>
+diff --git a/requests/models.py b/requests/models.py
+index 9926045363..4235141716 100644
+--- a/requests/models.py
++++ b/requests/models.py
+@@ -386,13 +386,14 @@ def prepare_body(self, data, files):
+         self.body = body
+ 
+     def prepare_content_length(self, body):
+-        self.headers['Content-Length'] = '0'
+         if hasattr(body, 'seek') and hasattr(body, 'tell'):
+             body.seek(0, 2)
+             self.headers['Content-Length'] = str(body.tell())
+             body.seek(0, 0)
+         elif body is not None:
+             self.headers['Content-Length'] = str(len(body))
++        elif self.method not in ('GET', 'HEAD'):
++            self.headers['Content-Length'] = '0'
+ 
+     def prepare_auth(self, auth):
+         """Prepares the given HTTP auth data."""
+diff --git a/test_requests.py b/test_requests.py
+index c974e980de..312c955df9 100644
+--- a/test_requests.py
++++ b/test_requests.py
+@@ -58,6 +58,13 @@ def test_basic_building(self):
+         assert pr.body == 'life=42'
+ 
+ 
++    def test_no_content_length(self):
++        get_req = requests.Request('GET', httpbin('get')).prepare()
++        self.assertTrue('Content-Length' not in get_req.headers)
++        head_req = requests.Request('HEAD', httpbin('head')).prepare()
++        self.assertTrue('Content-Length' not in head_req.headers)
++
++
+     def test_path_is_not_double_encoded(self):
+         request = requests.Request('GET', "http://0.0.0.0/get/test case").prepare()
+ 

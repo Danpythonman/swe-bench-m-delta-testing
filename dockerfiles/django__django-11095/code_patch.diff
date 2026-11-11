@@ -1,0 +1,60 @@
+diff --git a/django/contrib/admin/options.py b/django/contrib/admin/options.py
+index 5e7b23f9a00a..d64a2e9a2866 100644
+--- a/django/contrib/admin/options.py
++++ b/django/contrib/admin/options.py
+@@ -327,6 +327,10 @@ def get_fieldsets(self, request, obj=None):
+             return self.fieldsets
+         return [(None, {'fields': self.get_fields(request, obj)})]
+ 
++    def get_inlines(self, request, obj):
++        """Hook for specifying custom inlines."""
++        return self.inlines
++
+     def get_ordering(self, request):
+         """
+         Hook for specifying field ordering.
+@@ -582,7 +586,7 @@ def __str__(self):
+ 
+     def get_inline_instances(self, request, obj=None):
+         inline_instances = []
+-        for inline_class in self.inlines:
++        for inline_class in self.get_inlines(request, obj):
+             inline = inline_class(self.model, self.admin_site)
+             if request:
+                 if not (inline.has_view_or_change_permission(request, obj) or
+diff --git a/docs/ref/contrib/admin/index.txt b/docs/ref/contrib/admin/index.txt
+index 93679c46fdbd..e6bb91cf5c2a 100644
+--- a/docs/ref/contrib/admin/index.txt
++++ b/docs/ref/contrib/admin/index.txt
+@@ -1627,6 +1627,16 @@ templates used by the :class:`ModelAdmin` views:
+     instances of the classes defined in :attr:`inlines` or you might encounter
+     a "Bad Request" error when adding related objects.
+ 
++.. method:: ModelAdmin.get_inlines(request, obj)
++
++    .. versionadded:: 3.0
++
++    The ``get_inlines`` method is given the ``HttpRequest`` and the
++    ``obj`` being edited (or ``None`` on an add form) and is expected to return
++    an iterable of inlines. You can override this method to dynamically add
++    inlines based on the request or model instance instead of specifying them
++    in :attr:`ModelAdmin.inlines`.
++
+ .. method:: ModelAdmin.get_urls()
+ 
+     The ``get_urls`` method on a ``ModelAdmin`` returns the URLs to be used for
+diff --git a/docs/releases/3.0.txt b/docs/releases/3.0.txt
+index d7ad7a8cf7cb..44656b11cd75 100644
+--- a/docs/releases/3.0.txt
++++ b/docs/releases/3.0.txt
+@@ -47,6 +47,10 @@ Minor features
+ * Added support for the ``admin_order_field`` attribute on properties in
+   :attr:`.ModelAdmin.list_display`.
+ 
++* The new :meth:`ModelAdmin.get_inlines()
++  <django.contrib.admin.ModelAdmin.get_inlines>` method allows specifying the
++  inlines based on the request or model instance.
++
+ :mod:`django.contrib.admindocs`
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 

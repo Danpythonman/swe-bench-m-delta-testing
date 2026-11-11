@@ -21,6 +21,19 @@ WORKDIR /SWE-bench
             b'FROM example/image:latest\n\nWORKDIR /testbed\n',
         )
 
+    def test_keeps_registry_argument(self):
+        original = b"""ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/image@sha256:abc
+
+RUN apt-get update
+"""
+        self.assertEqual(
+            minimal_dockerfile(original),
+            b'ARG REGISTRY=docker.io\n'
+            b'FROM ${REGISTRY}/swebench/image@sha256:abc\n'
+            b'\nWORKDIR /testbed\n',
+        )
+
     def test_requires_base_image(self):
         with self.assertRaisesRegex(ValueError, 'no FROM'):
             minimal_dockerfile(b'RUN true\n')

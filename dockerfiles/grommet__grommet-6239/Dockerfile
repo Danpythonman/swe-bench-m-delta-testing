@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.grommet_1776_grommet-6239:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.grommet_1776_grommet-6239@sha256:776288f87590a58147dc0c35548006235d02bd2d7f721cdf9d571ae997e3bf30
 
 WORKDIR /install
 # Install docker cli

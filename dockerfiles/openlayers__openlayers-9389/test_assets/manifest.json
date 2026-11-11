@@ -1,0 +1,194 @@
+{
+ "test/rendering/ol/data/tiles/192x256/5/6/9.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/192x256/5/7/9.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/4326/0/0/0.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/512x256/5/3/12.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/mvt/14-8938-5680.vector.pbf": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/osm-512x256/5/3/12.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/osm/0/0/0.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/osm/5/4/12.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/osm/5/5/12.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/osm/5/5/13.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/osm/5/6/12.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/osm/5/6/13.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/stamen-labels/5/5/12.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/wms/wms0.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/data/tiles/wms/wms20.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/192x256-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/192x256-webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/2-layers-canvas-extent-hidpi.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/2-layers-canvas-extent-rotate-hidpi.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/2-layers-canvas-extent-rotate.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/2-layers-canvas-extent.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/2-layers-webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/512x256-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/512x256-webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/image-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/image-scaled.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/image-webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/inverted-star.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/opacity-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/opacity-webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/osm-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/osm-webgl.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/render-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-declutter-group.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-declutter-image-zindex.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-declutter-line-zindex.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-declutter-zindex.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-opaque.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-rotated.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-simplified-fill.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-simplified-stroke.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-simplified.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-stroke.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas-transparent.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vector.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vectortile-canvas-declutter.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vectortile-canvas-hidpi.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vectortile-canvas-rotated-hidpi.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vectortile-canvas-rotated.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vectortile-canvas.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/layer/expected/vectortile-vector-rotated.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/4326-to-3857.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/512x256-to-64x128.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/dateline-merc-180.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/dateline-pole.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/image-3857-to-4326.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/image-dateline-merc-180.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/image-dateline-pole.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/osm4326.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/osm5070.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/osm54009.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/stitch-osm3740.png": {
+  "action": "delete"
+ },
+ "test/rendering/ol/reproj/expected/stitch-osm4326.png": {
+  "action": "delete"
+ }
+}

@@ -1,0 +1,34 @@
+diff --git a/doc/whatsnew/2/2.14/full.rst b/doc/whatsnew/2/2.14/full.rst
+index d39bc4b828e..97cc20d2522 100644
+--- a/doc/whatsnew/2/2.14/full.rst
++++ b/doc/whatsnew/2/2.14/full.rst
+@@ -5,6 +5,11 @@ What's New in Pylint 2.14.2?
+ ----------------------------
+ Release date: TBA
+ 
++* Don't crash if ``lint.run._query_cpu()`` is run within a Kubernetes Pod, that has only
++  a fraction of a cpu core assigned. Just go with one process then.
++
++  Closes #6902
++
+ * Fixed a false positive in ``consider-using-f-string`` if the left side of a ``%`` is not a string.
+ 
+   Closes #6689
+diff --git a/pylint/lint/run.py b/pylint/lint/run.py
+index a7e5d55744e..27a4d9d84d3 100644
+--- a/pylint/lint/run.py
++++ b/pylint/lint/run.py
+@@ -58,6 +58,13 @@ def _query_cpu() -> int | None:
+             cpu_shares = int(file.read().rstrip())
+         # For AWS, gives correct value * 1024.
+         avail_cpu = int(cpu_shares / 1024)
++
++    # In K8s Pods also a fraction of a single core could be available
++    # As multiprocessing is not able to run only a "fraction" of process
++    # assume we have 1 CPU available
++    if avail_cpu == 0:
++        avail_cpu = 1
++
+     return avail_cpu
+ 
+ 

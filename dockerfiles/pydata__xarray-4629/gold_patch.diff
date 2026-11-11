@@ -1,0 +1,43 @@
+diff --git a/doc/whats-new.rst b/doc/whats-new.rst
+index 992531d2e32..13dad17e2c4 100644
+--- a/doc/whats-new.rst
++++ b/doc/whats-new.rst
+@@ -31,6 +31,7 @@ New Features
+ Bug fixes
+ ~~~~~~~~~
+ 
++- :py:func:`merge` with ``combine_attrs='override'`` makes a copy of the attrs (:issue:`4627`).
+ 
+ Documentation
+ ~~~~~~~~~~~~~
+diff --git a/xarray/core/merge.py b/xarray/core/merge.py
+index ca4e29b600d..dff00804f8f 100644
+--- a/xarray/core/merge.py
++++ b/xarray/core/merge.py
+@@ -501,7 +501,7 @@ def merge_attrs(variable_attrs, combine_attrs):
+     if combine_attrs == "drop":
+         return {}
+     elif combine_attrs == "override":
+-        return variable_attrs[0]
++        return dict(variable_attrs[0])
+     elif combine_attrs == "no_conflicts":
+         result = dict(variable_attrs[0])
+         for attrs in variable_attrs[1:]:
+diff --git a/xarray/tests/test_merge.py b/xarray/tests/test_merge.py
+index 0994ed9a485..afb65a35d58 100644
+--- a/xarray/tests/test_merge.py
++++ b/xarray/tests/test_merge.py
+@@ -109,6 +109,13 @@ def test_merge_arrays_attrs(
+             expected.attrs = expected_attrs
+             assert actual.identical(expected)
+ 
++    def test_merge_attrs_override_copy(self):
++        ds1 = xr.Dataset(attrs={"x": 0})
++        ds2 = xr.Dataset(attrs={"x": 1})
++        ds3 = xr.merge([ds1, ds2], combine_attrs="override")
++        ds3.attrs["x"] = 2
++        assert ds1.x == 0
++
+     def test_merge_dicts_simple(self):
+         actual = xr.merge([{"foo": 0}, {"bar": "one"}, {"baz": 3.5}])
+         expected = xr.Dataset({"foo": 0, "bar": "one", "baz": 3.5})

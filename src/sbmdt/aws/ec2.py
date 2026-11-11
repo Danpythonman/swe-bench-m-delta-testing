@@ -13,9 +13,12 @@ __all__ = ['create_instance', 'wait_for_instance', 'terminate_instance']
 
 log = logging.getLogger(__name__)
 
-AUTO_SHUTDOWN_SCRIPT = """#!/bin/bash
-shutdown -h +30
-"""
+DEFAULT_AUTO_SHUTDOWN_MINUTES = 30
+
+
+def auto_shutdown_script(minutes: int) -> str:
+    """User data that powers the instance off ``minutes`` after boot."""
+    return f'#!/bin/bash\nshutdown -h +{minutes}\n'
 
 
 async def create_instance(
@@ -28,6 +31,7 @@ async def create_instance(
     instance_profile_arn: str,
     block_device_name: str,
     block_volume_size_gb: int,
+    auto_shutdown_minutes: int = DEFAULT_AUTO_SHUTDOWN_MINUTES,
 ) -> str:
     """Launch a single EC2 instance and return its instance ID.
 
@@ -42,6 +46,9 @@ async def create_instance(
         block_device_name: Device name for the root/data EBS volume
             (e.g. ``/dev/sda1``).
         block_volume_size_gb: Size in GiB of the ``gp3`` EBS volume.
+        auto_shutdown_minutes: Minutes after boot at which the instance
+            powers itself off (and so terminates). Must be longer than
+            any run on it, or the run is killed.
 
     Returns:
         The ID of the newly created instance.
@@ -62,9 +69,9 @@ async def create_instance(
             IamInstanceProfile={'Arn': instance_profile_arn},
             # Terminate on shutdown
             InstanceInitiatedShutdownBehavior='terminate',
-            # Shutdown after 30 minutes automatically as a protection measure
-            # in case the terminate script fails to terminate the instance
-            UserData=AUTO_SHUTDOWN_SCRIPT,
+            # Shut down automatically as a protection measure in case the
+            # terminate script fails to terminate the instance
+            UserData=auto_shutdown_script(auto_shutdown_minutes),
             # Make a custom hard drive size
             BlockDeviceMappings=[
                 {

@@ -1,0 +1,4 @@
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.sympy_1776_sympy-24562@sha256:776086d668f184408eb410669894ed1721bd813aa01af4ffd2884e3312a843da
+
+WORKDIR /testbed

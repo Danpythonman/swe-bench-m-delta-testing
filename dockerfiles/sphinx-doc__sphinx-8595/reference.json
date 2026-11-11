@@ -1,0 +1,7 @@
+{
+  "instance_id": "sphinx-doc__sphinx-8595",
+  "fail_to_pass": [
+    "tests/test_ext_autodoc_automodule.py::test_empty_all"
+  ],
+  "pass_to_pass": []
+}

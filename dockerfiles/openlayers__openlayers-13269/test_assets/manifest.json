@@ -1,0 +1,10 @@
+{
+ "test/rendering/cases/webgl-data-tile-tilepixelratio2/expected.png": {
+  "action": "add",
+  "blob": "a8f8bcfc6ae990d109680f01e24ce417d7a71843"
+ },
+ "test/rendering/cases/webgl-tilewms-gutter20/expected.png": {
+  "action": "add",
+  "blob": "31025d9aa734633cd1f1a521813dc4f4d1afc199"
+ }
+}

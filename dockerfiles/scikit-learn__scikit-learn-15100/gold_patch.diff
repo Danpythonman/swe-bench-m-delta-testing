@@ -1,0 +1,62 @@
+diff --git a/doc/whats_new/v0.22.rst b/doc/whats_new/v0.22.rst
+index 24056ad94486a..088d418f184f8 100644
+--- a/doc/whats_new/v0.22.rst
++++ b/doc/whats_new/v0.22.rst
+@@ -255,6 +255,10 @@ Changelog
+   removed in v0.24. :pr:`14520` by
+   :user:`Guillem G. Subies <guillemgsubies>`.
+ 
++- |Fix| :func:`feature_extraction.text.strip_accents_unicode` now correctly
++  removes accents from strings that are in NFKD normalized form. :pr:`15100` by
++  :user:`Daniel Grady <DGrady>`.
++
+ :mod:`sklearn.feature_selection`
+ ................................
+ 
+diff --git a/sklearn/feature_extraction/tests/test_text.py b/sklearn/feature_extraction/tests/test_text.py
+index 7b7697ff47fff..6ea91f90653b0 100644
+--- a/sklearn/feature_extraction/tests/test_text.py
++++ b/sklearn/feature_extraction/tests/test_text.py
+@@ -97,6 +97,21 @@ def test_strip_accents():
+     expected = 'this is a test'
+     assert strip_accents_unicode(a) == expected
+ 
++    # strings that are already decomposed
++    a = "o\u0308"  # o with diaresis
++    expected = "o"
++    assert strip_accents_unicode(a) == expected
++
++    # combining marks by themselves
++    a = "\u0300\u0301\u0302\u0303"
++    expected = ""
++    assert strip_accents_unicode(a) == expected
++
++    # Multiple combining marks on one character
++    a = "o\u0308\u0304"
++    expected = "o"
++    assert strip_accents_unicode(a) == expected
++
+ 
+ def test_to_ascii():
+     # check some classical latin accentuated symbols
+diff --git a/sklearn/feature_extraction/text.py b/sklearn/feature_extraction/text.py
+index bb5a9d646789c..d73bd94d74e0f 100644
+--- a/sklearn/feature_extraction/text.py
++++ b/sklearn/feature_extraction/text.py
+@@ -129,10 +129,13 @@ def strip_accents_unicode(s):
+         Remove accentuated char for any unicode symbol that has a direct
+         ASCII equivalent.
+     """
+-    normalized = unicodedata.normalize('NFKD', s)
+-    if normalized == s:
++    try:
++        # If `s` is ASCII-compatible, then it does not contain any accented
++        # characters and we can avoid an expensive list comprehension
++        s.encode("ASCII", errors="strict")
+         return s
+-    else:
++    except UnicodeEncodeError:
++        normalized = unicodedata.normalize('NFKD', s)
+         return ''.join([c for c in normalized if not unicodedata.combining(c)])
+ 
+ 

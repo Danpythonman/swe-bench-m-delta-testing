@@ -1,0 +1,149 @@
+diff --git a/django/core/validators.py b/django/core/validators.py
+index a385819510d9..f9abec602cb1 100644
+--- a/django/core/validators.py
++++ b/django/core/validators.py
+@@ -92,6 +92,7 @@ class URLValidator(RegexValidator):
+         r'\Z', re.IGNORECASE)
+     message = _('Enter a valid URL.')
+     schemes = ['http', 'https', 'ftp', 'ftps']
++    unsafe_chars = frozenset('\t\r\n')
+ 
+     def __init__(self, schemes=None, **kwargs):
+         super().__init__(**kwargs)
+@@ -101,6 +102,8 @@ def __init__(self, schemes=None, **kwargs):
+     def __call__(self, value):
+         if not isinstance(value, str):
+             raise ValidationError(self.message, code=self.code, params={'value': value})
++        if self.unsafe_chars.intersection(value):
++            raise ValidationError(self.message, code=self.code, params={'value': value})
+         # Check if the scheme is valid.
+         scheme = value.split('://')[0].lower()
+         if scheme not in self.schemes:
+diff --git a/docs/releases/2.2.22.txt b/docs/releases/2.2.22.txt
+new file mode 100644
+index 000000000000..6808a267afeb
+--- /dev/null
++++ b/docs/releases/2.2.22.txt
+@@ -0,0 +1,22 @@
++===========================
++Django 2.2.22 release notes
++===========================
++
++*May 6, 2021*
++
++Django 2.2.22 fixes a security issue in 2.2.21.
++
++CVE-2021-32052: Header injection possibility since ``URLValidator`` accepted newlines in input on Python 3.9.5+
++===============================================================================================================
++
++On Python 3.9.5+, :class:`~django.core.validators.URLValidator` didn't prohibit
++newlines and tabs. If you used values with newlines in HTTP response, you could
++suffer from header injection attacks. Django itself wasn't vulnerable because
++:class:`~django.http.HttpResponse` prohibits newlines in HTTP headers.
++
++Moreover, the ``URLField`` form field which uses ``URLValidator`` silently
++removes newlines and tabs on Python 3.9.5+, so the possibility of newlines
++entering your data only existed if you are using this validator outside of the
++form fields.
++
++This issue was introduced by the :bpo:`43882` fix.
+diff --git a/docs/releases/3.1.10.txt b/docs/releases/3.1.10.txt
+new file mode 100644
+index 000000000000..e9a8fcc2d81b
+--- /dev/null
++++ b/docs/releases/3.1.10.txt
+@@ -0,0 +1,22 @@
++===========================
++Django 3.1.10 release notes
++===========================
++
++*May 6, 2021*
++
++Django 3.1.10 fixes a security issue in 3.1.9.
++
++CVE-2021-32052: Header injection possibility since ``URLValidator`` accepted newlines in input on Python 3.9.5+
++===============================================================================================================
++
++On Python 3.9.5+, :class:`~django.core.validators.URLValidator` didn't prohibit
++newlines and tabs. If you used values with newlines in HTTP response, you could
++suffer from header injection attacks. Django itself wasn't vulnerable because
++:class:`~django.http.HttpResponse` prohibits newlines in HTTP headers.
++
++Moreover, the ``URLField`` form field which uses ``URLValidator`` silently
++removes newlines and tabs on Python 3.9.5+, so the possibility of newlines
++entering your data only existed if you are using this validator outside of the
++form fields.
++
++This issue was introduced by the :bpo:`43882` fix.
+diff --git a/docs/releases/3.2.2.txt b/docs/releases/3.2.2.txt
+index d47da08d6c15..a899bc6e2994 100644
+--- a/docs/releases/3.2.2.txt
++++ b/docs/releases/3.2.2.txt
+@@ -2,9 +2,24 @@
+ Django 3.2.2 release notes
+ ==========================
+ 
+-*Expected June 1, 2021*
++*May 6, 2021*
+ 
+-Django 3.2.2 fixes several bugs in 3.2.1.
++Django 3.2.2 fixes a security issue and a bug in 3.2.1.
++
++CVE-2021-32052: Header injection possibility since ``URLValidator`` accepted newlines in input on Python 3.9.5+
++===============================================================================================================
++
++On Python 3.9.5+, :class:`~django.core.validators.URLValidator` didn't prohibit
++newlines and tabs. If you used values with newlines in HTTP response, you could
++suffer from header injection attacks. Django itself wasn't vulnerable because
++:class:`~django.http.HttpResponse` prohibits newlines in HTTP headers.
++
++Moreover, the ``URLField`` form field which uses ``URLValidator`` silently
++removes newlines and tabs on Python 3.9.5+, so the possibility of newlines
++entering your data only existed if you are using this validator outside of the
++form fields.
++
++This issue was introduced by the :bpo:`43882` fix.
+ 
+ Bugfixes
+ ========
+diff --git a/docs/releases/index.txt b/docs/releases/index.txt
+index c714ea95b4bb..99c19b088a6b 100644
+--- a/docs/releases/index.txt
++++ b/docs/releases/index.txt
+@@ -41,6 +41,7 @@ versions of the documentation contain the release notes for any later releases.
+ .. toctree::
+    :maxdepth: 1
+ 
++   3.1.10
+    3.1.9
+    3.1.8
+    3.1.7
+@@ -78,6 +79,7 @@ versions of the documentation contain the release notes for any later releases.
+ .. toctree::
+    :maxdepth: 1
+ 
++   2.2.22
+    2.2.21
+    2.2.20
+    2.2.19
+diff --git a/tests/validators/tests.py b/tests/validators/tests.py
+index d6d013c026db..09d5c40ff5bd 100644
+--- a/tests/validators/tests.py
++++ b/tests/validators/tests.py
+@@ -226,9 +226,15 @@
+     (URLValidator(), None, ValidationError),
+     (URLValidator(), 56, ValidationError),
+     (URLValidator(), 'no_scheme', ValidationError),
+-    # Trailing newlines not accepted
++    # Newlines and tabs are not accepted.
+     (URLValidator(), 'http://www.djangoproject.com/\n', ValidationError),
+     (URLValidator(), 'http://[::ffff:192.9.5.5]\n', ValidationError),
++    (URLValidator(), 'http://www.djangoproject.com/\r', ValidationError),
++    (URLValidator(), 'http://[::ffff:192.9.5.5]\r', ValidationError),
++    (URLValidator(), 'http://www.django\rproject.com/', ValidationError),
++    (URLValidator(), 'http://[::\rffff:192.9.5.5]', ValidationError),
++    (URLValidator(), 'http://\twww.djangoproject.com/', ValidationError),
++    (URLValidator(), 'http://\t[::ffff:192.9.5.5]', ValidationError),
+     # Trailing junk does not take forever to reject
+     (URLValidator(), 'http://www.asdasdasdasdsadfm.com.br ', ValidationError),
+     (URLValidator(), 'http://www.asdasdasdasdsadfm.com.br z', ValidationError),

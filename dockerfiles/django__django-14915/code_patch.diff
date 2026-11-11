@@ -1,0 +1,26 @@
+diff --git a/AUTHORS b/AUTHORS
+index 214aca248070..146b0be3a317 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -54,6 +54,7 @@ answer newbie questions, and generally made Django that much better:
+     Alexey Boriskin <alex@boriskin.me>
+     Alexey Tsivunin <most-208@yandex.ru>
+     Ali Vakilzade <ali@vakilzade.com>
++    Aljaž Košir <aljazkosir5@gmail.com>
+     Aljosa Mohorovic <aljosa.mohorovic@gmail.com>
+     Amit Chakradeo <https://amit.chakradeo.net/>
+     Amit Ramon <amit.ramon@gmail.com>
+diff --git a/django/forms/models.py b/django/forms/models.py
+index 5dcf923c1244..7effb202e3db 100644
+--- a/django/forms/models.py
++++ b/django/forms/models.py
+@@ -1166,6 +1166,9 @@ def __init__(self, value, instance):
+     def __str__(self):
+         return str(self.value)
+ 
++    def __hash__(self):
++        return hash(self.value)
++
+     def __eq__(self, other):
+         if isinstance(other, ModelChoiceIteratorValue):
+             other = other.value

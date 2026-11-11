@@ -1,0 +1,18 @@
+{
+ "test/rendering/cases/layer-vector-extent-rotation/expected.png": {
+  "action": "modify",
+  "blob": "8d3d5701d4b4000f8ccab886fb7a37fdd9a51cfd"
+ },
+ "test/rendering/cases/linestring-style-rotation/expected.png": {
+  "action": "modify",
+  "blob": "834bacc28c7beec82cc2acce95f0236a543b6565"
+ },
+ "test/rendering/cases/text-style-linestring-nice/expected.png": {
+  "action": "modify",
+  "blob": "ebe08a8d36a37cea2249ba7591293786425e5186"
+ },
+ "test/rendering/cases/text-style/expected.png": {
+  "action": "modify",
+  "blob": "ee8010c202aca6542fd9bbac2c4b23b348c1bd78"
+ }
+}

@@ -1,0 +1,55 @@
+diff --git a/lib/matplotlib/image.py b/lib/matplotlib/image.py
+index 95bb42d75c61..b710e7ac0901 100644
+--- a/lib/matplotlib/image.py
++++ b/lib/matplotlib/image.py
+@@ -532,9 +532,9 @@ def _make_image(self, A, in_bbox, out_bbox, clip_bbox, magnification=1.0,
+                 # we have re-set the vmin/vmax to account for small errors
+                 # that may have moved input values in/out of range
+                 s_vmin, s_vmax = vrange
+-                if isinstance(self.norm, mcolors.LogNorm):
+-                    if s_vmin < 0:
+-                        s_vmin = max(s_vmin, np.finfo(scaled_dtype).eps)
++                if isinstance(self.norm, mcolors.LogNorm) and s_vmin <= 0:
++                    # Don't give 0 or negative values to LogNorm
++                    s_vmin = np.finfo(scaled_dtype).eps
+                 with cbook._setattr_cm(self.norm,
+                                        vmin=s_vmin,
+                                        vmax=s_vmax,
+diff --git a/lib/matplotlib/tests/test_image.py b/lib/matplotlib/tests/test_image.py
+index 69fb89bcd4fb..42ed7479ae54 100644
+--- a/lib/matplotlib/tests/test_image.py
++++ b/lib/matplotlib/tests/test_image.py
+@@ -1233,23 +1233,24 @@ def test_imshow_quantitynd():
+     fig.canvas.draw()
+ 
+ 
++@pytest.mark.parametrize('x', [-1, 1])
+ @check_figures_equal(extensions=['png'])
+-def test_huge_range_log(fig_test, fig_ref):
+-    data = np.full((5, 5), -1, dtype=np.float64)
++def test_huge_range_log(fig_test, fig_ref, x):
++    # parametrize over bad lognorm -1 values and large range 1 -> 1e20
++    data = np.full((5, 5), x, dtype=np.float64)
+     data[0:2, :] = 1E20
+ 
+     ax = fig_test.subplots()
+-    im = ax.imshow(data, norm=colors.LogNorm(vmin=100, vmax=data.max()),
+-                   interpolation='nearest', cmap='viridis')
++    ax.imshow(data, norm=colors.LogNorm(vmin=1, vmax=data.max()),
++              interpolation='nearest', cmap='viridis')
+ 
+-    data = np.full((5, 5), -1, dtype=np.float64)
++    data = np.full((5, 5), x, dtype=np.float64)
+     data[0:2, :] = 1000
+ 
+-    cmap = copy(plt.get_cmap('viridis'))
+-    cmap.set_under('w')
+     ax = fig_ref.subplots()
+-    im = ax.imshow(data, norm=colors.Normalize(vmin=100, vmax=data.max()),
+-                   interpolation='nearest', cmap=cmap)
++    cmap = plt.get_cmap('viridis').with_extremes(under='w')
++    ax.imshow(data, norm=colors.Normalize(vmin=1, vmax=data.max()),
++              interpolation='nearest', cmap=cmap)
+ 
+ 
+ @check_figures_equal()

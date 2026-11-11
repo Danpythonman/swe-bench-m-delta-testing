@@ -1,0 +1,31 @@
+diff --git a/django/db/migrations/serializer.py b/django/db/migrations/serializer.py
+index e19c881cda55..6e78462e95db 100644
+--- a/django/db/migrations/serializer.py
++++ b/django/db/migrations/serializer.py
+@@ -273,7 +273,7 @@ def _format(self):
+ class TypeSerializer(BaseSerializer):
+     def serialize(self):
+         special_cases = [
+-            (models.Model, "models.Model", []),
++            (models.Model, "models.Model", ['from django.db import models']),
+             (type(None), 'type(None)', []),
+         ]
+         for case, string, imports in special_cases:
+diff --git a/tests/migrations/test_writer.py b/tests/migrations/test_writer.py
+index a590ff4398a7..471194ffc224 100644
+--- a/tests/migrations/test_writer.py
++++ b/tests/migrations/test_writer.py
+@@ -658,6 +658,13 @@ def test_serialize_functools_partialmethod(self):
+     def test_serialize_type_none(self):
+         self.assertSerializedEqual(type(None))
+ 
++    def test_serialize_type_model(self):
++        self.assertSerializedEqual(models.Model)
++        self.assertSerializedResultEqual(
++            MigrationWriter.serialize(models.Model),
++            ("('models.Model', {'from django.db import models'})", set()),
++        )
++
+     def test_simple_migration(self):
+         """
+         Tests serializing a simple migration.

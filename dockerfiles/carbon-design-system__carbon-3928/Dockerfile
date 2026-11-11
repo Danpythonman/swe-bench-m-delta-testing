@@ -1,5 +1,5 @@
-
-FROM 607869540801.dkr.ecr.us-east-1.amazonaws.com/docker-hub/swebench/sweb.eval.x86_64.carbon-design-system_1776_carbon-3928:latest
+ARG REGISTRY=docker.io
+FROM ${REGISTRY}/swebench/sweb.eval.x86_64.carbon-design-system_1776_carbon-3928@sha256:afff74437edccabf7bb461f03e7c4185d9c5b1f3b078b79537e99ef1a3fb0476
 
 WORKDIR /install
 # Install docker cli

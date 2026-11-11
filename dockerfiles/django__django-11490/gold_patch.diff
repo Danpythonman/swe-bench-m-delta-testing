@@ -1,0 +1,26 @@
+diff --git a/django/db/models/sql/compiler.py b/django/db/models/sql/compiler.py
+index a44adfc760b6..a791908cafee 100644
+--- a/django/db/models/sql/compiler.py
++++ b/django/db/models/sql/compiler.py
+@@ -426,6 +426,7 @@ def get_combinator_sql(self, combinator, all):
+                 # must have the same columns list. Set the selects defined on
+                 # the query on all combined queries, if not already set.
+                 if not compiler.query.values_select and self.query.values_select:
++                    compiler.query = compiler.query.clone()
+                     compiler.query.set_values((
+                         *self.query.extra_select,
+                         *self.query.values_select,
+diff --git a/tests/queries/test_qs_combinators.py b/tests/queries/test_qs_combinators.py
+index 3902db59e21e..227972e8c4e8 100644
+--- a/tests/queries/test_qs_combinators.py
++++ b/tests/queries/test_qs_combinators.py
+@@ -123,6 +123,9 @@ def test_union_with_values(self):
+         self.assertEqual(reserved_name['order'], 2)
+         reserved_name = qs1.union(qs1).values_list('name', 'order', 'id').get()
+         self.assertEqual(reserved_name[:2], ('a', 2))
++        # List of columns can be changed.
++        reserved_name = qs1.union(qs1).values_list('order').get()
++        self.assertEqual(reserved_name, (2,))
+ 
+     def test_union_with_two_annotated_values_list(self):
+         qs1 = Number.objects.filter(num=1).annotate(

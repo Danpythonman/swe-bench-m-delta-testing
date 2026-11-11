@@ -15,6 +15,8 @@ preserved within each half, so both remain applicable with ``git apply``.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import re
 from pathlib import Path
@@ -31,9 +33,13 @@ __all__ = [
     'CODE_PATCH_PRED_FILENAME',
     'is_test_path',
     'split_diff',
+    'split_diff_by_file',
     'drop_unappliable_binary',
     'drop_mode_only_sections',
+    'file_sections',
     'test_patch_for',
+    'test_assets_for',
+    'git_blob_id',
     'write_diff',
 ]
 
@@ -41,13 +47,26 @@ GOLD_PATCH_DIFF_FILENAME: Final[str] = 'gold_patch.diff'
 CODE_PATCH_DIFF_FILENAME: Final[str] = 'code_patch.diff'
 TEST_PATCH_DIFF_FILENAME: Final[str] = 'test_patch.diff'
 CODE_PATCH_PRED_FILENAME: Final[str] = 'code_patch.pred'
+# Binary files a test patch names but does not carry, recovered by
+# scripts/fetch_test_assets.py.
+TEST_ASSETS_DIR: Final[str] = 'test_assets'
+TEST_ASSETS_MANIFEST: Final[str] = 'manifest.json'
 
 # A path is a test path if it sits in a test directory or carries a test
 # suffix. Kept deliberately broad: misfiling a test file as code would
 # silently reintroduce the very problem this module exists to solve.
+# ``testing/`` is where pytest-dev/pytest keeps its own suite. Jest snapshots
+# and shared test helpers count too: a snapshot update belongs with the tests
+# it pins, so the pre-patch run checks the new expectation. Misfiled as
+# source, a snapshot reaches neither run's tests until the fix, so both runs
+# see the stale snapshot and pass: carbon-3610, -4260 and -15197 had no
+# FAIL_TO_PASS test at all until snapshots moved here.
 TEST_PATH: Final[re.Pattern[str]] = re.compile(
     r"""
-    (^|/)(test|tests|spec|specs|__tests__|__test__|e2e|cypress)/
+    (^|/)(test|tests|testing|spec|specs|__tests__|__test__|e2e|cypress)/
+    | (^|/)(__snapshots__|tests_config)/
+    | \.snap$
+    | (^|/)test[-_]helpers?\.[cm]?[jt]sx?$
     | [-_.](test|spec)\.[cm]?[jt]sx?$
     | \.(test|spec)\.[cm]?[jt]sx?$
     | (^|/)conftest\.py$
@@ -115,6 +134,37 @@ def split_diff(diff: str) -> tuple[str, str]:
     return ''.join(code_parts), ''.join(test_parts)
 
 
+def split_diff_by_file(diff: str) -> list[tuple[str, str]]:
+    """Cut a unified diff into one section per file.
+
+    ``git apply`` is all-or-nothing: a single section it cannot place
+    rejects the whole patch, which in practice means a model's real code
+    change is thrown away because the same submission also touched a
+    lockfile the image had already regenerated. Applying file by file
+    lets the caller keep what does apply and report what does not.
+
+    Args:
+        diff: The full unified diff.
+
+    Returns:
+        ``(path, section)`` pairs in the order they appear, where ``path``
+        is the post-image (``b/``) path. Empty when the text carries no
+        ``diff --git`` header at all.
+    """
+    starts = [m.start() for m in DIFF_HEADER.finditer(diff)]
+    if not starts:
+        return []
+
+    out: list[tuple[str, str]] = []
+    bounds = starts + [len(diff)]
+    for begin, end in zip(bounds[:-1], bounds[1:], strict=True):
+        section = diff[begin:end]
+        header = DIFF_HEADER.match(section)
+        assert header is not None
+        out.append((header.group(2), section))
+    return out
+
+
 def drop_unappliable_binary(diff: str) -> tuple[str, list[str]]:
     """Drop sections that declare a binary change without carrying it.
 
@@ -172,13 +222,39 @@ def drop_mode_only_sections(diff: str) -> tuple[str, list[str]]:
         section = diff[begin:end]
         header = DIFF_HEADER.match(section)
         assert header is not None
-        has_mode = bool(re.search(r'^old mode \d+\nnew mode \d+', section, re.M))
+        has_mode = bool(
+            re.search(r'^old mode \d+\nnew mode \d+', section, re.M)
+        )
         has_content = bool(re.search(r'^(--- |\+\+\+ |@@ )', section, re.M))
         if has_mode and not has_content:
             dropped.append(header.group(2))
         else:
             kept.append(section)
     return ''.join(kept), dropped
+
+
+def file_sections(diff: str) -> list[tuple[str, str]]:
+    """Cut a unified diff into its per-file sections.
+
+    Args:
+        diff: A unified diff.
+
+    Returns:
+        ``(path, section)`` pairs in diff order, where ``path`` is the
+        post-image path. A diff without ``diff --git`` headers comes back
+        as one section with an empty path.
+    """
+    starts = [m.start() for m in DIFF_HEADER.finditer(diff)]
+    if not starts:
+        return [('', diff)] if diff else []
+    bounds = starts + [len(diff)]
+    sections: list[tuple[str, str]] = []
+    for begin, end in zip(bounds[:-1], bounds[1:], strict=True):
+        section = diff[begin:end]
+        header = DIFF_HEADER.match(section)
+        assert header is not None
+        sections.append((header.group(2), section))
+    return sections
 
 
 def read_diff(path: Path) -> str:
@@ -243,8 +319,23 @@ def test_patch_for(instance_id: str, base: Path = DOCKERFILES_BASE) -> str:
     """
     instance_dir = base / instance_id
 
+    # An empty materialised split is treated as absent rather than as an
+    # answer. `test_patch.diff` is a cache of `split_diff(gold)`, and a
+    # cache must never be able to be more wrong than what it caches --
+    # but `is_file()` is true for a zero-byte file, so a stale one wins
+    # silently and the run gets no tests at all.
+    #
+    # That is not hypothetical: the four carbon instances whose only
+    # test-side file was a `.snap` were split before the snapshot rule
+    # existed, so they have a committed 0-byte `test_patch.diff`. Fixing
+    # `TEST_PATH` alone left them exactly as broken, because this branch
+    # never reached the gold patch to re-derive anything.
+    #
+    # Falling through costs nothing when the empty half is genuine: the
+    # derivation returns the same empty string, just computed rather
+    # than remembered.
     written = instance_dir / TEST_PATCH_DIFF_FILENAME
-    if written.is_file():
+    if written.is_file() and written.stat().st_size > 0:
         test_diff = read_diff(written)
     else:
         gold = instance_dir / GOLD_PATCH_DIFF_FILENAME
@@ -262,3 +353,53 @@ def test_patch_for(instance_id: str, base: Path = DOCKERFILES_BASE) -> str:
             f'patch names but does not carry: {dropped}'
         )
     return test_diff
+
+
+def git_blob_id(data: bytes) -> str:
+    """The id git gives ``data`` as a blob (what a diff's index line names)."""
+    return hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()
+
+
+def test_assets_for(
+    instance_id: str, base: Path = DOCKERFILES_BASE
+) -> list[tuple[str, bytes | None]]:
+    """Binary files the test patch changes but ``git apply`` cannot write.
+
+    ``drop_unappliable_binary`` removes a ``Binary files ... differ`` stub
+    from the test patch because the bytes are not in it. For openlayers
+    those stubs are the ``expected.png`` of every rendering case a fix
+    adds or updates, so dropping them silently leaves the rendering test
+    comparing against a stale image or none at all.
+    ``scripts/fetch_test_assets.py`` recovers the exact blobs from the
+    upstream pull request; this returns them for the evaluator to write
+    after the text half of the test patch applies.
+
+    A file is returned only when its bytes still hash to the blob id the
+    manifest recorded, so a corrupted or hand-edited asset is never used.
+
+    Args:
+        instance_id: The benchmark instance to look up.
+        base: Directory of per-instance folders.
+
+    Returns:
+        ``(repo path, bytes)`` pairs; ``bytes`` is ``None`` for a file the
+        test patch deletes. Empty when the instance has no assets.
+    """
+    assets = base / instance_id / TEST_ASSETS_DIR
+    manifest_file = assets / TEST_ASSETS_MANIFEST
+    if not manifest_file.is_file():
+        return []
+    out: list[tuple[str, bytes | None]] = []
+    for path, entry in sorted(json.loads(manifest_file.read_text()).items()):
+        if entry['action'] == 'delete':
+            out.append((path, None))
+            continue
+        data = (assets / entry['blob']).read_bytes()
+        if git_blob_id(data) != entry['blob']:
+            log.warning(
+                f'{instance_id}: test asset {path} does not match blob '
+                f'{entry["blob"]}; not restoring it'
+            )
+            continue
+        out.append((path, data))
+    return out

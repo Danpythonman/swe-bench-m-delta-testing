@@ -1,0 +1,47 @@
+diff --git a/doc/whats-new.rst b/doc/whats-new.rst
+index 94a38757851..c028b1e2a29 100644
+--- a/doc/whats-new.rst
++++ b/doc/whats-new.rst
+@@ -32,6 +32,8 @@ Bug fixes
+ ~~~~~~~~~
+ 
+ - :py:func:`merge` with ``combine_attrs='override'`` makes a copy of the attrs (:issue:`4627`).
++- Remove dictionary unpacking when using ``.loc`` to avoid collision with ``.sel`` parameters (:pull:`4695`).
++  By `Anderson Banihirwe <https://github.com/andersy005>`_
+ 
+ Documentation
+ ~~~~~~~~~~~~~
+diff --git a/xarray/core/dataarray.py b/xarray/core/dataarray.py
+index 32b24ef1f39..6316afd57f5 100644
+--- a/xarray/core/dataarray.py
++++ b/xarray/core/dataarray.py
+@@ -196,7 +196,7 @@ def __getitem__(self, key) -> "DataArray":
+             # expand the indexer so we can handle Ellipsis
+             labels = indexing.expanded_indexer(key, self.data_array.ndim)
+             key = dict(zip(self.data_array.dims, labels))
+-        return self.data_array.sel(**key)
++        return self.data_array.sel(key)
+ 
+     def __setitem__(self, key, value) -> None:
+         if not utils.is_dict_like(key):
+diff --git a/xarray/tests/test_dataarray.py b/xarray/tests/test_dataarray.py
+index a8c62a2ce15..f9a0af452e4 100644
+--- a/xarray/tests/test_dataarray.py
++++ b/xarray/tests/test_dataarray.py
+@@ -1170,6 +1170,16 @@ def test_loc_single_boolean(self):
+         assert data.loc[True] == 0
+         assert data.loc[False] == 1
+ 
++    def test_loc_dim_name_collision_with_sel_params(self):
++        da = xr.DataArray(
++            [[0, 0], [1, 1]],
++            dims=["dim1", "method"],
++            coords={"dim1": ["x", "y"], "method": ["a", "b"]},
++        )
++        np.testing.assert_array_equal(
++            da.loc[dict(dim1=["x", "y"], method=["a"])], [[0], [1]]
++        )
++
+     def test_selection_multiindex(self):
+         mindex = pd.MultiIndex.from_product(
+             [["a", "b"], [1, 2], [-1, -2]], names=("one", "two", "three")

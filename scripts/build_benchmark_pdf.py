@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import re
 import sys
@@ -44,13 +43,9 @@ WHITEBOARD_IMAGE = Path(
 
 
 def load_analysis(project: Path):
-    path = project / 'scripts' / 'analyze_results.py'
-    spec = importlib.util.spec_from_file_location('analysis_live', path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f'Cannot load {path}')
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    import sbmdt.analysis.reference as analysis
+
+    return analysis
 
 
 def load_parquets(directory: Path) -> pd.DataFrame:

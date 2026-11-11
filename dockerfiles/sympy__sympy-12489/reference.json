@@ -1,0 +1,16 @@
+{
+  "instance_id": "sympy__sympy-12489",
+  "fail_to_pass": [
+    "test_Permutation_subclassing"
+  ],
+  "pass_to_pass": [
+    "test_Permutation",
+    "test_josephus",
+    "test_ranking",
+    "test_mul",
+    "test_args",
+    "test_Cycle",
+    "test_from_sequence",
+    "test_printing_cyclic"
+  ]
+}

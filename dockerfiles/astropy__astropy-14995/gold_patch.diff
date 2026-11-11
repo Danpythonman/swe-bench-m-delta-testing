@@ -1,0 +1,73 @@
+diff --git a/astropy/nddata/mixins/ndarithmetic.py b/astropy/nddata/mixins/ndarithmetic.py
+index 4153dfccb20f..97279507e947 100644
+--- a/astropy/nddata/mixins/ndarithmetic.py
++++ b/astropy/nddata/mixins/ndarithmetic.py
+@@ -520,10 +520,10 @@ def _arithmetic_mask(self, operation, operand, handle_mask, axis=None, **kwds):
+         elif self.mask is None and operand is not None:
+             # Make a copy so there is no reference in the result.
+             return deepcopy(operand.mask)
+-        elif operand is None:
++        elif operand.mask is None:
+             return deepcopy(self.mask)
+         else:
+-            # Now lets calculate the resulting mask (operation enforces copy)
++            # Now let's calculate the resulting mask (operation enforces copy)
+             return handle_mask(self.mask, operand.mask, **kwds)
+ 
+     def _arithmetic_wcs(self, operation, operand, compare_wcs, **kwds):
+diff --git a/astropy/nddata/mixins/tests/test_ndarithmetic.py b/astropy/nddata/mixins/tests/test_ndarithmetic.py
+index 8c461155ab36..f6ffa2df4629 100644
+--- a/astropy/nddata/mixins/tests/test_ndarithmetic.py
++++ b/astropy/nddata/mixins/tests/test_ndarithmetic.py
+@@ -1310,3 +1310,42 @@ def test_raise_method_not_supported():
+     # raise error for unsupported propagation operations:
+     with pytest.raises(ValueError):
+         ndd1.uncertainty.propagate(np.mod, ndd2, result, correlation)
++
++
++def test_nddata_bitmask_arithmetic():
++    # NDData.mask is usually assumed to be boolean, but could be
++    # a bitmask. Ensure bitmask works:
++    array = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])
++    mask = np.array([[0, 1, 64], [8, 0, 1], [2, 1, 0]])
++
++    nref_nomask = NDDataRef(array)
++    nref_masked = NDDataRef(array, mask=mask)
++
++    # multiply no mask by constant (no mask * no mask)
++    assert nref_nomask.multiply(1.0, handle_mask=np.bitwise_or).mask is None
++
++    # multiply no mask by itself (no mask * no mask)
++    assert nref_nomask.multiply(nref_nomask, handle_mask=np.bitwise_or).mask is None
++
++    # multiply masked by constant (mask * no mask)
++    np.testing.assert_equal(
++        nref_masked.multiply(1.0, handle_mask=np.bitwise_or).mask, mask
++    )
++
++    # multiply masked by itself (mask * mask)
++    np.testing.assert_equal(
++        nref_masked.multiply(nref_masked, handle_mask=np.bitwise_or).mask, mask
++    )
++
++    # multiply masked by no mask (mask * no mask)
++    np.testing.assert_equal(
++        nref_masked.multiply(nref_nomask, handle_mask=np.bitwise_or).mask, mask
++    )
++
++    # check bitwise logic still works
++    other_mask = np.array([[64, 1, 0], [2, 1, 0], [8, 0, 2]])
++    nref_mask_other = NDDataRef(array, mask=other_mask)
++    np.testing.assert_equal(
++        nref_mask_other.multiply(nref_masked, handle_mask=np.bitwise_or).mask,
++        np.bitwise_or(mask, other_mask),
++    )
+diff --git a/docs/changes/nddata/14995.bugfix.rst b/docs/changes/nddata/14995.bugfix.rst
+new file mode 100644
+index 000000000000..0c07bf154b07
+--- /dev/null
++++ b/docs/changes/nddata/14995.bugfix.rst
+@@ -0,0 +1,2 @@
++Restore bitmask propagation behavior in ``NDData.mask``, plus a fix
++for arithmetic between masked and unmasked ``NDData`` objects.
+\ No newline at end of file

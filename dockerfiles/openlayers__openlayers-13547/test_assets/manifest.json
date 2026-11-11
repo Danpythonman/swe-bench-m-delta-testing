@@ -1,0 +1,6 @@
+{
+ "test/rendering/cases/webgl-data-tile-interpolate-gutter/expected.png": {
+  "action": "add",
+  "blob": "b2bc53610990486b70201118e8e21058b268d538"
+ }
+}

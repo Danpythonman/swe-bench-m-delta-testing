@@ -29,6 +29,10 @@ log = logging.getLogger(__name__)
 
 RESULTS_DIR: Final[str] = 'test-results'
 RESULTS_FILE: Final[str] = 'results.xml'
+SERVER_PATH: Final[str] = '/testbed/sbmdt-aat-server.js'
+SERVER_LOG: Final[str] = '/tmp/sbmdt-aat-server.log'
+NEWLINE: Final[str] = chr(10)
+HEAP_FLAG: Final[str] = '--max-old-space-size=4096'
 
 
 class CarbonEvaluator(Evaluator):
@@ -69,48 +73,226 @@ class CarbonEvaluator(Evaluator):
                 f'{self.instance_id}: {output.decode()}'
             )
 
-        if self.instance_id == 'carbon-design-system__carbon-5156':
-            # This legacy suite uses @ibma/aat 2.0.6. Its configured IBM
-            # archive endpoint now returns HTML, which crashes JSON parsing
-            # after Jest has run but before jest-junit flushes. The package
-            # ships the same awe-node rule engine in node_modules; use AAT's
-            # documented customRuleServer/rulePack path and serve that pinned
-            # engine locally instead of disabling accessibility assertions.
-            apply_change_literal(
-                container=self.container,
-                file='/testbed/aat/aat.js',
-                find='module.exports = {',
-                replace=(
-                    'module.exports = {\n'
-                    '  customRuleServer: true,\n'
-                    "  rulePack: 'http://127.0.0.1:18123/',"
-                ),
-                assertion='customRuleServer: true',
-            )
+        self._aat_configs = self._find_aat_configs()
+        if not self._aat_configs and self._aat_is_installed():
+            # AAT does not need a config file to run: without one it
+            # uses its built-in archive endpoint, which is the one
+            # that now answers with HTML. carbon-5156 fails exactly
+            # this way - every test passes, then the JSON parse
+            # throws and jest-junit never writes results.xml, so a
+            # complete run is thrown away. Writing the config gives
+            # the redirect below something to edit.
+            created = self._write_default_aat_config()
+            if created:
+                self._aat_configs = [created]
+        if self._aat_configs:
+            self._install_local_rule_server()
+        loadable = self._write_loadable_aat_config()
+        if loadable:
+            if not self._aat_configs:
+                self._install_local_rule_server()
+            self._aat_configs.append(loadable)
+
+    def _write_loadable_aat_config(self) -> str | None:
+        """Give AAT a config it will actually load, if it has none.
+
+        @ibma/aat 2.x reads its config from the working directory only,
+        as `.aat.yml`, `.aat.yaml`, or whatever `require('./aat')`
+        resolves to (plus the same names under `.config/`). carbon keeps
+        its file at `aat/aat.js`, a directory with no index.js, so AAT
+        never loads it and falls back to its defaults - the remote
+        archive whose endpoint now answers with HTML. Editing that file,
+        as `_install_local_rule_server` does, therefore changes nothing,
+        and carbon-5156 kept dying in `AATConfigLoader` after it. Only
+        when no loadable config exists is a `.aat.yml` written, holding
+        nothing but the local rule server, so every other setting stays
+        at the defaults the upstream run used.
+
+        Returns the path written, or None.
+        """
+        if self.container is None or not self._aat_is_installed():
+            return None
+        loadable = ' '.join(
+            f'/testbed/{name}' for name in (
+                '.aat.yml', '.aat.yaml', 'aat.js', 'aat.json',
+                'aat/index.js', 'aat/package.json',
+                '.config/.aat.yml', '.config/.aat.yaml', '.config/aat.js',
+                '.config/aat/index.js'))
+        exit_code, _ = self.container.exec_run(
+            ['bash', '-c', f'for f in {loadable}; do [ -e "$f" ] && exit 0; '
+             'done; exit 1'],
+            workdir='/testbed',
+            stream=False,
+        )
+        if exit_code == 0:
+            return None
+        path = '/testbed/.aat.yml'
+        try:
             write_to_container(
                 self.container,
-                '/testbed/aat.js',
-                ("module.exports = require('./aat/aat.js');\n"),
+                path,
+                'customRuleServer: true' + NEWLINE
+                + "rulePack: 'http://127.0.0.1:18123/'" + NEWLINE,
             )
+        except Exception as exc:
+            log.warning(f'could not write {path!r}: {exc}')
+            return None
+        log.info('wrote %s: no config AAT would load, so it would have '
+                 'used the broken remote archive', path)
+        return path
+
+    def _aat_is_installed(self) -> bool:
+        """Is the accessibility checker actually present?
+
+        Only instances that have it can be brought down by it, and
+        writing a config for a package that is not installed would
+        leave a stray file in every other carbon checkout.
+        """
+        if self.container is None:
+            return False
+        # Through bash, not a bare `test`: exec_run does not use a
+        # shell, so a bare builtin name can come back 126/127 and
+        # read as "not installed" on a container that has it. The
+        # search covers the monorepo's per-package node_modules as
+        # well as the hoisted root.
+        _, out = self.container.exec_run(
+            [
+                'bash',
+                '-c',
+                "find /testbed -maxdepth 4 -type d "
+                "-path '*/node_modules/@ibma/aat' -print -quit",
+            ],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(out, bytes)
+        found = bool(out.decode().strip())
+        log.info('@ibma/aat installed: %s', found)
+        return found
+
+    def _write_default_aat_config(self) -> str | None:
+        """Create the config AAT would otherwise do without.
+
+        Returns the path written, or None when it could not be
+        written - in which case the run fails the way it did before
+        rather than in a new way.
+        """
+        if self.container is None:
+            return None
+        path = '/testbed/.aat.js'
+        try:
             write_to_container(
                 self.container,
-                '/tmp/sbmdt-aat-server.js',
-                (
-                    "const http = require('http');\n"
-                    "const fs = require('fs');\n"
-                    'const engine = require.resolve(\n'
-                    "  '@ibma/aat/lib/engine/awe-node.js'\n"
-                    ');\n'
-                    'http.createServer((req, res) => {\n'
-                    "  if (req.url !== '/awe-node.js') {\n"
-                    '    res.statusCode = 404; res.end(); return;\n'
-                    '  }\n'
-                    "  res.setHeader('Content-Type', "
-                    "'application/javascript');\n"
-                    '  fs.createReadStream(engine).pipe(res);\n'
-                    "}).listen(18123, '127.0.0.1');\n"
-                ),
+                path,
+                'module.exports = {' + NEWLINE + '};' + NEWLINE,
             )
+        except Exception as exc:
+            log.warning(f'could not write {path!r}: {exc}')
+            return None
+        log.info(
+            'wrote %s: AAT is installed but this checkout ships no '
+            'config, so it would have used the broken endpoint',
+            path,
+        )
+        return path
+
+    def _find_aat_configs(self) -> list[str]:
+        """Config files that point AAT at a rule archive, if any.
+
+        Located rather than hardcoded: the path differs between carbon
+        versions, and which instances run the accessibility suite at all
+        is not something an instance id predicts.
+        """
+
+        if self.container is None:
+            return []
+        _, out = self.container.exec_run(
+            [
+                'bash',
+                '-c',
+                "{ find /testbed -maxdepth 3 -name 'aat.js'; "
+                "  find /testbed -maxdepth 3 -name '.aat.js'; } "
+                "2>/dev/null | grep -v node_modules || true",
+            ],
+            workdir='/testbed',
+            stream=False,
+        )
+        assert isinstance(out, bytes)
+        return [p for p in out.decode().splitlines() if p.strip()]
+
+    def _install_local_rule_server(self) -> None:
+        """Serve AAT's own bundled rule engine over loopback.
+
+        AAT's configured IBM archive endpoint now returns HTML, which
+        crashes JSON parsing after jest has run but before jest-junit
+        flushes, losing the whole run. The package ships the same
+        awe-node engine in node_modules, so point AAT's documented
+        customRuleServer/rulePack at a local copy instead of disabling
+        the accessibility assertions.
+        """
+
+        if self.container is None:
+            return
+
+        for cfg in self._aat_configs:
+            try:
+                apply_change_literal(
+                    container=self.container,
+                    file=cfg,
+                    find='module.exports = {',
+                    replace=(
+                        'module.exports = {'
+                        + NEWLINE
+                        + '  customRuleServer: true,'
+                        + NEWLINE
+                        + "  rulePack: 'http://127.0.0.1:18123/',"
+                    ),
+                    assertion='customRuleServer: true',
+                )
+            except Exception as exc:
+                # A config whose shape we do not recognise is left alone;
+                # the run then fails the way it did before rather than in
+                # some new way caused by a half-applied edit.
+                log.warning(f'could not point {cfg!r} at the local rule '
+                            f'server: {exc}')
+
+        # require.resolve() searches upward from the *script's* directory.
+        # A server living in /tmp therefore looks in /tmp/node_modules and
+        # /node_modules, never /testbed/node_modules, and exits before it
+        # listens. Resolve from /testbed explicitly.
+        write_to_container(
+            self.container,
+            SERVER_PATH,
+            (
+                "const http = require('http');"
+                + NEWLINE
+                + "const fs = require('fs');"
+                + NEWLINE
+                + 'const engine = require.resolve('
+                + NEWLINE
+                + "  '@ibma/aat/lib/engine/awe-node.js',"
+                + NEWLINE
+                + "  { paths: ['/testbed/node_modules', '/testbed'] }"
+                + NEWLINE
+                + ');'
+                + NEWLINE
+                + 'http.createServer((req, res) => {'
+                + NEWLINE
+                + "  if (req.url !== '/awe-node.js') {"
+                + NEWLINE
+                + '    res.statusCode = 404; res.end(); return;'
+                + NEWLINE
+                + '  }'
+                + NEWLINE
+                + "  res.setHeader('Content-Type', "
+                + "'application/javascript');"
+                + NEWLINE
+                + '  fs.createReadStream(engine).pipe(res);'
+                + NEWLINE
+                + "}).listen(18123, '127.0.0.1');"
+                + NEWLINE
+            ),
+        )
 
     @override
     def evaluate(self) -> list[TestResult]:
@@ -132,12 +314,20 @@ class CarbonEvaluator(Evaluator):
             raise Exception('no container')
 
         test_command = 'npm test'
-        if self.instance_id == 'carbon-design-system__carbon-5156':
+        if getattr(self, '_aat_configs', None):
+            # Start the rule server in the same shell as the tests, so
+            # it outlives them and dies with them, and wait for the
+            # port instead of racing jest to it.
             test_command = (
-                'node /tmp/sbmdt-aat-server.js '
-                '>/tmp/sbmdt-aat-server.log 2>&1 & '
-                'aat_pid=$!; trap \'kill "$aat_pid" 2>/dev/null || true\' '
-                'EXIT; npm test'
+                'node ' + SERVER_PATH +
+                ' >' + SERVER_LOG + ' 2>&1 & '
+                'aat_pid=$!; '
+                'trap \'kill "$aat_pid" 2>/dev/null || true\' EXIT; '
+                'for _ in $(seq 1 50); do '
+                '  (exec 3<>/dev/tcp/127.0.0.1/18123) 2>/dev/null '
+                '  && break; sleep 0.2; '
+                'done; '
+                'npm test'
             )
 
         # carbon-9136 and carbon-8912 both failed npm test with
@@ -163,6 +353,24 @@ class CarbonEvaluator(Evaluator):
                 'JEST_JUNIT_OUTPUT_DIR': RESULTS_DIR,
                 'JEST_JUNIT_OUTPUT_NAME': RESULTS_FILE,
                 'BABEL_ENV': 'test',
+                # Report each test's file (see jest_junit_parser).
+                'JEST_JUNIT_ADD_FILE_ATTRIBUTE': 'true',
+                'JEST_JUNIT_SUITE_NAME': '{filepath}',
+                # carbon-5156 died with "Ineffective mark-compacts near
+                # heap limit" partway through the suite, after roughly
+                # forty files had already passed, and so wrote no
+                # results.xml at all -- the same symptom as the AAT
+                # failures but a different cause. The GC trace names the
+                # ceiling: 1339 MB used of 1456 MB, which is the old
+                # node in these images defaulting to a ~1.5 GB old
+                # space. Carbon is a monorepo and its jest run simply
+                # needs more than that.
+                #
+                # 4 GB is a cap, not a reservation: nothing else in the
+                # suite comes near it, so this cannot cost the other
+                # instances anything, and it stays well under the
+                # worker's 8 GB even with jest's two processes.
+                'NODE_OPTIONS': HEAP_FLAG,
             },
             workdir='/testbed',
             stream=False,

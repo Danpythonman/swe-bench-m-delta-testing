@@ -2,13 +2,20 @@
 
 import ast
 import logging
+import re
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from sbmdt.patches import drop_unappliable_binary
+from sbmdt.evaluator.base import MODEL_PATCH_TYPES, PatchType
+from sbmdt.patches import (
+    drop_mode_only_sections,
+    drop_unappliable_binary,
+    file_sections,
+    split_diff,
+)
 
 BASE = Path(__file__).resolve().parents[1] / 'src/sbmdt/evaluator/base.py'
 tree = ast.parse(BASE.read_text(encoding='utf-8'))
@@ -23,6 +30,24 @@ namespace = dict(
     log=logging.getLogger(__name__),
     PATCH_FILE='input.diff',
     drop_unappliable_binary=drop_unappliable_binary,
+    drop_mode_only_sections=drop_mode_only_sections,
+    file_sections=file_sections,
+    split_diff=split_diff,
+    MODEL_PATCH_TYPES=MODEL_PATCH_TYPES,
+    re=re,
+)
+
+# A dependency pin the image's setup already wrote into package.json, as
+# refact's whole-checkout diffs carry it.
+PIN = (
+    'diff --git a/package.json b/package.json\n'
+    '--- a/package.json\n+++ b/package.json\n'
+    '@@ -1,3 +1,3 @@\n {\n-  "sass": "^1.15.2"\n+  "sass": "1.36.0"\n }\n'
+)
+FIX = (
+    'diff --git a/example.txt b/example.txt\n'
+    '--- a/example.txt\n+++ b/example.txt\n'
+    '@@ -1 +1 @@\n-old\n+new\n'
 )
 exec(
     compile(ast.Module(body=[method], type_ignores=[]), str(BASE), 'exec'),
@@ -31,7 +56,7 @@ exec(
 
 
 class PatchTransportTests(unittest.TestCase):
-    def run_patch(self, patch):
+    def run_patch(self, patch, patch_type=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             subprocess.run(['git', 'init', '-q', directory], check=True)
@@ -40,6 +65,8 @@ class PatchTransportTests(unittest.TestCase):
                 check=True,
             )
             (root / 'example.txt').write_bytes(b'old\n')
+            # The image's setup has already pinned sass.
+            (root / 'package.json').write_text('{\n  "sass": "1.36.0"\n}\n')
 
             def write(container, filename, content):
                 (root / filename).write_bytes(content.encode())
@@ -55,6 +82,8 @@ class PatchTransportTests(unittest.TestCase):
                 container=SimpleNamespace(exec_run=execute),
                 pred=SimpleNamespace(model_patch=patch),
                 instance_id='test',
+                patch_type=patch_type,
+                _refresh_index=lambda: None,
             )
             namespace['apply_patch'](obj)
             return (root / 'example.txt').read_bytes()
@@ -102,6 +131,20 @@ class PatchTransportTests(unittest.TestCase):
             '@@ -1 +1 @@\n-old\n+new\n'
         )
         self.assertEqual(self.run_patch(patch), b'new\n')
+
+    def test_model_patch_skips_file_already_applied(self):
+        self.assertEqual(
+            self.run_patch(PIN + FIX, PatchType.WITH_IMAGE), b'new\n'
+        )
+
+    def test_gold_patch_stays_strict(self):
+        with self.assertRaisesRegex(Exception, 'Failed to apply patch'):
+            self.run_patch(PIN + FIX, PatchType.GOLD)
+
+    def test_model_patch_still_fails_on_a_conflicting_file(self):
+        conflict = FIX.replace('-old', '-unrelated')
+        with self.assertRaisesRegex(Exception, 'Failed to apply patch'):
+            self.run_patch(PIN + conflict, PatchType.WITH_IMAGE)
 
 
 if __name__ == '__main__':
